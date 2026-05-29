@@ -1,0 +1,318 @@
+// ============================================
+// ZENDIT — Screen: Clients list + Drawer
+// ============================================
+
+function ClientsScreen({ onNav }) {
+  const [tab, setTab] = useState('all');
+  const [open, setOpen] = useState(null);
+  const [editing, setEditing] = useState(null);
+  const [view, setView] = useState('grid');
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(12);
+  const clients = window.DATA.CLIENTS;
+
+  const tabs = [
+    { id: 'all',     label: 'Tous',         n: clients.length },
+    { id: 'sender',  label: 'Expéditeurs',  n: 124 },
+    { id: 'recip',   label: 'Destinataires',n: 188 },
+    { id: 'loyal',   label: 'Fidèles',      n: 42 },
+    { id: 'unpaid',  label: 'Avec impayés', n: 8, cls: 'bad' },
+  ];
+
+  return (
+    <div className="page">
+      <div className="page__head">
+        <div>
+          <div className="page__title"><Bi fr="Clients" en="Clients" /></div>
+          <div className="page__sub">312 clients · expéditeurs Douala, destinataires Canada</div>
+        </div>
+        <div className="page__actions">
+          <button className="btn btn--ghost"><I.Download />Exporter CSV</button>
+          <button className="btn btn--brand" onClick={() => setEditing('new')}><I.UserPlus />Nouveau client</button>
+        </div>
+      </div>
+
+      <div className="toolbar">
+        <div className="tabs">
+          {tabs.map(t => (
+            <button key={t.id} className={'tab '+(tab===t.id?'is-active':'')} onClick={() => setTab(t.id)}>
+              {t.label} <span className="count">{t.n}</span>
+            </button>
+          ))}
+        </div>
+        <div className="spacer" />
+        <div style={{ position: 'relative' }}>
+          <I.Search style={{ position: 'absolute', left: 10, top: 9, width: 14, height: 14, color: 'var(--ink-400)' }} />
+          <input className="input input--sm" placeholder="Nom, téléphone, code client..." style={{ width: 260, paddingLeft: 32 }} />
+        </div>
+        <button className="btn btn--ghost btn--sm"><I.Filter />Filtres</button>
+        <button className="btn btn--soft btn--sm"><I.Pin />Ville</button>
+        <button className="btn btn--soft btn--sm"><I.Tag />Trier <I.ChevronDown style={{width:12, height:12}}/></button>
+        <ViewToggle value={view} onChange={setView} />
+      </div>
+
+      {view === 'grid'
+        ? <ClientsGridView clients={clients} setOpen={setOpen} />
+        : <ClientsListView clients={clients} setOpen={setOpen} page={page} pageSize={pageSize} />
+      }
+
+      <Pagination total={clients.length} page={page} pageSize={pageSize}
+        onPageChange={setPage}
+        onPageSizeChange={(s) => { setPageSize(s); setPage(1); }}
+        sizes={view === 'grid' ? [12, 24, 48] : [10, 25, 50, 100]} />
+
+      {open && <ClientDrawer cl={open} onClose={() => setOpen(null)} onEdit={() => { setEditing(open); setOpen(null); }} />}
+
+      {editing && (
+        <ClientFormModal
+          mode={editing === 'new' ? 'create' : 'edit'}
+          client={editing === 'new' ? null : editing}
+          onClose={() => setEditing(null)}
+          onSave={() => setEditing(null)}
+        />
+      )}
+    </div>
+  );
+}
+
+// === Grid view ===
+function ClientsGridView({ clients, setOpen }) {
+  return (
+    <div style={{
+      display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 12,
+      background: 'white',
+      border: '1px solid var(--border)', borderTop: 0,
+      padding: 14,
+    }}>
+      {clients.map(cl => (
+        <div key={cl.id} className="card" style={{ padding: 14, position: 'relative', cursor: 'pointer' }} onClick={() => setOpen(cl)}>
+          {cl.loyal && (
+            <div style={{ position: 'absolute', top: 12, right: 12, color: 'var(--brand-500)' }}>
+              <I.Star style={{width:14, height:14}}/>
+            </div>
+          )}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
+            <Avatar initials={cl.name.split(' ').map(x=>x[0]).join('').slice(0,2)} color={cl.color} size="lg" />
+            <div style={{ minWidth: 0 }}>
+              <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--ink-900)' }}>{cl.name}</div>
+              <div className="mono" style={{ fontSize: 11, color: 'var(--ink-400)' }}>{cl.code}</div>
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', gap: 6, marginBottom: 10, flexWrap:'wrap' }}>
+            {cl.role === 'sender' && <span className="badge badge--brand">Expéditeur</span>}
+            {cl.role === 'recipient' && <span className="badge badge--info">Destinataire</span>}
+            {cl.role === 'both' && <span className="badge badge--ok">Mixte · Exp + Dest</span>}
+            <span className="badge badge--neutral">{cl.city}</span>
+          </div>
+
+          <div style={{ fontSize: 12, color: 'var(--ink-500)', display: 'flex', alignItems: 'center', gap: 6, marginBottom: 10 }} className="mono">
+            <I.Phone style={{ width: 12, height: 12 }} />
+            {cl.phone}
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 6, padding: '10px 0', borderTop: '1px solid var(--border-soft)', borderBottom: '1px solid var(--border-soft)', marginBottom: 10 }}>
+            <Mini label="Cargaisons" v={cl.campaigns} />
+            <Mini label="Poids" v={cl.weight + ' kg'} />
+            <Mini label="CA" v={(cl.amount/1000).toFixed(1) + 'k'} unit="CAD" />
+          </div>
+
+          <div style={{ fontSize: 11.5, color: 'var(--ink-500)', display: 'flex', alignItems: 'center', gap: 6 }}>
+            <I.Calendar style={{ width: 11, height: 11 }} />
+            Dernière : <span className="mono" style={{ color: 'var(--ink-700)', fontWeight: 600 }}>{cl.lastCampaign}</span>
+            <StatusDot kind="info" label="" />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// === List view (table) ===
+function ClientsListView({ clients, setOpen, page, pageSize }) {
+  const paged = clients.slice((page - 1) * pageSize, page * pageSize);
+  return (
+    <table className="tbl" style={{ borderTopLeftRadius: 0, borderTopRightRadius: 0 }}>
+      <thead>
+        <tr>
+          <th style={{ width: 32, borderRadius: 0 }}><input type="checkbox" style={{accentColor:'var(--brand-500)'}}/></th>
+          <th>Client</th>
+          <th>Type</th>
+          <th>Ville</th>
+          <th>Téléphone</th>
+          <th style={{textAlign:'center'}}>Cargaisons</th>
+          <th style={{textAlign:'right'}}>Poids</th>
+          <th style={{textAlign:'right'}}>CA total</th>
+          <th>Dernière</th>
+          <th style={{borderRadius:0, width:60}}></th>
+        </tr>
+      </thead>
+      <tbody>
+        {paged.map(cl => (
+          <tr key={cl.id} style={{ cursor: 'pointer' }} onClick={() => setOpen(cl)}>
+            <td onClick={e => e.stopPropagation()}><input type="checkbox" style={{accentColor:'var(--brand-500)'}}/></td>
+            <td>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <Avatar initials={cl.name.split(' ').map(x=>x[0]).join('').slice(0,2)} color={cl.color} size="sm" />
+                <div>
+                  <div style={{ fontSize: 13, fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                    {cl.name}
+                    {cl.loyal && <I.Star style={{ width: 11, height: 11, color: 'var(--brand-500)' }} />}
+                  </div>
+                  <div className="mono" style={{ fontSize: 10.5, color: 'var(--ink-400)' }}>{cl.code}</div>
+                </div>
+              </div>
+            </td>
+            <td>
+              {cl.role === 'sender' && <span className="badge badge--brand">Expéditeur</span>}
+              {cl.role === 'recipient' && <span className="badge badge--info">Destinataire</span>}
+              {cl.role === 'both' && <span className="badge badge--ok">Mixte</span>}
+            </td>
+            <td style={{ fontSize: 12.5 }}>{cl.city}</td>
+            <td className="mono" style={{ fontSize: 12 }}>{cl.phone}</td>
+            <td className="mono" style={{ textAlign: 'center', fontWeight: 600 }}>{cl.campaigns}</td>
+            <td className="mono" style={{ textAlign: 'right' }}>{cl.weight}<span style={{ fontSize: 10.5, color: 'var(--ink-400)', marginLeft: 2 }}>kg</span></td>
+            <td style={{ textAlign: 'right' }}>
+              <span className="mono" style={{ fontWeight: 700 }}>{(cl.amount/1000).toFixed(1)}k</span>
+              <span style={{ fontSize: 10.5, color: 'var(--ink-400)', marginLeft: 2 }}>CAD</span>
+            </td>
+            <td className="mono" style={{ fontSize: 11.5, color: 'var(--ink-500)' }}>{cl.lastCampaign}</td>
+            <td onClick={e => e.stopPropagation()}>
+              <div style={{ display: 'flex', gap: 2, justifyContent: 'flex-end' }}>
+                <button className="icon-btn" title="WhatsApp"><I.Whatsapp style={{ color: 'var(--ok-600)', width: 14, height: 14 }}/></button>
+                <button className="icon-btn" onClick={() => setOpen(cl)}><I.ChevronRight /></button>
+              </div>
+            </td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  );
+}
+
+function Mini({ label, v, unit }) {
+  return (
+    <div style={{ textAlign: 'center' }}>
+      <div className="mono" style={{ fontSize: 13, fontWeight: 700, color: 'var(--ink-900)' }}>
+        {v}{unit && <span style={{ fontSize: 10, color: 'var(--ink-400)', marginLeft: 2 }}>{unit}</span>}
+      </div>
+      <div style={{ fontSize: 10, color: 'var(--ink-400)', textTransform: 'uppercase', letterSpacing: '.04em', fontWeight: 600 }}>{label}</div>
+    </div>
+  );
+}
+
+function ClientDrawer({ cl, onClose, onEdit }) {
+  return (
+    <Drawer width={560} onClose={onClose}>
+      <div className="drawer__head">
+        <div style={{ flex: 1 }}>
+          <div style={{ fontSize: 11, color: 'var(--ink-400)', textTransform: 'uppercase', letterSpacing: '.04em', fontWeight: 600 }}>
+            Profil client / Client profile
+          </div>
+        </div>
+        <button className="icon-btn" onClick={onClose}><I.Cross /></button>
+      </div>
+
+      <div className="drawer__body">
+        {/* Header */}
+        <div style={{ padding: '20px 22px', display: 'flex', alignItems: 'center', gap: 14, borderBottom: '1px solid var(--border-soft)' }}>
+          <Avatar initials={cl.name.split(' ').map(x=>x[0]).join('').slice(0,2)} color={cl.color} size="xl" />
+          <div style={{ flex: 1 }}>
+            <div style={{ fontSize: 19, fontWeight: 700, letterSpacing: '-.01em' }}>{cl.name}
+              {cl.loyal && <I.Star style={{ width: 14, height: 14, color: 'var(--brand-500)', marginLeft: 6, verticalAlign: -1 }}/>}
+            </div>
+            <div className="mono" style={{ fontSize: 12, color: 'var(--ink-400)', marginTop: 2 }}>{cl.code} · Client depuis fév. 2024</div>
+            <div style={{ display: 'flex', gap: 6, marginTop: 8 }}>
+              {cl.role === 'sender' && <span className="badge badge--brand">Expéditeur</span>}
+              {cl.role === 'recipient' && <span className="badge badge--info">Destinataire</span>}
+              {cl.role === 'both' && <span className="badge badge--ok">Expéditeur + Destinataire</span>}
+              <span className="badge badge--neutral">{cl.city}</span>
+            </div>
+          </div>
+        </div>
+
+        {/* KPIs */}
+        <div style={{ padding: '16px 22px', display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, borderBottom: '1px solid var(--border-soft)' }}>
+          <div>
+            <div style={{ fontSize: 11, color: 'var(--ink-400)', textTransform: 'uppercase', letterSpacing: '.04em', fontWeight: 600 }}>Cargaisons</div>
+            <div className="mono" style={{ fontSize: 22, fontWeight: 700 }}>{cl.campaigns}</div>
+          </div>
+          <div>
+            <div style={{ fontSize: 11, color: 'var(--ink-400)', textTransform: 'uppercase', letterSpacing: '.04em', fontWeight: 600 }}>CA total</div>
+            <div className="mono" style={{ fontSize: 22, fontWeight: 700, color: 'var(--ok-600)' }}>{cl.amount.toLocaleString('fr')}<span style={{ fontSize: 11, color: 'var(--ink-400)', fontWeight: 500, marginLeft: 3 }}>CAD</span></div>
+          </div>
+          <div>
+            <div style={{ fontSize: 11, color: 'var(--ink-400)', textTransform: 'uppercase', letterSpacing: '.04em', fontWeight: 600 }}>Impayés</div>
+            <div className="mono" style={{ fontSize: 22, fontWeight: 700, color: 'var(--ink-400)' }}>0<span style={{ fontSize: 11, color: 'var(--ink-400)', fontWeight: 500, marginLeft: 3 }}>CAD</span></div>
+          </div>
+        </div>
+
+        {/* Contact */}
+        <div style={{ padding: '16px 22px', borderBottom: '1px solid var(--border-soft)' }}>
+          <div className="section-title" style={{ marginBottom: 10 }}>Contact</div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+            <Row icon={<I.Phone />} label="Téléphone" value={cl.phone} mono />
+            <Row icon={<I.Pin />}   label="Ville"     value={cl.city + ', ' + (cl.role === 'sender' ? 'Cameroun' : 'Canada')} />
+            <Row icon={<I.Whatsapp />} label="WhatsApp" value={cl.phone} mono ok />
+            <Row icon={<I.Globe />} label="Langue" value="Français" />
+          </div>
+        </div>
+
+        {/* Shipment history */}
+        <div style={{ padding: '16px 22px' }}>
+          <div className="section-title">Historique d'envois <span className="section-title__count">{cl.campaigns}</span></div>
+          <table className="tbl tbl--compact">
+            <thead>
+              <tr>
+                <th style={{borderRadius:0}}>Cargaison</th>
+                <th>Poids</th>
+                <th>Montant</th>
+                <th style={{borderRadius:0}}>Statut</th>
+              </tr>
+            </thead>
+            <tbody>
+              {[
+                { c: 'DLA-YUL-APR-02', w: 14, a: 329, s: 'in-transit' },
+                { c: 'DLA-YUL-MAR-02', w: 18, a: 384, s: 'closed' },
+                { c: 'DLA-YUL-MAR-01', w: 12, a: 248, s: 'closed' },
+                { c: 'DLA-YUL-FEB-02', w: 9,  a: 198, s: 'closed' },
+                { c: 'DLA-YUL-FEB-01', w: 22, a: 440, s: 'closed' },
+              ].map((row, i) => (
+                <tr key={i}>
+                  <td className="mono" style={{ fontWeight: 600 }}>{row.c}</td>
+                  <td className="mono">{row.w} kg</td>
+                  <td className="mono" style={{ fontWeight: 600 }}>{row.a} CAD</td>
+                  <td>
+                    <span className={'badge badge--dot badge--'+(row.s === 'in-transit' ? 'info' : 'ok')}>
+                      {row.s === 'in-transit' ? 'En transit' : 'Clôturée'}
+                    </span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div className="drawer__foot">
+        <button className="btn btn--ghost" style={{flex:1, justifyContent:'center'}} onClick={onEdit}><I.Edit />Modifier</button>
+        <button className="btn btn--soft" style={{flex:1, justifyContent:'center'}}><I.Whatsapp style={{color:'var(--ok-600)'}}/>WhatsApp</button>
+        <button className="btn btn--brand" style={{flex:1, justifyContent:'center'}}><I.Send />Envoyer facture</button>
+      </div>
+    </Drawer>
+  );
+}
+
+function Row({ icon, label, value, mono, ok }) {
+  return (
+    <div>
+      <div style={{ fontSize: 10.5, color: 'var(--ink-400)', textTransform: 'uppercase', letterSpacing: '.04em', fontWeight: 600, marginBottom: 4 }}>{label}</div>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, color: ok ? 'var(--ok-600)' : 'var(--ink-800)', fontWeight: 500 }}>
+        {React.cloneElement(icon, { style: { width: 14, height: 14, color: 'var(--ink-400)' } })}
+        <span className={mono ? 'mono' : ''}>{value}</span>
+      </div>
+    </div>
+  );
+}
+
+window.ClientsScreen = ClientsScreen;
