@@ -36,7 +36,7 @@ function TopBar() {
               <I.Phone style={{ width: 13, height: 13 }} />
               Disponible 24h/7j · +1 514 000 0000
             </span>
-            <span className="jtop-bar__item" style={{ fontWeight: 700, color: '#374151' }}>
+            <span className="jtop-bar__item" style={{ fontWeight: 700, color: 'var(--ink-600)' }}>
               🇫🇷 Français
             </span>
           </div>
@@ -162,28 +162,28 @@ function JTrackBand() {
           <div className="jtrack-result">
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20, flexWrap: 'wrap', gap: 12 }}>
               <div>
-                <div style={{ fontSize: 10.5, color: '#9CA3AF', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.06em' }}>Numéro de suivi</div>
-                <div style={{ fontFamily: 'ui-monospace,monospace', fontSize: 20, fontWeight: 800, color: '#1A1A2E' }}>JL-26042-DLA0418</div>
+                <div style={{ fontSize: 10.5, color: "var(--ink-300)", fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.06em' }}>Numéro de suivi</div>
+                <div style={{ fontFamily: 'ui-monospace,monospace', fontSize: 20, fontWeight: 800, color: "var(--ink-900)" }}>JL-26042-DLA0418</div>
               </div>
-              <span style={{ background: '#F97316', color: 'white', padding: '7px 16px', borderRadius: 6, fontSize: 13, fontWeight: 700 }}>En transit · 80%</span>
+              <span style={{ background: "var(--brand-400)", color: 'white', padding: '7px 16px', borderRadius: 6, fontSize: 13, fontWeight: 700 }}>En transit · 80%</span>
             </div>
             {timeline.map((t, i) => (
               <div key={i} style={{ display: 'flex', gap: 14, paddingBottom: 16, position: 'relative' }}>
                 {i < timeline.length - 1 && (
-                  <div style={{ position: 'absolute', left: 13, top: 28, bottom: -4, width: 2, background: t.s === 'done' ? '#F97316' : '#E5E7EB' }} />
+                  <div style={{ position: 'absolute', left: 13, top: 28, bottom: -4, width: 2, background: t.s === 'done' ? "var(--brand-400)" : 'var(--border)' }} />
                 )}
                 <div style={{
                   width: 28, height: 28, borderRadius: 999, flex: '0 0 28px', zIndex: 1,
-                  background: t.s === 'done' ? '#F97316' : t.s === 'active' ? '#111111' : 'white',
-                  border: '2px solid ' + (t.s === 'todo' ? '#E5E7EB' : t.s === 'active' ? '#111111' : '#F97316'),
-                  color: t.s === 'todo' ? '#9CA3AF' : 'white',
+                  background: t.s === 'done' ? "var(--brand-400)" : t.s === 'active' ? 'var(--ink-900)' : 'white',
+                  border: '2px solid ' + (t.s === 'todo' ? 'var(--border)' : t.s === 'active' ? 'var(--ink-900)' : "var(--brand-400)"),
+                  color: t.s === 'todo' ? "var(--ink-300)" : 'white',
                   display: 'grid', placeItems: 'center', fontSize: 11, fontWeight: 700,
                 }}>
                   {t.s === 'done' ? <I.Check style={{ width: 13, height: 13 }} /> : i + 1}
                 </div>
                 <div style={{ paddingTop: 4 }}>
-                  <div style={{ fontSize: 14, fontWeight: 600, color: t.s === 'todo' ? '#9CA3AF' : '#1A1A2E' }}>{t.l}</div>
-                  <div style={{ fontSize: 12, color: '#9CA3AF' }}>{t.d}</div>
+                  <div style={{ fontSize: 14, fontWeight: 600, color: t.s === 'todo' ? "var(--ink-300)" : "var(--ink-900)" }}>{t.l}</div>
+                  <div style={{ fontSize: 12, color: "var(--ink-300)" }}>{t.d}</div>
                 </div>
               </div>
             ))}
@@ -231,11 +231,11 @@ function JAbout() {
               Turkish Cargo — pour garantir la régularité des rotations et la sécurité de vos marchandises,
               quelles que soient les saisons.
             </p>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 24, marginTop: 36, paddingTop: 28, borderTop: '1px solid #E5E7EB' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 24, marginTop: 36, paddingTop: 28, borderTop: '1px solid var(--border)' }}>
               {[{ n: '14j', l: 'Transit moyen' }, { n: '12k+', l: 'Colis livrés' }, { n: '98%', l: 'Succès' }].map(({ n, l }) => (
                 <div key={l}>
-                  <div style={{ fontFamily: 'Montserrat, sans-serif', fontSize: 32, fontWeight: 900, color: '#111111', letterSpacing: '-.03em' }}>{n}</div>
-                  <div style={{ fontSize: 13, color: '#6B7280', marginTop: 4 }}>{l}</div>
+                  <div style={{ fontFamily: 'Montserrat, sans-serif', fontSize: 32, fontWeight: 900, color: 'var(--ink-900)', letterSpacing: '-.03em' }}>{n}</div>
+                  <div style={{ fontSize: 13, color: 'var(--ink-400)', marginTop: 4 }}>{l}</div>
                 </div>
               ))}
             </div>
@@ -375,18 +375,18 @@ function JEstimator({ onBook }) {
       <div className="jc">
         <div style={{ textAlign: 'center', marginBottom: 40 }}>
           <div className="jsvc-sec__eyebrow" style={{ display: 'block', marginBottom: 10 }}>Simulateur de prix</div>
-          <h2 style={{ fontFamily: 'Montserrat, sans-serif', fontSize: '36px', color: '#111111', fontWeight: 900 }}>
+          <h2 style={{ fontFamily: 'Montserrat, sans-serif', fontSize: '36px', color: 'var(--ink-900)', fontWeight: 900 }}>
             Combien coûte mon envoi ?
           </h2>
-          <p style={{ fontSize: 15, color: '#6B7280', marginTop: 12, lineHeight: 1.65, maxWidth: 460, margin: '12px auto 0' }}>
+          <p style={{ fontSize: 15, color: 'var(--ink-400)', marginTop: 12, lineHeight: 1.65, maxWidth: 460, margin: '12px auto 0' }}>
             Calculez en quelques secondes. Sans inscription, sans engagement.
           </p>
         </div>
         <div className="jest">
           <div className="jest__head">
-            <I.Calculator style={{ width: 16, height: 16, color: '#F97316' }} />
+            <I.Calculator style={{ width: 16, height: 16, color: "var(--brand-400)" }} />
             <span className="jest__title">Estimateur d'envoi</span>
-            <span style={{ marginLeft: 'auto', fontSize: 12, color: '#6B7280' }}>Ajoutez autant d'articles que nécessaire</span>
+            <span style={{ marginLeft: 'auto', fontSize: 12, color: 'var(--ink-400)' }}>Ajoutez autant d'articles que nécessaire</span>
           </div>
           <div className="jest__route">
             <div className="jest__f">
@@ -395,15 +395,15 @@ function JEstimator({ onBook }) {
                 {routes.map(rr => <option key={rr.id} value={rr.id}>{rr.fromCity} ({rr.fromIATA})</option>)}
               </select>
             </div>
-            <I.ArrowRight style={{ width: 18, height: 18, color: '#9CA3AF', alignSelf: 'flex-end', marginBottom: 11 }} />
+            <I.ArrowRight style={{ width: 18, height: 18, color: "var(--ink-300)", alignSelf: 'flex-end', marginBottom: 11 }} />
             <div className="jest__f">
               <label>Destination</label>
               <select>{routes.map(rr => <option key={rr.id}>{rr.toCity} ({rr.toIATA})</option>)}</select>
             </div>
             <div style={{ flex: 1 }} />
-            <div style={{ alignSelf: 'flex-end', marginBottom: 11, fontSize: 13, color: '#6B7280' }}>
-              Transit <strong style={{ color: '#1A1A2E' }}>{r?.transitDays} j</strong>
-              {' · '}Tarif en <strong style={{ color: '#1A1A2E' }}>{r?.currency}</strong>
+            <div style={{ alignSelf: 'flex-end', marginBottom: 11, fontSize: 13, color: 'var(--ink-400)' }}>
+              Transit <strong style={{ color: "var(--ink-900)" }}>{r?.transitDays} j</strong>
+              {' · '}Tarif en <strong style={{ color: "var(--ink-900)" }}>{r?.currency}</strong>
             </div>
           </div>
           <div className="jest__lines">
@@ -430,11 +430,11 @@ function JEstimator({ onBook }) {
                     {c.base} <span className="jest__cur">{r?.currency}</span>
                     <div className="jest__tier">{c.tier.from}–{c.tier.to}kg · {c.tier.rate}/kg</div>
                   </div>
-                  <div className="jest__cell" style={{ textAlign: 'right', color: c.surcharge > 0 ? '#EA580C' : c.surcharge < 0 ? '#059669' : '#9CA3AF' }}>
+                  <div className="jest__cell" style={{ textAlign: 'right', color: c.surcharge > 0 ? "var(--brand-600)" : c.surcharge < 0 ? '#059669' : "var(--ink-300)" }}>
                     {c.surcharge > 0 ? '+' : ''}{c.surcharge} <span className="jest__cur">{r?.currency}</span>
                     <div className="jest__tier">{c.cat.label} {c.cat.pct > 0 ? '+' : ''}{c.cat.pct}%</div>
                   </div>
-                  <div className="jest__cell" style={{ fontWeight: 800, color: '#111111', textAlign: 'right' }}>
+                  <div className="jest__cell" style={{ fontWeight: 800, color: 'var(--ink-900)', textAlign: 'right' }}>
                     {c.total} <span className="jest__cur">{r?.currency}</span>
                   </div>
                   <button className="jest__del" onClick={() => removeLine(ln.id)} disabled={lines.length <= 1}>
@@ -482,10 +482,10 @@ function JFAQ() {
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: 72, alignItems: 'start' }}>
           <div>
             <div className="jsvc-sec__eyebrow" style={{ display: 'block', marginBottom: 12 }}>FAQ</div>
-            <h2 style={{ fontFamily: 'Montserrat, sans-serif', fontSize: '36px', fontWeight: 900, color: '#111111', marginBottom: 16 }}>
+            <h2 style={{ fontFamily: 'Montserrat, sans-serif', fontSize: '36px', fontWeight: 900, color: 'var(--ink-900)', marginBottom: 16 }}>
               Questions fréquentes
             </h2>
-            <p style={{ fontSize: 15, lineHeight: 1.75, color: '#6B7280' }}>
+            <p style={{ fontSize: 15, lineHeight: 1.75, color: 'var(--ink-400)' }}>
               Une autre question ? WhatsApp nous répond en moins d'une heure.
             </p>
             <div style={{ display: 'flex', alignItems: 'center', gap: 7, fontSize: 14, color: '#25D366', fontWeight: 600, marginTop: 20 }}>
