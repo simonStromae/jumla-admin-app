@@ -174,8 +174,8 @@ function JTrackBand() {
                 )}
                 <div style={{
                   width: 28, height: 28, borderRadius: 999, flex: '0 0 28px', zIndex: 1,
-                  background: t.s === 'done' ? '#F97316' : t.s === 'active' ? '#0D1B3E' : 'white',
-                  border: '2px solid ' + (t.s === 'todo' ? '#E5E7EB' : t.s === 'active' ? '#0D1B3E' : '#F97316'),
+                  background: t.s === 'done' ? '#F97316' : t.s === 'active' ? '#111111' : 'white',
+                  border: '2px solid ' + (t.s === 'todo' ? '#E5E7EB' : t.s === 'active' ? '#111111' : '#F97316'),
                   color: t.s === 'todo' ? '#9CA3AF' : 'white',
                   display: 'grid', placeItems: 'center', fontSize: 11, fontWeight: 700,
                 }}>
@@ -234,7 +234,7 @@ function JAbout() {
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 24, marginTop: 36, paddingTop: 28, borderTop: '1px solid #E5E7EB' }}>
               {[{ n: '14j', l: 'Transit moyen' }, { n: '12k+', l: 'Colis livrés' }, { n: '98%', l: 'Succès' }].map(({ n, l }) => (
                 <div key={l}>
-                  <div style={{ fontFamily: 'Montserrat, sans-serif', fontSize: 32, fontWeight: 900, color: '#0D1B3E', letterSpacing: '-.03em' }}>{n}</div>
+                  <div style={{ fontFamily: 'Montserrat, sans-serif', fontSize: 32, fontWeight: 900, color: '#111111', letterSpacing: '-.03em' }}>{n}</div>
                   <div style={{ fontSize: 13, color: '#6B7280', marginTop: 4 }}>{l}</div>
                 </div>
               ))}
@@ -375,7 +375,7 @@ function JEstimator({ onBook }) {
       <div className="jc">
         <div style={{ textAlign: 'center', marginBottom: 40 }}>
           <div className="jsvc-sec__eyebrow" style={{ display: 'block', marginBottom: 10 }}>Simulateur de prix</div>
-          <h2 style={{ fontFamily: 'Montserrat, sans-serif', fontSize: 'clamp(28px,4vw,40px)', color: '#0D1B3E', fontWeight: 900 }}>
+          <h2 style={{ fontFamily: 'Montserrat, sans-serif', fontSize: '36px', color: '#111111', fontWeight: 900 }}>
             Combien coûte mon envoi ?
           </h2>
           <p style={{ fontSize: 15, color: '#6B7280', marginTop: 12, lineHeight: 1.65, maxWidth: 460, margin: '12px auto 0' }}>
@@ -434,7 +434,7 @@ function JEstimator({ onBook }) {
                     {c.surcharge > 0 ? '+' : ''}{c.surcharge} <span className="jest__cur">{r?.currency}</span>
                     <div className="jest__tier">{c.cat.label} {c.cat.pct > 0 ? '+' : ''}{c.cat.pct}%</div>
                   </div>
-                  <div className="jest__cell" style={{ fontWeight: 800, color: '#0D1B3E', textAlign: 'right' }}>
+                  <div className="jest__cell" style={{ fontWeight: 800, color: '#111111', textAlign: 'right' }}>
                     {c.total} <span className="jest__cur">{r?.currency}</span>
                   </div>
                   <button className="jest__del" onClick={() => removeLine(ln.id)} disabled={lines.length <= 1}>
@@ -482,7 +482,7 @@ function JFAQ() {
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: 72, alignItems: 'start' }}>
           <div>
             <div className="jsvc-sec__eyebrow" style={{ display: 'block', marginBottom: 12 }}>FAQ</div>
-            <h2 style={{ fontFamily: 'Montserrat, sans-serif', fontSize: 'clamp(26px,3.5vw,38px)', fontWeight: 900, color: '#0D1B3E', marginBottom: 16 }}>
+            <h2 style={{ fontFamily: 'Montserrat, sans-serif', fontSize: '36px', fontWeight: 900, color: '#111111', marginBottom: 16 }}>
               Questions fréquentes
             </h2>
             <p style={{ fontSize: 15, lineHeight: 1.75, color: '#6B7280' }}>
