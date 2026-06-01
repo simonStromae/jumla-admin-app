@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import I from './Icons.jsx';
 
 export function Bi({ fr, en, sep = '/' }) {
@@ -12,22 +12,19 @@ export function Bi({ fr, en, sep = '/' }) {
 
 export function Sidebar({ route, onNav }) {
   const items = [
-    { id: 'home',      label: 'Cargaisons',  en: 'Shipments',  icon: I.Plane,    route: '/',          count: 22 },
-    { id: 'analytics', label: 'Analyses',    en: 'Analytics',  icon: I.Activity, route: '/analytics' },
-    { id: 'parcels',   label: 'Colis',       en: 'Parcels',    icon: I.Box,      route: '/parcels' },
-    { id: 'slips',     label: 'Bordereaux',  en: 'Slips',      icon: I.FileText, route: '/slips' },
-    { id: 'clients',   label: 'Clients',     en: 'Clients',    icon: I.Users,    route: '/clients',   count: 312 },
-    { id: 'payments',  label: 'Paiements',   en: 'Payments',   icon: I.Wallet,   route: '/payments' },
-    { id: 'messaging', label: 'Messagerie',  en: 'Messaging',  icon: I.Chat,     route: '/messaging' },
+    { id: 'home',      label: 'Cargaisons',  en: 'Shipments',  icon: I.Plane,    route: '/admin/campaigns', count: 22 },
+    { id: 'analytics', label: 'Analyses',    en: 'Analytics',  icon: I.Activity, route: '/admin/analytics' },
+    { id: 'parcels',   label: 'Colis',       en: 'Parcels',    icon: I.Box,      route: '/admin/parcels' },
+    { id: 'slips',     label: 'Bordereaux',  en: 'Slips',      icon: I.FileText, route: '/admin/slips' },
+    { id: 'clients',   label: 'Clients',     en: 'Clients',    icon: I.Users,    route: '/admin/clients',   count: 312 },
+    { id: 'payments',  label: 'Paiements',   en: 'Payments',   icon: I.Wallet,   route: '/admin/payments' },
+    { id: 'messaging', label: 'Messagerie',  en: 'Messaging',  icon: I.Chat,     route: '/admin/messaging' },
   ];
   const admin = [
-    { id: 'agents',   label: 'Agents',      en: 'Agents',    icon: I.Users,    route: '/agents' },
-    { id: 'settings', label: 'Paramètres',  en: 'Settings',  icon: I.Settings, route: '/settings' },
+    { id: 'agents',   label: 'Agents',      en: 'Agents',    icon: I.Users,    route: '/admin/agents' },
+    { id: 'settings', label: 'Paramètres',  en: 'Settings',  icon: I.Settings, route: '/admin/settings' },
   ];
-  const isActive = (r) => {
-    if (r === '/') return route === '/' || route === '';
-    return route.startsWith(r.split('/').slice(0, 2).join('/'));
-  };
+  const isActive = (r) => route === r || route.startsWith(r + '/');
   return (
     <aside className="sidebar">
       <div className="sidebar__brand">
@@ -178,13 +175,3 @@ export function Progress({ pct, kind }) {
   );
 }
 
-export function useHashRoute() {
-  const [route, setRoute] = useState(() => window.location.hash.replace(/^#/, '') || '/');
-  useEffect(() => {
-    const onHash = () => setRoute(window.location.hash.replace(/^#/, '') || '/');
-    window.addEventListener('hashchange', onHash);
-    return () => window.removeEventListener('hashchange', onHash);
-  }, []);
-  const nav = useCallback((r) => { window.location.hash = r; }, []);
-  return [route, nav];
-}

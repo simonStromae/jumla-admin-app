@@ -258,3 +258,52 @@ export function StatusTransitionModal({ from, to, onClose, onConfirm }) {
     </Modal>
   );
 }
+
+
+import { DATA, STATUS } from '../data.js';
+import { Bi, RoutePill } from '../components/Shell.jsx';
+
+export default function StatusWorkflowScreen({ onNav }) {
+  const [transition, setTransition] = useState(null);
+
+  return (
+    <div className="page">
+      <div className="page__head">
+        <div>
+          <div className="page__title"><Bi fr="Workflow & statuts" en="Workflow & status" /></div>
+          <div className="page__sub">Avancement des cargaisons à travers les étapes opérationnelles</div>
+        </div>
+      </div>
+
+      <StatusStepperMini current="open" />
+
+      <div style={{ marginTop: 18, display: 'grid', gap: 12 }}>
+        {DATA.CAMPAIGNS.map(c => {
+          const s = STATUS.campaign[c.status];
+          return (
+            <div key={c.id} className="card" style={{ padding: 16, display: 'flex', alignItems: 'center', gap: 18, cursor: 'pointer' }}
+                 onClick={() => onNav('/campaign/' + c.id)}>
+              <RoutePill from={c.dep.split('-')[0]} to={c.dep.split('-')[1]} />
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontWeight: 700, fontSize: 14 }} className="mono">{c.code}</div>
+                <div style={{ fontSize: 12, color: 'var(--ink-400)', marginTop: 2 }}>
+                  {c.parcels} colis · {c.totalKg} kg · départ {c.dep}
+                </div>
+              </div>
+              <StatusPanel status={c.status} onAdvance={() => setTransition(c)} />
+            </div>
+          );
+        })}
+      </div>
+
+      {transition && (
+        <StatusTransitionModal
+          from={transition.status}
+          to="open"
+          onClose={() => setTransition(null)}
+          onConfirm={() => setTransition(null)}
+        />
+      )}
+    </div>
+  );
+}
