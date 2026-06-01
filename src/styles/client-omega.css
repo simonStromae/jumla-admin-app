@@ -3,8 +3,6 @@
    Montserrat + Inter · border 0 · max 1300px
    ============================================ */
 
-@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700;800;900&family=Inter:wght@400;500;600;700&display=swap');
-
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; border-radius: 0 !important; }
 
 :root {
@@ -12,14 +10,14 @@
 }
 
 .jpage {
-  font-family: 'Inter', system-ui, sans-serif;
+  font-family: "Inter",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
   color: var(--ink-800);
   background: var(--white);
   -webkit-font-smoothing: antialiased;
 }
 
 .jpage h1, .jpage h2, .jpage h3, .jpage h4 {
-  font-family: 'Montserrat', system-ui, sans-serif;
+  font-family: "Inter",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
   font-weight: 800; letter-spacing: -.025em; line-height: 1.1;
 }
 
