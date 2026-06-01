@@ -81,30 +81,40 @@ function JNav({ onNav, onBook }) {
   );
 }
 
-/* ─── Hero split ─── */
+/* ─── Hero plein fond ─── */
 function JHero({ onBook }) {
   return (
     <section className="jhero">
+      <img className="jhero__bg" src={IMGS.hero} alt="" />
+      <div className="jhero__overlay" />
       <div className="jc">
-        <div className="jhero__inner">
-          <div>
-            <h1 className="jhero__title">
-              <span className="or">Rapide</span> <span className="wh">&amp; fiable</span><br />
-              <span className="wh">partout au</span> <span className="or">Canada</span>
-            </h1>
-            <p className="jhero__sub">
-              Jumla Shipping est le spécialiste du fret aérien entre le Cameroun et le Canada.
-              Réservez en ligne, déposez vos colis à Douala — votre destinataire les reçoit à Montréal en 14 jours.
-            </p>
-            <div className="jhero__btns">
-              <button className="jhero__btn-1" onClick={onBook}>En savoir plus</button>
-              <button className="jhero__btn-2" onClick={() => document.getElementById('jabout')?.scrollIntoView({ behavior: 'smooth' })}>
-                Notre histoire
-              </button>
-            </div>
+        <div className="jhero__content">
+          <h1 className="jhero__title">
+            <span className="or">Rapide</span> <span className="wh">&amp; fiable</span><br />
+            <span className="wh">partout au</span> <span className="or">Canada</span>
+          </h1>
+          <p className="jhero__sub">
+            Jumla Shipping est le spécialiste du fret aérien entre le Cameroun et le Canada.
+            Réservez en ligne, déposez vos colis à Douala — votre destinataire les reçoit à Montréal en 14 jours.
+          </p>
+          <div className="jhero__btns">
+            <button className="jhero__btn-1" onClick={onBook}>En savoir plus</button>
+            <button className="jhero__btn-2" onClick={() => document.getElementById('jabout')?.scrollIntoView({ behavior: 'smooth' })}>
+              Notre histoire
+            </button>
           </div>
-          <div className="jhero__img">
-            <img src={IMGS.hero} alt="Fret aérien Jumla Shipping" />
+          <div className="jhero__stats">
+            {[
+              { n: '14 jours', l: 'Transit moyen' },
+              { n: '12 000+',  l: 'Colis livrés' },
+              { n: '98%',      l: 'Taux de succès' },
+              { n: '2 500+',   l: 'Clients fidèles' },
+            ].map(({ n, l }) => (
+              <div key={l} className="jhero__stat">
+                <div className="jhero__stat-n">{n}</div>
+                <div className="jhero__stat-l">{l}</div>
+              </div>
+            ))}
           </div>
         </div>
       </div>

@@ -5,7 +5,7 @@
 
 @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700;800;900&family=Inter:wght@400;500;600;700&display=swap');
 
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; border-radius: 0 !important; }
 
 :root {
   --or:     #F97316;
@@ -65,7 +65,7 @@
   letter-spacing: -.03em; white-space: nowrap;
 }
 .jnav__logo-mark {
-  width: 38px; height: 38px; border-radius: 8px;
+  width: 38px; height: 38px; 
   background: var(--or); display: grid; place-items: center;
   font-size: 18px; font-weight: 900; color: white;
 }
@@ -74,7 +74,7 @@
   padding: 9px 15px; border: 0; background: none;
   font-family: 'Inter', sans-serif;
   font-size: 14px; font-weight: 600; color: var(--ink);
-  cursor: pointer; border-radius: 6px;
+  cursor: pointer; 
   transition: color .15s, background .15s;
 }
 .jnav__link:hover { color: var(--or); background: var(--or-l); }
@@ -83,14 +83,14 @@
   font-family: 'Inter', sans-serif;
   font-size: 14px; font-weight: 600; color: var(--gray);
   background: none; border: 0; cursor: pointer; padding: 9px 14px;
-  border-radius: 6px; transition: color .15s;
+   transition: color .15s;
 }
 .jnav__signin:hover { color: var(--nv); }
 .jbtn-nav {
   font-family: 'Montserrat', sans-serif;
   font-size: 13.5px; font-weight: 700;
   background: var(--or); color: white; border: 0;
-  padding: 11px 22px; border-radius: 6px; cursor: pointer;
+  padding: 11px 22px;  cursor: pointer;
   display: inline-flex; align-items: center; gap: 8px;
   transition: background .15s, transform .15s;
 }
@@ -98,15 +98,26 @@
 
 /* ── Hero ── */
 .jhero {
-  background: var(--nv);
-  overflow: hidden; position: relative;
-  min-height: 580px;
+  position: relative;
+  overflow: hidden;
+  min-height: 600px;
   display: flex; align-items: center;
+  background: var(--nv);
 }
-.jhero__inner {
-  display: grid; grid-template-columns: 1fr 1fr;
-  align-items: center; gap: 48px;
-  padding: 80px 0 60px;
+.jhero__bg {
+  position: absolute; inset: 0;
+  width: 100%; height: 100%;
+  object-fit: cover; object-position: center 30%;
+  z-index: 0;
+}
+.jhero__overlay {
+  position: absolute; inset: 0; z-index: 1;
+  background: linear-gradient(100deg, rgba(13,27,62,.95) 0%, rgba(13,27,62,.8) 50%, rgba(13,27,62,.45) 100%);
+}
+.jhero__content {
+  position: relative; z-index: 2;
+  max-width: 640px;
+  padding: 100px 0 80px;
 }
 .jhero__title {
   font-size: clamp(36px, 5vw, 62px);
@@ -118,14 +129,14 @@
 .jhero__sub {
   font-size: 15px; line-height: 1.75;
   color: rgba(255,255,255,.65); margin-bottom: 36px;
-  max-width: 440px; font-weight: 400;
+  max-width: 480px; font-weight: 400;
 }
 .jhero__btns { display: flex; gap: 14px; flex-wrap: wrap; }
 .jhero__btn-1 {
   font-family: 'Montserrat', sans-serif;
   font-size: 14px; font-weight: 700;
   background: white; color: var(--nv);
-  border: 0; padding: 13px 28px; border-radius: 6px;
+  border: 0; padding: 14px 30px;
   cursor: pointer; transition: background .15s;
 }
 .jhero__btn-1:hover { background: #F3F4F6; }
@@ -134,19 +145,26 @@
   font-size: 14px; font-weight: 700;
   background: transparent; color: white;
   border: 2px solid rgba(255,255,255,.35);
-  padding: 13px 28px; border-radius: 6px;
+  padding: 14px 30px;
   cursor: pointer; transition: border-color .15s;
 }
 .jhero__btn-2:hover { border-color: rgba(255,255,255,.7); }
-.jhero__img {
-  position: relative; border-radius: 16px; overflow: hidden;
-  aspect-ratio: 5/4;
+.jhero__stats {
+  display: flex; gap: 0; margin-top: 48px;
+  padding-top: 28px; border-top: 1px solid rgba(255,255,255,.12);
 }
-.jhero__img img { width: 100%; height: 100%; object-fit: cover; display: block; }
-.jhero__img::after {
-  content: ''; position: absolute; inset: 0;
-  background: linear-gradient(135deg, rgba(13,27,62,.3) 0%, transparent 60%);
+.jhero__stat {
+  flex: 1; padding-right: 28px;
+  border-right: 1px solid rgba(255,255,255,.1);
+  margin-right: 28px;
 }
+.jhero__stat:last-child { border-right: none; margin-right: 0; padding-right: 0; }
+.jhero__stat-n {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 28px; font-weight: 900; color: var(--or);
+  letter-spacing: -.03em;
+}
+.jhero__stat-l { font-size: 12px; color: rgba(255,255,255,.5); margin-top: 3px; }
 
 /* ── Tracking band ── */
 .jtrack-band {
@@ -215,7 +233,7 @@
   display: flex; align-items: center; gap: 14px; margin-top: 28px;
 }
 .jabout__ceo-av {
-  width: 48px; height: 48px; border-radius: 999px;
+  width: 48px; height: 48px; 
   background: var(--nv); color: white; font-family: 'Montserrat', sans-serif;
   font-size: 18px; font-weight: 800; display: grid; place-items: center;
   flex-shrink: 0;
@@ -234,7 +252,7 @@
   gap: 14px; height: 420px;
 }
 .jcommit__photo {
-  border-radius: 12px; overflow: hidden; background: #E5E7EB;
+   overflow: hidden; background: #E5E7EB;
 }
 .jcommit__photo img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .jcommit__photo--tall { grid-row: span 2; }
@@ -248,7 +266,7 @@
   font-family: 'Montserrat', sans-serif;
   font-size: 13px; font-weight: 700;
   background: var(--nv); color: white; border: 0;
-  padding: 12px 22px; border-radius: 6px; cursor: pointer;
+  padding: 12px 22px;  cursor: pointer;
   transition: background .15s;
 }
 .jcommit__more:hover { background: var(--nv-m); }
@@ -257,7 +275,7 @@
 .jfeats { background: var(--white); padding: 72px 0; border-top: 1px solid #E5E7EB; border-bottom: 1px solid #E5E7EB; }
 .jfeats__grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 48px; }
 .jfeats__icon {
-  width: 52px; height: 52px; border-radius: 12px;
+  width: 52px; height: 52px; 
   background: var(--or-l); color: var(--or);
   display: grid; place-items: center; margin-bottom: 16px;
 }
@@ -283,7 +301,7 @@
 .jsvc-sec__body { font-size: 15px; line-height: 1.8; color: var(--gray); }
 .jsvc-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; }
 .jsvc-card {
-  background: var(--white); border-radius: 10px; overflow: hidden;
+  background: var(--white);  overflow: hidden;
   transition: transform .2s, box-shadow .2s;
 }
 .jsvc-card:hover { transform: translateY(-4px); box-shadow: 0 16px 40px rgba(0,0,0,.1); }
@@ -338,7 +356,7 @@
 .jcta-btn-1 {
   font-family: 'Montserrat', sans-serif; font-size: 14px; font-weight: 800;
   background: var(--or); color: white; border: 0;
-  padding: 15px 32px; border-radius: 6px; cursor: pointer;
+  padding: 15px 32px;  cursor: pointer;
   display: inline-flex; align-items: center; gap: 8px;
   transition: background .15s;
 }
@@ -347,7 +365,7 @@
   font-family: 'Montserrat', sans-serif; font-size: 14px; font-weight: 700;
   background: transparent; color: white;
   border: 2px solid rgba(255,255,255,.3);
-  padding: 15px 32px; border-radius: 6px; cursor: pointer;
+  padding: 15px 32px;  cursor: pointer;
   transition: border-color .15s;
 }
 .jcta-btn-2:hover { border-color: white; }
@@ -360,7 +378,7 @@
   color: white; display: flex; align-items: center; gap: 10px; margin-bottom: 16px;
 }
 .jfoot__brand-mark {
-  width: 36px; height: 36px; border-radius: 7px; background: var(--or);
+  width: 36px; height: 36px;  background: var(--or);
   display: grid; place-items: center; font-size: 17px; font-weight: 900; color: white;
 }
 .jfoot__desc { font-size: 14px; line-height: 1.75; color: rgba(255,255,255,.5); margin-bottom: 20px; }
@@ -387,7 +405,7 @@
 }
 .jauth {
   display: grid; grid-template-columns: 280px 420px;
-  background: white; border-radius: 16px; overflow: hidden;
+  background: white;  overflow: hidden;
   box-shadow: 0 40px 80px rgba(0,0,0,.3); max-width: 100%;
 }
 .jauth__side {
@@ -401,14 +419,14 @@
 .jauth__close {
   position: absolute; top: 14px; right: 14px;
   background: none; border: 0; cursor: pointer;
-  color: var(--gray); padding: 6px; border-radius: 6px; transition: background .15s;
+  color: var(--gray); padding: 6px;  transition: background .15s;
 }
 .jauth__close:hover { background: var(--light); }
 .jauth__tabs {
-  display: flex; background: var(--light); border-radius: 8px; padding: 3px; gap: 3px; margin-bottom: 4px;
+  display: flex; background: var(--light);  padding: 3px; gap: 3px; margin-bottom: 4px;
 }
 .jauth__tabs button {
-  flex: 1; padding: 9px; border: 0; border-radius: 6px;
+  flex: 1; padding: 9px; border: 0; 
   font-family: 'Montserrat', sans-serif; font-size: 13px; font-weight: 700;
   cursor: pointer; background: none; color: var(--gray); transition: background .15s, color .15s;
 }
@@ -420,7 +438,7 @@
   letter-spacing: .08em; color: var(--gray);
 }
 .jauth__f input, .jauth__f select {
-  border: 1.5px solid #E5E7EB; border-radius: 8px;
+  border: 1.5px solid #E5E7EB; 
   padding: 10px 13px; font-size: 14px; color: var(--ink);
   outline: none; transition: border-color .15s; background: white;
   font-family: 'Inter', sans-serif;
@@ -435,7 +453,7 @@
 .jbtn-or {
   font-family: 'Montserrat', sans-serif; font-size: 14px; font-weight: 700;
   background: var(--or); color: white; border: 0;
-  padding: 12px 20px; border-radius: 8px; cursor: pointer;
+  padding: 12px 20px;  cursor: pointer;
   display: inline-flex; align-items: center; gap: 8px; justify-content: center;
   transition: background .15s; width: 100%;
 }
@@ -444,7 +462,7 @@
   font-family: 'Inter', sans-serif; font-size: 14px; font-weight: 600;
   background: white; color: var(--ink);
   border: 1.5px solid #E5E7EB;
-  padding: 11px 20px; border-radius: 8px; cursor: pointer;
+  padding: 11px 20px;  cursor: pointer;
   display: inline-flex; align-items: center; gap: 8px; justify-content: center;
   transition: border-color .15s; width: 100%;
 }
@@ -453,7 +471,7 @@
 /* estimator (kept, used in hero-below) */
 .jest-wrap { background: var(--light); padding: 80px 0; }
 .jest {
-  background: white; border-radius: 16px; overflow: hidden;
+  background: white;  overflow: hidden;
   box-shadow: 0 8px 40px rgba(0,0,0,.08);
 }
 .jest__head {
@@ -467,7 +485,7 @@
 .jest__f { display: flex; flex-direction: column; gap: 5px; }
 .jest__f label { font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; color: var(--gray); }
 .jest__f select, .jest__f input[type="number"] {
-  border: 1.5px solid #E5E7EB; border-radius: 8px;
+  border: 1.5px solid #E5E7EB; 
   padding: 9px 13px; font-size: 14px; color: var(--ink);
   background: white; outline: none; min-width: 130px;
   font-family: 'Inter', sans-serif; transition: border-color .15s;
@@ -489,7 +507,7 @@
 .jest__tier { font-size: 10px; color: var(--gray); margin-top: 2px; }
 .jest__del {
   background: none; border: 0; color: var(--gray); cursor: pointer;
-  padding: 8px 4px; border-radius: 6px; transition: background .15s;
+  padding: 8px 4px;  transition: background .15s;
 }
 .jest__del:hover:not(:disabled) { background: #FEE2E2; color: #EF4444; }
 .jest__del:disabled { opacity: .3; cursor: default; }
