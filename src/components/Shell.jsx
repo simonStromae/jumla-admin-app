@@ -28,9 +28,9 @@ export function Sidebar({ route, onNav }) {
   return (
     <aside className="sidebar">
       <div className="sidebar__brand">
-        <div className="sidebar__logo">Z</div>
+        <div className="sidebar__logo">J</div>
         <div>
-          <div className="sidebar__name">Zendit</div>
+          <div className="sidebar__name">Jumla Shipping</div>
           <div className="sidebar__org">Fret international</div>
         </div>
       </div>

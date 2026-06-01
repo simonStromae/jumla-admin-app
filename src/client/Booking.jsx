@@ -56,7 +56,7 @@ export default function BookingScreen({ onNav }) {
           </button>
           <div style={{ flex: 1, textAlign: 'center' }}>
             <div style={{ fontSize: 16, fontWeight: 700, color: 'white' }}>Réserver un envoi</div>
-            <div style={{ fontSize: 12, color: 'rgba(255,255,255,.5)', marginTop: 2 }}>Zendit Cargo</div>
+            <div style={{ fontSize: 12, color: 'rgba(255,255,255,.5)', marginTop: 2 }}>Jumla Shipping</div>
           </div>
           <div style={{ width: 80 }} />
         </div>

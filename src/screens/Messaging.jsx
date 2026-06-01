@@ -18,7 +18,7 @@ Vous pouvez récupérer votre colis à notre entrepôt :
 Pour toute question : {agent_phone}
 
 Merci de votre confiance,
-L'équipe Zendit`);
+L'équipe Jumla`);
 
   const recipients = [
     { id: 'r1', name: 'Client J', phone: '+1 514 *** **45', amount: 280, status: 'sent',     parcel: '#01' },

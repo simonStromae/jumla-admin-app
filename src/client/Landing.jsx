@@ -8,8 +8,8 @@ function ZTop({ onBook, onSignin }) {
     <div style={{ position: 'sticky', top: 0, zIndex: 100, background: 'linear-gradient(180deg, rgba(10,14,26,.95) 0%, rgba(10,14,26,.9) 100%)', backdropFilter: 'blur(8px)', borderBottom: '1px solid rgba(255,255,255,.08)' }}>
       <div style={{ maxWidth: 1200, margin: '0 auto', padding: '0 28px', display: 'flex', alignItems: 'center', height: 64, gap: 28 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontWeight: 800, fontSize: 20, color: 'white', letterSpacing: '-.02em' }}>
-          <div style={{ width: 32, height: 32, borderRadius: 9, background: 'linear-gradient(135deg, #F5A524, #D97706)', display: 'grid', placeItems: 'center', color: 'white', fontWeight: 700, fontSize: 14 }}>Z</div>
-          Zendit
+          <div style={{ width: 32, height: 32, borderRadius: 9, background: 'linear-gradient(135deg, #F5A524, #D97706)', display: 'grid', placeItems: 'center', color: 'white', fontWeight: 700, fontSize: 14 }}>J</div>
+          Jumla Shipping
         </div>
         <div style={{ display: 'flex', gap: 24, marginLeft: 12, flex: 1 }}>
           {['Services', 'Suivi', 'FAQ', 'Contact'].map(l => (
@@ -49,7 +49,7 @@ function Hero({ onBook }) {
           <span style={{ background: 'linear-gradient(90deg, #F5A524, #FCBC4F)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>en toute confiance</span>
         </h1>
         <p style={{ fontSize: 18, color: 'rgba(255,255,255,.65)', lineHeight: 1.65, marginBottom: 40, fontWeight: 400 }}>
-          Zendit simplifie l'envoi de colis entre le Cameroun et le Canada.<br />
+          Jumla Shipping simplifie l'envoi de colis entre le Cameroun et le Canada.<br />
           Suivi en temps réel, paiement sécurisé, remise à domicile ou en entrepôt.
         </p>
         <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
@@ -186,8 +186,8 @@ function Footer({ onBook }) {
         <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 1fr', gap: 40, marginBottom: 48 }}>
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontWeight: 800, fontSize: 20, color: 'white', marginBottom: 14 }}>
-              <div style={{ width: 32, height: 32, borderRadius: 9, background: 'linear-gradient(135deg, #F5A524, #D97706)', display: 'grid', placeItems: 'center', color: 'white', fontWeight: 700, fontSize: 14 }}>Z</div>
-              Zendit
+              <div style={{ width: 32, height: 32, borderRadius: 9, background: 'linear-gradient(135deg, #F5A524, #D97706)', display: 'grid', placeItems: 'center', color: 'white', fontWeight: 700, fontSize: 14 }}>J</div>
+              Jumla Shipping
             </div>
             <p style={{ fontSize: 13.5, lineHeight: 1.65, color: 'rgba(255,255,255,.5)', marginBottom: 18 }}>
               Fret aérien international entre le Cameroun et le Canada. Votre partenaire de confiance depuis 2020.
@@ -199,7 +199,7 @@ function Footer({ onBook }) {
           {[
             { title: 'Services',  links: ['Envoi Douala → Montréal', 'Livraison domicile', 'Retrait entrepôt', 'Suivi de colis'] },
             { title: 'Infos',     links: ['À propos', 'FAQ', 'Tarifs', 'Contact'] },
-            { title: 'Contact',   links: ['+237 6** ** ** 00', '+1 514 *** ****', 'support@zendit.cargo', '5500 Pl. Savane, Lachine'] },
+            { title: 'Contact',   links: ['+237 6** ** ** 00', '+1 514 *** ****', 'support@jumla.cargo', '5500 Pl. Savane, Lachine'] },
           ].map((col, i) => (
             <div key={i}>
               <div style={{ fontSize: 13, fontWeight: 700, color: 'white', marginBottom: 14 }}>{col.title}</div>
@@ -210,7 +210,7 @@ function Footer({ onBook }) {
           ))}
         </div>
         <div style={{ borderTop: '1px solid rgba(255,255,255,.08)', paddingTop: 24, display: 'flex', justifyContent: 'space-between', fontSize: 12, color: 'rgba(255,255,255,.3)' }}>
-          <span>© 2026 Zendit International SARL · Tous droits réservés</span>
+          <span>© 2026 Jumla Shipping SARL · Tous droits réservés</span>
           <span>Politique de confidentialité · CGV</span>
         </div>
       </div>

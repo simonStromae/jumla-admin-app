@@ -49,8 +49,8 @@ function SectionCompany() {
     <>
       <SettingsCard title="Identité de l'entreprise" sub="Ces informations apparaissent sur vos bordereaux et messages clients.">
         <div className="field-row field-row--2">
-          <div className="field"><label className="label">Nom commercial</label><input className="input" defaultValue="Zendit Cargo" /></div>
-          <div className="field"><label className="label">Raison sociale</label><input className="input" defaultValue="Zendit International SARL" /></div>
+          <div className="field"><label className="label">Nom commercial</label><input className="input" defaultValue="Jumla Shipping" /></div>
+          <div className="field"><label className="label">Raison sociale</label><input className="input" defaultValue="Jumla Shipping SARL" /></div>
         </div>
         <div className="field-row field-row--2">
           <div className="field"><label className="label">Téléphone Douala</label><input className="input mono" defaultValue="+237 6** ** ** 00" /></div>
@@ -66,7 +66,7 @@ function SectionCompany() {
       </SettingsCard>
       <SettingsCard title="Apparence & marque" sub="Logo, couleurs et pied de page des documents.">
         <div style={{ display: 'flex', alignItems: 'center', gap: 16, padding: '14px 16px', background: 'var(--bg-soft)', borderRadius: 8 }}>
-          <div style={{ width: 60, height: 60, borderRadius: 12, background: 'linear-gradient(135deg, #F5A524, #D97706)', color: 'white', display: 'grid', placeItems: 'center', fontSize: 28, fontWeight: 700 }}>Z</div>
+          <div style={{ width: 60, height: 60, borderRadius: 12, background: 'linear-gradient(135deg, #F5A524, #D97706)', color: 'white', display: 'grid', placeItems: 'center', fontSize: 28, fontWeight: 700 }}>J</div>
           <div style={{ flex: 1 }}>
             <div style={{ fontSize: 13, fontWeight: 600 }}>Logo actuel</div>
             <div style={{ fontSize: 12, color: 'var(--ink-400)', marginTop: 2 }}>PNG/SVG · max 2 Mo · fond transparent recommandé</div>

@@ -41,7 +41,7 @@ export default function SlipPrintScreen({ code = 'BL-2604-01', onNav }) {
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
             <div style={{ width: 48, height: 48, borderRadius: 10, background: 'linear-gradient(135deg, #F5A524, #D97706)', color: 'white', display: 'grid', placeItems: 'center', fontSize: 22, fontWeight: 700 }}>Z</div>
             <div>
-              <div style={{ fontSize: 22, fontWeight: 700, letterSpacing: '-.02em' }}>Zendit Cargo</div>
+              <div style={{ fontSize: 22, fontWeight: 700, letterSpacing: '-.02em' }}>Jumla Shipping</div>
               <div style={{ fontSize: 11, color: '#6B7280' }}>Fret aérien international</div>
             </div>
           </div>
@@ -173,7 +173,7 @@ export default function SlipPrintScreen({ code = 'BL-2604-01', onNav }) {
         {/* Signatures */}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24, marginTop: 26 }}>
           {[
-            { lbl: 'Agent Zendit', name: 'Marc Lefèvre — Montréal' },
+            { lbl: 'Agent Jumla', name: 'Marc Lefèvre — Montréal' },
             { lbl: 'Destinataire', name: 'Client J' },
           ].map((s, i) => (
             <div key={i}>
@@ -191,9 +191,9 @@ export default function SlipPrintScreen({ code = 'BL-2604-01', onNav }) {
 
         {/* Footer */}
         <div style={{ marginTop: 32, paddingTop: 14, borderTop: '1px solid #D1D5DB', display: 'flex', justifyContent: 'space-between', fontSize: 10, color: '#6B7280' }}>
-          <span>Zendit Cargo · BP 1842, Akwa, Douala · +237 6** ** ** 00</span>
+          <span>Jumla Shipping · BP 1842, Akwa, Douala · +237 6** ** ** 00</span>
           <span>Entrepôt YUL : 5500 Pl. de la Savane, Lachine, QC · +1 514 *** ****</span>
-          <span>support@zendit.cargo</span>
+          <span>support@jumla.cargo</span>
         </div>
       </div>
     </div>

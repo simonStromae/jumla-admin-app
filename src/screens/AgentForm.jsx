@@ -188,7 +188,7 @@ export default function AgentFormModal({ mode = 'create', agent, onClose, onSave
           <div className="field-row field-row--2">
             <div className="field">
               <label className="label">Email professionnel</label>
-              <input className="input" type="email" value={data.email} onChange={e => upd('email', e.target.value)} placeholder="prenom.nom@zendit.cargo" />
+              <input className="input" type="email" value={data.email} onChange={e => upd('email', e.target.value)} placeholder="prenom.nom@jumla.cargo" />
             </div>
             <div className="field">
               <label className="label">Téléphone</label>
@@ -295,7 +295,7 @@ export default function AgentFormModal({ mode = 'create', agent, onClose, onSave
                     <div style={{ fontSize: 11, color: 'var(--ink-400)', marginBottom: 8 }}>À : {data.email || '—'}</div>
                     <div style={{ fontSize: 12, color: 'var(--ink-700)', lineHeight: 1.5 }}>
                       Bonjour {data.name?.split(' ')[0] || '...'},<br /><br />
-                      Vous avez été invité(e) à rejoindre <strong>Zendit Cargo</strong> en tant que <strong>{data.role === 'admin' ? 'Administrateur' : data.role === 'agent' ? 'Agent' : 'Lecteur'}</strong> ({data.city}).<br /><br />
+                      Vous avez été invité(e) à rejoindre <strong>Jumla Shipping</strong> en tant que <strong>{data.role === 'admin' ? 'Administrateur' : data.role === 'agent' ? 'Agent' : 'Lecteur'}</strong> ({data.city}).<br /><br />
                       <a style={{ color: 'var(--brand-700)', fontWeight: 600 }}>👉 Créer mon mot de passe</a>
                       <div style={{ fontSize: 10.5, color: 'var(--ink-400)', marginTop: 8 }}>Lien valide 7 jours.</div>
                     </div>

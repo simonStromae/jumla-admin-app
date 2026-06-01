@@ -123,7 +123,7 @@ function AgentsListView({ agents, setEditing, page, pageSize }) {
                   <Avatar initials={a.initials} color={a.color} size="sm" />
                   <div>
                     <div style={{ fontSize: 13, fontWeight: 600 }}>{a.name}</div>
-                    <div className="mono" style={{ fontSize: 10.5, color: 'var(--ink-400)' }}>{a.initials.toLowerCase()}@zendit.cargo</div>
+                    <div className="mono" style={{ fontSize: 10.5, color: 'var(--ink-400)' }}>{a.initials.toLowerCase()}@jumla.cargo</div>
                   </div>
                 </div>
               </td>

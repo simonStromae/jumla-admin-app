@@ -1,7 +1,7 @@
 import '@/src/styles/tokens.css';
 
 export const metadata = {
-  title: 'Zendit Cargo',
+  title: 'Jumla Shipping',
   description: 'Plateforme de gestion de fret international',
 };
 

@@ -1,5 +1,5 @@
 // ============================================
-// ZENDIT — Icons (Phosphor-style line set)
+// JUMLA — Icons (Phosphor-style line set)
 // ============================================
 export const I = {};
 

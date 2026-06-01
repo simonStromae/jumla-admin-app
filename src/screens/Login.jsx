@@ -35,9 +35,9 @@ export default function LoginScreen({ onNav }) {
             display: 'grid', placeItems: 'center',
             fontWeight: 700, fontSize: 19, color: 'white',
             boxShadow: 'inset 0 -2px 4px rgba(0,0,0,.2), 0 6px 16px rgba(217, 119, 6, .35)',
-          }}>Z</div>
+          }}>J</div>
           <div>
-            <div style={{ fontWeight: 700, fontSize: 18, letterSpacing: '-.01em' }}>Zendit</div>
+            <div style={{ fontWeight: 700, fontSize: 18, letterSpacing: '-.01em' }}>Jumla Shipping</div>
             <div style={{ fontSize: 11.5, color: 'rgba(255,255,255,.55)', marginTop: 1 }}>Fret international · Douala</div>
           </div>
         </div>
@@ -65,7 +65,7 @@ export default function LoginScreen({ onNav }) {
           </div>
         </div>
         <div style={{ position: 'absolute', bottom: 20, left: 56, right: 56, display: 'flex', justifyContent: 'space-between', fontSize: 11, color: 'rgba(255,255,255,.4)', zIndex: 2 }}>
-          <span>© 2026 Zendit Cargo</span><span>v2.4</span>
+          <span>© 2026 Jumla Shipping</span><span>v2.4</span>
         </div>
       </div>
 
@@ -88,7 +88,7 @@ export default function LoginScreen({ onNav }) {
           <div style={{ marginTop: 28 }}>
             <div className="field">
               <label className="label">Email <span className="opt">/ Email</span></label>
-              <input className="input" defaultValue="aicha.m@zendit.cargo" placeholder="vous@zendit.cargo" />
+              <input className="input" defaultValue="aicha.m@jumla.cargo" placeholder="vous@jumla.cargo" />
             </div>
             <div className="field">
               <label className="label" style={{ display: 'flex', justifyContent: 'space-between' }}>
@@ -121,13 +121,13 @@ export default function LoginScreen({ onNav }) {
           <div style={{ marginTop: 32, padding: 14, background: 'var(--bg-soft)', border: '1px solid var(--border-soft)', borderRadius: 10, display: 'flex', gap: 10 }}>
             <I.Info style={{ flex: '0 0 16px', color: 'var(--ink-400)', marginTop: 1 }} />
             <div style={{ fontSize: 12, color: 'var(--ink-500)', lineHeight: 1.45 }}>
-              <strong style={{ color: 'var(--ink-700)' }}>Accès réservé.</strong> Cette plateforme est destinée aux agents et administrateurs Zendit.
+              <strong style={{ color: 'var(--ink-700)' }}>Accès réservé.</strong> Cette plateforme est destinée aux agents et administrateurs Jumla.
             </div>
           </div>
         </div>
 
         <div style={{ fontSize: 11, color: 'var(--ink-400)', textAlign: 'center', display: 'flex', justifyContent: 'space-between' }}>
-          <span>Conditions · Confidentialité</span><span>support@zendit.cargo</span>
+          <span>Conditions · Confidentialité</span><span>support@jumla.cargo</span>
         </div>
       </div>
     </div>
