@@ -265,19 +265,63 @@ function SectionCampaigns() {
   );
 }
 
+function SectionAutoNotif() {
+  const [toggles, setToggles] = useState({ arrival: true, reminder: true, delivery: true, overrun: false, invoice: true, broadcast: false });
+  const toggle = k => setToggles(t => ({ ...t, [k]: !t[k] }));
+
+  const triggers = [
+    { id: 'arrival',   l: "Avis d'arrivée",            d: 'Envoyé automatiquement quand la cargaison passe à "Arrivée"' },
+    { id: 'reminder',  l: 'Relance paiement J+3',       d: "Envoyé 3 jours après l'arrivée si paiement non confirmé" },
+    { id: 'delivery',  l: 'Confirmation de livraison',  d: 'Envoyé à la validation du bordereau et libération du colis' },
+    { id: 'overrun',   l: 'Alerte dépassement de poids',d: "Envoyé à l'expéditeur si le poids réel > poids réservé" },
+    { id: 'invoice',   l: 'Facture automatique',        d: 'Envoyée au destinataire à la création du colis' },
+    { id: 'broadcast', l: 'Annonce nouvelle cargaison', d: "Notifie les clients fidèles à l'ouverture d'une cargaison" },
+  ];
+
+  return (
+    <SettingsCard title="Notifications automatiques" sub="Activez ou désactivez chaque déclencheur. Les modèles correspondants sont gérés dans la messagerie.">
+      <div style={{ display: 'grid', gap: 8 }}>
+        {triggers.map(t => (
+          <div key={t.id} style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '12px 14px', border: '1px solid var(--border)', borderRadius: 8 }}>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontSize: 13.5, fontWeight: 600 }}>{t.l}</div>
+              <div style={{ fontSize: 12, color: 'var(--ink-500)', marginTop: 2 }}>{t.d}</div>
+            </div>
+            <a style={{ fontSize: 11.5, color: 'var(--brand-700)', fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap' }}>Voir modèle →</a>
+            <button onClick={() => toggle(t.id)} style={{
+              width: 36, height: 20, borderRadius: 999,
+              background: toggles[t.id] ? 'var(--brand-500)' : 'var(--ink-200)',
+              border: 'none', cursor: 'pointer',
+              position: 'relative', transition: 'background .15s', flexShrink: 0,
+            }}>
+              <span style={{
+                position: 'absolute', left: toggles[t.id] ? 18 : 2, top: 2,
+                width: 16, height: 16, borderRadius: 999, background: 'white',
+                boxShadow: '0 1px 3px rgba(0,0,0,.2)',
+                transition: 'left .15s',
+              }} />
+            </button>
+          </div>
+        ))}
+      </div>
+    </SettingsCard>
+  );
+}
+
 export default function SettingsScreen({ onNav }) {
   const [section, setSection] = useState('company');
   const [editRoute, setEditRoute] = useState(null);
   const [routeDetail, setRouteDetail] = useState(null);
 
   const nav = [
-    { id: 'company',   l: 'Entreprise',          icon: I.Building },
-    { id: 'routes',    l: 'Routes',              icon: I.Route,    badge: 'Nouveau' },
-    { id: 'pricing',   l: 'Tarifs & facturation', icon: I.Coins },
-    { id: 'whatsapp',  l: 'WhatsApp',            icon: I.Chat },
-    { id: 'campaigns', l: 'Cargaisons',          icon: I.Plane },
+    { id: 'company',   l: 'Entreprise',           icon: I.Building },
+    { id: 'routes',    l: 'Routes',               icon: I.Route,    badge: 'Nouveau' },
+    { id: 'pricing',   l: 'Tarifs & facturation',  icon: I.Coins },
+    { id: 'whatsapp',  l: 'WhatsApp',             icon: I.Chat },
+    { id: 'auto',      l: 'Auto-notifications',   icon: I.Bell,     badge: 'Nouveau' },
+    { id: 'campaigns', l: 'Cargaisons',           icon: I.Plane },
     { id: 'codes',     l: 'Codes & numérotation', icon: I.Tag },
-    { id: 'security',  l: 'Sécurité',            icon: I.Lock },
+    { id: 'security',  l: 'Sécurité',             icon: I.Lock },
   ];
 
   return (
@@ -317,6 +361,7 @@ export default function SettingsScreen({ onNav }) {
           {section === 'routes'    && <SectionRoutes onEdit={setEditRoute} onDetail={setRouteDetail} />}
           {section === 'pricing'   && <SectionPricing />}
           {section === 'whatsapp'  && <SectionWhatsapp />}
+          {section === 'auto'      && <SectionAutoNotif />}
           {section === 'campaigns' && <SectionCampaigns />}
           {section === 'codes'     && <SectionCodes />}
           {section === 'security'  && <SectionSecurity />}

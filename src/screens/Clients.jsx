@@ -3,6 +3,7 @@ import { DATA, STATUS } from '../data.js';
 import I from '../components/Icons.jsx';
 import { Bi, Avatar, StatusDot, Drawer } from '../components/Shell.jsx';
 import { Pagination, ViewToggle } from '../components/Pagination.jsx';
+import ClientFormModal from './ClientForm.jsx';
 
 export default function ClientsScreen({ onNav }) {
   const [tab, setTab] = useState('all');
@@ -63,6 +64,15 @@ export default function ClientsScreen({ onNav }) {
         sizes={view === 'grid' ? [12, 24, 48] : [10, 25, 50, 100]} />
 
       {open && <ClientDrawer cl={open} onClose={() => setOpen(null)} onEdit={() => { setEditing(open); setOpen(null); }} />}
+
+      {editing && (
+        <ClientFormModal
+          mode={editing === 'new' ? 'create' : 'edit'}
+          client={editing === 'new' ? null : editing}
+          onClose={() => setEditing(null)}
+          onSave={() => setEditing(null)}
+        />
+      )}
     </div>
   );
 }
