@@ -6,6 +6,7 @@ export default function SlipDetailScreen({ id, onNav, onPrint }) {
   const slip = {
     code: id || 'BL-2604-01',
     clientCode: 'CL-0418',
+    campaignId: 'c1',
     campaign: 'DLA-YUL-APR-02',
     sender: { name: 'Client A', code: 'CL-0142', phone: '+237 6** ** ** 12', city: 'Douala', address: 'BP 1842, Akwa, Douala' },
     recipient: { name: 'Client J', code: 'CL-0418', phone: '+1 514 *** **45', city: 'Montréal', address: '1234 Rue Saint-Denis, Montréal H2X 3K2' },
@@ -37,7 +38,7 @@ export default function SlipDetailScreen({ id, onNav, onPrint }) {
       <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12.5, color: 'var(--ink-400)', marginBottom: 8 }}>
         <a style={{ cursor: 'pointer' }} onClick={() => onNav('/')}>Cargaisons</a>
         <I.ChevronRight style={{ width: 12, height: 12 }} />
-        <a style={{ cursor: 'pointer' }} onClick={() => onNav('/campaign/c1')}>{slip.campaign}</a>
+        <a style={{ cursor: 'pointer' }} onClick={() => onNav('/campaign/' + slip.campaignId)}>{slip.campaign}</a>
         <I.ChevronRight style={{ width: 12, height: 12 }} />
         <span style={{ color: 'var(--ink-600)', fontWeight: 600 }}>Bordereau {slip.code}</span>
       </div>
@@ -50,7 +51,7 @@ export default function SlipDetailScreen({ id, onNav, onPrint }) {
             <span className="badge badge--lg badge--warn badge--dot">Vérification en cours</span>
           </div>
           <div className="page__sub">
-            Cargaison <a style={{ color: 'var(--brand-700)', fontWeight: 600, cursor: 'pointer' }} onClick={() => onNav('/campaign/c1')}>{slip.campaign}</a> ·
+            Cargaison <a style={{ color: 'var(--brand-700)', fontWeight: 600, cursor: 'pointer' }} onClick={() => onNav('/campaign/' + slip.campaignId)}>{slip.campaign}</a> ·
             Client <strong className="mono">{slip.clientCode}</strong>
           </div>
         </div>

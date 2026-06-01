@@ -1,11 +1,107 @@
 import { useState } from 'react';
 import { DATA, STATUS } from '../data.js';
 import I from '../components/Icons.jsx';
-import { Bi, Avatar } from '../components/Shell.jsx';
+import { Bi, Avatar, Modal } from '../components/Shell.jsx';
 import { Progress } from '../components/Shell.jsx';
+
+function PaymentModal({ payment, onClose, onSave }) {
+  const isNew = !payment;
+  const [data, setData] = useState({
+    parcel:    payment?.parcel    || '',
+    campaign:  payment?.campaign  || '',
+    recipName: payment?.recipName || '',
+    due:       payment?.due       || '',
+    received:  payment?.received  || '',
+    method:    payment?.method    || 'Virement',
+    note:      payment?.note      || '',
+  });
+  const upd = (k, v) => setData(d => ({ ...d, [k]: v }));
+  const remaining = (parseFloat(data.due) || 0) - (parseFloat(data.received) || 0);
+
+  return (
+    <Modal width={580} onClose={onClose}
+      title={<span>{isNew ? 'Enregistrer un paiement' : 'Modifier le paiement'} <span style={{ color: 'var(--ink-400)', fontWeight: 400, fontSize: '.85em', marginLeft: 6 }}>/ Record payment</span></span>}
+      sub={isNew ? 'Associez un règlement à un colis' : `Colis ${payment.parcel} · ${payment.recipName}`}
+      footer={
+        <>
+          <button className="btn btn--ghost" onClick={onClose}>Annuler</button>
+          <button className="btn btn--brand" onClick={onSave}><I.Check />{isNew ? 'Enregistrer' : 'Mettre à jour'}</button>
+        </>
+      }>
+
+      <div className="field-row field-row--2">
+        <div className="field">
+          <label className="label">Cargaison</label>
+          <select className="select" value={data.campaign} onChange={e => upd('campaign', e.target.value)}>
+            <option value="">— Sélectionner</option>
+            {DATA.CAMPAIGNS.map(c => <option key={c.id} value={c.code}>{c.code}</option>)}
+          </select>
+        </div>
+        <div className="field">
+          <label className="label">Code colis</label>
+          <input className="input mono" value={data.parcel} onChange={e => upd('parcel', e.target.value)} placeholder="#01" />
+        </div>
+      </div>
+
+      <div className="field">
+        <label className="label">Destinataire</label>
+        <input className="input" value={data.recipName} onChange={e => upd('recipName', e.target.value)} placeholder="Nom du destinataire" />
+      </div>
+
+      <div className="field-row field-row--2">
+        <div className="field">
+          <label className="label">Montant dû <span className="opt">CAD</span></label>
+          <input className="input mono" type="number" value={data.due} onChange={e => upd('due', e.target.value)} placeholder="0" />
+        </div>
+        <div className="field">
+          <label className="label">Montant reçu <span className="opt">CAD</span></label>
+          <input className="input mono" type="number" value={data.received} onChange={e => upd('received', e.target.value)} placeholder="0" />
+        </div>
+      </div>
+
+      {data.due && data.received && (
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', borderRadius: 8, marginBottom: 14,
+          background: remaining <= 0 ? 'var(--ok-50)' : 'var(--warn-50)',
+          border: '1px solid ' + (remaining <= 0 ? 'var(--ok-100)' : 'var(--warn-100)'),
+          fontSize: 13,
+        }}>
+          {remaining <= 0
+            ? <><I.Check style={{ color: 'var(--ok-600)', width: 14, height: 14 }} /><span style={{ color: 'var(--ok-700)', fontWeight: 600 }}>Solde réglé intégralement</span></>
+            : <><I.Alert style={{ color: 'var(--warn-700)', width: 14, height: 14 }} /><span style={{ color: 'var(--warn-700)', fontWeight: 600 }}>Reste à percevoir : <span className="mono">{remaining.toLocaleString('fr')} CAD</span></span></>}
+        </div>
+      )}
+
+      <div className="field-row field-row--2">
+        <div className="field">
+          <label className="label">Méthode de paiement</label>
+          <select className="select" value={data.method} onChange={e => upd('method', e.target.value)}>
+            <option>Virement</option>
+            <option>Interac</option>
+            <option>Espèces</option>
+            <option>Mobile Money</option>
+            <option>Chèque</option>
+          </select>
+        </div>
+        <div className="field">
+          <label className="label">Agent</label>
+          <select className="select">
+            {DATA.AGENTS.map(a => <option key={a.id}>{a.name}</option>)}
+          </select>
+        </div>
+      </div>
+
+      <div className="field" style={{ marginBottom: 0 }}>
+        <label className="label">Note <span className="opt">/ Optionnel</span></label>
+        <input className="input" value={data.note} onChange={e => upd('note', e.target.value)} placeholder="Référence virement, remarque..." />
+      </div>
+    </Modal>
+  );
+}
 
 export default function PaymentsScreen({ onNav }) {
   const [tab, setTab] = useState('all');
+  const [modal, setModal] = useState(null);
   const payments = DATA.PAYMENTS;
   const tabs = [
     { id: 'all',     l: 'Tous',     n: payments.length },
@@ -25,7 +121,7 @@ export default function PaymentsScreen({ onNav }) {
         </div>
         <div className="page__actions">
           <button className="btn btn--ghost"><I.Download />Export comptable</button>
-          <button className="btn btn--brand"><I.Plus />Enregistrer paiement</button>
+          <button className="btn btn--brand" onClick={() => setModal({ new: true })}><I.Plus />Enregistrer paiement</button>
         </div>
       </div>
 
@@ -116,8 +212,8 @@ export default function PaymentsScreen({ onNav }) {
               <td style={{ fontSize: 12, color: 'var(--ink-500)', maxWidth: 140, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.note}</td>
               <td>
                 {p.status === 'paid'
-                  ? <button className="btn btn--ghost btn--xs" style={{ justifyContent: 'center', width: '100%' }}><I.Eye />Voir</button>
-                  : <button className="btn btn--brand btn--xs" style={{ justifyContent: 'center', width: '100%' }}><I.Wallet />Régler</button>}
+                  ? <button className="btn btn--ghost btn--xs" style={{ justifyContent: 'center', width: '100%' }} onClick={() => setModal(p)}><I.Eye />Voir</button>
+                  : <button className="btn btn--brand btn--xs" style={{ justifyContent: 'center', width: '100%' }} onClick={() => setModal(p)}><I.Wallet />Régler</button>}
               </td>
             </tr>
           ))}
@@ -127,6 +223,14 @@ export default function PaymentsScreen({ onNav }) {
       <div style={{ marginTop: 12, fontSize: 12, color: 'var(--ink-400)' }}>
         {filtered.length} entrées · Période : 24 → 26 avril 2026
       </div>
+
+      {modal && (
+        <PaymentModal
+          payment={modal?.new ? null : modal}
+          onClose={() => setModal(null)}
+          onSave={() => setModal(null)}
+        />
+      )}
     </div>
   );
 }

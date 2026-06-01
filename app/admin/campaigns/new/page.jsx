@@ -1,8 +1,9 @@
 'use client';
-import { useNav } from '@/src/lib/nav';
-import NewCampaignScreen from '@/src/screens/NewCampaign';
+import { useRouter } from 'next/navigation';
+import { useEffect } from 'react';
 
 export default function NewCampaignPage() {
-  const onNav = useNav();
-  return <NewCampaignScreen onNav={onNav} />;
+  const router = useRouter();
+  useEffect(() => { router.replace('/admin/campaigns'); }, []);
+  return null;
 }
