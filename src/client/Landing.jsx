@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import I from '../components/Icons.jsx';
 import { ROUTES, PARCEL_CATEGORIES, getRoute } from '../data.js';
+import { TopBar, SiteNav, SiteFooter } from './SiteLayout.jsx';
 import '@/src/styles/client-omega.css';
 
 const IMGS = {
@@ -15,71 +16,6 @@ const IMGS = {
   svc4:    'https://images.pexels.com/photos/4481327/pexels-photo-4481327.jpeg?auto=compress&cs=tinysrgb&w=600',
 };
 
-/* ─── Top info bar ─── */
-function TopBar() {
-  return (
-    <div className="jtop-bar">
-      <div className="jc">
-        <div className="jtop-bar__inner">
-          <div className="jtop-bar__left">
-            <span className="jtop-bar__item">
-              <I.Calendar style={{ width: 13, height: 13 }} />
-              Lundi–Vendredi · 09h à 20h
-            </span>
-            <span className="jtop-bar__item">
-              <I.Send style={{ width: 13, height: 13 }} />
-              contact@jumla.cargo
-            </span>
-          </div>
-          <div className="jtop-bar__right">
-            <span className="jtop-bar__item">
-              <I.Phone style={{ width: 13, height: 13 }} />
-              Disponible 24h/7j · +1 514 000 0000
-            </span>
-            <span className="jtop-bar__item" style={{ fontWeight: 700, color: 'var(--ink-600)' }}>
-              🇫🇷 Français
-            </span>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-/* ─── Nav ─── */
-function JNav({ onNav, onBook }) {
-  const go = (id) => document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
-  const links = [
-    { l: 'Accueil',   fn: () => window.scrollTo({ top: 0, behavior: 'smooth' }) },
-    { l: 'À propos',  fn: () => go('jabout') },
-    { l: 'Services',  fn: () => go('jsvc') },
-    { l: 'Tarifs',    fn: () => go('jest') },
-    { l: 'Contact',   fn: () => go('jfoot') },
-  ];
-  return (
-    <div className="jnav">
-      <div className="jc">
-        <div className="jnav__inner">
-          <div className="jnav__logo">
-            <div className="jnav__logo-mark">J</div>
-            Jumla Shipping
-          </div>
-          <div className="jnav__links">
-            {links.map(({ l, fn }) => (
-              <button key={l} className="jnav__link" onClick={fn}>{l}</button>
-            ))}
-          </div>
-          <div className="jnav__right">
-            <button className="jnav__signin" onClick={() => onNav('/login')}>Se connecter</button>
-            <button className="jbtn-nav" onClick={onBook}>
-              Réserver un envoi <I.ArrowRight style={{ width: 15, height: 15 }} />
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
 
 /* ─── Hero plein fond ─── */
 function JHero({ onBook }) {
@@ -533,47 +469,6 @@ function JCTA({ onBook }) {
   );
 }
 
-/* ─── Footer ─── */
-function JFooter() {
-  const cols = [
-    { l: 'Services',   items: ['Fret aérien Douala → Montréal', 'Livraison à domicile', 'Retrait entrepôt', 'Suivi en temps réel'] },
-    { l: 'Entreprise', items: ['À propos', 'Blog', 'Carrières', 'Contact'] },
-    { l: 'Légal',      items: ['Conditions générales', 'Confidentialité', 'Cookies', 'FAQ'] },
-  ];
-  return (
-    <footer className="jfoot" id="jfoot">
-      <div className="jc">
-        <div className="jfoot__grid">
-          <div>
-            <div className="jfoot__brand">
-              <div className="jfoot__brand-mark">J</div>
-              Jumla Shipping
-            </div>
-            <p className="jfoot__desc">
-              Spécialiste du fret aérien international entre l'Afrique et le Canada depuis 2021.
-              Suivi, sécurité et transparence à chaque étape.
-            </p>
-            <div className="jfoot__contact">
-              <I.Whatsapp style={{ width: 16, height: 16 }} /> WhatsApp · Douala &amp; Montréal
-            </div>
-          </div>
-          {cols.map(c => (
-            <div key={c.l}>
-              <div className="jfoot__col-title">{c.l}</div>
-              <div className="jfoot__col">
-                {c.items.map(item => <a key={item}>{item}</a>)}
-              </div>
-            </div>
-          ))}
-        </div>
-        <div className="jfoot__bottom">
-          <span>© 2026 Jumla Shipping SARL — Tous droits réservés</span>
-          <span>Douala · Montréal · Lagos · Bruxelles</span>
-        </div>
-      </div>
-    </footer>
-  );
-}
 
 /* ─── Root ─── */
 export default function LandingPage({ onNav }) {
@@ -582,7 +477,7 @@ export default function LandingPage({ onNav }) {
   return (
     <div className="jpage">
       <TopBar />
-      <JNav onNav={onNav} onBook={onBook} />
+      <SiteNav onNav={onNav} onBook={onBook} mode="landing" />
       <JHero onBook={onBook} />
       <JTrackBand />
       <JAbout />
@@ -592,7 +487,7 @@ export default function LandingPage({ onNav }) {
       <JEstimator onBook={onBook} />
       <JFAQ />
       <JCTA onBook={onBook} />
-      <JFooter />
+      <SiteFooter />
     </div>
   );
 }

@@ -1,5 +1,7 @@
 'use client';
 import { useState } from 'react';
+import { TopBar, SiteNav, SiteFooter } from './SiteLayout.jsx';
+import '@/src/styles/client-omega.css';
 import '@/src/styles/booking.css';
 
 const ROUTES_DATA = [
@@ -152,35 +154,32 @@ export default function BookingScreen({ onNav }) {
   const prev = () => step > 0 ? setStep(s => s - 1) : onNav?.('/');
   const next = () => setStep(s => s + 1);
 
+  const onBook = () => {};
+
   return (
     <div className="co-wrap">
 
-      {/* ── HEADER ── */}
-      <header className="co-header">
-        <div className="co-header__inner">
-          <button className="co-logo" onClick={() => onNav?.('/')}>
-            <span className="co-logo__mark">J</span>
-            <span className="co-logo__name">Jumla</span>
-          </button>
+      {/* ── SHARED HEADER (même que la landing) ── */}
+      <TopBar />
+      <SiteNav onNav={onNav} onBook={onBook} mode="booking" />
 
-          {/* Breadcrumb */}
+      {/* ── Sous-header : breadcrumb ── */}
+      <div className="co-subhead">
+        <div className="co-subhead__inner">
+          <span className="co-subhead__title">Réservation</span>
           <nav className="co-crumbs">
             {STEPS.map((s, i) => (
               <span key={i} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                 {i > 0 && <span className="co-crumb__sep">›</span>}
                 <span className={`co-crumb${i === step && !isDone ? ' is-active' : i < step || isDone ? ' is-done' : ''}`}>
-                  <span className="co-crumb__num">
-                    {i < step || isDone ? '✓' : i + 1}
-                  </span>
+                  <span className="co-crumb__num">{i < step || isDone ? '✓' : i + 1}</span>
                   {s.label}
                 </span>
               </span>
             ))}
           </nav>
-
-          <div style={{ width: 80 }} />
         </div>
-      </header>
+      </div>
 
       {/* ── BODY ── */}
       <div className="co-body">
@@ -397,6 +396,9 @@ export default function BookingScreen({ onNav }) {
         </aside>
 
       </div>
+
+      {/* ── SHARED FOOTER (même que la landing) ── */}
+      <SiteFooter />
     </div>
   );
 }

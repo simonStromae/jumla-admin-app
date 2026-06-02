@@ -12,50 +12,30 @@
   color: var(--ink-900);
 }
 
-/* ── Header ── */
-.co-header {
-  background: white;
+/* ── Sous-header breadcrumb ── */
+.co-subhead {
+  background: var(--bg-soft);
   border-bottom: 1px solid var(--border);
-  position: sticky;
-  top: 0;
-  z-index: 30;
 }
 
-.co-header__inner {
+.co-subhead__inner {
   max-width: 1160px;
   margin: 0 auto;
   padding: 0 32px;
-  height: 60px;
+  height: 48px;
   display: flex;
   align-items: center;
-  justify-content: space-between;
   gap: 24px;
 }
 
-.co-logo {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  background: none;
-  border: none;
-  cursor: pointer;
-  padding: 0;
-  flex-shrink: 0;
-}
-
-.co-logo__mark {
-  width: 32px; height: 32px;
-  background: var(--brand-400);
-  color: white;
-  display: grid; place-items: center;
-  font-weight: 800; font-size: 15px;
-}
-
-.co-logo__name {
-  font-size: 16px;
+.co-subhead__title {
+  font-size: 13px;
   font-weight: 700;
   color: var(--ink-900);
-  letter-spacing: -.02em;
+  letter-spacing: -.01em;
+  white-space: nowrap;
+  padding-right: 24px;
+  border-right: 1px solid var(--border);
 }
 
 /* ── Step breadcrumb ── */
@@ -304,7 +284,7 @@
 .co-add-row:hover { border-color: var(--brand-300); color: var(--brand-600); }
 
 /* ── Right panel: order summary ── */
-.co-aside { position: sticky; top: 80px; }
+.co-aside { position: sticky; top: 24px; }
 
 .co-summary {
   background: white;
