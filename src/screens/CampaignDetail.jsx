@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { DATA, getCampaign, getRoute, STATUS, STATUS_STEPS } from '../data.js';
 import I from '../components/Icons.jsx';
-import { RoutePill, StatusDot, Avatar, Modal } from '../components/Shell.jsx';
+import { RoutePill, StatusDot, Avatar, Modal, ParcelActionsMenu } from '../components/Shell.jsx';
 import { StatusPanel, StatusTransitionModal } from './StatusWorkflow.jsx';
 
 export default function CampaignDetailScreen({ id, onNav, onEdit, onClose: onCloseCampaign }) {
@@ -133,9 +133,8 @@ export default function CampaignDetailScreen({ id, onNav, onEdit, onClose: onClo
             <th style={{ textAlign: 'right' }}>Montant</th>
             <th>Paiement</th>
             <th>Livraison</th>
-            <th>Bordereau</th>
             <th>Agent</th>
-            <th style={{ width: 80, borderRadius: 0 }}></th>
+            <th style={{ width: 44, borderRadius: 0 }}></th>
           </tr>
         </thead>
         <tbody>
@@ -184,19 +183,10 @@ export default function CampaignDetailScreen({ id, onNav, onEdit, onClose: onClo
                 </span>
               </td>
               <td>
-                {p.slip
-                  ? <a className="mono" style={{ fontSize: 12, color: 'var(--brand-700)', fontWeight: 600, cursor: 'pointer' }} onClick={() => onNav('/slip/' + p.slip)}>{p.slip}</a>
-                  : <button className="btn btn--ghost btn--xs" onClick={() => onNav('/parcels/' + p.id)}><I.Plus />Créer</button>}
-              </td>
-              <td>
                 <Avatar initials={p.agent} color={p.agent === 'AM' ? 1 : 2} size="sm" />
               </td>
-              <td>
-                <div style={{ display: 'flex', gap: 4, justifyContent: 'flex-end' }}>
-                  <button className="icon-btn" title="WhatsApp"><I.Whatsapp style={{ width: 14, height: 14, color: 'var(--ok-600)' }} /></button>
-                  <button className="icon-btn" title={isLocked ? 'Cargaison verrouillée' : 'Modifier'} onClick={() => !isLocked && onNav('/parcels/' + p.id + '/edit')} disabled={isLocked} style={isLocked ? { opacity: 0.3, cursor: 'not-allowed' } : {}}><I.Edit /></button>
-                  <button className="icon-btn"><I.More /></button>
-                </div>
+              <td style={{ overflow: 'visible' }}>
+                <ParcelActionsMenu parcel={p} onNav={onNav} isLocked={isLocked} />
               </td>
             </tr>
           ))}

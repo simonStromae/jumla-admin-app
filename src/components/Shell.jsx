@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import I from './Icons.jsx';
 
 export function Bi({ fr, en, sep = '/' }) {
@@ -170,6 +170,84 @@ export function Progress({ pct, kind }) {
   return (
     <div className={'prog ' + cls}>
       <div className="prog__fill" style={{ width: Math.min(100, Math.max(0, pct)) + '%' }}></div>
+    </div>
+  );
+}
+
+export function ParcelActionsMenu({ parcel, onNav, isLocked }) {
+  const [open, setOpen] = useState(false);
+  const wrapRef = useRef(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const close = (e) => { if (!wrapRef.current?.contains(e.target)) setOpen(false); };
+    document.addEventListener('mousedown', close);
+    return () => document.removeEventListener('mousedown', close);
+  }, [open]);
+
+  const payLink = `/payer/pay-${parcel.id}-demo`;
+
+  const sections = [
+    [
+      { icon: I.Eye,  label: 'Voir le détail',  onClick: () => onNav('/parcels/' + parcel.id) },
+      { icon: I.Edit, label: 'Modifier',         onClick: () => onNav('/parcels/' + parcel.id + '/edit'), disabled: isLocked },
+    ],
+    [
+      { icon: I.Whatsapp, label: 'Lien paiement — WhatsApp', onClick: () => {}, green: true },
+      { icon: I.Send,     label: 'Lien paiement — Email',    onClick: () => {} },
+      { icon: I.Copy,     label: 'Copier le lien',           onClick: () => navigator.clipboard?.writeText(window.location.origin + payLink) },
+    ],
+    [
+      { icon: I.Print, label: 'Imprimer le bordereau', onClick: () => {} },
+    ],
+    [
+      { icon: I.Trash, label: 'Supprimer', onClick: () => {}, danger: true, disabled: isLocked },
+    ],
+  ];
+
+  return (
+    <div ref={wrapRef} style={{ position: 'relative' }}>
+      <button
+        className="icon-btn"
+        onClick={(e) => { e.stopPropagation(); setOpen(v => !v); }}
+        style={{ background: open ? 'var(--bg-soft)' : undefined }}
+      >
+        <I.More />
+      </button>
+
+      {open && (
+        <div onClick={e => e.stopPropagation()} style={{
+          position: 'absolute', right: 0, top: 'calc(100% + 4px)', zIndex: 200,
+          background: 'white', border: '1px solid var(--border)',
+          borderRadius: 'var(--radius)', boxShadow: 'var(--sh-lg)',
+          minWidth: 220, padding: '4px 0',
+        }}>
+          {sections.map((group, gi) => (
+            <div key={gi}>
+              {gi > 0 && <div style={{ height: 1, background: 'var(--border-soft)', margin: '4px 0' }} />}
+              {group.map((item, ii) => (
+                <button key={ii}
+                  disabled={item.disabled}
+                  onClick={() => { setOpen(false); item.onClick(); }}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: 10,
+                    width: '100%', padding: '8px 14px',
+                    background: 'none', border: 'none',
+                    cursor: item.disabled ? 'not-allowed' : 'pointer',
+                    fontSize: 13, fontWeight: 500, textAlign: 'left',
+                    color: item.danger ? 'var(--bad-600)' : item.green ? 'var(--ok-600)' : item.disabled ? 'var(--ink-300)' : 'var(--ink-700)',
+                  }}
+                  onMouseEnter={e => { if (!item.disabled) e.currentTarget.style.background = 'var(--bg-soft)'; }}
+                  onMouseLeave={e => { e.currentTarget.style.background = 'none'; }}
+                >
+                  <item.icon style={{ width: 14, height: 14, opacity: item.disabled ? 0.4 : 1, flexShrink: 0 }} />
+                  {item.label}
+                </button>
+              ))}
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

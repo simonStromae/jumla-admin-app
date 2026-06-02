@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { DATA, STATUS } from '../data.js';
 import I from '../components/Icons.jsx';
-import { Bi, Avatar } from '../components/Shell.jsx';
+import { Bi, Avatar, ParcelActionsMenu } from '../components/Shell.jsx';
 import { Pagination } from '../components/Pagination.jsx';
 
 export default function AllParcelsScreen({ onNav }) {
@@ -100,8 +100,7 @@ export default function AllParcelsScreen({ onNav }) {
             <th style={{ textAlign: 'right' }}>Montant</th>
             <th>Paiement</th>
             <th>Livraison</th>
-            <th>Bordereau</th>
-            <th style={{ borderRadius: 0, width: 60 }}></th>
+            <th style={{ borderRadius: 0, width: 44 }}></th>
           </tr>
         </thead>
         <tbody>
@@ -145,12 +144,9 @@ export default function AllParcelsScreen({ onNav }) {
                   {p.delivery === 'home' ? <><I.Truck style={{ width: 13, height: 13 }} /> Domicile</> : <><I.Warehouse style={{ width: 13, height: 13 }} /> Retrait</>}
                 </span>
               </td>
-              <td>
-                {p.slip
-                  ? <a className="mono" style={{ fontSize: 12, color: 'var(--brand-700)', fontWeight: 600, cursor: 'pointer' }} onClick={() => onNav('/slip/' + p.slip)}>{p.slip}</a>
-                  : <button className="btn btn--ghost btn--xs"><I.Plus />Créer</button>}
+              <td style={{ overflow: 'visible' }}>
+                <ParcelActionsMenu parcel={{ ...p, id: p.id.split('-').pop() }} onNav={onNav} isLocked={false} />
               </td>
-              <td><button className="icon-btn"><I.More /></button></td>
             </tr>
           ))}
         </tbody>
