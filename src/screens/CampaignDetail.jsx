@@ -144,7 +144,7 @@ export default function CampaignDetailScreen({ id, onNav, onEdit, onClose: onClo
           {parcels.map(p => (
             <tr key={p.id}>
               <td><input type="checkbox" style={{ accentColor: 'var(--brand-500)' }} /></td>
-              <td><span className="mono" style={{ fontWeight: 700, color: 'var(--ink-900)' }}>{p.code}</span></td>
+              <td><a className="mono" style={{ fontWeight: 700, color: 'var(--brand-700)', cursor: 'pointer' }} onClick={() => onNav('/parcels/' + p.id)}>{p.code}</a></td>
               <td>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                   <Avatar initials={p.senderName.split(' ').map(x => x[0]).join('').slice(0, 2)} color={(p.id.charCodeAt(0) % 8) + 1} size="sm" />

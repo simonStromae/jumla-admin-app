@@ -15,7 +15,6 @@ export function Sidebar({ route, onNav }) {
     { id: 'home',      label: 'Cargaisons',  en: 'Shipments',  icon: I.Plane,    route: '/admin/campaigns', count: 22 },
     { id: 'analytics', label: 'Analyses',    en: 'Analytics',  icon: I.Activity, route: '/admin/analytics' },
     { id: 'parcels',   label: 'Colis',       en: 'Parcels',    icon: I.Box,      route: '/admin/parcels' },
-    { id: 'slips',     label: 'Bordereaux',  en: 'Slips',      icon: I.FileText, route: '/admin/slips' },
     { id: 'clients',   label: 'Clients',     en: 'Clients',    icon: I.Users,    route: '/admin/clients',   count: 312 },
     { id: 'payments',  label: 'Paiements',   en: 'Payments',   icon: I.Wallet,   route: '/admin/payments' },
     { id: 'messaging', label: 'Messagerie',  en: 'Messaging',  icon: I.Chat,     route: '/admin/messaging' },

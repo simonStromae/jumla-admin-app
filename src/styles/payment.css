@@ -1,0 +1,340 @@
+/* ============================================
+   JUMLA — Public payment page
+   ============================================ */
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; border-radius: 0; }
+
+.pay-wrap {
+  min-height: 100vh;
+  background: var(--bg-soft);
+  font-family: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  color: var(--ink-900);
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── Header ── */
+.pay-header {
+  background: var(--ink-900);
+  border-bottom: 2px solid var(--brand-400);
+}
+
+.pay-header__inner {
+  max-width: 1040px;
+  margin: 0 auto;
+  padding: 0 32px;
+  height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.pay-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 16px;
+  font-weight: 700;
+  color: white;
+  letter-spacing: -.02em;
+}
+
+.pay-brand__mark {
+  width: 32px; height: 32px;
+  background: var(--brand-400);
+  display: grid; place-items: center;
+  font-size: 16px; font-weight: 800;
+  color: white;
+}
+
+.pay-header__badge {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: var(--ok-400);
+  border: 1px solid var(--ok-700);
+  padding: 3px 10px;
+}
+
+/* ── Main ── */
+.pay-main {
+  flex: 1;
+  max-width: 1040px;
+  margin: 0 auto;
+  width: 100%;
+  padding: 40px 32px 60px;
+}
+
+/* ── 2-col grid ── */
+.pay-grid {
+  display: grid;
+  grid-template-columns: 1fr 360px;
+  gap: 28px;
+  align-items: start;
+}
+
+/* ── Card (instructions) ── */
+.pay-card {
+  background: white;
+  border: 1px solid var(--border);
+}
+
+.pay-card__head {
+  padding: 18px 24px;
+  background: var(--ink-900);
+  color: white;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: -.01em;
+}
+
+.pay-card__body {
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* ── Steps ── */
+.pay-step {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+}
+
+.pay-step__num {
+  width: 28px; height: 28px;
+  background: var(--ink-900);
+  color: white;
+  display: grid; place-items: center;
+  font-size: 13px; font-weight: 700;
+  flex-shrink: 0;
+}
+
+.pay-step__title { font-size: 14px; font-weight: 700; color: var(--ink-900); margin-bottom: 3px; }
+.pay-step__sub { font-size: 12.5px; color: var(--ink-500); line-height: 1.55; }
+
+/* ── Interac box ── */
+.pay-interac-box {
+  background: var(--ink-900);
+  color: white;
+  padding: 20px 24px;
+  text-align: center;
+}
+
+.pay-interac-box__title {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  color: rgba(255,255,255,.5);
+  margin-bottom: 10px;
+}
+
+.pay-interac-box__contact {
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--brand-300);
+  letter-spacing: -.01em;
+  font-family: "JetBrains Mono", monospace;
+}
+
+.pay-interac-box__or {
+  font-size: 11px;
+  color: rgba(255,255,255,.3);
+  margin: 6px 0;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+}
+
+/* ── Warning box ── */
+.pay-warn-box {
+  display: flex;
+  gap: 12px;
+  padding: 14px 16px;
+  background: var(--warn-50);
+  border: 1.5px solid var(--warn-200);
+}
+
+.pay-warn-box__icon {
+  width: 24px; height: 24px;
+  background: var(--warn-500);
+  color: white;
+  display: grid; place-items: center;
+  font-size: 13px; font-weight: 800;
+  flex-shrink: 0;
+}
+
+.pay-warn-box__title { font-size: 13px; font-weight: 700; color: var(--warn-800); margin-bottom: 6px; }
+.pay-warn-box__text { font-size: 12.5px; color: var(--ink-700); line-height: 1.6; }
+.pay-warn-box__phone {
+  display: block;
+  font-family: "JetBrains Mono", monospace;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--ink-900);
+  margin: 6px 0;
+}
+
+.pay-message-hint {
+  font-size: 12.5px;
+  color: var(--ink-600);
+  padding: 12px 14px;
+  background: var(--bg-soft);
+  border: 1px solid var(--border);
+  line-height: 1.5;
+}
+
+/* ── Summary panel ── */
+.pay-summary {
+  background: white;
+  border: 1px solid var(--border);
+  margin-bottom: 14px;
+}
+
+.pay-summary__head {
+  padding: 14px 18px;
+  background: var(--ink-900);
+  color: white;
+  font-size: 13px; font-weight: 700;
+  letter-spacing: .01em;
+}
+
+.pay-summary__section {
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--border-soft);
+}
+
+.pay-summary__label {
+  font-size: 10px; font-weight: 700; letter-spacing: .1em;
+  text-transform: uppercase; color: var(--ink-400); margin-bottom: 5px;
+}
+
+.pay-summary__value { font-size: 13.5px; font-weight: 700; color: var(--ink-900); }
+.pay-summary__sub { font-size: 11.5px; color: var(--ink-500); margin-top: 2px; }
+
+.pay-lines { display: flex; flex-direction: column; gap: 5px; margin-top: 8px; }
+.pay-line {
+  display: flex; justify-content: space-between;
+  font-size: 12.5px; color: var(--ink-600);
+}
+
+.pay-summary__total {
+  padding: 14px 18px;
+  display: flex; justify-content: space-between; align-items: center;
+  border-top: 2px solid var(--ink-900);
+}
+
+.pay-summary__total-label { font-size: 13px; font-weight: 700; color: var(--ink-700); }
+.pay-summary__total-amount { font-size: 24px; font-weight: 800; color: var(--ink-900); }
+
+/* ── Acknowledge checkbox ── */
+.pay-acknowledge {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px 14px;
+  border: 1.5px solid var(--border);
+  background: white;
+  cursor: pointer;
+  font-size: 12.5px;
+  color: var(--ink-700);
+  line-height: 1.5;
+  margin-bottom: 10px;
+}
+
+.pay-acknowledge input {
+  width: 16px; height: 16px;
+  margin-top: 2px;
+  accent-color: var(--brand-500);
+  flex-shrink: 0;
+  cursor: pointer;
+}
+
+/* ── CTA button ── */
+.pay-cta {
+  width: 100%;
+  padding: 14px;
+  background: var(--border);
+  color: var(--ink-400);
+  border: none;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: not-allowed;
+  transition: background .15s, color .15s;
+  letter-spacing: .01em;
+}
+
+.pay-cta--active {
+  background: var(--brand-400);
+  color: white;
+  cursor: pointer;
+}
+
+.pay-cta--active:hover { background: var(--brand-500); }
+
+.pay-support {
+  margin-top: 14px;
+  font-size: 12px;
+  color: var(--ink-400);
+  line-height: 1.6;
+  text-align: center;
+}
+
+/* ── Confirmation ── */
+.pay-confirm {
+  max-width: 520px;
+  margin: 40px auto;
+  background: white;
+  border: 1px solid var(--border);
+  padding: 48px 40px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+}
+
+.pay-confirm__icon {
+  width: 64px; height: 64px;
+  background: var(--ok-50);
+  border: 2px solid var(--ok-300);
+  display: grid; place-items: center;
+  font-size: 28px; color: var(--ok-600); font-weight: 800;
+}
+
+.pay-confirm__title {
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--ink-900);
+  letter-spacing: -.025em;
+}
+
+.pay-confirm__sub {
+  font-size: 13.5px;
+  color: var(--ink-500);
+  max-width: 380px;
+  line-height: 1.65;
+}
+
+/* ── Footer ── */
+.pay-footer {
+  padding: 20px 32px;
+  background: var(--ink-900);
+  color: rgba(255,255,255,.35);
+  font-size: 11.5px;
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+/* ── Responsive ── */
+@media (max-width: 780px) {
+  .pay-main { padding: 24px 20px 40px; }
+  .pay-grid { grid-template-columns: 1fr; }
+  .pay-header__inner { padding: 0 20px; }
+  .pay-footer { flex-direction: column; gap: 4px; }
+}
