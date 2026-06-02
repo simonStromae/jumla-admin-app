@@ -1,16 +1,16 @@
 import { useState } from 'react';
 import { DATA, getRoute } from '../data.js';
 import I from '../components/Icons.jsx';
-import { RoutePill, Modal, Avatar } from '../components/Shell.jsx';
+import { RoutePill, Avatar } from '../components/Shell.jsx';
 
 const CATS = DATA.PARCEL_CATEGORIES;
 
-export default function ParcelFormModal({ mode = 'create', parcel, campaign, onClose, onSave }) {
+export default function ParcelFormPage({ mode = 'create', parcel, campaign, onNav }) {
   const isEdit = mode === 'edit';
   const route = getRoute(campaign?.route) || DATA.ROUTES[0];
 
   const [data, setData] = useState(() => ({
-    campaignId: '',
+    campaignId: campaign?.id || '',
     code: parcel?.code || '#65',
     senderName: parcel?.senderName || '',
     senderPhone: parcel?.senderPhone || '',
@@ -32,7 +32,10 @@ export default function ParcelFormModal({ mode = 'create', parcel, campaign, onC
 
   const upd = (k, v) => setData(d => ({ ...d, [k]: v }));
 
-  const grid = route.pricing;
+  const activeCampaign = campaign || DATA.CAMPAIGNS.find(c => c.id === data.campaignId);
+  const activeRoute = activeCampaign ? getRoute(activeCampaign.route) : route;
+  const grid = activeRoute.pricing;
+
   const totalItemWeight = data.items.reduce((a, i) => a + (+i.weight || 0), 0);
   const baseRate = getTierRate(totalItemWeight || data.reservedKg, grid);
   const itemsTotal = data.items.reduce((a, i) => {
@@ -47,37 +50,55 @@ export default function ParcelFormModal({ mode = 'create', parcel, campaign, onC
   const insuranceFee = data.insurance ? Math.round(itemsTotal * 0.03) : 0;
   const total = itemsTotal + overrunAmount + deliveryFee + handlingFee + insuranceFee;
 
+  const handleCancel = () => {
+    if (campaign) onNav('/campaign/' + campaign.id);
+    else onNav('/parcels');
+  };
+
   return (
-    <Modal width={960} onClose={onClose}
-      title={
-        <span>{isEdit ? 'Modifier le colis' : 'Nouveau colis'}
-          <span style={{ color: 'var(--ink-400)', fontWeight: 400, fontSize: '.85em', marginLeft: 6 }}>/ {isEdit ? 'Edit parcel' : 'New parcel'}</span>
+    <div className="page">
+      {/* Breadcrumb */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12.5, color: 'var(--ink-400)', marginBottom: 8 }}>
+        <a style={{ cursor: 'pointer' }} onClick={() => onNav('/')}>Cargaisons</a>
+        {campaign && (
+          <>
+            <I.ChevronRight style={{ width: 12, height: 12 }} />
+            <a style={{ cursor: 'pointer' }} onClick={() => onNav('/campaign/' + campaign.id)}>{campaign.code}</a>
+          </>
+        )}
+        <I.ChevronRight style={{ width: 12, height: 12 }} />
+        <span style={{ color: 'var(--ink-600)', fontWeight: 600 }}>
+          {isEdit ? data.code : 'Nouveau colis'}
         </span>
-      }
-      sub={
-        <span>
-          {campaign
-            ? <>Cargaison <span className="mono" style={{ color: 'var(--ink-700)', fontWeight: 600 }}>{campaign.code}</span></>
-            : data.campaignId
-              ? <>Cargaison <span className="mono" style={{ color: 'var(--ink-700)', fontWeight: 600 }}>{DATA.CAMPAIGNS.find(c => c.id === data.campaignId)?.code || ''}</span></>
+      </div>
+
+      {/* Page head */}
+      <div className="page__head" style={{ marginBottom: 22 }}>
+        <div>
+          <div className="page__title">
+            {isEdit ? 'Modifier le colis' : 'Nouveau colis'}
+            <span style={{ color: 'var(--ink-400)', fontWeight: 400, fontSize: '.7em', marginLeft: 8 }}>
+              / {isEdit ? 'Edit parcel' : 'New parcel'}
+            </span>
+          </div>
+          <div className="page__sub">
+            {activeCampaign
+              ? <>Cargaison <span className="mono" style={{ color: 'var(--ink-700)', fontWeight: 600 }}>{activeCampaign.code}</span> · {activeRoute.fromIATA} → {activeRoute.toIATA}</>
               : <span style={{ color: 'var(--ink-400)' }}>Sélectionnez une cargaison</span>
-          }
-          {isEdit && <> · Colis <span className="mono" style={{ color: 'var(--ink-700)', fontWeight: 600 }}>{data.code}</span></>}
-        </span>
-      }
-      footer={
-        <>
+            }
+          </div>
+        </div>
+        <div className="page__actions">
           {isEdit && <button className="btn btn--ghost" style={{ color: 'var(--bad-600)' }}><I.Trash />Supprimer</button>}
-          <div className="spacer" style={{ flex: 1 }} />
-          <button className="btn btn--ghost" onClick={onClose}>Annuler</button>
-          {!isEdit && <button className="btn btn--soft" onClick={onSave}>Enregistrer & ajouter un autre</button>}
-          <button className="btn btn--brand" onClick={onSave}>
+          <button className="btn btn--ghost" onClick={handleCancel}>Annuler</button>
+          {!isEdit && <button className="btn btn--soft" onClick={handleCancel}>Enregistrer &amp; ajouter un autre</button>}
+          <button className="btn btn--brand" onClick={handleCancel}>
             <I.Check />{isEdit ? 'Enregistrer les modifications' : 'Créer le colis'}
           </button>
-        </>
-      }>
+        </div>
+      </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 300px', gap: 22 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 300px', gap: 22, alignItems: 'start' }}>
         <div>
           {/* Campaign selector — only when called outside a campaign */}
           {!campaign && (
@@ -112,7 +133,7 @@ export default function ParcelFormModal({ mode = 'create', parcel, campaign, onC
                   <input className="input mono" type="number" step="0.1" value={data.reservedKg} onChange={e => upd('reservedKg', +e.target.value)} style={{ paddingRight: 36 }} />
                   <span style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--ink-400)', fontSize: 12 }}>kg</span>
                 </div>
-                <div className="hint">Tarif base : <strong className="mono" style={{ color: 'var(--ink-700)' }}>{reservedAmount} {route.currency}</strong></div>
+                <div className="hint">Tarif base : <strong className="mono" style={{ color: 'var(--ink-700)' }}>{reservedAmount} {activeRoute.currency}</strong></div>
               </div>
               <div className="field" style={{ marginBottom: 0 }}>
                 <label className="label">Poids total déclaré <span className="opt">/ Declared total</span></label>
@@ -124,7 +145,7 @@ export default function ParcelFormModal({ mode = 'create', parcel, campaign, onC
                 </div>
                 {overrun > 0 && (
                   <div className="hint" style={{ color: 'var(--warn-700)' }}>
-                    ⚠ Dépassement <strong className="mono">+{overrun.toFixed(1)} kg</strong> → <strong className="mono">+{overrunAmount} {route.currency}</strong>
+                    ⚠ Dépassement <strong className="mono">+{overrun.toFixed(1)} kg</strong> → <strong className="mono">+{overrunAmount} {activeRoute.currency}</strong>
                   </div>
                 )}
               </div>
@@ -132,7 +153,7 @@ export default function ParcelFormModal({ mode = 'create', parcel, campaign, onC
           </div>
 
           {/* Items — with weight + category per line */}
-          <ItemsSection data={data} upd={upd} currency={route.currency} baseRate={baseRate} />
+          <ItemsSection data={data} upd={upd} currency={activeRoute.currency} baseRate={baseRate} />
 
           {/* Notes & options */}
           <div className="card" style={{ padding: 16, marginBottom: 14 }}>
@@ -157,7 +178,7 @@ export default function ParcelFormModal({ mode = 'create', parcel, campaign, onC
               <I.Truck style={{ width: 14, height: 14, color: 'var(--brand-600)' }} /> Mode de livraison
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
-              <DeliveryCard sel={data.delivery === 'home'} onClick={() => upd('delivery', 'home')} icon={<I.Truck style={{ width: 18, height: 18 }} />} label="Livraison à domicile" en="Home delivery" extra={`+25 ${route.currency}`} />
+              <DeliveryCard sel={data.delivery === 'home'} onClick={() => upd('delivery', 'home')} icon={<I.Truck style={{ width: 18, height: 18 }} />} label="Livraison à domicile" en="Home delivery" extra={`+25 ${activeRoute.currency}`} />
               <DeliveryCard sel={data.delivery === 'pickup'} onClick={() => upd('delivery', 'pickup')} icon={<I.Warehouse style={{ width: 18, height: 18 }} />} label="Retrait entrepôt" en="Warehouse pickup" extra="Gratuit" />
             </div>
           </div>
@@ -201,104 +222,102 @@ export default function ParcelFormModal({ mode = 'create', parcel, campaign, onC
         </div>
 
         {/* Right: live summary */}
-        <div>
-          <div style={{ position: 'sticky', top: 0 }}>
-            <div className="card" style={{ overflow: 'hidden' }}>
-              <div style={{ padding: '14px 16px', background: 'linear-gradient(135deg, var(--ink-900), var(--ink-800))', color: 'white' }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
-                  <span className="mono" style={{ fontSize: 14, fontWeight: 700 }}>{data.code}</span>
-                  <RoutePill from={route.fromIATA} to={route.toIATA} />
-                </div>
-                <div style={{ fontSize: 11, color: 'rgba(255,255,255,.55)' }}>
-                  {campaign?.code || DATA.CAMPAIGNS.find(c => c.id === data.campaignId)?.code || '—'} · Aperçu en direct
-                </div>
+        <div style={{ position: 'sticky', top: 24 }}>
+          <div className="card" style={{ overflow: 'hidden' }}>
+            <div style={{ padding: '14px 16px', background: 'linear-gradient(135deg, var(--ink-900), var(--ink-800))', color: 'white' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
+                <span className="mono" style={{ fontSize: 14, fontWeight: 700 }}>{data.code}</span>
+                <RoutePill from={activeRoute.fromIATA} to={activeRoute.toIATA} />
               </div>
-
-              <div style={{ padding: 16 }}>
-                <div style={{ fontSize: 10.5, color: 'var(--ink-400)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.04em', marginBottom: 8 }}>
-                  Tarif · {baseRate} {route.currency}/kg
-                </div>
-
-                {/* Per-item lines */}
-                {data.items.map((it, idx) => {
-                  if (!it.weight) return null;
-                  const cat = CATS.find(c => c.id === it.category) || CATS[0];
-                  const linePrice = Math.round(it.weight * baseRate * (1 + cat.pct / 100));
-                  return (
-                    <div key={it.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', padding: '4px 0', fontSize: 12, gap: 6, borderBottom: idx < data.items.length - 1 ? '1px solid var(--border-soft)' : 'none' }}>
-                      <span style={{ color: 'var(--ink-600)', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                        <span style={{ marginRight: 4 }}>{cat.icon}</span>
-                        {it.name || `Ligne ${idx + 1}`}
-                        <span style={{ color: 'var(--ink-300)', marginLeft: 4 }}>· {it.weight}kg</span>
-                        {cat.pct !== 0 && <span style={{ marginLeft: 4, fontSize: 10, color: cat.pct > 0 ? 'var(--warn-600)' : 'var(--ok-600)', fontWeight: 700 }}>{cat.pct > 0 ? '+' : ''}{cat.pct}%</span>}
-                      </span>
-                      <span className="mono" style={{ fontWeight: 600, color: 'var(--ink-900)', whiteSpace: 'nowrap', fontSize: 12 }}>{linePrice} <span style={{ color: 'var(--ink-400)', fontWeight: 400, fontSize: 10 }}>{route.currency}</span></span>
-                    </div>
-                  );
-                })}
-
-                <div style={{ marginTop: 8, paddingTop: 8, borderTop: '1px solid var(--border-soft)' }}>
-                  <SummaryLine l={`Sous-total articles (${totalItemWeight.toFixed(1)} kg)`} v={itemsTotal} cur={route.currency} />
-                  {overrun > 0 && <SummaryLine l={`Dépassement +${overrun.toFixed(1)} kg`} sub="22/kg" v={overrunAmount} cur={route.currency} warn />}
-                  {data.delivery === 'home' && <SummaryLine l="Livraison domicile" v={deliveryFee} cur={route.currency} />}
-                  <SummaryLine l="Manutention" v={handlingFee} cur={route.currency} />
-                  {data.insurance && <SummaryLine l="Assurance 3%" v={insuranceFee} cur={route.currency} />}
-                </div>
-
-                <div style={{ borderTop: '2px solid var(--ink-900)', marginTop: 10, paddingTop: 12, display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
-                  <span style={{ fontWeight: 700 }}>Total dû</span>
-                  <span className="mono" style={{ fontSize: 22, fontWeight: 700 }}>
-                    {total} <span style={{ fontSize: 12, color: 'var(--ink-400)' }}>{route.currency}</span>
-                  </span>
-                </div>
-
-                {data.paid === 'paid' && (
-                  <div style={{ marginTop: 10, padding: 8, background: 'var(--ok-50)', fontSize: 11.5, color: 'var(--ok-700)', fontWeight: 600 }}>
-                    ✓ Marqué comme payé · {data.method || '—'}
-                  </div>
-                )}
-                {data.paid === 'unpaid' && total > 0 && (
-                  <div style={{ marginTop: 10, padding: 8, background: 'var(--bad-50)', fontSize: 11.5, color: 'var(--bad-700)', fontWeight: 600 }}>
-                    ⚠ Reste à percevoir <span className="mono">{total} {route.currency}</span>
-                  </div>
-                )}
-              </div>
-
-              {/* Pricing grid */}
-              <div style={{ padding: '12px 16px', borderTop: '1px solid var(--border-soft)', background: 'var(--bg-soft)' }}>
-                <div style={{ fontSize: 10.5, color: 'var(--ink-400)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.04em', marginBottom: 6 }}>
-                  Grille — {route.code}
-                </div>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
-                  {grid.map((p, i) => {
-                    const active = totalItemWeight > p.from && totalItemWeight <= p.to;
-                    return (
-                      <span key={i} className="mono" style={{
-                        padding: '2px 7px', fontSize: 10.5, fontWeight: 600,
-                        background: active ? 'var(--brand-500)' : 'white',
-                        color: active ? 'white' : 'var(--ink-600)',
-                        border: '1px solid ' + (active ? 'var(--brand-500)' : 'var(--border)'),
-                      }}>
-                        {p.from}–{p.to}: {p.rate}
-                      </span>
-                    );
-                  })}
-                </div>
+              <div style={{ fontSize: 11, color: 'rgba(255,255,255,.55)' }}>
+                {activeCampaign?.code || '—'} · Aperçu en direct
               </div>
             </div>
 
-            <div className="card" style={{ marginTop: 12, padding: 14 }}>
-              <div style={{ fontSize: 10.5, color: 'var(--ink-400)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.04em', marginBottom: 8 }}>À l'enregistrement</div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 6, fontSize: 12 }}>
-                <AutoCheck checked label="Générer le bordereau (BL)" />
-                <AutoCheck checked label="Envoyer la facture par WhatsApp" />
-                <AutoCheck label="Notifier l'expéditeur" />
+            <div style={{ padding: 16 }}>
+              <div style={{ fontSize: 10.5, color: 'var(--ink-400)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.04em', marginBottom: 8 }}>
+                Tarif · {baseRate} {activeRoute.currency}/kg
               </div>
+
+              {/* Per-item lines */}
+              {data.items.map((it, idx) => {
+                if (!it.weight) return null;
+                const cat = CATS.find(c => c.id === it.category) || CATS[0];
+                const linePrice = Math.round(it.weight * baseRate * (1 + cat.pct / 100));
+                return (
+                  <div key={it.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', padding: '4px 0', fontSize: 12, gap: 6, borderBottom: idx < data.items.length - 1 ? '1px solid var(--border-soft)' : 'none' }}>
+                    <span style={{ color: 'var(--ink-600)', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      <span style={{ marginRight: 4 }}>{cat.icon}</span>
+                      {it.name || `Ligne ${idx + 1}`}
+                      <span style={{ color: 'var(--ink-300)', marginLeft: 4 }}>· {it.weight}kg</span>
+                      {cat.pct !== 0 && <span style={{ marginLeft: 4, fontSize: 10, color: cat.pct > 0 ? 'var(--warn-600)' : 'var(--ok-600)', fontWeight: 700 }}>{cat.pct > 0 ? '+' : ''}{cat.pct}%</span>}
+                    </span>
+                    <span className="mono" style={{ fontWeight: 600, color: 'var(--ink-900)', whiteSpace: 'nowrap', fontSize: 12 }}>{linePrice} <span style={{ color: 'var(--ink-400)', fontWeight: 400, fontSize: 10 }}>{activeRoute.currency}</span></span>
+                  </div>
+                );
+              })}
+
+              <div style={{ marginTop: 8, paddingTop: 8, borderTop: '1px solid var(--border-soft)' }}>
+                <SummaryLine l={`Sous-total articles (${totalItemWeight.toFixed(1)} kg)`} v={itemsTotal} cur={activeRoute.currency} />
+                {overrun > 0 && <SummaryLine l={`Dépassement +${overrun.toFixed(1)} kg`} sub="22/kg" v={overrunAmount} cur={activeRoute.currency} warn />}
+                {data.delivery === 'home' && <SummaryLine l="Livraison domicile" v={deliveryFee} cur={activeRoute.currency} />}
+                <SummaryLine l="Manutention" v={handlingFee} cur={activeRoute.currency} />
+                {data.insurance && <SummaryLine l="Assurance 3%" v={insuranceFee} cur={activeRoute.currency} />}
+              </div>
+
+              <div style={{ borderTop: '2px solid var(--ink-900)', marginTop: 10, paddingTop: 12, display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
+                <span style={{ fontWeight: 700 }}>Total dû</span>
+                <span className="mono" style={{ fontSize: 22, fontWeight: 700 }}>
+                  {total} <span style={{ fontSize: 12, color: 'var(--ink-400)' }}>{activeRoute.currency}</span>
+                </span>
+              </div>
+
+              {data.paid === 'paid' && (
+                <div style={{ marginTop: 10, padding: 8, background: 'var(--ok-50)', fontSize: 11.5, color: 'var(--ok-700)', fontWeight: 600 }}>
+                  ✓ Marqué comme payé · {data.method || '—'}
+                </div>
+              )}
+              {data.paid === 'unpaid' && total > 0 && (
+                <div style={{ marginTop: 10, padding: 8, background: 'var(--bad-50)', fontSize: 11.5, color: 'var(--bad-700)', fontWeight: 600 }}>
+                  ⚠ Reste à percevoir <span className="mono">{total} {activeRoute.currency}</span>
+                </div>
+              )}
+            </div>
+
+            {/* Pricing grid */}
+            <div style={{ padding: '12px 16px', borderTop: '1px solid var(--border-soft)', background: 'var(--bg-soft)' }}>
+              <div style={{ fontSize: 10.5, color: 'var(--ink-400)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.04em', marginBottom: 6 }}>
+                Grille — {activeRoute.code}
+              </div>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+                {grid.map((p, i) => {
+                  const active = totalItemWeight > p.from && totalItemWeight <= p.to;
+                  return (
+                    <span key={i} className="mono" style={{
+                      padding: '2px 7px', fontSize: 10.5, fontWeight: 600,
+                      background: active ? 'var(--brand-500)' : 'white',
+                      color: active ? 'white' : 'var(--ink-600)',
+                      border: '1px solid ' + (active ? 'var(--brand-500)' : 'var(--border)'),
+                    }}>
+                      {p.from}–{p.to}: {p.rate}
+                    </span>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+
+          <div className="card" style={{ marginTop: 12, padding: 14 }}>
+            <div style={{ fontSize: 10.5, color: 'var(--ink-400)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.04em', marginBottom: 8 }}>À l'enregistrement</div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6, fontSize: 12 }}>
+              <AutoCheck checked label="Générer le bordereau (BL)" />
+              <AutoCheck checked label="Envoyer la facture par WhatsApp" />
+              <AutoCheck label="Notifier l'expéditeur" />
             </div>
           </div>
         </div>
       </div>
-    </Modal>
+    </div>
   );
 }
 

@@ -3,14 +3,12 @@ import { DATA, getCampaign, getRoute, STATUS, STATUS_STEPS } from '../data.js';
 import I from '../components/Icons.jsx';
 import { RoutePill, StatusDot, Avatar, Modal } from '../components/Shell.jsx';
 import { StatusPanel, StatusTransitionModal } from './StatusWorkflow.jsx';
-import ParcelFormModal from './ParcelForm.jsx';
 
 export default function CampaignDetailScreen({ id, onNav, onEdit, onClose: onCloseCampaign }) {
   const c = getCampaign(id) || DATA.CAMPAIGNS[0];
   const r = getRoute(c.route);
   const s = STATUS.campaign[c.status];
   const [tab, setTab] = useState('all');
-  const [parcelModal, setParcelModal] = useState(null);
   const [statusTransition, setStatusTransition] = useState(null);
   const [showClose, setShowClose] = useState(false);
 
@@ -55,7 +53,7 @@ export default function CampaignDetailScreen({ id, onNav, onEdit, onClose: onClo
           <button className="btn btn--ghost"><I.Download />Export Excel</button>
           <button className="btn btn--ghost" onClick={onEdit} disabled={isLocked} style={isLocked ? { opacity: 0.4, cursor: 'not-allowed' } : {}}><I.Edit />Modifier</button>
           {c.status !== 'closed' && <button className="btn btn--primary" onClick={() => setShowClose(true)}><I.Check />Clôturer</button>}
-          <button className="btn btn--brand" onClick={() => !isLocked && setParcelModal({ mode: 'create' })} disabled={isLocked} style={isLocked ? { opacity: 0.4, cursor: 'not-allowed' } : {}}><I.Plus />Nouveau colis</button>
+          <button className="btn btn--brand" onClick={() => !isLocked && onNav('/parcels/new?campaign=' + c.id)} disabled={isLocked} style={isLocked ? { opacity: 0.4, cursor: 'not-allowed' } : {}}><I.Plus />Nouveau colis</button>
         </div>
       </div>
 
@@ -196,7 +194,7 @@ export default function CampaignDetailScreen({ id, onNav, onEdit, onClose: onClo
               <td>
                 <div style={{ display: 'flex', gap: 4, justifyContent: 'flex-end' }}>
                   <button className="icon-btn" title="WhatsApp"><I.Whatsapp style={{ width: 14, height: 14, color: 'var(--ok-600)' }} /></button>
-                  <button className="icon-btn" title={isLocked ? 'Cargaison verrouillée' : 'Modifier'} onClick={() => !isLocked && setParcelModal({ mode: 'edit', parcel: p })} disabled={isLocked} style={isLocked ? { opacity: 0.3, cursor: 'not-allowed' } : {}}><I.Edit /></button>
+                  <button className="icon-btn" title={isLocked ? 'Cargaison verrouillée' : 'Modifier'} onClick={() => !isLocked && onNav('/parcels/' + p.id + '/edit')} disabled={isLocked} style={isLocked ? { opacity: 0.3, cursor: 'not-allowed' } : {}}><I.Edit /></button>
                   <button className="icon-btn"><I.More /></button>
                 </div>
               </td>
@@ -209,16 +207,6 @@ export default function CampaignDetailScreen({ id, onNav, onEdit, onClose: onClo
         <span>{parcels.length} colis affichés sur {c.parcels}</span>
         <span>Dernière modif. : Marc L. — 26 avr. 2026, 14:32</span>
       </div>
-
-      {parcelModal && (
-        <ParcelFormModal
-          mode={parcelModal.mode}
-          parcel={parcelModal.parcel}
-          campaign={c}
-          onClose={() => setParcelModal(null)}
-          onSave={() => setParcelModal(null)}
-        />
-      )}
 
       {statusTransition && (
         <StatusTransitionModal
