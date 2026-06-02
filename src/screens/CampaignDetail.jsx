@@ -188,7 +188,7 @@ export default function CampaignDetailScreen({ id, onNav, onEdit, onClose: onClo
               <td>
                 {p.slip
                   ? <a className="mono" style={{ fontSize: 12, color: 'var(--brand-700)', fontWeight: 600, cursor: 'pointer' }} onClick={() => onNav('/slip/' + p.slip)}>{p.slip}</a>
-                  : <button className="btn btn--ghost btn--xs"><I.Plus />Créer</button>}
+                  : <button className="btn btn--ghost btn--xs" onClick={() => onNav('/parcels/' + p.id)}><I.Plus />Créer</button>}
               </td>
               <td>
                 <Avatar initials={p.agent} color={p.agent === 'AM' ? 1 : 2} size="sm" />

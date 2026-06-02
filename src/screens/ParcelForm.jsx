@@ -8,6 +8,7 @@ export default function ParcelFormModal({ mode = 'create', parcel, campaign, onC
   const route = getRoute(campaign?.route) || DATA.ROUTES[0];
 
   const [data, setData] = useState(() => ({
+    campaignId: '',
     code: parcel?.code || '#65',
     senderId: parcel?.senderId || 'cl1',
     senderName: parcel?.senderName || '',
@@ -55,7 +56,12 @@ export default function ParcelFormModal({ mode = 'create', parcel, campaign, onC
       }
       sub={
         <span>
-          Cargaison <span className="mono" style={{ color: 'var(--ink-700)', fontWeight: 600 }}>{campaign?.code || 'DLA-YUL-APR-02'}</span>
+          {campaign
+            ? <>Cargaison <span className="mono" style={{ color: 'var(--ink-700)', fontWeight: 600 }}>{campaign.code}</span></>
+            : data.campaignId
+              ? <>Cargaison <span className="mono" style={{ color: 'var(--ink-700)', fontWeight: 600 }}>{DATA.CAMPAIGNS.find(c => c.id === data.campaignId)?.code || ''}</span></>
+              : <span style={{ color: 'var(--ink-400)' }}>Sélectionnez une cargaison</span>
+          }
           {isEdit && <> · Colis <span className="mono" style={{ color: 'var(--ink-700)', fontWeight: 600 }}>{data.code}</span></>}
         </span>
       }
@@ -73,6 +79,22 @@ export default function ParcelFormModal({ mode = 'create', parcel, campaign, onC
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 320px', gap: 22 }}>
         <div>
+          {!campaign && (
+            <div className="card" style={{ padding: 16, marginBottom: 14 }}>
+              <div className="section-title" style={{ marginBottom: 12 }}>
+                <I.Plane style={{ width: 14, height: 14, color: 'var(--brand-600)' }} /> Cargaison
+              </div>
+              <div className="field" style={{ marginBottom: 0 }}>
+                <label className="label">Sélectionner la cargaison <span className="opt">/ Shipment</span></label>
+                <select className="select" value={data.campaignId || ''} onChange={e => upd('campaignId', e.target.value)}>
+                  <option value="">— Choisir une cargaison ouverte</option>
+                  {DATA.CAMPAIGNS.filter(c => c.status !== 'closed').map(c => (
+                    <option key={c.id} value={c.id}>{c.code} · {c.dep}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+          )}
           <PartyField kind="Expéditeur · Douala" en="Sender" iconColor="var(--brand-500)" color={1} data={data} prefix="sender" cityLabel="Cameroun" upd={upd} />
           <PartyField kind="Destinataire · Canada" en="Recipient" iconColor="var(--info-600)" color={2} data={data} prefix="recip" cityLabel={data.recipCity} upd={upd} withAddress />
 
@@ -178,7 +200,7 @@ export default function ParcelFormModal({ mode = 'create', parcel, campaign, onC
                   <span className="mono" style={{ fontSize: 14, fontWeight: 700 }}>{data.code}</span>
                   <RoutePill from={route.fromIATA} to={route.toIATA} />
                 </div>
-                <div style={{ fontSize: 11, color: 'rgba(255,255,255,.55)' }}>{campaign?.code || 'DLA-YUL-APR-02'} · Aperçu en direct</div>
+                <div style={{ fontSize: 11, color: 'rgba(255,255,255,.55)' }}>{campaign?.code || DATA.CAMPAIGNS.find(c => c.id === data.campaignId)?.code || '—'} · Aperçu en direct</div>
               </div>
 
               <div style={{ padding: 16 }}>

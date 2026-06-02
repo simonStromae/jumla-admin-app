@@ -3,12 +3,14 @@ import { DATA, STATUS } from '../data.js';
 import I from '../components/Icons.jsx';
 import { Bi, Avatar } from '../components/Shell.jsx';
 import { Pagination } from '../components/Pagination.jsx';
+import ParcelFormModal from './ParcelForm.jsx';
 
 export default function AllParcelsScreen({ onNav }) {
   const [tab, setTab] = useState('all');
   const [campaignFilter, setCampaignFilter] = useState('all');
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(25);
+  const [parcelModal, setParcelModal] = useState(null);
 
   const allParcels = DATA.CAMPAIGNS.flatMap(c =>
     DATA.PARCELS.slice(0, Math.min(c.parcels, 4)).map(p => ({
@@ -38,7 +40,7 @@ export default function AllParcelsScreen({ onNav }) {
         </div>
         <div className="page__actions">
           <button className="btn btn--ghost"><I.Download />Export CSV</button>
-          <button className="btn btn--brand"><I.Plus />Nouveau colis</button>
+          <button className="btn btn--brand" onClick={() => setParcelModal({ mode: 'create' })}><I.Plus />Nouveau colis</button>
         </div>
       </div>
 
@@ -159,6 +161,8 @@ export default function AllParcelsScreen({ onNav }) {
       <Pagination total={filtered.length} page={page} pageSize={pageSize}
         onPageChange={setPage}
         onPageSizeChange={(s) => { setPageSize(s); setPage(1); }} />
+
+      {parcelModal && <ParcelFormModal mode="create" campaign={null} onClose={() => setParcelModal(null)} onSave={() => setParcelModal(null)} />}
     </div>
   );
 }

@@ -1,12 +1,11 @@
 import { useState } from 'react';
-import { DATA, STATUS } from '../data.js';
+import { DATA } from '../data.js';
 import I from '../components/Icons.jsx';
-import { Bi, Avatar, StatusDot, Drawer } from '../components/Shell.jsx';
+import { Bi, Avatar, Drawer } from '../components/Shell.jsx';
 import { Pagination, ViewToggle } from '../components/Pagination.jsx';
 import ClientFormModal from './ClientForm.jsx';
 
 export default function ClientsScreen({ onNav }) {
-  const [tab, setTab] = useState('all');
   const [open, setOpen] = useState(null);
   const [editing, setEditing] = useState(null);
   const [view, setView] = useState('grid');
@@ -14,42 +13,26 @@ export default function ClientsScreen({ onNav }) {
   const [pageSize, setPageSize] = useState(12);
   const clients = DATA.CLIENTS;
 
-  const tabs = [
-    { id: 'all',    label: 'Tous',          n: clients.length },
-    { id: 'sender', label: 'Expéditeurs',   n: 124 },
-    { id: 'recip',  label: 'Destinataires', n: 188 },
-    { id: 'loyal',  label: 'Fidèles',       n: 42 },
-    { id: 'unpaid', label: 'Avec impayés',  n: 8, cls: 'bad' },
-  ];
-
   return (
     <div className="page">
       <div className="page__head">
         <div>
-          <div className="page__title"><Bi fr="Clients" en="Clients" /></div>
-          <div className="page__sub">312 clients · expéditeurs Douala, destinataires Canada</div>
+          <div className="page__title"><Bi fr="Expéditeurs" en="Senders" /></div>
+          <div className="page__sub">Expéditeurs enregistrés — basés à Douala, Lagos et autres villes d'origine</div>
         </div>
         <div className="page__actions">
           <button className="btn btn--ghost"><I.Download />Exporter CSV</button>
-          <button className="btn btn--brand" onClick={() => setEditing('new')}><I.UserPlus />Nouveau client</button>
+          <button className="btn btn--brand" onClick={() => setEditing('new')}><I.UserPlus />Nouvel expéditeur</button>
         </div>
       </div>
 
       <div className="toolbar">
-        <div className="tabs">
-          {tabs.map(t => (
-            <button key={t.id} className={'tab ' + (tab === t.id ? 'is-active' : '')} onClick={() => setTab(t.id)}>
-              {t.label} <span className="count">{t.n}</span>
-            </button>
-          ))}
-        </div>
         <div className="spacer" />
         <div style={{ position: 'relative' }}>
           <I.Search style={{ position: 'absolute', left: 10, top: 9, width: 14, height: 14, color: 'var(--ink-400)' }} />
           <input className="input input--sm" placeholder="Nom, téléphone, code client..." style={{ width: 260, paddingLeft: 32 }} />
         </div>
         <button className="btn btn--ghost btn--sm"><I.Filter />Filtres</button>
-        <button className="btn btn--soft btn--sm"><I.Pin />Ville</button>
         <ViewToggle value={view} onChange={setView} />
       </div>
 
@@ -95,11 +78,8 @@ function ClientsGridView({ clients, setOpen }) {
             </div>
           </div>
 
-          <div style={{ display: 'flex', gap: 6, marginBottom: 10, flexWrap: 'wrap' }}>
-            {cl.role === 'sender' && <span className="badge badge--brand">Expéditeur</span>}
-            {cl.role === 'recipient' && <span className="badge badge--info">Destinataire</span>}
-            {cl.role === 'both' && <span className="badge badge--ok">Mixte · Exp + Dest</span>}
-            <span className="badge badge--neutral">{cl.city}</span>
+          <div style={{ fontSize: 12, color: 'var(--ink-600)', marginBottom: 8, fontWeight: 500 }}>
+            {cl.city}, Cameroun
           </div>
 
           <div style={{ fontSize: 12, color: 'var(--ink-500)', display: 'flex', alignItems: 'center', gap: 6, marginBottom: 10 }} className="mono">
@@ -130,8 +110,7 @@ function ClientsListView({ clients, setOpen, page, pageSize }) {
       <thead>
         <tr>
           <th style={{ width: 32, borderRadius: 0 }}><input type="checkbox" style={{ accentColor: 'var(--brand-500)' }} /></th>
-          <th>Client</th>
-          <th>Type</th>
+          <th>Expéditeur</th>
           <th>Ville</th>
           <th>Téléphone</th>
           <th style={{ textAlign: 'center' }}>Cargaisons</th>
@@ -157,12 +136,7 @@ function ClientsListView({ clients, setOpen, page, pageSize }) {
                 </div>
               </div>
             </td>
-            <td>
-              {cl.role === 'sender' && <span className="badge badge--brand">Expéditeur</span>}
-              {cl.role === 'recipient' && <span className="badge badge--info">Destinataire</span>}
-              {cl.role === 'both' && <span className="badge badge--ok">Mixte</span>}
-            </td>
-            <td style={{ fontSize: 12.5 }}>{cl.city}</td>
+            <td style={{ fontSize: 12.5 }}>{cl.city}, Cameroun</td>
             <td className="mono" style={{ fontSize: 12 }}>{cl.phone}</td>
             <td className="mono" style={{ textAlign: 'center', fontWeight: 600 }}>{cl.campaigns}</td>
             <td className="mono" style={{ textAlign: 'right' }}>{cl.weight}<span style={{ fontSize: 10.5, color: 'var(--ink-400)', marginLeft: 2 }}>kg</span></td>
@@ -200,7 +174,7 @@ function ClientDrawer({ cl, onClose, onEdit }) {
     <Drawer width={560} onClose={onClose}>
       <div className="drawer__head">
         <div style={{ flex: 1 }}>
-          <div style={{ fontSize: 11, color: 'var(--ink-400)', textTransform: 'uppercase', letterSpacing: '.04em', fontWeight: 600 }}>Profil client / Client profile</div>
+          <div style={{ fontSize: 11, color: 'var(--ink-400)', textTransform: 'uppercase', letterSpacing: '.04em', fontWeight: 600 }}>Profil expéditeur / Sender profile</div>
         </div>
         <button className="icon-btn" onClick={onClose}><I.Cross /></button>
       </div>
@@ -213,12 +187,9 @@ function ClientDrawer({ cl, onClose, onEdit }) {
               {cl.name}
               {cl.loyal && <I.Star style={{ width: 14, height: 14, color: 'var(--brand-500)', marginLeft: 6, verticalAlign: -1 }} />}
             </div>
-            <div className="mono" style={{ fontSize: 12, color: 'var(--ink-400)', marginTop: 2 }}>{cl.code} · Client depuis fév. 2024</div>
-            <div style={{ display: 'flex', gap: 6, marginTop: 8 }}>
-              {cl.role === 'sender' && <span className="badge badge--brand">Expéditeur</span>}
-              {cl.role === 'recipient' && <span className="badge badge--info">Destinataire</span>}
-              {cl.role === 'both' && <span className="badge badge--ok">Expéditeur + Destinataire</span>}
-              <span className="badge badge--neutral">{cl.city}</span>
+            <div className="mono" style={{ fontSize: 12, color: 'var(--ink-400)', marginTop: 2 }}>{cl.code} · Expéditeur depuis fév. 2024</div>
+            <div style={{ marginTop: 8, fontSize: 12.5, color: 'var(--ink-600)', fontWeight: 500 }}>
+              {cl.city}, Cameroun
             </div>
           </div>
         </div>
@@ -240,9 +211,8 @@ function ClientDrawer({ cl, onClose, onEdit }) {
           <div className="section-title" style={{ marginBottom: 10 }}>Contact</div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
             <DrawerRow icon={<I.Phone />} label="Téléphone" value={cl.phone} mono />
-            <DrawerRow icon={<I.Pin />} label="Ville" value={cl.city + ', ' + (cl.role === 'sender' ? 'Cameroun' : 'Canada')} />
+            <DrawerRow icon={<I.Pin />} label="Ville" value={cl.city + ', Cameroun'} />
             <DrawerRow icon={<I.Whatsapp />} label="WhatsApp" value={cl.phone} mono ok />
-            <DrawerRow icon={<I.Globe />} label="Langue" value="Français" />
           </div>
         </div>
 
