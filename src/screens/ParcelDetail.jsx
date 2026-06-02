@@ -74,13 +74,13 @@ export default function ParcelDetailScreen({ id, onNav }) {
               kind="Expéditeur" en="Sender"
               name={parcel.senderName} phone={parcel.senderPhone}
               city="Douala" color={1}
-              icon={<I.Pin style={{ color: 'var(--brand-500)' }} />}
+              icon={<I.Pin style={{ color: 'var(--brand-500)', width: 16, height: 16, flexShrink: 0 }} />}
             />
             <PartyCard
               kind="Destinataire" en="Recipient"
               name={parcel.recipName} phone={parcel.recipPhone}
               city={parcel.recipCity} color={2}
-              icon={<I.Pin style={{ color: 'var(--info-600)' }} />}
+              icon={<I.Pin style={{ color: 'var(--info-600)', width: 16, height: 16, flexShrink: 0 }} />}
             />
           </div>
 
@@ -293,7 +293,7 @@ function InteracModal({ parcel, onClose, onSend }) {
   const payUrl = typeof window !== 'undefined' ? window.location.origin + '/payer/' + token : '/payer/' + token;
 
   return (
-    <Modal width={560} onClose={onClose}
+    <Modal width={700} onClose={onClose}
       title="Envoyer le lien de paiement Interac"
       sub={'Colis ' + parcel.code + ' · ' + parcel.amount + ' CAD dû'}
       footer={
