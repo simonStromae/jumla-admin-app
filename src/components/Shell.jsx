@@ -12,12 +12,13 @@ export function Bi({ fr, en, sep = '/' }) {
 
 export function Sidebar({ route, onNav }) {
   const items = [
-    { id: 'home',      label: 'Cargaisons',  en: 'Shipments',  icon: I.Plane,    route: '/admin/campaigns', count: 22 },
-    { id: 'analytics', label: 'Analyses',    en: 'Analytics',  icon: I.Activity, route: '/admin/analytics' },
-    { id: 'parcels',   label: 'Colis',       en: 'Parcels',    icon: I.Box,      route: '/admin/parcels' },
-    { id: 'clients',   label: 'Clients',     en: 'Clients',    icon: I.Users,    route: '/admin/clients',   count: 312 },
-    { id: 'payments',  label: 'Paiements',   en: 'Payments',   icon: I.Wallet,   route: '/admin/payments' },
-    { id: 'messaging', label: 'Messagerie',  en: 'Messaging',  icon: I.Chat,     route: '/admin/messaging' },
+    { id: 'home',      label: 'Cargaisons',   en: 'Shipments',    icon: I.Plane,    route: '/admin/campaigns', count: 22 },
+    { id: 'analytics', label: 'Analyses',     en: 'Analytics',    icon: I.Activity, route: '/admin/analytics' },
+    { id: 'parcels',   label: 'Colis',        en: 'Parcels',      icon: I.Box,      route: '/admin/parcels' },
+    { id: 'verify',    label: 'Vérification', en: 'Arrival check',icon: I.Check,    route: '/admin/verify',    badge: 1 },
+    { id: 'clients',   label: 'Clients',      en: 'Clients',      icon: I.Users,    route: '/admin/clients',   count: 312 },
+    { id: 'payments',  label: 'Paiements',    en: 'Payments',     icon: I.Wallet,   route: '/admin/payments' },
+    { id: 'messaging', label: 'Messagerie',   en: 'Messaging',    icon: I.Chat,     route: '/admin/messaging' },
   ];
   const admin = [
     { id: 'agents',   label: 'Agents',      en: 'Agents',    icon: I.Users,    route: '/admin/agents' },
@@ -41,6 +42,11 @@ export function Sidebar({ route, onNav }) {
             <a key={it.id} className={'sidebar__link' + (isActive(it.route) ? ' is-active' : '')} onClick={() => onNav(it.route)}>
               <Ic /> <span>{it.label}</span>
               {it.count != null && <span className="count">{it.count}</span>}
+              {it.badge != null && (
+                <span style={{ marginLeft: 'auto', minWidth: 18, height: 18, borderRadius: 999, background: 'var(--bad-500)', color: 'white', fontSize: 10, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 5px' }}>
+                  {it.badge}
+                </span>
+              )}
             </a>
           );
         })}

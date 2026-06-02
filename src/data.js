@@ -75,14 +75,39 @@ export const CAMPAIGNS = [
 ];
 
 export const PARCELS = [
-  { id: 'p1', code: '#01', campaign: 'DLA-YUL-APR-02', senderName: 'Client A',      senderPhone: '+237 6** ** ** 12', recipName: 'Client J', recipPhone: '+1 514 *** **45', recipCity: 'Montréal',      reservedKg: 12, actualKg: 14,  contents: '2 valises, vêtements, ndolè',         amount: 280,  paid: 'paid',    delivery: 'home',     slip: 'BL-2604-01', agent: 'AM', note: '—', overrun: true },
-  { id: 'p2', code: '#02', campaign: 'DLA-YUL-APR-02', senderName: 'Client B',      senderPhone: '+237 6** ** ** 24', recipName: 'Client K', recipPhone: '+1 438 *** **08', recipCity: 'Laval',         reservedKg: 8,  actualKg: 7.5, contents: 'Carton 1, produits alimentaires',    amount: 145,  paid: 'paid',    delivery: 'pickup',   slip: 'BL-2604-02', agent: 'AM', note: '—', overrun: false },
-  { id: 'p3', code: '#03', campaign: 'DLA-YUL-APR-02', senderName: 'Client C',      senderPhone: '+237 6** ** ** 31', recipName: 'Client L', recipPhone: '+1 450 *** **77', recipCity: 'Longueuil',     reservedKg: 25, actualKg: 24,  contents: 'Électronique, 1 carton scellé',      amount: 410,  paid: 'pending', delivery: 'home',     slip: null,         agent: 'ML', note: 'À rappeler', overrun: false },
-  { id: 'p4', code: '#04', campaign: 'DLA-YUL-APR-02', senderName: 'Client D',      senderPhone: '+237 6** ** ** 02', recipName: 'Client M', recipPhone: '+1 514 *** **19', recipCity: 'Montréal',      reservedKg: 15, actualKg: 18,  contents: 'Vêtements, chaussures',              amount: 320,  paid: 'unpaid',  delivery: 'home',     slip: 'BL-2604-04', agent: 'ML', note: '—', overrun: true },
-  { id: 'p5', code: '#05', campaign: 'DLA-YUL-APR-02', senderName: 'Client E',      senderPhone: '+237 6** ** ** 87', recipName: 'Client N', recipPhone: '+1 819 *** **66', recipCity: 'Gatineau',      reservedKg: 30, actualKg: 31,  contents: 'Mobilier démontable, 3 cartons',     amount: 540,  paid: 'paid',    delivery: 'home',     slip: 'BL-2604-05', agent: 'AM', note: '—', overrun: false },
-  { id: 'p6', code: '#06', campaign: 'DLA-YUL-APR-02', senderName: 'Client F',      senderPhone: '+237 6** ** ** 41', recipName: 'Client O', recipPhone: '+1 514 *** **22', recipCity: 'Montréal',      reservedKg: 10, actualKg: 9,   contents: 'Documents et 1 valise',              amount: 195,  paid: 'unpaid',  delivery: 'pickup',   slip: null,         agent: 'AM', note: 'Vérifier', overrun: false },
-  { id: 'p7', code: '#07', campaign: 'DLA-YUL-APR-02', senderName: 'Client G',      senderPhone: '+237 6** ** ** 18', recipName: 'Client P', recipPhone: '+1 450 *** **30', recipCity: 'Brossard',      reservedKg: 20, actualKg: 22,  contents: 'Tissu, bibelots, 2 cartons',         amount: 380,  paid: 'paid',    delivery: 'home',     slip: 'BL-2604-07', agent: 'ML', note: '—', overrun: true },
-  { id: 'p8', code: '#08', campaign: 'DLA-YUL-APR-02', senderName: 'Client H',      senderPhone: '+237 6** ** ** 09', recipName: 'Client Q', recipPhone: '+1 514 *** **51', recipCity: 'Montréal',      reservedKg: 6,  actualKg: 5.5, contents: 'Petit colis, cadeaux',               amount: 110,  paid: 'paid',    delivery: 'pickup',   slip: 'BL-2604-08', agent: 'AM', note: '—', overrun: false },
+  { id: 'p1', code: '#01', campaign: 'DLA-YUL-APR-02', senderName: 'Client A', senderPhone: '+237 6** ** ** 12', recipName: 'Client J', recipPhone: '+1 514 *** **45', recipCity: 'Montréal',  reservedKg: 12, actualKg: 14,  contents: '2 valises, vêtements, ndolè',        amount: 280, paid: 'paid',    delivery: 'home',   slip: 'BL-2604-01', agent: 'AM', note: '—',         overrun: true,  items: [
+    { id: 'p1-i1', desc: 'Valise de voyage',        qty: 2, kg: 6 },
+    { id: 'p1-i2', desc: 'Sac vêtements mixtes',    qty: 1, kg: 4 },
+    { id: 'p1-i3', desc: 'Carton ndolè (surgelé)',  qty: 1, kg: 4 },
+  ]},
+  { id: 'p2', code: '#02', campaign: 'DLA-YUL-APR-02', senderName: 'Client B', senderPhone: '+237 6** ** ** 24', recipName: 'Client K', recipPhone: '+1 438 *** **08', recipCity: 'Laval',      reservedKg: 8,  actualKg: 7.5, contents: 'Carton produits alimentaires',        amount: 145, paid: 'paid',    delivery: 'pickup', slip: 'BL-2604-02', agent: 'AM', note: '—',         overrun: false, items: [
+    { id: 'p2-i1', desc: 'Carton produits alimentaires', qty: 1, kg: 5 },
+    { id: 'p2-i2', desc: 'Sachets condiments locaux',    qty: 4, kg: 2.5 },
+  ]},
+  { id: 'p3', code: '#03', campaign: 'DLA-YUL-APR-02', senderName: 'Client C', senderPhone: '+237 6** ** ** 31', recipName: 'Client L', recipPhone: '+1 450 *** **77', recipCity: 'Longueuil', reservedKg: 25, actualKg: 24,  contents: 'Électronique, 1 carton scellé',      amount: 410, paid: 'pending', delivery: 'home',   slip: null,         agent: 'ML', note: 'À rappeler', overrun: false, items: [
+    { id: 'p3-i1', desc: 'Téléviseur 43" (carton)', qty: 1, kg: 14 },
+    { id: 'p3-i2', desc: 'Carton électronique divers', qty: 1, kg: 10 },
+  ]},
+  { id: 'p4', code: '#04', campaign: 'DLA-YUL-APR-02', senderName: 'Client D', senderPhone: '+237 6** ** ** 02', recipName: 'Client M', recipPhone: '+1 514 *** **19', recipCity: 'Montréal',  reservedKg: 15, actualKg: 18,  contents: 'Vêtements, chaussures',              amount: 320, paid: 'unpaid',  delivery: 'home',   slip: 'BL-2604-04', agent: 'ML', note: '—',         overrun: true,  items: [
+    { id: 'p4-i1', desc: 'Carton vêtements adulte', qty: 2, kg: 10 },
+    { id: 'p4-i2', desc: 'Paires de chaussures',    qty: 4, kg: 8 },
+  ]},
+  { id: 'p5', code: '#05', campaign: 'DLA-YUL-APR-02', senderName: 'Client E', senderPhone: '+237 6** ** ** 87', recipName: 'Client N', recipPhone: '+1 819 *** **66', recipCity: 'Gatineau',  reservedKg: 30, actualKg: 31,  contents: 'Mobilier démontable, 3 cartons',     amount: 540, paid: 'paid',    delivery: 'home',   slip: 'BL-2604-05', agent: 'AM', note: '—',         overrun: false, items: [
+    { id: 'p5-i1', desc: 'Carton pièces mobilier', qty: 3, kg: 25 },
+    { id: 'p5-i2', desc: 'Sac outillage & visserie', qty: 1, kg: 6 },
+  ]},
+  { id: 'p6', code: '#06', campaign: 'DLA-YUL-APR-02', senderName: 'Client F', senderPhone: '+237 6** ** ** 41', recipName: 'Client O', recipPhone: '+1 514 *** **22', recipCity: 'Montréal',  reservedKg: 10, actualKg: 9,   contents: 'Documents et 1 valise',              amount: 195, paid: 'unpaid',  delivery: 'pickup', slip: null,         agent: 'AM', note: 'Vérifier',  overrun: false, items: [
+    { id: 'p6-i1', desc: 'Valise vêtements',     qty: 1, kg: 7 },
+    { id: 'p6-i2', desc: 'Pochette documents',   qty: 1, kg: 2 },
+  ]},
+  { id: 'p7', code: '#07', campaign: 'DLA-YUL-APR-02', senderName: 'Client G', senderPhone: '+237 6** ** ** 18', recipName: 'Client P', recipPhone: '+1 450 *** **30', recipCity: 'Brossard',  reservedKg: 20, actualKg: 22,  contents: 'Tissu wax, bibelots, 2 cartons',     amount: 380, paid: 'paid',    delivery: 'home',   slip: 'BL-2604-07', agent: 'ML', note: '—',         overrun: true,  items: [
+    { id: 'p7-i1', desc: 'Rouleaux tissu wax',      qty: 5, kg: 8 },
+    { id: 'p7-i2', desc: 'Carton bibelots & déco',  qty: 2, kg: 14 },
+  ]},
+  { id: 'p8', code: '#08', campaign: 'DLA-YUL-APR-02', senderName: 'Client H', senderPhone: '+237 6** ** ** 09', recipName: 'Client Q', recipPhone: '+1 514 *** **51', recipCity: 'Montréal',  reservedKg: 6,  actualKg: 5.5, contents: 'Petit colis, cadeaux',               amount: 110, paid: 'paid',    delivery: 'pickup', slip: 'BL-2604-08', agent: 'AM', note: '—',         overrun: false, items: [
+    { id: 'p8-i1', desc: 'Boîtes cadeaux emballées',   qty: 3, kg: 3 },
+    { id: 'p8-i2', desc: 'Sachets friandises locales', qty: 2, kg: 2.5 },
+  ]},
 ];
 
 export const CLIENTS = [
