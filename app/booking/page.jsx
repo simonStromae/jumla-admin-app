@@ -1,8 +1,8 @@
 'use client';
-import { useNav } from '@/src/lib/nav';
+import { useRouter } from 'next/navigation';
 import BookingScreen from '@/src/client/Booking';
 
 export default function BookingPage() {
-  const onNav = useNav();
-  return <BookingScreen onNav={onNav} />;
+  const router = useRouter();
+  return <BookingScreen onNav={(path) => router.push(path)} />;
 }
