@@ -3,6 +3,7 @@ import { DATA, getCampaign, getRoute, STATUS, STATUS_STEPS } from '../data.js';
 import I from '../components/Icons.jsx';
 import { RoutePill, StatusDot, Avatar, Modal, ParcelActionsMenu } from '../components/Shell.jsx';
 import { StatusPanel, StatusTransitionModal } from './StatusWorkflow.jsx';
+import CampaignVerifyPanel from './CampaignVerify.jsx';
 
 export default function CampaignDetailScreen({ id, onNav, onEdit, onClose: onCloseCampaign }) {
   const c = getCampaign(id) || DATA.CAMPAIGNS[0];
@@ -11,6 +12,7 @@ export default function CampaignDetailScreen({ id, onNav, onEdit, onClose: onClo
   const [tab, setTab] = useState('all');
   const [statusTransition, setStatusTransition] = useState(null);
   const [showClose, setShowClose] = useState(false);
+  const [verifyMode, setVerifyMode] = useState(false);
 
   const workflowStatus = c.status === 'closed' ? 'arrived' : c.status === 'in-transit' ? 'in-transit' : 'open';
   const lockedStates = ['locked', 'in-transit', 'arrived', 'closed'];
@@ -49,10 +51,11 @@ export default function CampaignDetailScreen({ id, onNav, onEdit, onClose: onClo
           </div>
         </div>
         <div className="page__actions">
-          <button className="btn btn--ghost"><I.Print />Imprimer</button>
           <button className="btn btn--ghost"><I.Download />Export Excel</button>
+          <button className="btn btn--ghost" onClick={() => onNav('/campaign/' + c.id + '/labels')}><I.Print />Étiquettes</button>
           <button className="btn btn--ghost" onClick={onEdit} disabled={isLocked} style={isLocked ? { opacity: 0.4, cursor: 'not-allowed' } : {}}><I.Edit />Modifier</button>
           {c.status !== 'closed' && <button className="btn btn--primary" onClick={() => setShowClose(true)}><I.Check />Clôturer</button>}
+          <button className="btn btn--ghost" onClick={() => setVerifyMode(true)}><I.Check />Vérifier arrivée</button>
           <button className="btn btn--brand" onClick={() => !isLocked && onNav('/parcels/new?campaign=' + c.id)} disabled={isLocked} style={isLocked ? { opacity: 0.4, cursor: 'not-allowed' } : {}}><I.Plus />Nouveau colis</button>
         </div>
       </div>
@@ -105,98 +108,104 @@ export default function CampaignDetailScreen({ id, onNav, onEdit, onClose: onClo
         </div>
       )}
 
-      <div className="toolbar">
-        <div className="tabs">
-          {tabs.map(t => (
-            <button key={t.id} className={'tab ' + (tab === t.id ? 'is-active' : '')} onClick={() => setTab(t.id)}>
-              {t.label} <span className="count">{t.n}</span>
-            </button>
-          ))}
-        </div>
-        <div className="spacer" />
-        <div style={{ position: 'relative' }}>
-          <I.Search style={{ position: 'absolute', left: 10, top: 9, width: 14, height: 14, color: 'var(--ink-400)' }} />
-          <input className="input input--sm" placeholder="Rechercher colis, expéditeur, destinataire..." style={{ width: 280, paddingLeft: 32 }} />
-        </div>
-        <button className="btn btn--ghost btn--sm"><I.Filter />Filtres</button>
-      </div>
+      {verifyMode ? (
+        <CampaignVerifyPanel parcels={parcels} campaign={c} onExit={() => setVerifyMode(false)} />
+      ) : (
+        <>
+          <div className="toolbar">
+            <div className="tabs">
+              {tabs.map(t => (
+                <button key={t.id} className={'tab ' + (tab === t.id ? 'is-active' : '')} onClick={() => setTab(t.id)}>
+                  {t.label} <span className="count">{t.n}</span>
+                </button>
+              ))}
+            </div>
+            <div className="spacer" />
+            <div style={{ position: 'relative' }}>
+              <I.Search style={{ position: 'absolute', left: 10, top: 9, width: 14, height: 14, color: 'var(--ink-400)' }} />
+              <input className="input input--sm" placeholder="Rechercher colis, expéditeur, destinataire..." style={{ width: 280, paddingLeft: 32 }} />
+            </div>
+            <button className="btn btn--ghost btn--sm"><I.Filter />Filtres</button>
+          </div>
 
-      <table className="tbl" style={{ borderTopLeftRadius: 0, borderTopRightRadius: 0 }}>
-        <thead>
-          <tr>
-            <th style={{ width: 32, borderRadius: 0 }}><input type="checkbox" style={{ accentColor: 'var(--brand-500)' }} /></th>
-            <th style={{ borderRadius: 0 }}>Code</th>
-            <th>Expéditeur · Douala</th>
-            <th>Destinataire · Canada</th>
-            <th>Poids</th>
-            <th>Contenu</th>
-            <th style={{ textAlign: 'right' }}>Montant</th>
-            <th>Paiement</th>
-            <th>Livraison</th>
-            <th>Agent</th>
-            <th style={{ width: 44, borderRadius: 0 }}></th>
-          </tr>
-        </thead>
-        <tbody>
-          {parcels.map(p => (
-            <tr key={p.id}>
-              <td><input type="checkbox" style={{ accentColor: 'var(--brand-500)' }} /></td>
-              <td><a className="mono" style={{ fontWeight: 700, color: 'var(--brand-700)', cursor: 'pointer' }} onClick={() => onNav('/parcels/' + p.id)}>{p.code}</a></td>
-              <td>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <Avatar initials={p.senderName.split(' ').map(x => x[0]).join('').slice(0, 2)} color={(p.id.charCodeAt(0) % 8) + 1} size="sm" />
-                  <div style={{ minWidth: 0 }}>
-                    <div style={{ fontWeight: 600 }}>{p.senderName}</div>
-                    <div className="mono" style={{ fontSize: 11, color: 'var(--ink-400)' }}>{p.senderPhone}</div>
-                  </div>
-                </div>
-              </td>
-              <td>
-                <div style={{ fontWeight: 600 }}>{p.recipName}</div>
-                <div style={{ fontSize: 11, color: 'var(--ink-400)' }}>
-                  <span className="mono">{p.recipPhone}</span>
-                  <span style={{ marginLeft: 6, color: 'var(--ink-500)' }}>· {p.recipCity}</span>
-                </div>
-              </td>
-              <td>
-                <div className="mono" style={{ fontSize: 12, lineHeight: 1.3 }}>
-                  <span style={{ color: 'var(--ink-400)' }}>Rés.</span> <strong>{p.reservedKg}</strong> kg<br />
-                  <span style={{ color: 'var(--ink-400)' }}>Réel</span> <strong style={{ color: p.overrun ? 'var(--warn-700)' : 'var(--ink-800)' }}>{p.actualKg}</strong> kg
-                  {p.overrun && <span style={{ marginLeft: 4, color: 'var(--warn-700)', fontSize: 10 }}>⚠</span>}
-                </div>
-              </td>
-              <td style={{ maxWidth: 200, fontSize: 12, color: 'var(--ink-600)' }}>
-                <div style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.contents}</div>
-              </td>
-              <td style={{ textAlign: 'right' }}>
-                <span className="mono" style={{ fontWeight: 700, color: 'var(--ink-900)' }}>{p.amount}</span>
-                <span style={{ fontSize: 11, color: 'var(--ink-400)', marginLeft: 4 }}>CAD</span>
-              </td>
-              <td>
-                <span className={'badge badge--dot badge--' + STATUS.payment[p.paid].cls}>
-                  {STATUS.payment[p.paid].label}
-                </span>
-              </td>
-              <td>
-                <span style={{ fontSize: 12, display: 'inline-flex', alignItems: 'center', gap: 4, color: 'var(--ink-600)' }}>
-                  {p.delivery === 'home' ? <><I.Truck style={{ width: 13, height: 13 }} /> Domicile</> : <><I.Warehouse style={{ width: 13, height: 13 }} /> Retrait</>}
-                </span>
-              </td>
-              <td>
-                <Avatar initials={p.agent} color={p.agent === 'AM' ? 1 : 2} size="sm" />
-              </td>
-              <td style={{ overflow: 'visible' }}>
-                <ParcelActionsMenu parcel={p} onNav={onNav} isLocked={isLocked} />
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+          <table className="tbl" style={{ borderTopLeftRadius: 0, borderTopRightRadius: 0 }}>
+            <thead>
+              <tr>
+                <th style={{ width: 32, borderRadius: 0 }}><input type="checkbox" style={{ accentColor: 'var(--brand-500)' }} /></th>
+                <th style={{ borderRadius: 0 }}>Code</th>
+                <th>Expéditeur · Douala</th>
+                <th>Destinataire · Canada</th>
+                <th>Poids</th>
+                <th>Contenu</th>
+                <th style={{ textAlign: 'right' }}>Montant</th>
+                <th>Paiement</th>
+                <th>Livraison</th>
+                <th>Agent</th>
+                <th style={{ width: 44, borderRadius: 0 }}></th>
+              </tr>
+            </thead>
+            <tbody>
+              {parcels.map(p => (
+                <tr key={p.id}>
+                  <td><input type="checkbox" style={{ accentColor: 'var(--brand-500)' }} /></td>
+                  <td><a className="mono" style={{ fontWeight: 700, color: 'var(--brand-700)', cursor: 'pointer' }} onClick={() => onNav('/parcels/' + p.id)}>{p.code}</a></td>
+                  <td>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <Avatar initials={p.senderName.split(' ').map(x => x[0]).join('').slice(0, 2)} color={(p.id.charCodeAt(0) % 8) + 1} size="sm" />
+                      <div style={{ minWidth: 0 }}>
+                        <div style={{ fontWeight: 600 }}>{p.senderName}</div>
+                        <div className="mono" style={{ fontSize: 11, color: 'var(--ink-400)' }}>{p.senderPhone}</div>
+                      </div>
+                    </div>
+                  </td>
+                  <td>
+                    <div style={{ fontWeight: 600 }}>{p.recipName}</div>
+                    <div style={{ fontSize: 11, color: 'var(--ink-400)' }}>
+                      <span className="mono">{p.recipPhone}</span>
+                      <span style={{ marginLeft: 6, color: 'var(--ink-500)' }}>· {p.recipCity}</span>
+                    </div>
+                  </td>
+                  <td>
+                    <div className="mono" style={{ fontSize: 12, lineHeight: 1.3 }}>
+                      <span style={{ color: 'var(--ink-400)' }}>Rés.</span> <strong>{p.reservedKg}</strong> kg<br />
+                      <span style={{ color: 'var(--ink-400)' }}>Réel</span> <strong style={{ color: p.overrun ? 'var(--warn-700)' : 'var(--ink-800)' }}>{p.actualKg}</strong> kg
+                      {p.overrun && <span style={{ marginLeft: 4, color: 'var(--warn-700)', fontSize: 10 }}>⚠</span>}
+                    </div>
+                  </td>
+                  <td style={{ maxWidth: 200, fontSize: 12, color: 'var(--ink-600)' }}>
+                    <div style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.contents}</div>
+                  </td>
+                  <td style={{ textAlign: 'right' }}>
+                    <span className="mono" style={{ fontWeight: 700, color: 'var(--ink-900)' }}>{p.amount}</span>
+                    <span style={{ fontSize: 11, color: 'var(--ink-400)', marginLeft: 4 }}>CAD</span>
+                  </td>
+                  <td>
+                    <span className={'badge badge--dot badge--' + STATUS.payment[p.paid].cls}>
+                      {STATUS.payment[p.paid].label}
+                    </span>
+                  </td>
+                  <td>
+                    <span style={{ fontSize: 12, display: 'inline-flex', alignItems: 'center', gap: 4, color: 'var(--ink-600)' }}>
+                      {p.delivery === 'home' ? <><I.Truck style={{ width: 13, height: 13 }} /> Domicile</> : <><I.Warehouse style={{ width: 13, height: 13 }} /> Retrait</>}
+                    </span>
+                  </td>
+                  <td>
+                    <Avatar initials={p.agent} color={p.agent === 'AM' ? 1 : 2} size="sm" />
+                  </td>
+                  <td style={{ overflow: 'visible' }}>
+                    <ParcelActionsMenu parcel={p} onNav={onNav} isLocked={isLocked} />
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
 
-      <div style={{ marginTop: 12, fontSize: 12, color: 'var(--ink-400)', display: 'flex', justifyContent: 'space-between' }}>
-        <span>{parcels.length} colis affichés sur {c.parcels}</span>
-        <span>Dernière modif. : Marc L. — 26 avr. 2026, 14:32</span>
-      </div>
+          <div style={{ marginTop: 12, fontSize: 12, color: 'var(--ink-400)', display: 'flex', justifyContent: 'space-between' }}>
+            <span>{parcels.length} colis affichés sur {c.parcels}</span>
+            <span>Dernière modif. : Marc L. — 26 avr. 2026, 14:32</span>
+          </div>
+        </>
+      )}
 
       {statusTransition && (
         <StatusTransitionModal
