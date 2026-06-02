@@ -161,7 +161,6 @@
   display: grid; place-items: center;
   font-size: 13px; font-weight: 700;
   transition: all .25s;
-  position: relative;
 }
 
 .brail__dot.is-active {
@@ -177,15 +176,6 @@
   color: white;
 }
 
-.brail__dot-label {
-  position: absolute;
-  right: calc(100% + 8px);
-  font-size: 10px;
-  font-weight: 600;
-  color: var(--ink-400);
-  white-space: nowrap;
-}
-
 /* ── Main content ── */
 .bmain {
   display: flex;
@@ -194,31 +184,24 @@
 }
 
 .bmain__head {
-  padding: 52px 52px 0;
+  padding: 48px 52px 0;
 }
 
 .bmain__q {
-  font-size: 26px;
+  font-size: 24px;
   font-weight: 800;
   color: var(--ink-900);
   letter-spacing: -.03em;
   line-height: 1.1;
-  margin-bottom: 4px;
-}
-
-.bmain__qdesc {
-  font-size: 13.5px;
-  color: var(--ink-400);
-  margin-top: 6px;
 }
 
 .bmain__body {
-  padding: 28px 52px;
+  padding: 24px 52px;
   flex: 1;
 }
 
 .bmain__nav {
-  padding: 18px 52px;
+  padding: 16px 52px;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -228,27 +211,19 @@
   bottom: 0;
 }
 
-/* ── Option cards (route / delivery) ── */
-.bopt-grid {
-  display: grid;
-  gap: 12px;
-}
+/* ── Option cards ── */
+.bopt-grid { display: grid; gap: 12px; }
 .bopt-grid--2 { grid-template-columns: 1fr 1fr; }
-.bopt-grid--4 { grid-template-columns: repeat(4, 1fr); }
 
 .bopt-card {
   background: white;
   border: 2px solid var(--border);
-  padding: 24px 16px 20px;
+  padding: 22px 16px 18px;
   cursor: pointer;
   text-align: center;
   transition: border-color .15s, background .15s, box-shadow .15s;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 8px;
-  width: 100%;
-  font-family: inherit;
+  display: flex; flex-direction: column; align-items: center; gap: 8px;
+  width: 100%; font-family: inherit;
 }
 .bopt-card:hover { border-color: var(--brand-300); box-shadow: 0 2px 12px rgba(0,0,0,.06); }
 .bopt-card.is-sel {
@@ -256,69 +231,194 @@
   background: var(--brand-50);
   box-shadow: 0 0 0 3px rgba(245,165,36,.12);
 }
+.bopt-card--sm { padding: 12px 10px; }
 
-.bopt-card__icon { font-size: 36px; line-height: 1; }
+.bopt-card__icon { font-size: 34px; line-height: 1; }
 .bopt-card__label { font-size: 14px; font-weight: 700; color: var(--ink-900); }
 .bopt-card__sub { font-size: 11.5px; color: var(--ink-500); line-height: 1.5; }
 
-/* ── Form ── */
-.bform {
-  background: white;
-  border: 1px solid var(--border);
-  padding: 28px;
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 16px;
+/* ── Date picker (step 1) ── */
+.bdate-section { margin-top: 22px; }
+
+.bdate-label {
+  font-size: 11px; font-weight: 700;
+  letter-spacing: .08em; text-transform: uppercase;
+  color: var(--ink-600); margin-bottom: 10px;
 }
 
-.bform__row { display: flex; flex-direction: column; gap: 6px; }
-.bform__row--full { grid-column: 1 / -1; }
+.bdate-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.bdate-card {
+  background: white; border: 2px solid var(--border);
+  padding: 13px 10px; text-align: center; cursor: pointer;
+  font-family: inherit;
+  transition: border-color .15s, background .15s;
+}
+.bdate-card:hover { border-color: var(--brand-300); }
+.bdate-card.is-sel { border-color: var(--brand-400); background: var(--brand-50); }
+
+.bdate-card__day { font-size: 13px; font-weight: 700; color: var(--ink-900); }
+.bdate-card__spots { font-size: 11px; color: var(--ink-400); margin-top: 3px; }
+.bdate-card__spots--low { color: var(--warn-600); }
+
+/* ── Split layout (step 2) ── */
+.bsplit {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+.bsplit__section {
+  background: white;
+  border: 1px solid var(--border);
+  padding: 20px;
+  display: flex; flex-direction: column; gap: 13px;
+}
+
+.bsplit__head {
+  font-size: 10.5px; font-weight: 700;
+  letter-spacing: .1em; text-transform: uppercase;
+  color: var(--ink-500);
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--border-soft);
+}
+
+.bform__row { display: flex; flex-direction: column; gap: 5px; }
 
 .blabel {
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--ink-600);
-  letter-spacing: .01em;
+  font-size: 11.5px; font-weight: 600;
+  color: var(--ink-600); letter-spacing: .01em;
 }
 
 .binput, .bselect, .btextarea {
-  width: 100%;
-  padding: 10px 12px;
+  width: 100%; padding: 9px 11px;
   border: 1.5px solid var(--border);
   background: var(--bg-soft);
-  font-family: inherit;
-  font-size: 13.5px;
-  color: var(--ink-900);
-  outline: none;
-  transition: border-color .15s, background .15s;
+  font-family: inherit; font-size: 13.5px; color: var(--ink-900);
+  outline: none; transition: border-color .15s, background .15s;
 }
 .binput:focus, .bselect:focus, .btextarea:focus {
-  border-color: var(--brand-400);
-  background: white;
+  border-color: var(--brand-400); background: white;
 }
 .btextarea { resize: vertical; }
 
+/* ── Account creation checkbox ── */
+.baccount-opt {
+  display: flex; align-items: flex-start; gap: 14px;
+  background: var(--bg-soft); border: 1.5px solid var(--border);
+  padding: 14px 16px; cursor: pointer; margin-top: 14px;
+  transition: border-color .15s, background .15s;
+}
+.baccount-opt:has(input:checked) {
+  border-color: var(--brand-400); background: var(--brand-50);
+}
+.baccount-opt input[type="checkbox"] {
+  width: 17px; height: 17px; margin-top: 2px; flex-shrink: 0;
+  accent-color: var(--brand-500); cursor: pointer;
+}
+.baccount-opt__title { font-size: 13px; font-weight: 700; color: var(--ink-900); margin-bottom: 3px; }
+.baccount-opt__sub { font-size: 12px; color: var(--ink-500); line-height: 1.5; }
+
+/* ── Parcel table (step 3) ── */
+.bparcels { overflow-x: auto; }
+
+.bparcel-header {
+  display: grid;
+  grid-template-columns: 58px 90px 150px 1fr 38px;
+  gap: 6px; padding: 9px 12px;
+  background: var(--ink-900); color: white;
+  font-size: 10px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase;
+  min-width: 560px;
+}
+
+.bparcel-row {
+  display: grid;
+  grid-template-columns: 58px 90px 150px 1fr 38px;
+  gap: 6px; padding: 8px 12px;
+  background: white; border: 1px solid var(--border); border-top: none;
+  align-items: center; min-width: 560px;
+}
+
+.bparcel-row .binput,
+.bparcel-row .bselect {
+  padding: 7px 8px; font-size: 13px;
+}
+
+.bparcel-del {
+  background: none; border: none; cursor: pointer; padding: 6px;
+  color: var(--ink-300); font-size: 20px; line-height: 1;
+  display: grid; place-items: center; width: 38px; height: 36px;
+  font-family: inherit;
+}
+.bparcel-del:hover:not(:disabled) { color: var(--bad-500); }
+.bparcel-del:disabled { opacity: .25; cursor: default; }
+
+.bparcel-add {
+  width: 100%; padding: 11px; margin-top: 8px;
+  background: none; border: 2px dashed var(--border);
+  font-family: inherit; font-size: 13px; font-weight: 600;
+  color: var(--ink-400); cursor: pointer;
+  transition: border-color .15s, color .15s;
+}
+.bparcel-add:hover { border-color: var(--brand-300); color: var(--brand-600); }
+
 /* ── Price summary ── */
 .bprice {
-  grid-column: 1 / -1;
   background: var(--brand-50);
   border: 1px solid var(--brand-100);
-  padding: 16px 18px;
+  padding: 14px 16px;
 }
 .bprice__label {
   font-size: 10px; font-weight: 700;
   letter-spacing: .12em; text-transform: uppercase;
-  color: var(--brand-700); margin-bottom: 10px;
+  color: var(--brand-700); margin-bottom: 8px;
 }
 .bprice__row {
   display: flex; justify-content: space-between;
-  font-size: 13px; color: var(--ink-600); padding: 3px 0;
+  font-size: 12.5px; color: var(--ink-600); padding: 3px 0;
 }
 .bprice__total {
   display: flex; justify-content: space-between;
-  font-size: 15px; font-weight: 800; color: var(--brand-700);
-  padding-top: 10px; margin-top: 8px;
+  font-size: 14px; font-weight: 800; color: var(--brand-700);
+  padding-top: 8px; margin-top: 6px;
   border-top: 1px solid var(--brand-200);
+}
+
+/* ── Recap (step 4) ── */
+.brecap { display: flex; flex-direction: column; }
+
+.brecap__section {
+  background: white;
+  border: 1px solid var(--border);
+  border-bottom: none;
+  padding: 16px 20px;
+}
+
+.brecap__section-title {
+  font-size: 10px; font-weight: 700;
+  letter-spacing: .12em; text-transform: uppercase;
+  color: var(--brand-600); margin-bottom: 10px;
+}
+
+.brecap__row {
+  display: flex; justify-content: space-between; align-items: baseline;
+  font-size: 13px; padding: 5px 0;
+  border-bottom: 1px solid var(--border-soft);
+  gap: 16px;
+}
+.brecap__row:last-child { border-bottom: none; }
+.brecap__row span:first-child { color: var(--ink-500); flex-shrink: 0; }
+.brecap__row span:last-child { font-weight: 600; color: var(--ink-900); text-align: right; }
+
+.brecap__total {
+  display: flex; justify-content: space-between;
+  padding: 16px 20px;
+  background: var(--ink-900); color: white;
+  font-weight: 800; font-size: 16px;
 }
 
 /* ── Buttons ── */
@@ -327,7 +427,7 @@
   font-family: inherit; font-size: 13.5px; font-weight: 700;
   cursor: pointer; border: none;
   display: inline-flex; align-items: center; gap: 8px;
-  transition: opacity .15s, background .15s;
+  transition: background .15s;
   letter-spacing: .01em;
 }
 .bbtn--primary { background: var(--ink-900); color: white; }
@@ -335,7 +435,7 @@
 .bbtn--ghost { background: white; border: 1.5px solid var(--border); color: var(--ink-700); }
 .bbtn--ghost:hover { background: var(--bg-soft); }
 
-/* ── Done state ── */
+/* ── Done / Confirmation ── */
 .bdone {
   display: flex; flex-direction: column; align-items: center;
   justify-content: center; text-align: center;
@@ -348,15 +448,15 @@
   font-size: 28px; color: var(--ok-600); font-weight: 800;
 }
 .bdone__title { font-size: 26px; font-weight: 800; color: var(--ink-900); letter-spacing: -.03em; }
-.bdone__sub { font-size: 14px; color: var(--ink-500); max-width: 400px; line-height: 1.65; }
+.bdone__sub { font-size: 14px; color: var(--ink-500); max-width: 420px; line-height: 1.65; }
 .bdone__recap {
-  width: 100%; max-width: 400px;
+  width: 100%; max-width: 420px;
   background: white; border: 1px solid var(--border);
   padding: 16px 20px;
 }
 .bdone__row {
   display: flex; justify-content: space-between;
-  padding: 9px 0; font-size: 13px;
+  padding: 8px 0; font-size: 13px;
   border-bottom: 1px solid var(--border-soft);
 }
 .bdone__row:last-child { border-bottom: none; }
@@ -369,6 +469,7 @@
   .bwrap { grid-template-columns: 1fr; }
   .bside, .brail { display: none; }
   .bmain__head, .bmain__body, .bmain__nav { padding-left: 20px; padding-right: 20px; }
-  .bopt-grid--4 { grid-template-columns: 1fr 1fr; }
   .bmain__head { padding-top: 32px; }
+  .bsplit { grid-template-columns: 1fr; }
+  .bdate-grid { grid-template-columns: 1fr 1fr; }
 }
