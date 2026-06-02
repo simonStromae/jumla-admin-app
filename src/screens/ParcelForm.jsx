@@ -18,7 +18,6 @@ export default function ParcelFormPage({ mode = 'create', parcel, campaign, onNa
     recipPhone: parcel?.recipPhone || '',
     recipCity: parcel?.recipCity || 'Montréal',
     recipAddress: parcel?.recipAddress || '',
-    reservedKg: parcel?.reservedKg || 10,
     items: parcel?.items || [
       { id: 1, name: '', packs: 1, pieces: 1, weight: 0, category: 'standard', note: '' },
     ],
@@ -37,18 +36,15 @@ export default function ParcelFormPage({ mode = 'create', parcel, campaign, onNa
   const grid = activeRoute.pricing;
 
   const totalItemWeight = data.items.reduce((a, i) => a + (+i.weight || 0), 0);
-  const baseRate = getTierRate(totalItemWeight || data.reservedKg, grid);
+  const baseRate = getTierRate(totalItemWeight, grid);
   const itemsTotal = data.items.reduce((a, i) => {
     const cat = CATS.find(c => c.id === i.category) || CATS[0];
     return a + Math.round((+i.weight || 0) * baseRate * (1 + cat.pct / 100));
   }, 0);
-  const reservedAmount = calcPrice(data.reservedKg, grid);
-  const overrun = Math.max(0, totalItemWeight - data.reservedKg);
-  const overrunAmount = Math.round(overrun * 22);
   const deliveryFee = data.delivery === 'home' ? 25 : 0;
   const handlingFee = 8;
   const insuranceFee = data.insurance ? Math.round(itemsTotal * 0.03) : 0;
-  const total = itemsTotal + overrunAmount + deliveryFee + handlingFee + insuranceFee;
+  const total = itemsTotal + deliveryFee + handlingFee + insuranceFee;
 
   const handleCancel = () => {
     if (campaign) onNav('/campaign/' + campaign.id);
@@ -120,37 +116,6 @@ export default function ParcelFormPage({ mode = 'create', parcel, campaign, onNa
 
           <PartyField kind="Expéditeur · Douala" en="Sender" iconColor="var(--brand-500)" color={1} data={data} prefix="sender" cityLabel="Cameroun" upd={upd} />
           <PartyField kind="Destinataire · Canada" en="Recipient" iconColor="var(--info-600)" color={2} data={data} prefix="recip" cityLabel={data.recipCity} upd={upd} withAddress />
-
-          {/* Weight */}
-          <div className="card" style={{ padding: 16, marginBottom: 14 }}>
-            <div className="section-title" style={{ marginBottom: 12 }}>
-              <I.Scale style={{ width: 14, height: 14, color: 'var(--brand-600)' }} /> Poids
-            </div>
-            <div className="field-row field-row--2" style={{ marginBottom: 0 }}>
-              <div className="field" style={{ marginBottom: 0 }}>
-                <label className="label">Poids réservé <span className="opt">/ Reserved</span></label>
-                <div style={{ position: 'relative' }}>
-                  <input className="input mono" type="number" step="0.1" value={data.reservedKg} onChange={e => upd('reservedKg', +e.target.value)} style={{ paddingRight: 36 }} />
-                  <span style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--ink-400)', fontSize: 12 }}>kg</span>
-                </div>
-                <div className="hint">Tarif base : <strong className="mono" style={{ color: 'var(--ink-700)' }}>{reservedAmount} {activeRoute.currency}</strong></div>
-              </div>
-              <div className="field" style={{ marginBottom: 0 }}>
-                <label className="label">Poids total déclaré <span className="opt">/ Declared total</span></label>
-                <div style={{ padding: '9px 12px', background: 'var(--bg-soft)', border: '1.5px solid ' + (overrun > 0 ? 'var(--warn-300)' : 'var(--border)'), display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <span className="mono" style={{ fontSize: 14, fontWeight: 700, color: overrun > 0 ? 'var(--warn-700)' : 'var(--ink-900)' }}>
-                    {totalItemWeight.toFixed(1)} kg
-                  </span>
-                  <span style={{ fontSize: 11, color: 'var(--ink-400)' }}>calculé depuis les lignes</span>
-                </div>
-                {overrun > 0 && (
-                  <div className="hint" style={{ color: 'var(--warn-700)' }}>
-                    ⚠ Dépassement <strong className="mono">+{overrun.toFixed(1)} kg</strong> → <strong className="mono">+{overrunAmount} {activeRoute.currency}</strong>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
 
           {/* Items — with weight + category per line */}
           <ItemsSection data={data} upd={upd} currency={activeRoute.currency} baseRate={baseRate} />
@@ -259,7 +224,6 @@ export default function ParcelFormPage({ mode = 'create', parcel, campaign, onNa
 
               <div style={{ marginTop: 8, paddingTop: 8, borderTop: '1px solid var(--border-soft)' }}>
                 <SummaryLine l={`Sous-total articles (${totalItemWeight.toFixed(1)} kg)`} v={itemsTotal} cur={activeRoute.currency} />
-                {overrun > 0 && <SummaryLine l={`Dépassement +${overrun.toFixed(1)} kg`} sub="22/kg" v={overrunAmount} cur={activeRoute.currency} warn />}
                 {data.delivery === 'home' && <SummaryLine l="Livraison domicile" v={deliveryFee} cur={activeRoute.currency} />}
                 <SummaryLine l="Manutention" v={handlingFee} cur={activeRoute.currency} />
                 {data.insurance && <SummaryLine l="Assurance 3%" v={insuranceFee} cur={activeRoute.currency} />}

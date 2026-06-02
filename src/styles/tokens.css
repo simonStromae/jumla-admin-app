@@ -88,6 +88,13 @@
   /* Layout */
   --sidebar-w: 232px;
   --topbar-h:  60px;
+
+  /* Radius scale (doux = 8px) */
+  --radius:    8px;
+  --radius-sm: 6px;
+  --radius-xs: 4px;
+  --radius-lg: 10px;
+  --radius-xl: 12px;
 }
 
 /* Reset + base */
@@ -151,7 +158,7 @@ a { color: inherit; text-decoration: none; }
 }
 .sidebar__logo {
   width: 32px; height: 32px;
-  border-radius: 9px;
+  border-radius: var(--radius);
   background: linear-gradient(135deg, var(--brand-500), var(--brand-400));
   color: var(--white);
   display: grid; place-items: center;
@@ -166,7 +173,7 @@ a { color: inherit; text-decoration: none; }
 .sidebar__link {
   display: flex; align-items: center; gap: 10px;
   padding: 8px 10px;
-  border-radius: 7px;
+  border-radius: var(--radius);
   color: var(--ink-600);
   font-size: 13px;
   font-weight: 500;
@@ -232,7 +239,7 @@ a { color: inherit; text-decoration: none; }
   display: flex; align-items: center; gap: 8px;
   background: var(--bg-soft);
   border: 1px solid transparent;
-  border-radius: 8px;
+  border-radius: var(--radius);
   padding: 7px 11px;
   width: 280px;
   color: var(--ink-400);
@@ -307,7 +314,7 @@ a { color: inherit; text-decoration: none; }
   display: inline-flex; align-items: center; gap: 7px;
   height: 34px;
   padding: 0 13px;
-  border-radius: 8px;
+  border-radius: var(--radius);
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
@@ -339,8 +346,8 @@ a { color: inherit; text-decoration: none; }
 }
 .btn--soft:hover { background: var(--bg-sunken); }
 .btn--danger { background: var(--bad-500); color: white; }
-.btn--sm { height: 28px; padding: 0 10px; font-size: 12px; border-radius: 6px;}
-.btn--xs { height: 24px; padding: 0 8px; font-size: 11px; border-radius: 5px;}
+.btn--sm { height: 28px; padding: 0 10px; font-size: 12px; border-radius: var(--radius-sm);}
+.btn--xs { height: 24px; padding: 0 8px; font-size: 11px; border-radius: var(--radius-xs);}
 .btn--lg { height: 40px; padding: 0 16px; font-size: 14px; }
 .btn--icon { width: 32px; padding: 0; justify-content: center;}
 
@@ -373,7 +380,7 @@ a { color: inherit; text-decoration: none; }
 .card {
   background: var(--white);
   border: 1px solid var(--border);
-  border-radius: 12px;
+  border-radius: var(--radius-xl);
   box-shadow: var(--sh-xs);
 }
 .card--soft {
@@ -388,7 +395,7 @@ a { color: inherit; text-decoration: none; }
   padding: 0 11px;
   background: var(--white);
   border: 1px solid var(--border);
-  border-radius: 7px;
+  border-radius: var(--radius);
   font-size: 13px;
   color: var(--ink-800);
   transition: border-color .15s, box-shadow .15s;
@@ -460,8 +467,8 @@ a { color: inherit; text-decoration: none; }
   border-top: 1px solid var(--border);
   white-space: nowrap;
 }
-.tbl thead th:first-child { border-left: 1px solid var(--border); border-top-left-radius: 8px;}
-.tbl thead th:last-child  { border-right: 1px solid var(--border); border-top-right-radius: 8px;}
+.tbl thead th:first-child { border-left: 1px solid var(--border); border-top-left-radius: var(--radius);}
+.tbl thead th:last-child  { border-right: 1px solid var(--border); border-top-right-radius: var(--radius);}
 .tbl tbody td {
   padding: 12px;
   border-bottom: 1px solid var(--border-soft);
@@ -473,13 +480,13 @@ a { color: inherit; text-decoration: none; }
 .tbl tbody tr:hover td { background: var(--bg-hover); }
 .tbl tbody td:first-child { border-left: 1px solid var(--border); }
 .tbl tbody td:last-child { border-right: 1px solid var(--border); }
-.tbl tbody tr:last-child td:first-child { border-bottom-left-radius: 8px; }
-.tbl tbody tr:last-child td:last-child { border-bottom-right-radius: 8px; }
+.tbl tbody tr:last-child td:first-child { border-bottom-left-radius: var(--radius); }
+.tbl tbody tr:last-child td:last-child { border-bottom-right-radius: var(--radius); }
 
 .tbl--compact tbody td { padding: 8px 12px; }
 
 /* Tabs */
-.tabs { display: inline-flex; gap: 2px; padding: 3px; background: var(--bg-soft); border-radius: 8px; }
+.tabs { display: inline-flex; gap: 2px; padding: 3px; background: var(--bg-soft); border-radius: var(--radius); }
 .tab {
   padding: 6px 12px;
   border-radius: 6px;

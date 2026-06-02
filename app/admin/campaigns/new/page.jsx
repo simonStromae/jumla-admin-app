@@ -1,9 +1,8 @@
 'use client';
-import { useRouter } from 'next/navigation';
-import { useEffect } from 'react';
+import { useNav } from '@/src/lib/nav';
+import CampaignFormPage from '@/src/screens/CampaignForm';
 
 export default function NewCampaignPage() {
-  const router = useRouter();
-  useEffect(() => { router.replace('/admin/campaigns'); }, []);
-  return null;
+  const onNav = useNav();
+  return <CampaignFormPage mode="create" onNav={onNav} />;
 }
