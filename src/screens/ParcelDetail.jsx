@@ -1,20 +1,27 @@
 'use client';
 import { useState } from 'react';
-import { DATA, STATUS } from '../data.js';
+import { DATA, STATUS, PARCEL_CATEGORIES } from '../data.js';
 import I from '../components/Icons.jsx';
 import { Avatar, Modal } from '../components/Shell.jsx';
-
-const ITEMS_INIT = [
-  { id: 1, name: '2 valises — vêtements adulte', packs: 2, pieces: 2, status: 'ok', discr: 0, note: '' },
-  { id: 2, name: 'Carton — ndolè, épices, café', packs: 1, pieces: 8, status: 'verify', discr: 0, note: '8 sachets, à peser' },
-];
 
 export default function ParcelDetailScreen({ id, onNav }) {
   const parcel = DATA.PARCELS.find(p => p.id === id) || DATA.PARCELS[0];
   const campaign = DATA.CAMPAIGNS.find(c => c.code === parcel.campaign) || DATA.CAMPAIGNS[0];
   const paymentStatus = STATUS.payment[parcel.paid];
 
-  const [items, setItems] = useState(ITEMS_INIT);
+  const [items, setItems] = useState(() =>
+    (parcel.items || []).map(it => ({
+      id: it.id,
+      name: it.desc,
+      cat: it.cat || 'standard',
+      packs: it.qty,
+      pieces: it.qty,
+      kg: it.kg,
+      status: 'ok',
+      discr: 0,
+      note: '',
+    }))
+  );
   const [showSlip, setShowSlip] = useState(!!parcel.slip);
   const [linkSent, setLinkSent] = useState(false);
   const [showPayModal, setShowPayModal] = useState(false);
@@ -121,6 +128,7 @@ export default function ParcelDetailScreen({ id, onNav }) {
               )}
               {parcel.slip && (
                 <div style={{ display: 'flex', gap: 8 }}>
+                  <button className="btn btn--ghost btn--sm" onClick={() => onNav('/parcels/' + parcel.id + '/labels')}><I.Tag />Étiquettes</button>
                   <button className="btn btn--ghost btn--sm"><I.Print />Imprimer</button>
                   <button className="btn btn--ghost btn--sm"><I.Download />PDF</button>
                   <button className="btn btn--ghost btn--sm"><I.Whatsapp style={{ color: 'var(--ok-600)' }} />Envoyer</button>
@@ -144,49 +152,68 @@ export default function ParcelDetailScreen({ id, onNav }) {
                     <tr>
                       <th style={{ borderRadius: 0, width: 32 }}>#</th>
                       <th>Article / Description</th>
-                      <th style={{ width: 60 }}>Colis</th>
-                      <th style={{ width: 60 }}>Pièces</th>
+                      <th style={{ width: 140 }}>Catégorie</th>
+                      <th style={{ width: 60 }}>Qté</th>
                       <th style={{ width: 155 }}>Vérification</th>
                       <th style={{ width: 55, textAlign: 'center' }}>Écart</th>
                       <th style={{ borderRadius: 0 }}>Note</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {items.map((it, i) => (
-                      <tr key={it.id}>
-                        <td className="mono" style={{ color: 'var(--ink-400)', fontSize: 12 }}>{i + 1}</td>
-                        <td style={{ fontWeight: 500, fontSize: 12.5 }}>{it.name}</td>
-                        <td className="mono">{it.packs}</td>
-                        <td className="mono">{it.pieces}</td>
-                        <td>
-                          <select className="select input--sm" style={{ height: 28, padding: '0 8px', fontSize: 12 }}
-                            value={it.status} onChange={e => updItem(it.id, 'status', e.target.value)}>
-                            <option value="ok">Conforme</option>
-                            <option value="missing">Manquant</option>
-                            <option value="extra">En plus</option>
-                            <option value="verify">A vérifier</option>
-                          </select>
-                        </td>
-                        <td style={{ textAlign: 'center' }}>
-                          <span className="mono" style={{ fontWeight: 700, color: it.discr > 0 ? 'var(--bad-600)' : 'var(--ink-300)' }}>
-                            {it.discr > 0 ? '-' + it.discr : '—'}
-                          </span>
-                        </td>
-                        <td>
-                          <input className="input input--sm" value={it.note}
-                            onChange={e => updItem(it.id, 'note', e.target.value)}
-                            placeholder="—" style={{ fontSize: 12 }} />
-                        </td>
-                      </tr>
-                    ))}
+                    {items.map((it, i) => {
+                      const catDef = PARCEL_CATEGORIES.find(c => c.id === it.cat) || PARCEL_CATEGORIES[0];
+                      return (
+                        <tr key={it.id}>
+                          <td className="mono" style={{ color: 'var(--ink-400)', fontSize: 12 }}>{i + 1}</td>
+                          <td>
+                            <input className="input input--sm" value={it.name}
+                              onChange={e => updItem(it.id, 'name', e.target.value)}
+                              placeholder="Libellé article..." style={{ fontSize: 12, fontWeight: 500 }} />
+                          </td>
+                          <td>
+                            <select className="select input--sm" style={{ height: 28, padding: '0 8px', fontSize: 12 }}
+                              value={it.cat} onChange={e => updItem(it.id, 'cat', e.target.value)}>
+                              {PARCEL_CATEGORIES.map(c => (
+                                <option key={c.id} value={c.id}>{c.icon} {c.label}</option>
+                              ))}
+                            </select>
+                          </td>
+                          <td className="mono">{it.packs}</td>
+                          <td>
+                            <select className="select input--sm" style={{ height: 28, padding: '0 8px', fontSize: 12 }}
+                              value={it.status} onChange={e => updItem(it.id, 'status', e.target.value)}>
+                              <option value="ok">Conforme</option>
+                              <option value="missing">Manquant</option>
+                              <option value="extra">En plus</option>
+                              <option value="verify">A vérifier</option>
+                            </select>
+                          </td>
+                          <td style={{ textAlign: 'center' }}>
+                            <span className="mono" style={{ fontWeight: 700, color: it.discr > 0 ? 'var(--bad-600)' : 'var(--ink-300)' }}>
+                              {it.discr > 0 ? '-' + it.discr : '—'}
+                            </span>
+                          </td>
+                          <td>
+                            <input className="input input--sm" value={it.note}
+                              onChange={e => updItem(it.id, 'note', e.target.value)}
+                              placeholder="—" style={{ fontSize: 12 }} />
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
 
                 <div style={{ padding: '10px 16px', borderTop: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <button className="btn btn--ghost btn--sm" onClick={() => setItems([...items, { id: Date.now(), name: '', packs: 1, pieces: 1, status: 'ok', discr: 0, note: '' }])}>
+                  <button className="btn btn--ghost btn--sm" onClick={() => setItems([...items, { id: Date.now(), name: '', cat: 'standard', packs: 1, pieces: 1, kg: 0, status: 'ok', discr: 0, note: '' }])}>
                     <I.Plus />Ajouter article
                   </button>
-                  <button className="btn btn--primary btn--sm"><I.Check />Valider le bordereau</button>
+                  <div style={{ display: 'flex', gap: 8 }}>
+                    <button className="btn btn--ghost btn--sm" onClick={() => onNav('/parcels/' + parcel.id + '/labels')}>
+                      <I.Tag />Imprimer étiquettes
+                    </button>
+                    <button className="btn btn--primary btn--sm"><I.Check />Valider le bordereau</button>
+                  </div>
                 </div>
               </>
             )}
