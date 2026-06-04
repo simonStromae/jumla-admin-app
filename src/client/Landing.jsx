@@ -58,74 +58,32 @@ function JHero({ onBook }) {
   );
 }
 
-/* ─── Tracking band ─── */
-function JTrackBand() {
+/* ─── Tracking CTA band ─── */
+function JTrackBand({ onNav }) {
   const [val, setVal] = useState('');
-  const [found, setFound] = useState(false);
-  const timeline = [
-    { l: 'Colis déposé à Douala',      d: '28 avr. · 10:14', s: 'done' },
-    { l: 'Embarqué en soute',           d: '28 avr. · 18:30', s: 'done' },
-    { l: 'En vol vers Montréal',        d: '03 mai · 22:45',  s: 'done' },
-    { l: 'Arrivé à Montréal',           d: '12 mai · 08:14',  s: 'active' },
-    { l: 'Livré au destinataire',       d: 'Prévu 14 mai',    s: 'todo' },
-  ];
+  const goTrack = () => onNav?.('/suivi' + (val.trim() ? '?code=' + encodeURIComponent(val.trim()) : ''));
   return (
-    <div>
-      <div className="jtrack-band">
-        <div className="jc" style={{ padding: 0 }}>
-          <div className="jtrack-band__inner">
-            <div className="jtrack-band__label">
-              <I.Box style={{ width: 28, height: 28 }} />
-              <span>Suivre votre<br />colis en temps réel</span>
-            </div>
-            <div className="jtrack-band__input-wrap">
-              <input
-                className="jtrack-band__input"
-                placeholder="Entrez votre numéro de suivi (ex : JL-26042-DLA0418)"
-                value={val}
-                onChange={e => setVal(e.target.value)}
-                onKeyDown={e => e.key === 'Enter' && setFound(true)}
-              />
-            </div>
-            <button className="jtrack-band__btn" onClick={() => setFound(true)}>
-              Suivre &amp; tracer
-            </button>
+    <div className="jtrack-band">
+      <div className="jc" style={{ padding: 0 }}>
+        <div className="jtrack-band__inner">
+          <div className="jtrack-band__label">
+            <I.Box style={{ width: 28, height: 28 }} />
+            <span>Suivre votre<br />colis en temps réel</span>
           </div>
+          <div className="jtrack-band__input-wrap">
+            <input
+              className="jtrack-band__input"
+              placeholder="Entrez votre numéro de suivi (ex : JL-26042-DLA0418)"
+              value={val}
+              onChange={e => setVal(e.target.value)}
+              onKeyDown={e => e.key === 'Enter' && goTrack()}
+            />
+          </div>
+          <button className="jtrack-band__btn" onClick={goTrack}>
+            Suivre &amp; tracer
+          </button>
         </div>
       </div>
-      {found && (
-        <div className="jc">
-          <div className="jtrack-result">
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20, flexWrap: 'wrap', gap: 12 }}>
-              <div>
-                <div style={{ fontSize: 10.5, color: "var(--ink-300)", fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.06em' }}>Numéro de suivi</div>
-                <div style={{ fontFamily: 'ui-monospace,monospace', fontSize: 20, fontWeight: 800, color: "var(--ink-900)" }}>JL-26042-DLA0418</div>
-              </div>
-              <span style={{ background: "var(--brand-400)", color: 'white', padding: '7px 16px', borderRadius: 6, fontSize: 13, fontWeight: 700 }}>En transit · 80%</span>
-            </div>
-            {timeline.map((t, i) => (
-              <div key={i} style={{ display: 'flex', gap: 14, paddingBottom: 16, position: 'relative' }}>
-                {i < timeline.length - 1 && (
-                  <div style={{ position: 'absolute', left: 13, top: 28, bottom: -4, width: 2, background: t.s === 'done' ? "var(--brand-400)" : 'var(--border)' }} />
-                )}
-                <div style={{
-                  width: 28, height: 28, borderRadius: 999, flex: '0 0 28px', zIndex: 1,
-                  background: t.s === 'done' ? "var(--brand-400)" : t.s === 'active' ? 'var(--ink-900)' : 'white',
-                  border: '2px solid ' + (t.s === 'todo' ? 'var(--border)' : t.s === 'active' ? 'var(--ink-900)' : "var(--brand-400)"),
-                  color: t.s === 'todo' ? "var(--ink-300)" : 'white',
-                  display: 'grid', placeItems: 'center', fontSize: 11, fontWeight: 700,
-                }}>
-                  {t.s === 'done' ? <I.Check style={{ width: 13, height: 13 }} /> : i + 1}
-                </div>
-                <div style={{ paddingTop: 4 }}>
-                  <div style={{ fontSize: 14, fontWeight: 600, color: t.s === 'todo' ? "var(--ink-300)" : "var(--ink-900)" }}>{t.l}</div>
-                  <div style={{ fontSize: 12, color: "var(--ink-300)" }}>{t.d}</div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
     </div>
   );
 }
@@ -460,7 +418,7 @@ function JCTA({ onBook }) {
           <button className="jcta-btn-1" onClick={onBook}>
             Réserver un envoi <I.ArrowRight style={{ width: 17, height: 17 }} />
           </button>
-          <button className="jcta-btn-2" onClick={() => document.getElementById('jtrack-section')?.scrollIntoView({ behavior: 'smooth' })}>
+          <button className="jcta-btn-2" onClick={() => onNav?.('/suivi')}>
             <I.Search style={{ width: 16, height: 16 }} /> Suivre un colis
           </button>
         </div>
@@ -479,7 +437,7 @@ export default function LandingPage({ onNav }) {
       <TopBar />
       <SiteNav onNav={onNav} onBook={onBook} mode="landing" />
       <JHero onBook={onBook} />
-      <JTrackBand />
+      <JTrackBand onNav={onNav} />
       <JAbout />
       <JCommit onBook={onBook} />
       <JFeats />

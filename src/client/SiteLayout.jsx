@@ -46,6 +46,7 @@ export function SiteNav({ onNav, onBook, mode = 'landing' }) {
     { l: 'À propos', fn: () => goOrBack('jabout') },
     { l: 'Services', fn: () => goOrBack('jsvc') },
     { l: 'Tarifs',   fn: () => goOrBack('jest') },
+    { l: 'Suivi',    fn: () => onNav?.('/suivi'), active: mode === 'tracking' },
     { l: 'Contact',  fn: () => goOrBack('jfoot') },
   ];
   return (
@@ -58,8 +59,8 @@ export function SiteNav({ onNav, onBook, mode = 'landing' }) {
             Jumla Shipping
           </button>
           <div className="jnav__links">
-            {links.map(({ l, fn }) => (
-              <button key={l} className="jnav__link" onClick={fn}>{l}</button>
+            {links.map(({ l, fn, active }) => (
+              <button key={l} className={'jnav__link' + (active ? ' is-active' : '')} onClick={fn}>{l}</button>
             ))}
           </div>
           <div className="jnav__right">
