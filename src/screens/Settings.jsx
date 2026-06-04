@@ -106,8 +106,14 @@ function SectionRoutes({ onEdit, onDetail }) {
                     Transit <strong>{r.transitDays} j</strong>
                     <span style={{ color: 'var(--ink-300)', margin: '0 8px' }}>·</span>
                     Devise <strong>{r.currency}</strong>
-                    <span style={{ color: 'var(--ink-300)', margin: '0 8px' }}>·</span>
-                    {r.pricing.length} tranches tarifaires
+                    {r.fees && (
+                      <>
+                        <span style={{ color: 'var(--ink-300)', margin: '0 8px' }}>·</span>
+                        Forfait 0-3 kg : <strong>{r.fees.flatUpTo3kg} {r.currency}</strong>
+                        <span style={{ color: 'var(--ink-300)', margin: '0 8px' }}>·</span>
+                        +{r.fees.perHalfKgRate} {r.currency}/0,5 kg
+                      </>
+                    )}
                   </div>
                 </div>
               </div>
@@ -315,8 +321,7 @@ export default function SettingsScreen({ onNav }) {
 
   const nav = [
     { id: 'company',   l: 'Entreprise',           icon: I.Building },
-    { id: 'routes',    l: 'Routes',               icon: I.Route,    badge: 'Nouveau' },
-    { id: 'pricing',   l: 'Tarifs & facturation',  icon: I.Coins },
+    { id: 'routes',    l: 'Routes & tarifs',      icon: I.Route },
     { id: 'whatsapp',  l: 'WhatsApp',             icon: I.Chat },
     { id: 'auto',      l: 'Auto-notifications',   icon: I.Bell,     badge: 'Nouveau' },
     { id: 'campaigns', l: 'Cargaisons',           icon: I.Plane },
@@ -359,7 +364,6 @@ export default function SettingsScreen({ onNav }) {
         <div>
           {section === 'company'   && <SectionCompany />}
           {section === 'routes'    && <SectionRoutes onEdit={setEditRoute} onDetail={setRouteDetail} />}
-          {section === 'pricing'   && <SectionPricing />}
           {section === 'whatsapp'  && <SectionWhatsapp />}
           {section === 'auto'      && <SectionAutoNotif />}
           {section === 'campaigns' && <SectionCampaigns />}
@@ -369,7 +373,9 @@ export default function SettingsScreen({ onNav }) {
       </div>
 
       {editRoute && (
-        <Modal width={600} onClose={() => setEditRoute(null)} title={editRoute === 'new' ? 'Nouvelle route' : 'Modifier la route'}>
+        <Modal width={680} onClose={() => setEditRoute(null)} title={editRoute === 'new' ? 'Nouvelle route' : 'Modifier la route'}>
+          {/* ── Infos de base ── */}
+          <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '.08em', textTransform: 'uppercase', color: 'var(--ink-400)', marginBottom: 10 }}>Informations générales</div>
           <div className="field-row field-row--2">
             <div className="field"><label className="label">Ville départ</label><input className="input" defaultValue={editRoute?.fromCity || ''} /></div>
             <div className="field"><label className="label">Ville arrivée</label><input className="input" defaultValue={editRoute?.toCity || ''} /></div>
@@ -380,9 +386,81 @@ export default function SettingsScreen({ onNav }) {
           </div>
           <div className="field-row field-row--2">
             <div className="field"><label className="label">Transit (jours)</label><input className="input" type="number" defaultValue={editRoute?.transitDays || 14} /></div>
-            <div className="field"><label className="label">Devise</label><select className="select" defaultValue={editRoute?.currency || 'CAD'}><option>CAD</option><option>EUR</option><option>XAF</option></select></div>
+            <div className="field"><label className="label">Devise</label>
+              <select className="select" defaultValue={editRoute?.currency || 'CAD'}>
+                <option>CAD</option><option>EUR</option><option>XAF</option>
+              </select>
+            </div>
           </div>
-          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 4 }}>
+
+          {/* ── Tarification ── */}
+          <div style={{ borderTop: '1px solid var(--border-soft)', margin: '18px 0 14px', paddingTop: 18 }}>
+            <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '.08em', textTransform: 'uppercase', color: 'var(--ink-400)', marginBottom: 14 }}>Tarification</div>
+
+            <div style={{ background: 'var(--bg-soft)', border: '1px solid var(--border)', borderRadius: 8, padding: '14px 16px', marginBottom: 14 }}>
+              <div style={{ fontSize: 12.5, fontWeight: 700, color: 'var(--ink-700)', marginBottom: 10 }}>Forfait 0 – 3 kg (total affiché au client)</div>
+              <div className="field-row field-row--2" style={{ marginBottom: 0 }}>
+                <div className="field">
+                  <label className="label">Forfait total (0 – 3 kg)</label>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <input className="input mono" type="number" defaultValue={editRoute?.fees?.flatUpTo3kg ?? 65} style={{ flex: 1 }} />
+                    <span style={{ fontSize: 12, color: 'var(--ink-400)', whiteSpace: 'nowrap' }}>{editRoute?.currency || 'CAD'}</span>
+                  </div>
+                </div>
+              </div>
+              <div style={{ fontSize: 11.5, color: 'var(--ink-500)', marginTop: 10, marginBottom: 8 }}>Détail du forfait (doit totaliser le montant ci-dessus) :</div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8 }}>
+                {[
+                  { label: 'Frais de base',   key: 'base',      def: 50 },
+                  { label: 'Frais de douane', key: 'customs',   def: 5  },
+                  { label: 'Carton / manut.', key: 'carton',    def: 1  },
+                  { label: 'Formalités',      key: 'formality', def: 4  },
+                  { label: 'Service',         key: 'service',   def: 5  },
+                ].map(f => (
+                  <div key={f.key} className="field" style={{ marginBottom: 0 }}>
+                    <label className="label">{f.label}</label>
+                    <input className="input mono input--sm" type="number" defaultValue={editRoute?.fees?.[f.key] ?? f.def} />
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="field-row field-row--2">
+              <div className="field">
+                <label className="label">Taux par 0,5 kg au-delà de 3 kg</label>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <input className="input mono" type="number" defaultValue={editRoute?.fees?.perHalfKgRate ?? 9} style={{ flex: 1 }} />
+                  <span style={{ fontSize: 12, color: 'var(--ink-400)', whiteSpace: 'nowrap' }}>{editRoute?.currency || 'CAD'} / 0,5 kg</span>
+                </div>
+              </div>
+              <div className="field">
+                <label className="label">Livraison Grand Montréal</label>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <input className="input mono" type="number" defaultValue={editRoute?.fees?.montrealDelivery ?? 25} style={{ flex: 1 }} />
+                  <span style={{ fontSize: 12, color: 'var(--ink-400)', whiteSpace: 'nowrap' }}>{editRoute?.currency || 'CAD'}</span>
+                </div>
+              </div>
+            </div>
+
+            <div style={{ fontSize: 12.5, fontWeight: 700, color: 'var(--ink-700)', marginBottom: 8, marginTop: 4 }}>Prix des sacs</div>
+            <div className="field-row" style={{ gridTemplateColumns: '1fr 1fr 1fr', gap: 8 }}>
+              {[
+                { label: 'Petit sac',  key: 'smallBag',  def: 3 },
+                { label: 'Moyen sac', key: 'mediumBag', def: 5 },
+                { label: 'Grand sac', key: 'largeBag',  def: 10 },
+              ].map(s => (
+                <div key={s.key} className="field" style={{ marginBottom: 0 }}>
+                  <label className="label">{s.label}</label>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <input className="input mono" type="number" defaultValue={editRoute?.fees?.addons?.[s.key] ?? s.def} style={{ flex: 1 }} />
+                    <span style={{ fontSize: 12, color: 'var(--ink-400)' }}>{editRoute?.currency || 'CAD'}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 8 }}>
             <button className="btn btn--ghost" onClick={() => setEditRoute(null)}>Annuler</button>
             <button className="btn btn--brand" onClick={() => setEditRoute(null)}><I.Check />Enregistrer</button>
           </div>
@@ -415,19 +493,39 @@ export default function SettingsScreen({ onNav }) {
                 </div>
               ))}
             </div>
-            <div className="section-title">Grille tarifaire</div>
-            <table className="tbl tbl--compact">
-              <thead><tr><th style={{ borderRadius: 0 }}>De</th><th>À</th><th style={{ textAlign: 'right' }}>Prix/kg</th></tr></thead>
-              <tbody>
-                {routeDetail.pricing.map((p, i) => (
-                  <tr key={i}>
-                    <td className="mono">{p.from} kg</td>
-                    <td className="mono">{p.to ? p.to + ' kg' : '∞'}</td>
-                    <td style={{ textAlign: 'right' }}><span className="mono" style={{ fontWeight: 700 }}>{p.rate}</span> {routeDetail.currency}</td>
-                  </tr>
+            <div className="section-title">Tarification</div>
+            {routeDetail.fees ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid var(--border-soft)', fontSize: 13 }}>
+                  <span style={{ fontWeight: 600 }}>Forfait 0 – 3 kg</span>
+                  <span className="mono" style={{ fontWeight: 700 }}>{routeDetail.fees.flatUpTo3kg} {routeDetail.currency}</span>
+                </div>
+                {[
+                  ['Frais de base', routeDetail.fees.base],
+                  ['Frais de douane', routeDetail.fees.customs],
+                  ['Carton / manutention', routeDetail.fees.carton],
+                  ['Formalités', routeDetail.fees.formality],
+                  ['Service', routeDetail.fees.service],
+                ].map(([k, v]) => (
+                  <div key={k} style={{ display: 'flex', justifyContent: 'space-between', padding: '5px 0 5px 14px', borderBottom: '1px solid var(--border-soft)', fontSize: 12, color: 'var(--ink-500)' }}>
+                    <span>{k}</span><span>{v} {routeDetail.currency}</span>
+                  </div>
                 ))}
-              </tbody>
-            </table>
+                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid var(--border-soft)', fontSize: 13 }}>
+                  <span style={{ fontWeight: 600 }}>Au-delà de 3 kg (par 0,5 kg)</span>
+                  <span className="mono" style={{ fontWeight: 700 }}>+{routeDetail.fees.perHalfKgRate} {routeDetail.currency}</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid var(--border-soft)', fontSize: 13 }}>
+                  <span style={{ fontWeight: 600 }}>Livraison Grand Montréal</span>
+                  <span className="mono" style={{ fontWeight: 700 }}>{routeDetail.fees.montrealDelivery} {routeDetail.currency}</span>
+                </div>
+                <div style={{ padding: '8px 0', fontSize: 12, color: 'var(--ink-500)' }}>
+                  Sacs : petit {routeDetail.fees.addons.smallBag} · moyen {routeDetail.fees.addons.mediumBag} · grand {routeDetail.fees.addons.largeBag} {routeDetail.currency}
+                </div>
+              </div>
+            ) : (
+              <p style={{ fontSize: 12, color: 'var(--ink-400)' }}>Aucune tarification configurée.</p>
+            )}
           </div>
         </Drawer>
       )}

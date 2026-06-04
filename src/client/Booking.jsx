@@ -45,7 +45,6 @@ const DEPARTURES = {
   ],
 };
 
-// ── Cities by delivery zone ──
 const CITIES = [
   { label: 'Montréal',              zone: 'montreal' },
   { label: 'Laval',                 zone: 'montreal' },
@@ -85,10 +84,8 @@ function roundUpToHalfKg(kg) {
 }
 
 function calcPrice(kg, fees, addons, delivery, cityZone) {
-  const rawKg = parseFloat(kg) || 0;
-  if (rawKg <= 0) return null;
-
-  const billedKg = rawKg <= 3 ? rawKg : roundUpToHalfKg(rawKg);
+  if (kg <= 0) return null;
+  const billedKg = kg <= 3 ? kg : roundUpToHalfKg(kg);
   const surplusKg = billedKg > 3 ? billedKg - 3 : 0;
   const surplusIncrements = surplusKg / 0.5;
   const shipping = fees.flatUpTo3kg + surplusIncrements * fees.perHalfKgRate;
@@ -103,7 +100,7 @@ function calcPrice(kg, fees, addons, delivery, cityZone) {
   const deliveryFee        = isMontrealDelivery ? fees.montrealDelivery : 0;
 
   return {
-    rawKg, billedKg, surplusKg, surplusIncrements,
+    rawKg: kg, billedKg, surplusKg, surplusIncrements,
     perHalfKgRate: fees.perHalfKgRate,
     breakdown: { base: fees.base, customs: fees.customs, carton: fees.carton, formality: fees.formality, service: fees.service },
     shipping, addonSmall, addonMedium, addonLarge, addonTotal,
@@ -113,9 +110,9 @@ function calcPrice(kg, fees, addons, delivery, cityZone) {
 }
 
 // ── Shared atoms ──
-function Field({ label, children, full }) {
+function Field({ label, children }) {
   return (
-    <div className={`co-field${full ? ' co-field--full' : ''}`}>
+    <div className="co-field">
       <label className="co-label">{label}</label>
       {children}
     </div>
@@ -136,8 +133,8 @@ function Stepper({ value, onChange, min = 0 }) {
 }
 
 // ── Right panel ──
-function Summary({ route, departure, price, form, step, isDone }) {
-  const city = CITIES.find(c => c.label === form.recipCity);
+function Summary({ route, departure, totalKg, price, form, step, isDone }) {
+  const city     = CITIES.find(c => c.label === form.recipCity);
   const cityZone = city?.zone || 'montreal';
 
   return (
@@ -152,11 +149,7 @@ function Summary({ route, departure, price, form, step, isDone }) {
         <div className={`co-summary__row${departure ? '' : ' co-summary__row--muted'}`}>
           <span>Départ</span><span>{departure?.label ?? 'Non sélectionné'}</span>
         </div>
-        {route && (
-          <div className="co-summary__row co-summary__row--muted">
-            <span>Transit estimé</span><span>~{route.transit} jours</span>
-          </div>
-        )}
+        {route && <div className="co-summary__row co-summary__row--muted"><span>Transit estimé</span><span>~{route.transit} jours</span></div>}
       </div>
 
       {step >= 1 && (
@@ -168,21 +161,11 @@ function Summary({ route, departure, price, form, step, isDone }) {
                 <span>Poids{price.billedKg !== price.rawKg ? ' (facturé)' : ''}</span>
                 <span>{price.billedKg} kg</span>
               </div>
-              {price.addonTotal > 0 && (
-                <div className="co-summary__row">
-                  <span>Sacs</span>
-                  <span>+{price.addonTotal} {route.currency}</span>
-                </div>
-              )}
-              <div className="co-summary__row">
-                <span>Frais d'envoi</span>
-                <span>{price.shipping.toFixed(0)} {route.currency}</span>
-              </div>
+              {price.addonTotal > 0 && <div className="co-summary__row"><span>Sacs</span><span>+{price.addonTotal} {route.currency}</span></div>}
+              <div className="co-summary__row"><span>Frais d'envoi</span><span>{price.shipping.toFixed(0)} {route.currency}</span></div>
             </>
           ) : (
-            <div className="co-summary__row co-summary__row--muted">
-              <span>Poids non renseigné</span><span>—</span>
-            </div>
+            <div className="co-summary__row co-summary__row--muted"><span>Aucun article renseigné</span><span>—</span></div>
           )}
         </div>
       )}
@@ -193,14 +176,9 @@ function Summary({ route, departure, price, form, step, isDone }) {
           {form.delivery === 'pickup' ? (
             <div className="co-summary__row"><span>Retrait entrepôt</span><span>Gratuit</span></div>
           ) : cityZone === 'montreal' ? (
-            <div className="co-summary__row">
-              <span>Domicile — Montréal</span>
-              <span>{route?.fees.montrealDelivery} {route?.currency}</span>
-            </div>
+            <div className="co-summary__row"><span>Domicile — Montréal</span><span>{route?.fees.montrealDelivery} {route?.currency}</span></div>
           ) : (
-            <div className="co-summary__row co-summary__row--muted">
-              <span>Livraison hors région</span><span>À évaluer</span>
-            </div>
+            <div className="co-summary__row co-summary__row--muted"><span>Livraison hors région</span><span>À évaluer</span></div>
           )}
         </div>
       )}
@@ -221,20 +199,24 @@ export default function BookingScreen({ onNav }) {
   const [form, setForm] = useState({
     route: 'dla-yul',
     departure: '',
-    weight: '',
     addons: { smallBag: 0, mediumBag: 0, largeBag: 0 },
-    contents: '',
     senderName: '', senderPhone: '', senderEmail: '',
     recipName: '', recipPhone: '', recipCity: 'Montréal',
     delivery: 'pickup',
     address: '',
     payMethod: 'card',
   });
+  const [items, setItems] = useState([
+    { id: 1, desc: '', paquets: 1, pieces: 1, kg: '' },
+  ]);
   const [showBreakdown, setShowBreakdown] = useState(false);
   const [createAccount, setCreateAccount] = useState(false);
 
-  const upd = (k, v) => setForm(f => ({ ...f, [k]: v }));
+  const upd      = (k, v) => setForm(f => ({ ...f, [k]: v }));
   const updAddon = (k, v) => setForm(f => ({ ...f, addons: { ...f.addons, [k]: v } }));
+  const addItem    = () => setItems(is => [...is, { id: Date.now(), desc: '', paquets: 1, pieces: 1, kg: '' }]);
+  const removeItem = id => setItems(is => is.filter(i => i.id !== id));
+  const updItem    = (id, k, v) => setItems(is => is.map(i => i.id === id ? { ...i, [k]: v } : i));
 
   const route     = ROUTES_DATA.find(r => r.id === form.route);
   const departure = DEPARTURES[form.route]?.find(d => d.id === form.departure);
@@ -243,11 +225,12 @@ export default function BookingScreen({ onNav }) {
   const city     = CITIES.find(c => c.label === form.recipCity);
   const cityZone = city?.zone || 'montreal';
 
-  const price = route ? calcPrice(form.weight, route.fees, form.addons, form.delivery, cityZone) : null;
+  const totalKg = items.reduce((sum, i) => sum + (parseFloat(i.kg) || 0), 0);
+  const price   = route && totalKg > 0 ? calcPrice(totalKg, route.fees, form.addons, form.delivery, cityZone) : null;
 
   const canNext = () => {
     if (step === 0) return !!form.departure;
-    if (step === 1) return parseFloat(form.weight) > 0;
+    if (step === 1) return totalKg > 0;
     if (step === 2) return !!form.senderName && !!form.recipName;
     return true;
   };
@@ -258,8 +241,7 @@ export default function BookingScreen({ onNav }) {
   const montréalCities = CITIES.filter(c => c.zone === 'montreal');
   const otherCities    = CITIES.filter(c => c.zone === 'other');
 
-  // Stable reference code for confirmation
-  const [refCode] = useState(() => `#${Math.random().toString(36).slice(2,7).toUpperCase()}`);
+  const [refCode] = useState(() => `#${Math.random().toString(36).slice(2, 7).toUpperCase()}`);
 
   return (
     <div className="co-wrap">
@@ -297,12 +279,10 @@ export default function BookingScreen({ onNav }) {
               </p>
               {price?.isOutsideDelivery && (
                 <div style={{ background: 'var(--warn-50)', border: '1px solid var(--warn-200)', borderRadius: 'var(--radius)', padding: '14px 18px', fontSize: 13, color: 'var(--warn-700)', maxWidth: 400, textAlign: 'left', lineHeight: 1.6 }}>
-                  <strong>Livraison hors région :</strong> les frais de livraison vers <strong>{form.recipCity}</strong> seront évalués à l'arrivée à Montréal. Vous recevrez une facture et un lien de paiement par email.
+                  <strong>Livraison hors région :</strong> les frais vers <strong>{form.recipCity}</strong> seront évalués à l'arrivée à Montréal. Vous recevrez une facture et un lien de paiement par email.
                 </div>
               )}
-              <button className="co-btn co-btn--ghost" style={{ marginTop: 8 }} onClick={() => onNav?.('/')}>
-                ← Retour à l'accueil
-              </button>
+              <button className="co-btn co-btn--ghost" style={{ marginTop: 8 }} onClick={() => onNav?.('/')}>← Retour à l'accueil</button>
             </div>
           ) : (
             <>
@@ -342,9 +322,7 @@ export default function BookingScreen({ onNav }) {
                       ))}
                     </div>
                     {!form.departure && (
-                      <p style={{ fontSize: 12, color: 'var(--ink-400)', marginTop: 10 }}>
-                        Sélectionnez une date pour continuer.
-                      </p>
+                      <p style={{ fontSize: 12, color: 'var(--ink-400)', marginTop: 10 }}>Sélectionnez une date pour continuer.</p>
                     )}
                   </div>
                 </div>
@@ -353,42 +331,64 @@ export default function BookingScreen({ onNav }) {
               {/* ── Step 1 : Votre colis ── */}
               {step === 1 && (
                 <div className="co-section">
-                  <div className="co-section__title">Votre colis</div>
+                  <div className="co-section__title">Contenu du colis</div>
 
-                  {/* Weight */}
-                  <div style={{ marginBottom: 24 }}>
-                    <div className="co-label" style={{ marginBottom: 8 }}>Poids total estimé (kg)</div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap' }}>
-                      <input
-                        className="co-input"
-                        type="number" min="0.5" step="0.5"
-                        value={form.weight}
-                        onChange={e => upd('weight', e.target.value)}
-                        placeholder="ex : 8"
-                        style={{ maxWidth: 130 }}
-                      />
-                      {parseFloat(form.weight) > 3 && (
-                        <div style={{ fontSize: 12.5, color: 'var(--ink-500)' }}>
-                          → facturé <strong>{roundUpToHalfKg(parseFloat(form.weight))} kg</strong>
-                          <span style={{ color: 'var(--ink-400)', marginLeft: 4 }}>(arrondi au 0,5 kg supérieur)</span>
+                  {/* Items table */}
+                  <div style={{ marginBottom: 20 }}>
+                    <div className="co-label" style={{ marginBottom: 10 }}>Articles</div>
+                    <div className="co-table-wrap">
+                      <div className="co-table-head" style={{ gridTemplateColumns: '1fr 76px 76px 96px 38px' }}>
+                        <div>Description</div>
+                        <div>Paquets</div>
+                        <div>Pièces</div>
+                        <div>Poids (kg)</div>
+                        <div></div>
+                      </div>
+                      {items.map(item => (
+                        <div key={item.id} className="co-table-row" style={{ gridTemplateColumns: '1fr 76px 76px 96px 38px' }}>
+                          <input className="co-input" value={item.desc}
+                            onChange={e => updItem(item.id, 'desc', e.target.value)}
+                            placeholder="Ex : valise vêtements, carton ndolè…" />
+                          <input className="co-input" type="number" min="1" value={item.paquets}
+                            onChange={e => updItem(item.id, 'paquets', e.target.value)} />
+                          <input className="co-input" type="number" min="1" value={item.pieces}
+                            onChange={e => updItem(item.id, 'pieces', e.target.value)} />
+                          <input className="co-input" type="number" min="0" step="0.5" value={item.kg}
+                            onChange={e => updItem(item.id, 'kg', e.target.value)} placeholder="0" />
+                          <button className="co-table-del" disabled={items.length === 1}
+                            onClick={() => removeItem(item.id)}>×</button>
                         </div>
-                      )}
-                      {parseFloat(form.weight) > 0 && parseFloat(form.weight) <= 3 && (
-                        <div style={{ fontSize: 12.5, color: 'var(--ok-600)', fontWeight: 600 }}>
-                          ≤ 3 kg — forfait {route.fees.flatUpTo3kg} {route.currency}
-                        </div>
-                      )}
+                      ))}
                     </div>
+                    <button className="co-add-row" onClick={addItem}>+ Ajouter un article</button>
+
+                    {/* Total weight */}
+                    {totalKg > 0 && (
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 10, padding: '10px 4px 0', fontSize: 13 }}>
+                        <span style={{ color: 'var(--ink-500)' }}>Poids total :</span>
+                        <strong style={{ color: 'var(--ink-900)' }}>{totalKg} kg</strong>
+                        {totalKg > 3 && (
+                          <span style={{ color: 'var(--ink-400)', fontSize: 12 }}>
+                            → facturé {roundUpToHalfKg(totalKg)} kg (arrondi au 0,5 kg supérieur)
+                          </span>
+                        )}
+                        {totalKg <= 3 && (
+                          <span style={{ color: 'var(--ok-600)', fontSize: 12, fontWeight: 600 }}>
+                            ≤ 3 kg — forfait {route.fees.flatUpTo3kg} {route.currency}
+                          </span>
+                        )}
+                      </div>
+                    )}
                   </div>
 
                   {/* Addons */}
-                  <div style={{ marginBottom: 24 }}>
-                    <div className="co-label" style={{ marginBottom: 12 }}>Sacs (optionnel)</div>
+                  <div style={{ marginBottom: price ? 20 : 0 }}>
+                    <div className="co-label" style={{ marginBottom: 10 }}>Sacs (optionnel)</div>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                       {[
-                        { key: 'smallBag',  label: 'Petit sac',   unitPrice: route.fees.addons.smallBag },
-                        { key: 'mediumBag', label: 'Moyen sac',   unitPrice: route.fees.addons.mediumBag },
-                        { key: 'largeBag',  label: 'Grand sac',   unitPrice: route.fees.addons.largeBag },
+                        { key: 'smallBag',  label: 'Petit sac',  unitPrice: route.fees.addons.smallBag },
+                        { key: 'mediumBag', label: 'Moyen sac',  unitPrice: route.fees.addons.mediumBag },
+                        { key: 'largeBag',  label: 'Grand sac',  unitPrice: route.fees.addons.largeBag },
                       ].map(({ key, label, unitPrice }) => (
                         <div key={key} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', background: 'var(--bg-soft)', border: '1.5px solid var(--border)', borderRadius: 'var(--radius)' }}>
                           <div>
@@ -399,18 +399,6 @@ export default function BookingScreen({ onNav }) {
                         </div>
                       ))}
                     </div>
-                  </div>
-
-                  {/* Contents */}
-                  <div style={{ marginBottom: price ? 20 : 0 }}>
-                    <div className="co-label" style={{ marginBottom: 8 }}>Description du contenu (optionnel)</div>
-                    <textarea
-                      className="co-textarea"
-                      rows={3}
-                      value={form.contents}
-                      onChange={e => upd('contents', e.target.value)}
-                      placeholder="Ex : 2 valises vêtements, 1 carton ndolè surgelé, épices..."
-                    />
                   </div>
 
                   {/* Live fee preview */}
@@ -452,9 +440,9 @@ export default function BookingScreen({ onNav }) {
                               <div style={{ fontSize: 10.5, fontWeight: 700, letterSpacing: '.08em', textTransform: 'uppercase', color: 'var(--brand-500)', marginTop: 6, marginBottom: 2 }}>
                                 Sacs — {price.addonTotal} {route.currency}
                               </div>
-                              {price.addonSmall > 0 && <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: 'var(--ink-600)', paddingLeft: 10 }}><span>Petits sacs × {form.addons.smallBag}</span><span>{price.addonSmall} {route.currency}</span></div>}
+                              {price.addonSmall  > 0 && <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: 'var(--ink-600)', paddingLeft: 10 }}><span>Petits sacs × {form.addons.smallBag}</span><span>{price.addonSmall} {route.currency}</span></div>}
                               {price.addonMedium > 0 && <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: 'var(--ink-600)', paddingLeft: 10 }}><span>Moyens sacs × {form.addons.mediumBag}</span><span>{price.addonMedium} {route.currency}</span></div>}
-                              {price.addonLarge > 0 && <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: 'var(--ink-600)', paddingLeft: 10 }}><span>Grands sacs × {form.addons.largeBag}</span><span>{price.addonLarge} {route.currency}</span></div>}
+                              {price.addonLarge  > 0 && <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: 'var(--ink-600)', paddingLeft: 10 }}><span>Grands sacs × {form.addons.largeBag}</span><span>{price.addonLarge} {route.currency}</span></div>}
                             </>
                           )}
                         </div>
@@ -504,7 +492,6 @@ export default function BookingScreen({ onNav }) {
                     </div>
                   </div>
 
-                  {/* Delivery type */}
                   <div style={{ marginTop: 22 }}>
                     <div className="co-label" style={{ marginBottom: 10 }}>Mode de livraison</div>
                     <div className="co-opts co-opts--2">
@@ -529,7 +516,6 @@ export default function BookingScreen({ onNav }) {
                     </div>
                   </div>
 
-                  {/* Address if home + Montreal */}
                   {form.delivery === 'home' && cityZone === 'montreal' && (
                     <div className="co-field" style={{ marginTop: 14 }}>
                       <label className="co-label">Adresse de livraison</label>
@@ -537,7 +523,6 @@ export default function BookingScreen({ onNav }) {
                     </div>
                   )}
 
-                  {/* Outside Montreal warning */}
                   {form.delivery === 'home' && cityZone === 'other' && (
                     <div style={{ marginTop: 12, background: 'var(--warn-50)', border: '1px solid var(--warn-200)', borderRadius: 'var(--radius)', padding: '12px 16px', fontSize: 13, color: 'var(--warn-700)', lineHeight: 1.6 }}>
                       ℹ️ Les frais de livraison vers <strong>{form.recipCity}</strong> seront évalués à l'arrivée à l'entrepôt de Montréal. Vous recevrez une facture et un lien de paiement par email.
@@ -559,7 +544,6 @@ export default function BookingScreen({ onNav }) {
                 <div className="co-section">
                   <div className="co-section__title">Paiement</div>
 
-                  {/* Invoice */}
                   <div style={{ border: '1px solid var(--border)', borderRadius: 'var(--radius)', overflow: 'hidden', marginBottom: 24 }}>
                     <div style={{ padding: '10px 16px', background: 'var(--ink-900)', color: 'white', fontSize: 11, fontWeight: 700, letterSpacing: '.08em', textTransform: 'uppercase' }}>
                       Détail de la facture
@@ -573,11 +557,11 @@ export default function BookingScreen({ onNav }) {
                           <span>{price.shipping.toFixed(0)} {route.currency}</span>
                         </div>
                         {[
-                          ['Frais de base',             price.breakdown.base],
-                          ['Frais de douane',            price.breakdown.customs],
-                          ['Carton / manutention',       price.breakdown.carton],
-                          ["Formalités d'expédition",   price.breakdown.formality],
-                          ['Frais de service',           price.breakdown.service],
+                          ['Frais de base',           price.breakdown.base],
+                          ['Frais de douane',          price.breakdown.customs],
+                          ['Carton / manutention',     price.breakdown.carton],
+                          ["Formalités d'expédition", price.breakdown.formality],
+                          ['Frais de service',         price.breakdown.service],
                         ].map(([k, v]) => (
                           <div key={k} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: 'var(--ink-500)', paddingLeft: 14, marginBottom: 2 }}>
                             <span>{k}</span><span>{v} {route.currency}</span>
@@ -627,14 +611,12 @@ export default function BookingScreen({ onNav }) {
                       </div>
                     </div>
 
-                    {/* Total */}
                     <div style={{ padding: '14px 16px', borderTop: '2px solid var(--ink-900)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       <span style={{ fontSize: 13, fontWeight: 800, color: 'var(--ink-700)' }}>Total à payer maintenant</span>
                       <span style={{ fontSize: 22, fontWeight: 800, color: 'var(--ink-900)' }}>{price.total.toFixed(0)} {route.currency}</span>
                     </div>
                   </div>
 
-                  {/* Payment method */}
                   <div className="co-label" style={{ marginBottom: 10 }}>Mode de paiement</div>
                   <div className="co-opts">
                     {[
@@ -674,11 +656,11 @@ export default function BookingScreen({ onNav }) {
           )}
         </div>
 
-        {/* Right panel */}
         <aside className="co-aside">
           <Summary
             route={route}
             departure={departure}
+            totalKg={totalKg}
             price={price}
             form={form}
             step={step}
