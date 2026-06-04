@@ -257,7 +257,7 @@ export default function BookingScreen({ onNav }) {
     senderName: '', senderPhone: '', senderEmail: '',
     recipName: '', recipPhone: '', recipCity: 'Montréal',
     delivery: 'pickup',
-    address: '',
+    recipAddress: '', recipApt: '', recipProvince: 'QC', recipPostal: '',
     payMethod: 'card',
   });
   const [items, setItems] = useState([
@@ -570,16 +570,50 @@ export default function BookingScreen({ onNav }) {
                     </div>
                   </div>
 
-                  {form.delivery === 'home' && cityZone === 'montreal' && (
-                    <div className="co-field" style={{ marginTop: 14 }}>
-                      <label className="co-label">Adresse de livraison</label>
-                      <input className="co-input" value={form.address} onChange={e => upd('address', e.target.value)} placeholder="123 rue Sainte-Catherine, Montréal, QC H3H 1A1" />
-                    </div>
-                  )}
-
-                  {form.delivery === 'home' && cityZone === 'other' && (
-                    <div style={{ marginTop: 12, background: 'var(--warn-50)', border: '1px solid var(--warn-200)', borderRadius: 'var(--radius)', padding: '12px 16px', fontSize: 13, color: 'var(--warn-700)', lineHeight: 1.6 }}>
-                      ℹ️ Les frais de livraison vers <strong>{form.recipCity}</strong> seront évalués à l'arrivée à l'entrepôt de Montréal. Vous recevrez une facture et un lien de paiement par email.
+                  {/* Full shipping address — shown when home delivery */}
+                  {form.delivery === 'home' && (
+                    <div style={{ marginTop: 18, padding: '16px 18px', background: 'var(--bg-soft)', border: '1.5px solid var(--border)', borderRadius: 'var(--radius)' }}>
+                      <div className="co-label" style={{ marginBottom: 14 }}>Adresse de livraison</div>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                        <div className="co-field" style={{ marginBottom: 0 }}>
+                          <label className="co-label">Adresse (numéro et rue)</label>
+                          <input className="co-input" value={form.recipAddress} onChange={e => upd('recipAddress', e.target.value)} placeholder="123 rue Sainte-Catherine" />
+                        </div>
+                        <div className="co-field" style={{ marginBottom: 0 }}>
+                          <label className="co-label">Appartement, bureau, suite (optionnel)</label>
+                          <input className="co-input" value={form.recipApt} onChange={e => upd('recipApt', e.target.value)} placeholder="Apt 4B" />
+                        </div>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                          <div className="co-field" style={{ marginBottom: 0 }}>
+                            <label className="co-label">Ville</label>
+                            <div className="co-input" style={{ background: 'var(--ink-50)', color: 'var(--ink-500)', cursor: 'default', display: 'flex', alignItems: 'center' }}>
+                              {form.recipCity}
+                            </div>
+                          </div>
+                          <div className="co-field" style={{ marginBottom: 0 }}>
+                            <label className="co-label">Province / Territoire</label>
+                            <select className="co-select" value={form.recipProvince} onChange={e => upd('recipProvince', e.target.value)}>
+                              <option value="QC">Québec</option>
+                              <option value="ON">Ontario</option>
+                              <option value="BC">Colombie-Britannique</option>
+                              <option value="AB">Alberta</option>
+                              <option value="MB">Manitoba</option>
+                              <option value="SK">Saskatchewan</option>
+                              <option value="NS">Nouvelle-Écosse</option>
+                              <option value="NB">Nouveau-Brunswick</option>
+                            </select>
+                          </div>
+                        </div>
+                        <div className="co-field" style={{ marginBottom: 0 }}>
+                          <label className="co-label">Code postal</label>
+                          <input className="co-input" value={form.recipPostal} onChange={e => upd('recipPostal', e.target.value)} placeholder="H3H 1A1" style={{ maxWidth: 160 }} />
+                        </div>
+                      </div>
+                      {cityZone === 'other' && (
+                        <div style={{ marginTop: 12, background: 'var(--warn-50)', border: '1px solid var(--warn-200)', borderRadius: 'var(--radius)', padding: '10px 14px', fontSize: 12.5, color: 'var(--warn-700)', lineHeight: 1.6 }}>
+                          ℹ️ Les frais vers <strong>{form.recipCity}</strong> seront évalués à l'arrivée à Montréal. Vous recevrez une facture et un lien de paiement par email.
+                        </div>
+                      )}
                     </div>
                   )}
 

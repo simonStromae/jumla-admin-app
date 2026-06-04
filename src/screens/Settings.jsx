@@ -314,6 +314,158 @@ function SectionAutoNotif() {
   );
 }
 
+const PROVINCES = [
+  { v: 'QC', l: 'Québec' }, { v: 'ON', l: 'Ontario' }, { v: 'BC', l: 'Colombie-Britannique' },
+  { v: 'AB', l: 'Alberta' }, { v: 'MB', l: 'Manitoba' }, { v: 'SK', l: 'Saskatchewan' },
+];
+
+function RouteEditModal({ editRoute, onClose }) {
+  const isNew = editRoute === 'new';
+  const r = isNew ? null : editRoute;
+  const currency = r?.currency || 'CAD';
+
+  const [feeRows, setFeeRows] = useState(() => r?.fees ? [
+    { id: 1, label: 'Frais de base',           amount: r.fees.base      },
+    { id: 2, label: 'Frais de douane',          amount: r.fees.customs   },
+    { id: 3, label: 'Carton / manutention',     amount: r.fees.carton    },
+    { id: 4, label: "Formalités d'expédition",  amount: r.fees.formality },
+    { id: 5, label: 'Frais de service',         amount: r.fees.service   },
+  ] : [
+    { id: 1, label: 'Frais de base',           amount: 50 },
+    { id: 2, label: 'Frais de douane',          amount: 5  },
+    { id: 3, label: 'Carton / manutention',     amount: 1  },
+    { id: 4, label: "Formalités d'expédition",  amount: 4  },
+    { id: 5, label: 'Frais de service',         amount: 5  },
+  ]);
+
+  const totalFlat = feeRows.reduce((s, row) => s + (parseFloat(row.amount) || 0), 0);
+  const addRow    = () => setFeeRows(rs => [...rs, { id: Date.now(), label: '', amount: 0 }]);
+  const delRow    = id => setFeeRows(rs => rs.filter(row => row.id !== id));
+  const updRow    = (id, k, v) => setFeeRows(rs => rs.map(row => row.id === id ? { ...row, [k]: v } : row));
+
+  return (
+    <Modal width={700} onClose={onClose} title={isNew ? 'Nouvelle route' : `Modifier la route — ${r?.fromCity ?? ''} → ${r?.toCity ?? ''}`}>
+      {/* ── Infos générales ── */}
+      <div style={{ fontSize: 10.5, fontWeight: 700, letterSpacing: '.08em', textTransform: 'uppercase', color: 'var(--ink-400)', marginBottom: 10 }}>Informations générales</div>
+      <div className="field-row field-row--2">
+        <div className="field"><label className="label">Ville départ</label><input className="input" defaultValue={r?.fromCity || ''} /></div>
+        <div className="field"><label className="label">Ville arrivée</label><input className="input" defaultValue={r?.toCity || ''} /></div>
+      </div>
+      <div className="field-row field-row--2">
+        <div className="field"><label className="label">Code IATA départ</label><input className="input mono" defaultValue={r?.fromIATA || ''} placeholder="DLA" /></div>
+        <div className="field"><label className="label">Code IATA arrivée</label><input className="input mono" defaultValue={r?.toIATA || ''} placeholder="YUL" /></div>
+      </div>
+      <div className="field-row field-row--2">
+        <div className="field"><label className="label">Transit (jours)</label><input className="input" type="number" defaultValue={r?.transitDays || 14} /></div>
+        <div className="field"><label className="label">Devise</label>
+          <select className="select" defaultValue={r?.currency || 'CAD'}><option>CAD</option><option>EUR</option><option>XAF</option></select>
+        </div>
+      </div>
+
+      {/* ── Tarification ── */}
+      <div style={{ borderTop: '1px solid var(--border-soft)', margin: '18px 0 14px', paddingTop: 18 }}>
+        <div style={{ fontSize: 10.5, fontWeight: 700, letterSpacing: '.08em', textTransform: 'uppercase', color: 'var(--ink-400)', marginBottom: 14 }}>Tarification</div>
+
+        {/* Fee breakdown table */}
+        <div style={{ marginBottom: 16 }}>
+          <div style={{ fontSize: 12.5, fontWeight: 700, color: 'var(--ink-700)', marginBottom: 8 }}>Composition du forfait 0 – 3 kg</div>
+          <table className="tbl" style={{ marginBottom: 0 }}>
+            <thead>
+              <tr>
+                <th style={{ borderRadius: 0 }}>Libellé du frais</th>
+                <th style={{ textAlign: 'right', width: 130 }}>Montant ({currency})</th>
+                <th style={{ width: 40, borderRadius: 0 }}></th>
+              </tr>
+            </thead>
+            <tbody>
+              {feeRows.map(row => (
+                <tr key={row.id}>
+                  <td>
+                    <input
+                      className="input input--sm"
+                      value={row.label}
+                      onChange={e => updRow(row.id, 'label', e.target.value)}
+                      placeholder="Libellé…"
+                      style={{ border: 'none', background: 'transparent', width: '100%', padding: '2px 0' }}
+                    />
+                  </td>
+                  <td style={{ textAlign: 'right' }}>
+                    <input
+                      className="input input--sm mono"
+                      type="number"
+                      value={row.amount}
+                      onChange={e => updRow(row.id, 'amount', e.target.value)}
+                      style={{ width: 80, textAlign: 'right' }}
+                    />
+                  </td>
+                  <td>
+                    <button
+                      className="icon-btn"
+                      onClick={() => delRow(row.id)}
+                      disabled={feeRows.length === 1}
+                      style={{ color: feeRows.length === 1 ? 'var(--ink-200)' : 'var(--bad-400)' }}
+                    ><I.Trash /></button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 12px', background: 'var(--bg-soft)', border: '1px solid var(--border)', borderTop: 'none' }}>
+            <button className="btn btn--ghost btn--sm" onClick={addRow}><I.Plus />Ajouter une ligne</button>
+            <div style={{ fontSize: 13, fontWeight: 700 }}>
+              Total forfait :&nbsp;
+              <span className="mono" style={{ color: totalFlat > 0 ? 'var(--ok-600)' : 'var(--ink-400)' }}>
+                {totalFlat} {currency}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* Surplus + delivery */}
+        <div className="field-row field-row--2">
+          <div className="field">
+            <label className="label">Taux par 0,5 kg au-delà de 3 kg</label>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <input className="input mono" type="number" defaultValue={r?.fees?.perHalfKgRate ?? 9} style={{ flex: 1 }} />
+              <span style={{ fontSize: 12, color: 'var(--ink-400)', whiteSpace: 'nowrap' }}>{currency} / 0,5 kg</span>
+            </div>
+          </div>
+          <div className="field">
+            <label className="label">Livraison Grand Montréal</label>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <input className="input mono" type="number" defaultValue={r?.fees?.montrealDelivery ?? 25} style={{ flex: 1 }} />
+              <span style={{ fontSize: 12, color: 'var(--ink-400)', whiteSpace: 'nowrap' }}>{currency}</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Bag prices */}
+        <div style={{ fontSize: 12.5, fontWeight: 700, color: 'var(--ink-700)', marginBottom: 8 }}>Prix des sacs</div>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8 }}>
+          {[
+            { label: 'Petit sac',  key: 'smallBag',  def: 3  },
+            { label: 'Moyen sac', key: 'mediumBag', def: 5  },
+            { label: 'Grand sac', key: 'largeBag',  def: 10 },
+          ].map(s => (
+            <div key={s.key} className="field" style={{ marginBottom: 0 }}>
+              <label className="label">{s.label}</label>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <input className="input mono" type="number" defaultValue={r?.fees?.addons?.[s.key] ?? s.def} style={{ flex: 1 }} />
+                <span style={{ fontSize: 12, color: 'var(--ink-400)' }}>{currency}</span>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 8 }}>
+        <button className="btn btn--ghost" onClick={onClose}>Annuler</button>
+        <button className="btn btn--brand" onClick={onClose}><I.Check />Enregistrer</button>
+      </div>
+    </Modal>
+  );
+}
+
 export default function SettingsScreen({ onNav }) {
   const [section, setSection] = useState('company');
   const [editRoute, setEditRoute] = useState(null);
@@ -372,100 +524,7 @@ export default function SettingsScreen({ onNav }) {
         </div>
       </div>
 
-      {editRoute && (
-        <Modal width={680} onClose={() => setEditRoute(null)} title={editRoute === 'new' ? 'Nouvelle route' : 'Modifier la route'}>
-          {/* ── Infos de base ── */}
-          <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '.08em', textTransform: 'uppercase', color: 'var(--ink-400)', marginBottom: 10 }}>Informations générales</div>
-          <div className="field-row field-row--2">
-            <div className="field"><label className="label">Ville départ</label><input className="input" defaultValue={editRoute?.fromCity || ''} /></div>
-            <div className="field"><label className="label">Ville arrivée</label><input className="input" defaultValue={editRoute?.toCity || ''} /></div>
-          </div>
-          <div className="field-row field-row--2">
-            <div className="field"><label className="label">Code IATA départ</label><input className="input mono" defaultValue={editRoute?.fromIATA || ''} placeholder="DLA" /></div>
-            <div className="field"><label className="label">Code IATA arrivée</label><input className="input mono" defaultValue={editRoute?.toIATA || ''} placeholder="YUL" /></div>
-          </div>
-          <div className="field-row field-row--2">
-            <div className="field"><label className="label">Transit (jours)</label><input className="input" type="number" defaultValue={editRoute?.transitDays || 14} /></div>
-            <div className="field"><label className="label">Devise</label>
-              <select className="select" defaultValue={editRoute?.currency || 'CAD'}>
-                <option>CAD</option><option>EUR</option><option>XAF</option>
-              </select>
-            </div>
-          </div>
-
-          {/* ── Tarification ── */}
-          <div style={{ borderTop: '1px solid var(--border-soft)', margin: '18px 0 14px', paddingTop: 18 }}>
-            <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '.08em', textTransform: 'uppercase', color: 'var(--ink-400)', marginBottom: 14 }}>Tarification</div>
-
-            <div style={{ background: 'var(--bg-soft)', border: '1px solid var(--border)', borderRadius: 8, padding: '14px 16px', marginBottom: 14 }}>
-              <div style={{ fontSize: 12.5, fontWeight: 700, color: 'var(--ink-700)', marginBottom: 10 }}>Forfait 0 – 3 kg (total affiché au client)</div>
-              <div className="field-row field-row--2" style={{ marginBottom: 0 }}>
-                <div className="field">
-                  <label className="label">Forfait total (0 – 3 kg)</label>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <input className="input mono" type="number" defaultValue={editRoute?.fees?.flatUpTo3kg ?? 65} style={{ flex: 1 }} />
-                    <span style={{ fontSize: 12, color: 'var(--ink-400)', whiteSpace: 'nowrap' }}>{editRoute?.currency || 'CAD'}</span>
-                  </div>
-                </div>
-              </div>
-              <div style={{ fontSize: 11.5, color: 'var(--ink-500)', marginTop: 10, marginBottom: 8 }}>Détail du forfait (doit totaliser le montant ci-dessus) :</div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8 }}>
-                {[
-                  { label: 'Frais de base',   key: 'base',      def: 50 },
-                  { label: 'Frais de douane', key: 'customs',   def: 5  },
-                  { label: 'Carton / manut.', key: 'carton',    def: 1  },
-                  { label: 'Formalités',      key: 'formality', def: 4  },
-                  { label: 'Service',         key: 'service',   def: 5  },
-                ].map(f => (
-                  <div key={f.key} className="field" style={{ marginBottom: 0 }}>
-                    <label className="label">{f.label}</label>
-                    <input className="input mono input--sm" type="number" defaultValue={editRoute?.fees?.[f.key] ?? f.def} />
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div className="field-row field-row--2">
-              <div className="field">
-                <label className="label">Taux par 0,5 kg au-delà de 3 kg</label>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <input className="input mono" type="number" defaultValue={editRoute?.fees?.perHalfKgRate ?? 9} style={{ flex: 1 }} />
-                  <span style={{ fontSize: 12, color: 'var(--ink-400)', whiteSpace: 'nowrap' }}>{editRoute?.currency || 'CAD'} / 0,5 kg</span>
-                </div>
-              </div>
-              <div className="field">
-                <label className="label">Livraison Grand Montréal</label>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <input className="input mono" type="number" defaultValue={editRoute?.fees?.montrealDelivery ?? 25} style={{ flex: 1 }} />
-                  <span style={{ fontSize: 12, color: 'var(--ink-400)', whiteSpace: 'nowrap' }}>{editRoute?.currency || 'CAD'}</span>
-                </div>
-              </div>
-            </div>
-
-            <div style={{ fontSize: 12.5, fontWeight: 700, color: 'var(--ink-700)', marginBottom: 8, marginTop: 4 }}>Prix des sacs</div>
-            <div className="field-row" style={{ gridTemplateColumns: '1fr 1fr 1fr', gap: 8 }}>
-              {[
-                { label: 'Petit sac',  key: 'smallBag',  def: 3 },
-                { label: 'Moyen sac', key: 'mediumBag', def: 5 },
-                { label: 'Grand sac', key: 'largeBag',  def: 10 },
-              ].map(s => (
-                <div key={s.key} className="field" style={{ marginBottom: 0 }}>
-                  <label className="label">{s.label}</label>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                    <input className="input mono" type="number" defaultValue={editRoute?.fees?.addons?.[s.key] ?? s.def} style={{ flex: 1 }} />
-                    <span style={{ fontSize: 12, color: 'var(--ink-400)' }}>{editRoute?.currency || 'CAD'}</span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 8 }}>
-            <button className="btn btn--ghost" onClick={() => setEditRoute(null)}>Annuler</button>
-            <button className="btn btn--brand" onClick={() => setEditRoute(null)}><I.Check />Enregistrer</button>
-          </div>
-        </Modal>
-      )}
+      {editRoute && <RouteEditModal editRoute={editRoute} onClose={() => setEditRoute(null)} />}
 
       {routeDetail && (
         <Drawer onClose={() => setRouteDetail(null)}>

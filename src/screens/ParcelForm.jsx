@@ -18,6 +18,9 @@ export default function ParcelFormPage({ mode = 'create', parcel, campaign, onNa
     recipPhone: parcel?.recipPhone || '',
     recipCity: parcel?.recipCity || 'Montréal',
     recipAddress: parcel?.recipAddress || '',
+    recipApt: parcel?.recipApt || '',
+    recipProvince: parcel?.recipProvince || 'QC',
+    recipPostal: parcel?.recipPostal || '',
     items: parcel?.items || [
       { id: 1, name: '', packs: 1, pieces: 1, weight: 0, category: 'standard', note: '' },
     ],
@@ -453,21 +456,46 @@ function PartyField({ kind, en, iconColor, color, data, prefix, cityLabel, upd, 
 
       {withAddress && (
         <>
-          <div className="field-row field-row--2" style={{ marginBottom: 14 }}>
-            <div className="field" style={{ marginBottom: 0 }}>
-              <label className="label">Ville</label>
-              <select className="select" value={data.recipCity} onChange={e => upd('recipCity', e.target.value)}>
-                {['Montréal', 'Laval', 'Longueuil', 'Brossard', 'Gatineau', 'Québec', 'Toronto'].map(c => <option key={c}>{c}</option>)}
-              </select>
+          <div style={{ background: 'var(--bg-soft)', border: '1px solid var(--border-soft)', borderRadius: 8, padding: '12px 14px', marginBottom: 0 }}>
+            <div style={{ fontSize: 10.5, fontWeight: 700, letterSpacing: '.08em', textTransform: 'uppercase', color: 'var(--ink-400)', marginBottom: 10 }}>Adresse de livraison</div>
+            <div className="field" style={{ marginBottom: 10 }}>
+              <label className="label">Adresse (numéro et rue)</label>
+              <input className="input" value={data.recipAddress} onChange={e => upd('recipAddress', e.target.value)} placeholder="123 rue Sainte-Catherine" />
+            </div>
+            <div className="field" style={{ marginBottom: 10 }}>
+              <label className="label">Appartement, bureau (optionnel)</label>
+              <input className="input" value={data.recipApt} onChange={e => upd('recipApt', e.target.value)} placeholder="Apt 4B" />
+            </div>
+            <div className="field-row field-row--2" style={{ marginBottom: 10 }}>
+              <div className="field" style={{ marginBottom: 0 }}>
+                <label className="label">Ville</label>
+                <select className="select" value={data.recipCity} onChange={e => upd('recipCity', e.target.value)}>
+                  <optgroup label="Grand Montréal">
+                    {['Montréal','Laval','Longueuil','Brossard','Saint-Lambert','Westmount','Outremont','Côte-Saint-Luc','LaSalle','Verdun','Lachine','Dorval','Pointe-Claire','Dollard-des-Ormeaux','Mont-Royal'].map(c => <option key={c}>{c}</option>)}
+                  </optgroup>
+                  <optgroup label="Hors région">
+                    {['Gatineau','Québec','Ottawa','Toronto','Vancouver','Calgary','Edmonton','Winnipeg'].map(c => <option key={c}>{c}</option>)}
+                  </optgroup>
+                </select>
+              </div>
+              <div className="field" style={{ marginBottom: 0 }}>
+                <label className="label">Province</label>
+                <select className="select" value={data.recipProvince} onChange={e => upd('recipProvince', e.target.value)}>
+                  <option value="QC">Québec</option>
+                  <option value="ON">Ontario</option>
+                  <option value="BC">Colombie-Britannique</option>
+                  <option value="AB">Alberta</option>
+                  <option value="MB">Manitoba</option>
+                  <option value="SK">Saskatchewan</option>
+                  <option value="NS">Nouvelle-Écosse</option>
+                  <option value="NB">Nouveau-Brunswick</option>
+                </select>
+              </div>
             </div>
             <div className="field" style={{ marginBottom: 0 }}>
-              <label className="label">Langue préférée</label>
-              <select className="select" defaultValue="fr"><option value="fr">Français</option><option value="en">English</option></select>
+              <label className="label">Code postal</label>
+              <input className="input mono" value={data.recipPostal} onChange={e => upd('recipPostal', e.target.value)} placeholder="H3H 1A1" style={{ maxWidth: 160 }} />
             </div>
-          </div>
-          <div className="field" style={{ marginBottom: 0 }}>
-            <label className="label">Adresse de livraison</label>
-            <input className="input" value={data.recipAddress} onChange={e => upd('recipAddress', e.target.value)} placeholder="N°, rue, code postal..." />
           </div>
         </>
       )}
