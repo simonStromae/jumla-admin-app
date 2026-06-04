@@ -132,15 +132,64 @@ function Stepper({ value, onChange, min = 0 }) {
   );
 }
 
+// ── Item icon by content keyword ──
+function itemIcon(desc) {
+  const d = (desc || '').toLowerCase();
+  if (d.match(/valise|sac|bag|vêt|habit|cloth/)) return '👜';
+  if (d.match(/carton|colis|box/)) return '📦';
+  if (d.match(/chaussure|sandale|shoe/)) return '👟';
+  if (d.match(/téléphone|phone|élec|laptop|ordi/)) return '📱';
+  if (d.match(/ndolè|épice|food|alim|congel/)) return '🥘';
+  if (d.match(/docu|papier|paper/)) return '📄';
+  return '📦';
+}
+
 // ── Right panel ──
-function Summary({ route, departure, totalKg, price, form, step, isDone }) {
+function Summary({ route, departure, items, totalKg, price, form, step, isDone }) {
+  const [promoCode, setPromoCode] = useState('');
   const city     = CITIES.find(c => c.label === form.recipCity);
   const cityZone = city?.zone || 'montreal';
 
+  const filledItems = items.filter(i => i.desc || parseFloat(i.kg) > 0);
+
   return (
     <div className="co-summary">
-      <div className="co-summary__head">Récapitulatif</div>
+      <div className="co-summary__head">Votre réservation</div>
 
+      {/* ── Articles du colis (like Shopify product rows) ── */}
+      {filledItems.length > 0 && (
+        <div className="co-summary__items">
+          {filledItems.map(item => (
+            <div key={item.id} className="co-summary__item">
+              <div className="co-summary__item-thumb">
+                {itemIcon(item.desc)}
+                <span className="co-summary__item-qty">{item.paquets || 1}</span>
+              </div>
+              <div className="co-summary__item-info">
+                <div className="co-summary__item-name">{item.desc || 'Article'}</div>
+                <div className="co-summary__item-sub">
+                  {item.paquets > 1 ? `${item.paquets} paquets` : '1 paquet'}
+                  {item.pieces > 1 ? ` · ${item.pieces} pièces` : ''}
+                </div>
+              </div>
+              <span className="co-summary__item-kg">{item.kg || '—'} kg</span>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* ── Code promo ── */}
+      <div className="co-summary__promo">
+        <input
+          className="co-summary__promo-input"
+          placeholder="Code promo ou bon de réduction"
+          value={promoCode}
+          onChange={e => setPromoCode(e.target.value)}
+        />
+        <button className="co-summary__promo-btn">Appliquer</button>
+      </div>
+
+      {/* ── Itinéraire ── */}
       <div className="co-summary__section">
         <div className="co-summary__label">Itinéraire</div>
         <div className={`co-summary__row${route ? '' : ' co-summary__row--muted'}`}>
@@ -152,17 +201,29 @@ function Summary({ route, departure, totalKg, price, form, step, isDone }) {
         {route && <div className="co-summary__row co-summary__row--muted"><span>Transit estimé</span><span>~{route.transit} jours</span></div>}
       </div>
 
+      {/* ── Frais ── */}
       {step >= 1 && (
         <div className="co-summary__section">
-          <div className="co-summary__label">Colis</div>
+          <div className="co-summary__label">Frais</div>
           {price ? (
             <>
               <div className="co-summary__row">
-                <span>Poids{price.billedKg !== price.rawKg ? ' (facturé)' : ''}</span>
-                <span>{price.billedKg} kg</span>
+                <span>Envoi {price.billedKg} kg{price.billedKg !== price.rawKg ? ` (déclaré ${price.rawKg} kg)` : ''}</span>
+                <span>{price.shipping.toFixed(0)} {route.currency}</span>
               </div>
               {price.addonTotal > 0 && <div className="co-summary__row"><span>Sacs</span><span>+{price.addonTotal} {route.currency}</span></div>}
-              <div className="co-summary__row"><span>Frais d'envoi</span><span>{price.shipping.toFixed(0)} {route.currency}</span></div>
+              {step >= 2 && (
+                form.delivery === 'pickup' ? (
+                  <div className="co-summary__row"><span>Livraison</span><span>Gratuit</span></div>
+                ) : cityZone === 'montreal' ? (
+                  <div className="co-summary__row"><span>Livraison domicile</span><span>+{route?.fees.montrealDelivery} {route?.currency}</span></div>
+                ) : (
+                  <div className="co-summary__row co-summary__row--muted"><span>Livraison hors région</span><span>À évaluer</span></div>
+                )
+              )}
+              {step < 2 && (
+                <div className="co-summary__row co-summary__row--muted"><span>Livraison</span><span>Calculé à l'étape suivante</span></div>
+              )}
             </>
           ) : (
             <div className="co-summary__row co-summary__row--muted"><span>Aucun article renseigné</span><span>—</span></div>
@@ -170,24 +231,17 @@ function Summary({ route, departure, totalKg, price, form, step, isDone }) {
         </div>
       )}
 
-      {step >= 2 && (
-        <div className="co-summary__section">
-          <div className="co-summary__label">Livraison</div>
-          {form.delivery === 'pickup' ? (
-            <div className="co-summary__row"><span>Retrait entrepôt</span><span>Gratuit</span></div>
-          ) : cityZone === 'montreal' ? (
-            <div className="co-summary__row"><span>Domicile — Montréal</span><span>{route?.fees.montrealDelivery} {route?.currency}</span></div>
-          ) : (
-            <div className="co-summary__row co-summary__row--muted"><span>Livraison hors région</span><span>À évaluer</span></div>
-          )}
-        </div>
-      )}
-
       <div className="co-summary__total">
-        <span className="co-summary__total-label">Total</span>
-        <span className="co-summary__total-price">
-          {price ? `${price.total.toFixed(0)} ${route.currency}` : '—'}
-        </span>
+        <div>
+          <div className="co-summary__total-label">Total</div>
+          {price && <div style={{ fontSize: 11, color: 'var(--ink-400)', marginTop: 2 }}>TVA non applicable</div>}
+        </div>
+        <div style={{ textAlign: 'right' }}>
+          {route && <div style={{ fontSize: 11, color: 'var(--ink-400)', marginBottom: 2 }}>{route.currency}</div>}
+          <span className="co-summary__total-price">
+            {price ? `${price.total.toFixed(0)}` : '—'}
+          </span>
+        </div>
       </div>
     </div>
   );
@@ -660,6 +714,7 @@ export default function BookingScreen({ onNav }) {
           <Summary
             route={route}
             departure={departure}
+            items={items}
             totalKg={totalKg}
             price={price}
             form={form}
