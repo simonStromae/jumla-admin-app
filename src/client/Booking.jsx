@@ -4,47 +4,115 @@ import { TopBar, SiteNav, SiteFooter } from './SiteLayout.jsx';
 import '@/src/styles/client-omega.css';
 import '@/src/styles/booking.css';
 
+// ── Routes with configurable fee structure ──
 const ROUTES_DATA = [
-  { id: 'dla-yul', label: 'Douala → Montréal', code: 'DLA → YUL', base: 18, currency: 'CAD', transit: 14 },
-  { id: 'yul-dla', label: 'Montréal → Douala', code: 'YUL → DLA', base: 16, currency: 'CAD', transit: 14 },
+  {
+    id: 'dla-yul', label: 'Douala → Montréal', code: 'DLA → YUL',
+    currency: 'CAD', transit: 14,
+    fees: {
+      base: 50, customs: 5, carton: 1, formality: 4, service: 5,
+      flatUpTo3kg: 65, perHalfKgRate: 9,
+      addons: { smallBag: 3, mediumBag: 5, largeBag: 10 },
+      montrealDelivery: 25,
+    },
+  },
+  {
+    id: 'los-yul', label: 'Lagos → Montréal', code: 'LOS → YUL',
+    currency: 'CAD', transit: 16,
+    fees: {
+      base: 55, customs: 6, carton: 1, formality: 4, service: 4,
+      flatUpTo3kg: 70, perHalfKgRate: 10,
+      addons: { smallBag: 3, mediumBag: 5, largeBag: 10 },
+      montrealDelivery: 25,
+    },
+  },
 ];
 
 const DEPARTURES = {
   'dla-yul': [
-    { id: 'd1', label: 'Mar 9 Juin',  spots: 12 },
-    { id: 'd2', label: 'Mar 16 Juin', spots: 8  },
-    { id: 'd3', label: 'Mar 23 Juin', spots: 15 },
-    { id: 'd4', label: 'Mar 30 Juin', spots: 3  },
-    { id: 'd5', label: 'Mar 7 Juil',  spots: 18 },
-    { id: 'd6', label: 'Mar 14 Juil', spots: 20 },
+    { id: 'd1', label: 'Mar 9 Juin',   spots: 12 },
+    { id: 'd2', label: 'Mar 16 Juin',  spots: 8  },
+    { id: 'd3', label: 'Mar 23 Juin',  spots: 15 },
+    { id: 'd4', label: 'Mar 30 Juin',  spots: 3  },
+    { id: 'd5', label: 'Mar 7 Juil',   spots: 18 },
+    { id: 'd6', label: 'Mar 14 Juil',  spots: 20 },
   ],
-  'yul-dla': [
-    { id: 'd1', label: 'Jeu 11 Juin', spots: 10 },
-    { id: 'd2', label: 'Jeu 18 Juin', spots: 5  },
-    { id: 'd3', label: 'Jeu 25 Juin', spots: 14 },
-    { id: 'd4', label: 'Jeu 2 Juil',  spots: 20 },
-    { id: 'd5', label: 'Jeu 9 Juil',  spots: 17 },
-    { id: 'd6', label: 'Jeu 16 Juil', spots: 20 },
+  'los-yul': [
+    { id: 'd1', label: 'Jeu 11 Juin',  spots: 10 },
+    { id: 'd2', label: 'Jeu 18 Juin',  spots: 5  },
+    { id: 'd3', label: 'Jeu 25 Juin',  spots: 14 },
+    { id: 'd4', label: 'Jeu 2 Juil',   spots: 20 },
   ],
 };
 
-const CATS = [
-  { id: 'clothing',    label: 'Vêtements & textiles',   icon: '👗', surcharge: 0 },
-  { id: 'food',        label: 'Épices & denrées sèches', icon: '🌿', surcharge: 2 },
-  { id: 'electronics', label: 'Électronique',            icon: '💻', surcharge: 5 },
-  { id: 'cosmetics',   label: 'Cosmétiques',             icon: '💄', surcharge: 3 },
-  { id: 'documents',   label: 'Documents',               icon: '📄', surcharge: 0 },
-  { id: 'other',       label: 'Autre',                   icon: '📦', surcharge: 1 },
+// ── Cities by delivery zone ──
+const CITIES = [
+  { label: 'Montréal',              zone: 'montreal' },
+  { label: 'Laval',                 zone: 'montreal' },
+  { label: 'Longueuil',             zone: 'montreal' },
+  { label: 'Brossard',              zone: 'montreal' },
+  { label: 'Saint-Lambert',         zone: 'montreal' },
+  { label: 'Westmount',             zone: 'montreal' },
+  { label: 'Outremont',             zone: 'montreal' },
+  { label: 'Côte-Saint-Luc',        zone: 'montreal' },
+  { label: 'LaSalle',               zone: 'montreal' },
+  { label: 'Verdun',                zone: 'montreal' },
+  { label: 'Lachine',               zone: 'montreal' },
+  { label: 'Dorval',                zone: 'montreal' },
+  { label: 'Pointe-Claire',         zone: 'montreal' },
+  { label: 'Dollard-des-Ormeaux',   zone: 'montreal' },
+  { label: 'Mont-Royal',            zone: 'montreal' },
+  { label: 'Gatineau',   zone: 'other' },
+  { label: 'Québec',     zone: 'other' },
+  { label: 'Ottawa',     zone: 'other' },
+  { label: 'Toronto',    zone: 'other' },
+  { label: 'Vancouver',  zone: 'other' },
+  { label: 'Calgary',    zone: 'other' },
+  { label: 'Edmonton',   zone: 'other' },
+  { label: 'Winnipeg',   zone: 'other' },
 ];
 
 const STEPS = [
-  { label: 'Itinéraire' },
-  { label: 'Personnes' },
-  { label: 'Colis' },
-  { label: 'Validation' },
+  { label: 'Route & Départ' },
+  { label: 'Votre colis' },
+  { label: 'Coordonnées' },
+  { label: 'Paiement' },
 ];
 
-/* ── Shared form atoms ── */
+// ── Pricing helpers ──
+function roundUpToHalfKg(kg) {
+  return Math.ceil(kg * 2) / 2;
+}
+
+function calcPrice(kg, fees, addons, delivery, cityZone) {
+  const rawKg = parseFloat(kg) || 0;
+  if (rawKg <= 0) return null;
+
+  const billedKg = rawKg <= 3 ? rawKg : roundUpToHalfKg(rawKg);
+  const surplusKg = billedKg > 3 ? billedKg - 3 : 0;
+  const surplusIncrements = surplusKg / 0.5;
+  const shipping = fees.flatUpTo3kg + surplusIncrements * fees.perHalfKgRate;
+
+  const addonSmall  = (addons.smallBag  || 0) * fees.addons.smallBag;
+  const addonMedium = (addons.mediumBag || 0) * fees.addons.mediumBag;
+  const addonLarge  = (addons.largeBag  || 0) * fees.addons.largeBag;
+  const addonTotal  = addonSmall + addonMedium + addonLarge;
+
+  const isMontrealDelivery = delivery === 'home' && cityZone === 'montreal';
+  const isOutsideDelivery  = delivery === 'home' && cityZone === 'other';
+  const deliveryFee        = isMontrealDelivery ? fees.montrealDelivery : 0;
+
+  return {
+    rawKg, billedKg, surplusKg, surplusIncrements,
+    perHalfKgRate: fees.perHalfKgRate,
+    breakdown: { base: fees.base, customs: fees.customs, carton: fees.carton, formality: fees.formality, service: fees.service },
+    shipping, addonSmall, addonMedium, addonLarge, addonTotal,
+    deliveryFee, isOutsideDelivery,
+    total: shipping + addonTotal + deliveryFee,
+  };
+}
+
+// ── Shared atoms ──
 function Field({ label, children, full }) {
   return (
     <div className={`co-field${full ? ' co-field--full' : ''}`}>
@@ -54,116 +122,151 @@ function Field({ label, children, full }) {
   );
 }
 
-/* ── Right panel: always-visible order summary ── */
-function Summary({ route, departure, parcels, delivery, isDone }) {
-  const deliveryFee = delivery === 'home' ? 25 : 0;
-  const parcelsTotal = parcels.reduce((sum, p) => {
-    const cat = CATS.find(c => c.id === p.category);
-    return sum + (parseFloat(p.qty) || 1) * (parseFloat(p.weight) || 0) * (route.base + (cat?.surcharge || 0));
-  }, 0);
-  const total = parcelsTotal + deliveryFee;
+function Stepper({ value, onChange, min = 0 }) {
+  const btnBase = { width: 32, height: 32, border: '1.5px solid var(--border)', background: 'var(--bg-soft)', cursor: 'pointer', fontSize: 20, lineHeight: 1, fontWeight: 700, color: 'var(--ink-500)', display: 'grid', placeItems: 'center' };
+  return (
+    <div style={{ display: 'flex', alignItems: 'center' }}>
+      <button onClick={() => onChange(Math.max(min, value - 1))} disabled={value <= min}
+        style={{ ...btnBase, borderRight: 'none', borderRadius: 'var(--radius-sm) 0 0 var(--radius-sm)', opacity: value <= min ? .35 : 1 }}>−</button>
+      <div style={{ width: 40, height: 32, border: '1.5px solid var(--border)', display: 'grid', placeItems: 'center', fontSize: 13.5, fontWeight: 700, background: 'white' }}>{value}</div>
+      <button onClick={() => onChange(value + 1)}
+        style={{ ...btnBase, borderLeft: 'none', borderRadius: '0 var(--radius-sm) var(--radius-sm) 0' }}>+</button>
+    </div>
+  );
+}
+
+// ── Right panel ──
+function Summary({ route, departure, price, form, step, isDone }) {
+  const city = CITIES.find(c => c.label === form.recipCity);
+  const cityZone = city?.zone || 'montreal';
 
   return (
     <div className="co-summary">
-      <div className="co-summary__head">Votre réservation</div>
+      <div className="co-summary__head">Récapitulatif</div>
 
-      {/* Route */}
       <div className="co-summary__section">
         <div className="co-summary__label">Itinéraire</div>
         <div className={`co-summary__row${route ? '' : ' co-summary__row--muted'}`}>
-          <span>Route</span>
-          <span>{route?.label ?? '—'}</span>
+          <span>Route</span><span>{route?.label ?? '—'}</span>
         </div>
         <div className={`co-summary__row${departure ? '' : ' co-summary__row--muted'}`}>
-          <span>Date de départ</span>
-          <span>{departure?.label ?? 'Non sélectionnée'}</span>
+          <span>Départ</span><span>{departure?.label ?? 'Non sélectionné'}</span>
         </div>
-        <div className="co-summary__row co-summary__row--muted">
-          <span>Transit estimé</span>
-          <span>~{route?.transit ?? '—'} jours</span>
-        </div>
-      </div>
-
-      {/* Colis */}
-      <div className="co-summary__section">
-        <div className="co-summary__label">
-          Colis {parcels.filter(p => p.weight).length > 0 && `· ${parcels.filter(p => p.weight).length} article(s)`}
-        </div>
-        {parcels.filter(p => parseFloat(p.weight) > 0).length === 0 ? (
+        {route && (
           <div className="co-summary__row co-summary__row--muted">
-            <span>Aucun article ajouté</span><span>—</span>
+            <span>Transit estimé</span><span>~{route.transit} jours</span>
           </div>
-        ) : (
-          parcels.filter(p => parseFloat(p.weight) > 0).map(p => {
-            const cat = CATS.find(c => c.id === p.category);
-            const w = parseFloat(p.weight) || 0;
-            const q = parseFloat(p.qty) || 1;
-            const lp = q * w * (route.base + (cat?.surcharge || 0));
-            return (
-              <div key={p.id} className="co-summary__row">
-                <span>{q}× {cat?.label}</span>
-                <span>{lp.toFixed(0)} {route.currency}</span>
-              </div>
-            );
-          })
         )}
       </div>
 
-      {/* Livraison */}
-      <div className="co-summary__section">
-        <div className="co-summary__label">Livraison</div>
-        <div className="co-summary__row">
-          <span>{delivery === 'home' ? 'Domicile' : 'Retrait entrepôt'}</span>
-          <span>{delivery === 'home' ? '25 CAD' : 'Gratuit'}</span>
+      {step >= 1 && (
+        <div className="co-summary__section">
+          <div className="co-summary__label">Colis</div>
+          {price ? (
+            <>
+              <div className="co-summary__row">
+                <span>Poids{price.billedKg !== price.rawKg ? ' (facturé)' : ''}</span>
+                <span>{price.billedKg} kg</span>
+              </div>
+              {price.addonTotal > 0 && (
+                <div className="co-summary__row">
+                  <span>Sacs</span>
+                  <span>+{price.addonTotal} {route.currency}</span>
+                </div>
+              )}
+              <div className="co-summary__row">
+                <span>Frais d'envoi</span>
+                <span>{price.shipping.toFixed(0)} {route.currency}</span>
+              </div>
+            </>
+          ) : (
+            <div className="co-summary__row co-summary__row--muted">
+              <span>Poids non renseigné</span><span>—</span>
+            </div>
+          )}
         </div>
-      </div>
+      )}
 
-      {/* Total */}
+      {step >= 2 && (
+        <div className="co-summary__section">
+          <div className="co-summary__label">Livraison</div>
+          {form.delivery === 'pickup' ? (
+            <div className="co-summary__row"><span>Retrait entrepôt</span><span>Gratuit</span></div>
+          ) : cityZone === 'montreal' ? (
+            <div className="co-summary__row">
+              <span>Domicile — Montréal</span>
+              <span>{route?.fees.montrealDelivery} {route?.currency}</span>
+            </div>
+          ) : (
+            <div className="co-summary__row co-summary__row--muted">
+              <span>Livraison hors région</span><span>À évaluer</span>
+            </div>
+          )}
+        </div>
+      )}
+
       <div className="co-summary__total">
-        <span className="co-summary__total-label">Total estimé</span>
-        <span className="co-summary__total-price">{total > 0 ? total.toFixed(0) + ' CAD' : '—'}</span>
+        <span className="co-summary__total-label">Total</span>
+        <span className="co-summary__total-price">
+          {price ? `${price.total.toFixed(0)} ${route.currency}` : '—'}
+        </span>
       </div>
     </div>
   );
 }
 
-/* ── Main component ── */
+// ── Main component ──
 export default function BookingScreen({ onNav }) {
   const [step, setStep] = useState(0);
   const [form, setForm] = useState({
     route: 'dla-yul',
     departure: '',
+    weight: '',
+    addons: { smallBag: 0, mediumBag: 0, largeBag: 0 },
+    contents: '',
     senderName: '', senderPhone: '', senderEmail: '',
     recipName: '', recipPhone: '', recipCity: 'Montréal',
     delivery: 'pickup',
+    address: '',
+    payMethod: 'card',
   });
-  const [parcels, setParcels] = useState([
-    { id: 1, qty: '1', weight: '', category: 'clothing', desc: '' },
-  ]);
+  const [showBreakdown, setShowBreakdown] = useState(false);
   const [createAccount, setCreateAccount] = useState(false);
 
   const upd = (k, v) => setForm(f => ({ ...f, [k]: v }));
-  const addParcel = () => setParcels(ps => [...ps, { id: Date.now(), qty: '1', weight: '', category: 'clothing', desc: '' }]);
-  const removeParcel = id => setParcels(ps => ps.filter(p => p.id !== id));
-  const updParcel = (id, k, v) => setParcels(ps => ps.map(p => p.id === id ? { ...p, [k]: v } : p));
+  const updAddon = (k, v) => setForm(f => ({ ...f, addons: { ...f.addons, [k]: v } }));
 
-  const route = ROUTES_DATA.find(r => r.id === form.route);
-  const departure = DEPARTURES[form.route].find(d => d.id === form.departure);
-  const isDone = step === STEPS.length;
+  const route     = ROUTES_DATA.find(r => r.id === form.route);
+  const departure = DEPARTURES[form.route]?.find(d => d.id === form.departure);
+  const isDone    = step === STEPS.length;
+
+  const city     = CITIES.find(c => c.label === form.recipCity);
+  const cityZone = city?.zone || 'montreal';
+
+  const price = route ? calcPrice(form.weight, route.fees, form.addons, form.delivery, cityZone) : null;
+
+  const canNext = () => {
+    if (step === 0) return !!form.departure;
+    if (step === 1) return parseFloat(form.weight) > 0;
+    if (step === 2) return !!form.senderName && !!form.recipName;
+    return true;
+  };
 
   const prev = () => step > 0 ? setStep(s => s - 1) : onNav?.('/');
   const next = () => setStep(s => s + 1);
 
-  const onBook = () => {};
+  const montréalCities = CITIES.filter(c => c.zone === 'montreal');
+  const otherCities    = CITIES.filter(c => c.zone === 'other');
+
+  // Stable reference code for confirmation
+  const [refCode] = useState(() => `#${Math.random().toString(36).slice(2,7).toUpperCase()}`);
 
   return (
     <div className="co-wrap">
-
-      {/* ── SHARED HEADER (même que la landing) ── */}
       <TopBar />
-      <SiteNav onNav={onNav} onBook={onBook} mode="booking" />
+      <SiteNav onNav={onNav} onBook={() => {}} mode="booking" />
 
-      {/* ── Sous-header : breadcrumb ── */}
+      {/* Breadcrumb */}
       <div className="co-subhead">
         <div className="co-subhead__inner">
           <span className="co-subhead__title">Réservation</span>
@@ -181,10 +284,7 @@ export default function BookingScreen({ onNav }) {
         </div>
       </div>
 
-      {/* ── BODY ── */}
       <div className="co-body">
-
-        {/* ── LEFT: form ── */}
         <div className="co-main">
           {isDone ? (
             /* ── CONFIRMATION ── */
@@ -192,20 +292,26 @@ export default function BookingScreen({ onNav }) {
               <div className="co-done__icon">✓</div>
               <h2 className="co-done__title">Réservation confirmée !</h2>
               <p className="co-done__sub">
-                Votre demande a été enregistrée. Notre équipe vous contactera dans les 2h pour confirmer les détails et organiser la collecte.
+                Votre colis a été enregistré sous la référence <strong>{refCode}</strong>.
+                Vous recevrez un email de confirmation et notre équipe vous contactera pour organiser la collecte.
               </p>
-              <div style={{ display: 'flex', gap: 12, marginTop: 8 }}>
-                <button className="co-btn co-btn--ghost" onClick={() => onNav?.('/')}>← Retour à l'accueil</button>
-              </div>
+              {price?.isOutsideDelivery && (
+                <div style={{ background: 'var(--warn-50)', border: '1px solid var(--warn-200)', borderRadius: 'var(--radius)', padding: '14px 18px', fontSize: 13, color: 'var(--warn-700)', maxWidth: 400, textAlign: 'left', lineHeight: 1.6 }}>
+                  <strong>Livraison hors région :</strong> les frais de livraison vers <strong>{form.recipCity}</strong> seront évalués à l'arrivée à Montréal. Vous recevrez une facture et un lien de paiement par email.
+                </div>
+              )}
+              <button className="co-btn co-btn--ghost" style={{ marginTop: 8 }} onClick={() => onNav?.('/')}>
+                ← Retour à l'accueil
+              </button>
             </div>
           ) : (
             <>
-              {/* ── Step 0 : Itinéraire ── */}
+              {/* ── Step 0 : Route & Départ ── */}
               {step === 0 && (
                 <div className="co-section">
-                  <div className="co-section__title">Itinéraire</div>
+                  <div className="co-section__title">Route & Date de départ</div>
 
-                  <div style={{ marginBottom: 22 }}>
+                  <div style={{ marginBottom: 24 }}>
                     <div className="co-label" style={{ marginBottom: 10 }}>Direction</div>
                     <div className="co-opts">
                       {ROUTES_DATA.map(r => (
@@ -216,16 +322,16 @@ export default function BookingScreen({ onNav }) {
                             <div className="co-opt__label">✈️ {r.label}</div>
                             <div className="co-opt__sub">{r.code} · Transit ~{r.transit} jours</div>
                           </div>
-                          <span className="co-opt__badge">dès {r.base} {r.currency}/kg</span>
+                          <span className="co-opt__badge">dès {r.fees.flatUpTo3kg} {r.currency}</span>
                         </button>
                       ))}
                     </div>
                   </div>
 
                   <div>
-                    <div className="co-label" style={{ marginBottom: 10 }}>Date de départ — {route.label}</div>
+                    <div className="co-label" style={{ marginBottom: 10 }}>Date de départ</div>
                     <div className="co-dates">
-                      {DEPARTURES[form.route].map(d => (
+                      {(DEPARTURES[form.route] || []).map(d => (
                         <button key={d.id} className={`co-date${form.departure === d.id ? ' is-sel' : ''}`}
                           onClick={() => upd('departure', d.id)}>
                           <div className="co-date__day">{d.label}</div>
@@ -235,14 +341,133 @@ export default function BookingScreen({ onNav }) {
                         </button>
                       ))}
                     </div>
+                    {!form.departure && (
+                      <p style={{ fontSize: 12, color: 'var(--ink-400)', marginTop: 10 }}>
+                        Sélectionnez une date pour continuer.
+                      </p>
+                    )}
                   </div>
                 </div>
               )}
 
-              {/* ── Step 1 : Personnes ── */}
+              {/* ── Step 1 : Votre colis ── */}
               {step === 1 && (
                 <div className="co-section">
-                  <div className="co-section__title">Coordonnées des parties</div>
+                  <div className="co-section__title">Votre colis</div>
+
+                  {/* Weight */}
+                  <div style={{ marginBottom: 24 }}>
+                    <div className="co-label" style={{ marginBottom: 8 }}>Poids total estimé (kg)</div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap' }}>
+                      <input
+                        className="co-input"
+                        type="number" min="0.5" step="0.5"
+                        value={form.weight}
+                        onChange={e => upd('weight', e.target.value)}
+                        placeholder="ex : 8"
+                        style={{ maxWidth: 130 }}
+                      />
+                      {parseFloat(form.weight) > 3 && (
+                        <div style={{ fontSize: 12.5, color: 'var(--ink-500)' }}>
+                          → facturé <strong>{roundUpToHalfKg(parseFloat(form.weight))} kg</strong>
+                          <span style={{ color: 'var(--ink-400)', marginLeft: 4 }}>(arrondi au 0,5 kg supérieur)</span>
+                        </div>
+                      )}
+                      {parseFloat(form.weight) > 0 && parseFloat(form.weight) <= 3 && (
+                        <div style={{ fontSize: 12.5, color: 'var(--ok-600)', fontWeight: 600 }}>
+                          ≤ 3 kg — forfait {route.fees.flatUpTo3kg} {route.currency}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Addons */}
+                  <div style={{ marginBottom: 24 }}>
+                    <div className="co-label" style={{ marginBottom: 12 }}>Sacs (optionnel)</div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                      {[
+                        { key: 'smallBag',  label: 'Petit sac',   unitPrice: route.fees.addons.smallBag },
+                        { key: 'mediumBag', label: 'Moyen sac',   unitPrice: route.fees.addons.mediumBag },
+                        { key: 'largeBag',  label: 'Grand sac',   unitPrice: route.fees.addons.largeBag },
+                      ].map(({ key, label, unitPrice }) => (
+                        <div key={key} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', background: 'var(--bg-soft)', border: '1.5px solid var(--border)', borderRadius: 'var(--radius)' }}>
+                          <div>
+                            <span style={{ fontSize: 13.5, fontWeight: 600, color: 'var(--ink-800)' }}>{label}</span>
+                            <span style={{ fontSize: 12, color: 'var(--ink-400)', marginLeft: 8 }}>{unitPrice} {route.currency} / unité</span>
+                          </div>
+                          <Stepper value={form.addons[key]} onChange={v => updAddon(key, v)} />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Contents */}
+                  <div style={{ marginBottom: price ? 20 : 0 }}>
+                    <div className="co-label" style={{ marginBottom: 8 }}>Description du contenu (optionnel)</div>
+                    <textarea
+                      className="co-textarea"
+                      rows={3}
+                      value={form.contents}
+                      onChange={e => upd('contents', e.target.value)}
+                      placeholder="Ex : 2 valises vêtements, 1 carton ndolè surgelé, épices..."
+                    />
+                  </div>
+
+                  {/* Live fee preview */}
+                  {price && (
+                    <div style={{ background: 'var(--brand-50)', border: '1.5px solid var(--brand-100)', borderRadius: 'var(--radius)', padding: '14px 16px' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: showBreakdown ? 12 : 0 }}>
+                        <span style={{ fontSize: 13.5, fontWeight: 700, color: 'var(--brand-700)' }}>
+                          Estimation : {price.total.toFixed(0)} {route.currency}
+                        </span>
+                        <button onClick={() => setShowBreakdown(b => !b)}
+                          style={{ fontSize: 11.5, color: 'var(--brand-600)', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 600 }}>
+                          {showBreakdown ? 'Masquer ▴' : 'Voir le détail ▾'}
+                        </button>
+                      </div>
+                      {showBreakdown && (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+                          <div style={{ fontSize: 10.5, fontWeight: 700, letterSpacing: '.08em', textTransform: 'uppercase', color: 'var(--brand-500)', marginBottom: 4 }}>
+                            Frais d'envoi — {price.billedKg} kg — {price.shipping.toFixed(0)} {route.currency}
+                          </div>
+                          {[
+                            ['Frais de base', price.breakdown.base],
+                            ['Frais de douane', price.breakdown.customs],
+                            ['Carton / manutention', price.breakdown.carton],
+                            ['Formalités', price.breakdown.formality],
+                            ['Frais de service', price.breakdown.service],
+                          ].map(([k, v]) => (
+                            <div key={k} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: 'var(--ink-600)', paddingLeft: 10 }}>
+                              <span>{k}</span><span>{v} {route.currency}</span>
+                            </div>
+                          ))}
+                          {price.surplusKg > 0 && (
+                            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: 'var(--ink-600)', paddingLeft: 10 }}>
+                              <span>Surplus {price.surplusKg} kg ({price.surplusIncrements}× 0,5 kg)</span>
+                              <span>+{(price.surplusIncrements * price.perHalfKgRate).toFixed(0)} {route.currency}</span>
+                            </div>
+                          )}
+                          {price.addonTotal > 0 && (
+                            <>
+                              <div style={{ fontSize: 10.5, fontWeight: 700, letterSpacing: '.08em', textTransform: 'uppercase', color: 'var(--brand-500)', marginTop: 6, marginBottom: 2 }}>
+                                Sacs — {price.addonTotal} {route.currency}
+                              </div>
+                              {price.addonSmall > 0 && <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: 'var(--ink-600)', paddingLeft: 10 }}><span>Petits sacs × {form.addons.smallBag}</span><span>{price.addonSmall} {route.currency}</span></div>}
+                              {price.addonMedium > 0 && <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: 'var(--ink-600)', paddingLeft: 10 }}><span>Moyens sacs × {form.addons.mediumBag}</span><span>{price.addonMedium} {route.currency}</span></div>}
+                              {price.addonLarge > 0 && <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: 'var(--ink-600)', paddingLeft: 10 }}><span>Grands sacs × {form.addons.largeBag}</span><span>{price.addonLarge} {route.currency}</span></div>}
+                            </>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* ── Step 2 : Coordonnées ── */}
+              {step === 2 && (
+                <div className="co-section">
+                  <div className="co-section__title">Expéditeur & Destinataire</div>
 
                   <div className="co-split">
                     <div className="co-split-block">
@@ -268,104 +493,162 @@ export default function BookingScreen({ onNav }) {
                       </Field>
                       <Field label="Ville">
                         <select className="co-select" value={form.recipCity} onChange={e => upd('recipCity', e.target.value)}>
-                          {['Montréal','Laval','Longueuil','Brossard','Gatineau','Québec','Toronto'].map(c => <option key={c}>{c}</option>)}
+                          <optgroup label="Grand Montréal">
+                            {montréalCities.map(c => <option key={c.label}>{c.label}</option>)}
+                          </optgroup>
+                          <optgroup label="Hors région">
+                            {otherCities.map(c => <option key={c.label}>{c.label}</option>)}
+                          </optgroup>
                         </select>
                       </Field>
                     </div>
                   </div>
 
-                  <div style={{ marginTop: 20 }}>
+                  {/* Delivery type */}
+                  <div style={{ marginTop: 22 }}>
                     <div className="co-label" style={{ marginBottom: 10 }}>Mode de livraison</div>
                     <div className="co-opts co-opts--2">
-                      {[
-                        { id: 'pickup', label: 'Retrait entrepôt', sub: 'Lachine, QC', badge: 'Gratuit' },
-                        { id: 'home',   label: 'Livraison domicile', sub: 'Partout au Québec', badge: '+25 CAD' },
-                      ].map(d => (
-                        <button key={d.id} className={`co-opt${form.delivery === d.id ? ' is-sel' : ''}`}
-                          onClick={() => upd('delivery', d.id)}>
-                          <div className="co-opt__radio" />
-                          <div className="co-opt__body">
-                            <div className="co-opt__label">{d.label}</div>
-                            <div className="co-opt__sub">{d.sub}</div>
-                          </div>
-                          <span className="co-opt__badge">{d.badge}</span>
-                        </button>
-                      ))}
+                      <button className={`co-opt${form.delivery === 'pickup' ? ' is-sel' : ''}`} onClick={() => upd('delivery', 'pickup')}>
+                        <div className="co-opt__radio" />
+                        <div className="co-opt__body">
+                          <div className="co-opt__label">Retrait entrepôt</div>
+                          <div className="co-opt__sub">Lachine, Montréal</div>
+                        </div>
+                        <span className="co-opt__badge">Gratuit</span>
+                      </button>
+                      <button className={`co-opt${form.delivery === 'home' ? ' is-sel' : ''}`} onClick={() => upd('delivery', 'home')}>
+                        <div className="co-opt__radio" />
+                        <div className="co-opt__body">
+                          <div className="co-opt__label">Livraison à domicile</div>
+                          <div className="co-opt__sub">{cityZone === 'montreal' ? 'Grand Montréal' : 'Hors région'}</div>
+                        </div>
+                        <span className="co-opt__badge">
+                          {cityZone === 'montreal' ? `+${route.fees.montrealDelivery} ${route.currency}` : 'À évaluer'}
+                        </span>
+                      </button>
                     </div>
                   </div>
+
+                  {/* Address if home + Montreal */}
+                  {form.delivery === 'home' && cityZone === 'montreal' && (
+                    <div className="co-field" style={{ marginTop: 14 }}>
+                      <label className="co-label">Adresse de livraison</label>
+                      <input className="co-input" value={form.address} onChange={e => upd('address', e.target.value)} placeholder="123 rue Sainte-Catherine, Montréal, QC H3H 1A1" />
+                    </div>
+                  )}
+
+                  {/* Outside Montreal warning */}
+                  {form.delivery === 'home' && cityZone === 'other' && (
+                    <div style={{ marginTop: 12, background: 'var(--warn-50)', border: '1px solid var(--warn-200)', borderRadius: 'var(--radius)', padding: '12px 16px', fontSize: 13, color: 'var(--warn-700)', lineHeight: 1.6 }}>
+                      ℹ️ Les frais de livraison vers <strong>{form.recipCity}</strong> seront évalués à l'arrivée à l'entrepôt de Montréal. Vous recevrez une facture et un lien de paiement par email.
+                    </div>
+                  )}
 
                   <label className="co-account" style={{ marginTop: 16 }}>
                     <input type="checkbox" checked={createAccount} onChange={e => setCreateAccount(e.target.checked)} />
                     <div>
-                      <div className="co-account__title">Créer un compte Jumla avec ces informations</div>
-                      <div className="co-account__sub">Suivez vos envois en ligne et accédez à votre historique de commandes.</div>
+                      <div className="co-account__title">Créer un compte Jumla</div>
+                      <div className="co-account__sub">Suivez vos envois en ligne et accédez à votre historique.</div>
                     </div>
                   </label>
                 </div>
               )}
 
-              {/* ── Step 2 : Colis ── */}
-              {step === 2 && (
+              {/* ── Step 3 : Paiement ── */}
+              {step === 3 && price && (
                 <div className="co-section">
-                  <div className="co-section__title">Articles à envoyer</div>
+                  <div className="co-section__title">Paiement</div>
 
-                  <div className="co-table-wrap">
-                    <div className="co-table-head">
-                      <div>Qté</div>
-                      <div>Poids (kg)</div>
-                      <div>Catégorie</div>
-                      <div>Nomination / Description</div>
-                      <div></div>
+                  {/* Invoice */}
+                  <div style={{ border: '1px solid var(--border)', borderRadius: 'var(--radius)', overflow: 'hidden', marginBottom: 24 }}>
+                    <div style={{ padding: '10px 16px', background: 'var(--ink-900)', color: 'white', fontSize: 11, fontWeight: 700, letterSpacing: '.08em', textTransform: 'uppercase' }}>
+                      Détail de la facture
                     </div>
-                    {parcels.map(p => (
-                      <div key={p.id} className="co-table-row">
-                        <input className="co-input" type="number" min="1" value={p.qty}
-                          onChange={e => updParcel(p.id, 'qty', e.target.value)} />
-                        <input className="co-input" type="number" min="0" step="0.5" value={p.weight}
-                          onChange={e => updParcel(p.id, 'weight', e.target.value)} placeholder="0" />
-                        <select className="co-select" value={p.category}
-                          onChange={e => updParcel(p.id, 'category', e.target.value)}>
-                          {CATS.map(c => <option key={c.id} value={c.id}>{c.icon} {c.label}</option>)}
-                        </select>
-                        <input className="co-input" value={p.desc}
-                          onChange={e => updParcel(p.id, 'desc', e.target.value)}
-                          placeholder="Ex: habits enfants, thym séché..." />
-                        <button className="co-table-del" disabled={parcels.length === 1}
-                          onClick={() => removeParcel(p.id)}>×</button>
+
+                    <div style={{ padding: '16px 16px 0' }}>
+                      {/* Shipping */}
+                      <div style={{ marginBottom: 14 }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13.5, fontWeight: 700, color: 'var(--ink-800)', marginBottom: 6 }}>
+                          <span>Frais d'envoi{price.billedKg !== price.rawKg ? ` (${price.billedKg} kg facturés)` : ` (${price.billedKg} kg)`}</span>
+                          <span>{price.shipping.toFixed(0)} {route.currency}</span>
+                        </div>
+                        {[
+                          ['Frais de base',             price.breakdown.base],
+                          ['Frais de douane',            price.breakdown.customs],
+                          ['Carton / manutention',       price.breakdown.carton],
+                          ["Formalités d'expédition",   price.breakdown.formality],
+                          ['Frais de service',           price.breakdown.service],
+                        ].map(([k, v]) => (
+                          <div key={k} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: 'var(--ink-500)', paddingLeft: 14, marginBottom: 2 }}>
+                            <span>{k}</span><span>{v} {route.currency}</span>
+                          </div>
+                        ))}
+                        {price.surplusKg > 0 && (
+                          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: 'var(--ink-500)', paddingLeft: 14 }}>
+                            <span>Surplus {price.surplusKg} kg ({price.surplusIncrements}× 0,5 kg @ {price.perHalfKgRate} {route.currency})</span>
+                            <span>+{(price.surplusIncrements * price.perHalfKgRate).toFixed(0)} {route.currency}</span>
+                          </div>
+                        )}
                       </div>
-                    ))}
+
+                      {/* Addons */}
+                      {price.addonTotal > 0 && (
+                        <div style={{ borderTop: '1px solid var(--border-soft)', paddingTop: 12, marginBottom: 14 }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13.5, fontWeight: 700, color: 'var(--ink-800)', marginBottom: 4 }}>
+                            <span>Sacs</span><span>{price.addonTotal} {route.currency}</span>
+                          </div>
+                          {price.addonSmall  > 0 && <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: 'var(--ink-500)', paddingLeft: 14, marginBottom: 2 }}><span>Petits sacs × {form.addons.smallBag}</span><span>{price.addonSmall} {route.currency}</span></div>}
+                          {price.addonMedium > 0 && <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: 'var(--ink-500)', paddingLeft: 14, marginBottom: 2 }}><span>Moyens sacs × {form.addons.mediumBag}</span><span>{price.addonMedium} {route.currency}</span></div>}
+                          {price.addonLarge  > 0 && <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: 'var(--ink-500)', paddingLeft: 14 }}><span>Grands sacs × {form.addons.largeBag}</span><span>{price.addonLarge} {route.currency}</span></div>}
+                        </div>
+                      )}
+
+                      {/* Delivery */}
+                      <div style={{ borderTop: '1px solid var(--border-soft)', paddingTop: 12, paddingBottom: 16 }}>
+                        {form.delivery === 'pickup' ? (
+                          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13.5, fontWeight: 700, color: 'var(--ink-800)' }}>
+                            <span>Livraison (retrait entrepôt)</span><span>Gratuit</span>
+                          </div>
+                        ) : cityZone === 'montreal' ? (
+                          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13.5, fontWeight: 700, color: 'var(--ink-800)' }}>
+                            <span>Livraison à domicile — Grand Montréal</span>
+                            <span>{price.deliveryFee} {route.currency}</span>
+                          </div>
+                        ) : (
+                          <div>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13.5, fontWeight: 700, color: 'var(--warn-700)' }}>
+                              <span>Livraison hors région</span><span>À évaluer</span>
+                            </div>
+                            <p style={{ fontSize: 11.5, color: 'var(--ink-400)', marginTop: 4, lineHeight: 1.5 }}>
+                              Facture envoyée par email à l'arrivée de votre colis à Montréal.
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Total */}
+                    <div style={{ padding: '14px 16px', borderTop: '2px solid var(--ink-900)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span style={{ fontSize: 13, fontWeight: 800, color: 'var(--ink-700)' }}>Total à payer maintenant</span>
+                      <span style={{ fontSize: 22, fontWeight: 800, color: 'var(--ink-900)' }}>{price.total.toFixed(0)} {route.currency}</span>
+                    </div>
                   </div>
 
-                  <button className="co-add-row" onClick={addParcel}>+ Ajouter un article</button>
-                </div>
-              )}
-
-              {/* ── Step 3 : Validation ── */}
-              {step === 3 && (
-                <div className="co-section">
-                  <div className="co-section__title">Vérifiez votre réservation</div>
-                  <p style={{ fontSize: 13.5, color: 'var(--ink-500)', marginBottom: 20, lineHeight: 1.6 }}>
-                    Vérifiez les informations ci-contre avant de valider. Notre équipe vous contactera pour confirmer les détails et organiser la collecte.
-                  </p>
-
-                  <div style={{ background: 'var(--bg-soft)', border: '1px solid var(--border)', padding: '16px 20px' }}>
-                    <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--ink-500)', textTransform: 'uppercase', letterSpacing: '.08em', marginBottom: 10 }}>
-                      Récapitulatif
-                    </div>
+                  {/* Payment method */}
+                  <div className="co-label" style={{ marginBottom: 10 }}>Mode de paiement</div>
+                  <div className="co-opts">
                     {[
-                      ['Route', route.label],
-                      ['Date de départ', departure?.label ?? 'Non sélectionnée'],
-                      ['Expéditeur', form.senderName || '—'],
-                      ['Tél. expéditeur', form.senderPhone || '—'],
-                      ['Destinataire', form.recipName || '—'],
-                      ['Ville', form.recipCity],
-                      ['Livraison', form.delivery === 'home' ? 'Domicile (+25 CAD)' : 'Retrait entrepôt (gratuit)'],
-                      ['Nb. articles', parcels.length.toString()],
-                    ].map(([k, v]) => (
-                      <div key={k} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, padding: '5px 0', borderBottom: '1px solid var(--border-soft)' }}>
-                        <span style={{ color: 'var(--ink-500)' }}>{k}</span>
-                        <span style={{ fontWeight: 600 }}>{v}</span>
-                      </div>
+                      { id: 'card',    label: 'Carte bancaire',     sub: 'Visa, Mastercard, Amex' },
+                      { id: 'interac', label: 'Virement Interac',   sub: 'Paiement sécurisé par courriel' },
+                      { id: 'cash',    label: "Espèces à l'agence", sub: "À régler avant l'expédition" },
+                    ].map(m => (
+                      <button key={m.id} className={`co-opt${form.payMethod === m.id ? ' is-sel' : ''}`} onClick={() => upd('payMethod', m.id)}>
+                        <div className="co-opt__radio" />
+                        <div className="co-opt__body">
+                          <div className="co-opt__label">{m.label}</div>
+                          <div className="co-opt__sub">{m.sub}</div>
+                        </div>
+                      </button>
                     ))}
                   </div>
                 </div>
@@ -376,28 +659,34 @@ export default function BookingScreen({ onNav }) {
                 <button className="co-btn co-btn--ghost" onClick={prev}>
                   ← {step === 0 ? "Retour à l'accueil" : 'Précédent'}
                 </button>
-                <button className={`co-btn ${step === STEPS.length - 1 ? 'co-btn--brand' : 'co-btn--primary'}`} onClick={next}>
-                  {step === STEPS.length - 1 ? 'Confirmer la réservation' : 'Continuer →'}
+                <button
+                  className={`co-btn ${step === STEPS.length - 1 ? 'co-btn--brand' : 'co-btn--primary'}`}
+                  onClick={next}
+                  disabled={!canNext()}
+                  style={{ opacity: canNext() ? 1 : 0.4, cursor: canNext() ? 'pointer' : 'default' }}
+                >
+                  {step === STEPS.length - 1
+                    ? `Payer ${price ? price.total.toFixed(0) + ' ' + route.currency : ''} →`
+                    : 'Continuer →'}
                 </button>
               </div>
             </>
           )}
         </div>
 
-        {/* ── RIGHT: summary ── */}
+        {/* Right panel */}
         <aside className="co-aside">
           <Summary
             route={route}
             departure={departure}
-            parcels={parcels}
-            delivery={form.delivery}
+            price={price}
+            form={form}
+            step={step}
             isDone={isDone}
           />
         </aside>
-
       </div>
 
-      {/* ── SHARED FOOTER (même que la landing) ── */}
       <SiteFooter />
     </div>
   );

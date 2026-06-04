@@ -18,6 +18,12 @@ export const ROUTES = [
       { from: 25, to: 50,  rate: 12 },
       { from: 50, to: 100, rate: 10 },
     ],
+    fees: {
+      base: 50, customs: 5, carton: 1, formality: 4, service: 5,
+      flatUpTo3kg: 65, perHalfKgRate: 9,
+      addons: { smallBag: 3, mediumBag: 5, largeBag: 10 },
+      montrealDelivery: 25,
+    },
   },
   {
     id: 'r-los-yul', code: 'LOS → YUL',
@@ -33,6 +39,12 @@ export const ROUTES = [
       { from: 15, to: 30, rate: 14 },
       { from: 30, to: 100, rate: 11 },
     ],
+    fees: {
+      base: 55, customs: 6, carton: 1, formality: 4, service: 4,
+      flatUpTo3kg: 70, perHalfKgRate: 10,
+      addons: { smallBag: 3, mediumBag: 5, largeBag: 10 },
+      montrealDelivery: 25,
+    },
   },
   {
     id: 'r-dla-bru', code: 'DLA → BRU',
@@ -47,6 +59,12 @@ export const ROUTES = [
       { from: 5, to: 15,  rate: 12 },
       { from: 15, to: 50, rate: 10 },
     ],
+    fees: {
+      base: 40, customs: 4, carton: 1, formality: 3, service: 2,
+      flatUpTo3kg: 50, perHalfKgRate: 7,
+      addons: { smallBag: 2, mediumBag: 4, largeBag: 8 },
+      montrealDelivery: 0,
+    },
   },
   {
     id: 'r-dla-par', code: 'DLA → CDG',
@@ -60,6 +78,12 @@ export const ROUTES = [
       { from: 0, to: 5,   rate: 13 },
       { from: 5, to: 20,  rate: 11 },
     ],
+    fees: {
+      base: 38, customs: 4, carton: 1, formality: 3, service: 2,
+      flatUpTo3kg: 48, perHalfKgRate: 7,
+      addons: { smallBag: 2, mediumBag: 4, largeBag: 8 },
+      montrealDelivery: 0,
+    },
   },
 ];
 
