@@ -3,7 +3,7 @@
    Montserrat + Inter · border 0 · max 1300px
    ============================================ */
 
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; border-radius: 0 !important; }
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 :root {
   --w: 1300px;
@@ -56,16 +56,18 @@
   letter-spacing: -.03em; white-space: nowrap;
 }
 .jnav__logo-mark {
-  width: 38px; height: 38px; 
+  width: 38px; height: 38px;
   background: var(--brand-400); display: grid; place-items: center;
   font-size: 18px; font-weight: 900; color: white;
+  border-radius: var(--radius);
 }
 .jnav__links { display: flex; align-items: center; gap: 2px; flex: 1; }
 .jnav__link {
   padding: 9px 15px; border: 0; background: none;
+  border-radius: var(--radius-sm);
   font-family: 'Inter', sans-serif;
   font-size: 14px; font-weight: 600; color: var(--ink-800);
-  cursor: pointer; 
+  cursor: pointer;
   transition: color .15s, background .15s;
 }
 .jnav__link:hover { color: var(--brand-400); background: var(--brand-50); }
@@ -81,7 +83,8 @@
   font-family: 'Montserrat', sans-serif;
   font-size: 13.5px; font-weight: 700;
   background: var(--brand-400); color: white; border: 0;
-  padding: 11px 22px;  cursor: pointer;
+  border-radius: var(--radius);
+  padding: 11px 22px; cursor: pointer;
   display: inline-flex; align-items: center; gap: 8px;
   transition: background .15s, transform .15s;
 }
@@ -126,7 +129,8 @@
   font-family: 'Montserrat', sans-serif;
   font-size: 14px; font-weight: 700;
   background: white; color: var(--ink-900);
-  border: 0; padding: 14px 30px;
+  border: 0; border-radius: var(--radius);
+  padding: 14px 30px;
   cursor: pointer; transition: background .15s;
 }
 .jhero__btn-1:hover { background: var(--ink-50); }
@@ -135,6 +139,7 @@
   font-size: 14px; font-weight: 700;
   background: transparent; color: white;
   border: 2px solid rgba(255,255,255,.35);
+  border-radius: var(--radius);
   padding: 14px 30px;
   cursor: pointer; transition: border-color .15s;
 }
@@ -223,9 +228,10 @@
   display: flex; align-items: center; gap: 14px; margin-top: 28px;
 }
 .jabout__ceo-av {
-  width: 48px; height: 48px; 
+  width: 48px; height: 48px;
   background: var(--ink-900); color: white; font-family: 'Montserrat', sans-serif;
   font-size: 18px; font-weight: 800; display: grid; place-items: center;
+  border-radius: var(--radius);
   flex-shrink: 0;
 }
 .jabout__ceo-name { font-weight: 700; font-size: 14px; color: var(--ink-800); }
@@ -242,7 +248,8 @@
   gap: 14px; height: 420px;
 }
 .jcommit__photo {
-   overflow: hidden; background: var(--border);
+  overflow: hidden; background: var(--border);
+  border-radius: var(--radius);
 }
 .jcommit__photo img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .jcommit__photo--tall { grid-row: span 2; }
@@ -256,7 +263,8 @@
   font-family: 'Montserrat', sans-serif;
   font-size: 13px; font-weight: 700;
   background: var(--ink-900); color: white; border: 0;
-  padding: 12px 22px;  cursor: pointer;
+  border-radius: var(--radius);
+  padding: 12px 22px; cursor: pointer;
   transition: background .15s;
 }
 .jcommit__more:hover { background: var(--ink-700); }
@@ -265,8 +273,9 @@
 .jfeats { background: var(--white); padding: 72px 0; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
 .jfeats__grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 48px; }
 .jfeats__icon {
-  width: 52px; height: 52px; 
+  width: 52px; height: 52px;
   background: var(--brand-50); color: var(--brand-400);
+  border-radius: var(--radius);
   display: grid; place-items: center; margin-bottom: 16px;
 }
 .jfeats__title {
@@ -291,7 +300,8 @@
 .jsvc-sec__body { font-size: 15px; line-height: 1.8; color: var(--ink-400); }
 .jsvc-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; }
 .jsvc-card {
-  background: var(--white);  overflow: hidden;
+  background: var(--white); overflow: hidden;
+  border-radius: var(--radius-xl);
   transition: transform .2s, box-shadow .2s;
 }
 .jsvc-card:hover { transform: translateY(-4px); box-shadow: 0 16px 40px rgba(0,0,0,.1); }
@@ -346,7 +356,8 @@
 .jcta-btn-1 {
   font-family: 'Montserrat', sans-serif; font-size: 14px; font-weight: 800;
   background: var(--brand-400); color: white; border: 0;
-  padding: 15px 32px;  cursor: pointer;
+  border-radius: var(--radius);
+  padding: 15px 32px; cursor: pointer;
   display: inline-flex; align-items: center; gap: 8px;
   transition: background .15s;
 }
@@ -355,7 +366,8 @@
   font-family: 'Montserrat', sans-serif; font-size: 14px; font-weight: 700;
   background: transparent; color: white;
   border: 2px solid rgba(255,255,255,.3);
-  padding: 15px 32px;  cursor: pointer;
+  border-radius: var(--radius);
+  padding: 15px 32px; cursor: pointer;
   transition: border-color .15s;
 }
 .jcta-btn-2:hover { border-color: white; }
@@ -368,8 +380,9 @@
   color: white; display: flex; align-items: center; gap: 10px; margin-bottom: 16px;
 }
 .jfoot__brand-mark {
-  width: 36px; height: 36px;  background: var(--brand-400);
+  width: 36px; height: 36px; background: var(--brand-400);
   display: grid; place-items: center; font-size: 17px; font-weight: 900; color: white;
+  border-radius: var(--radius);
 }
 .jfoot__desc { font-size: 14px; line-height: 1.75; color: rgba(255,255,255,.5); margin-bottom: 20px; }
 .jfoot__contact { display: flex; align-items: center; gap: 7px; font-size: 13.5px; color: #25D366; font-weight: 600; }
@@ -395,7 +408,8 @@
 }
 .jauth {
   display: grid; grid-template-columns: 280px 420px;
-  background: white;  overflow: hidden;
+  background: white; overflow: hidden;
+  border-radius: var(--radius-xl);
   box-shadow: 0 40px 80px rgba(0,0,0,.3); max-width: 100%;
 }
 .jauth__side {
@@ -409,18 +423,21 @@
 .jauth__close {
   position: absolute; top: 14px; right: 14px;
   background: none; border: 0; cursor: pointer;
-  color: var(--ink-400); padding: 6px;  transition: background .15s;
+  border-radius: var(--radius-sm);
+  color: var(--ink-400); padding: 6px; transition: background .15s;
 }
 .jauth__close:hover { background: var(--bg-soft); }
 .jauth__tabs {
-  display: flex; background: var(--bg-soft);  padding: 3px; gap: 3px; margin-bottom: 4px;
+  display: flex; background: var(--bg-soft); border-radius: var(--radius-sm);
+  padding: 3px; gap: 3px; margin-bottom: 4px;
 }
 .jauth__tabs button {
-  flex: 1; padding: 9px; border: 0; 
+  flex: 1; padding: 9px; border: 0;
+  border-radius: var(--radius-xs);
   font-family: 'Montserrat', sans-serif; font-size: 13px; font-weight: 700;
   cursor: pointer; background: none; color: var(--ink-400); transition: background .15s, color .15s;
 }
-.jauth__tabs button.is-active { background: var(--ink-900); color: white; }
+.jauth__tabs button.is-active { background: var(--ink-900); color: white; border-radius: var(--radius-xs); }
 .jauth__row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 .jauth__f { display: flex; flex-direction: column; gap: 5px; }
 .jauth__f label {
@@ -428,7 +445,8 @@
   letter-spacing: .08em; color: var(--ink-400);
 }
 .jauth__f input, .jauth__f select {
-  border: 1.5px solid var(--border); 
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius);
   padding: 10px 13px; font-size: 14px; color: var(--ink-800);
   outline: none; transition: border-color .15s; background: white;
   font-family: 'Inter', sans-serif;
@@ -443,7 +461,8 @@
 .jbtn-or {
   font-family: 'Montserrat', sans-serif; font-size: 14px; font-weight: 700;
   background: var(--brand-400); color: white; border: 0;
-  padding: 12px 20px;  cursor: pointer;
+  border-radius: var(--radius);
+  padding: 12px 20px; cursor: pointer;
   display: inline-flex; align-items: center; gap: 8px; justify-content: center;
   transition: background .15s; width: 100%;
 }
@@ -452,7 +471,8 @@
   font-family: 'Inter', sans-serif; font-size: 14px; font-weight: 600;
   background: white; color: var(--ink-800);
   border: 1.5px solid var(--border);
-  padding: 11px 20px;  cursor: pointer;
+  border-radius: var(--radius);
+  padding: 11px 20px; cursor: pointer;
   display: inline-flex; align-items: center; gap: 8px; justify-content: center;
   transition: border-color .15s; width: 100%;
 }
@@ -461,7 +481,8 @@
 /* estimator (kept, used in hero-below) */
 .jest-wrap { background: var(--bg-soft); padding: 80px 0; }
 .jest {
-  background: white;  overflow: hidden;
+  background: white; overflow: hidden;
+  border-radius: var(--radius-xl);
   box-shadow: 0 8px 40px rgba(0,0,0,.08);
 }
 .jest__head {
@@ -475,7 +496,8 @@
 .jest__f { display: flex; flex-direction: column; gap: 5px; }
 .jest__f label { font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; color: var(--ink-400); }
 .jest__f select, .jest__f input[type="number"] {
-  border: 1.5px solid var(--border); 
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius);
   padding: 9px 13px; font-size: 14px; color: var(--ink-800);
   background: white; outline: none; min-width: 130px;
   font-family: 'Inter', sans-serif; transition: border-color .15s;
