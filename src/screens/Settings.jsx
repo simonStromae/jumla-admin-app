@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, Fragment } from 'react';
 import { DATA } from '../data.js';
 import I from '../components/Icons.jsx';
 import { Bi, RoutePill, Modal, Drawer } from '../components/Shell.jsx';
@@ -204,7 +204,7 @@ function SectionWhatsapp() {
   );
 }
 
-function SectionSecurity() {
+function SectionSecurity({ onNav }) {
   const [secToggles, setSecToggles] = useState({ twofa: false, session: true, alerts: true });
   const toggle = (k) => setSecToggles(t => ({ ...t, [k]: !t[k] }));
   return (
@@ -214,24 +214,15 @@ function SectionSecurity() {
         <ToggleRow label="Session expirée après 8h d'inactivité"  sub="Reconnexion requise automatiquement"                  checked={secToggles.session} onChange={() => toggle('session')} />
         <ToggleRow label="Alertes connexion suspecte"              sub="Email lors d'une connexion depuis un nouvel appareil" checked={secToggles.alerts}  onChange={() => toggle('alerts')} />
       </SettingsCard>
-      <SettingsCard title="Journal d'activité" sub="Historique des actions réalisées par les agents.">
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
-          {[
-            { t: '14:48', u: 'Aïcha M.', a: 'Paiement validé', obj: 'CLI-0418 · #01', kind: 'ok' },
-            { t: '14:32', u: 'Marc L.',  a: 'Bordereau créé',  obj: 'BL-2604-01',     kind: 'info' },
-            { t: '13:55', u: 'Aïcha M.', a: 'Cargaison clôturée', obj: 'DLA-YUL-APR-01', kind: 'warn' },
-            { t: '13:21', u: 'Admin',    a: 'Agent invité',    obj: 'Thomas D.',      kind: 'neutral' },
-          ].map((e, i) => (
-            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 0', borderBottom: '1px solid var(--border-soft)', fontSize: 12.5 }}>
-              <span className="mono" style={{ color: 'var(--ink-400)', width: 40, flexShrink: 0 }}>{e.t}</span>
-              <span style={{ fontWeight: 600, color: 'var(--ink-700)', width: 80, flexShrink: 0 }}>{e.u}</span>
-              <span className={'badge badge--' + e.kind} style={{ flexShrink: 0 }}>{e.a}</span>
-              <span style={{ color: 'var(--ink-500)', fontFamily: 'var(--ff-mono)', fontSize: 12 }}>{e.obj}</span>
-            </div>
-          ))}
+      <div className="card" style={{ marginBottom: 14, padding: '16px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div>
+          <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--ink-900)' }}>Journal d'activité</div>
+          <div style={{ fontSize: 12, color: 'var(--ink-400)', marginTop: 3 }}>Historique complet des actions réalisées par les agents.</div>
         </div>
-        <a style={{ fontSize: 12, color: 'var(--brand-700)', fontWeight: 600, cursor: 'pointer', marginTop: 8, display: 'inline-block' }}>Voir journal complet →</a>
-      </SettingsCard>
+        <a onClick={() => onNav?.('/admin/logs')} style={{ fontSize: 13, color: 'var(--brand-700)', fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap' }}>
+          Voir le journal →
+        </a>
+      </div>
     </>
   );
 }
@@ -261,10 +252,9 @@ function SectionCampaigns() {
     <SettingsCard title="Paramètres des cargaisons" sub="Valeurs par défaut appliquées à la création d'une cargaison.">
       <div className="field-row field-row--2">
         <div className="field"><label className="label">Durée de transit par défaut</label><input className="input" defaultValue="14" type="number" /><div className="hint">jours</div></div>
-        <div className="field"><label className="label">Capacité max par défaut</label><input className="input" defaultValue="2000" type="number" /><div className="hint">kg</div></div>
+        <div className="field"><label className="label">Devise par défaut</label><select className="select"><option>CAD</option><option>EUR</option><option>USD</option><option>XAF</option></select></div>
       </div>
       <div className="field-row field-row--2">
-        <div className="field"><label className="label">Devise par défaut</label><select className="select"><option>CAD</option><option>EUR</option><option>USD</option><option>XAF</option></select></div>
         <div className="field"><label className="label">Arrondi poids facturé</label><select className="select"><option>0,5 kg</option><option>1 kg</option><option>Exact</option></select></div>
       </div>
     </SettingsCard>
@@ -324,27 +314,36 @@ function RouteEditModal({ editRoute, onClose }) {
   const r = isNew ? null : editRoute;
   const currency = r?.currency || 'CAD';
 
-  const [feeRows, setFeeRows] = useState(() => r?.fees ? [
-    { id: 1, label: 'Frais de base',           amount: r.fees.base      },
-    { id: 2, label: 'Frais de douane',          amount: r.fees.customs   },
-    { id: 3, label: 'Carton / manutention',     amount: r.fees.carton    },
-    { id: 4, label: "Formalités d'expédition",  amount: r.fees.formality },
-    { id: 5, label: 'Frais de service',         amount: r.fees.service   },
+  const defaultBreakdown = (fees) => [
+    { id: 1, label: 'Frais de base',          amount: fees?.base      ?? 50 },
+    { id: 2, label: 'Frais de douane',         amount: fees?.customs   ?? 5  },
+    { id: 3, label: 'Carton / manutention',    amount: fees?.carton    ?? 1  },
+    { id: 4, label: "Formalités d'expédition", amount: fees?.formality ?? 4  },
+    { id: 5, label: 'Frais de service',        amount: fees?.service   ?? 5  },
+  ];
+
+  const [tiers, setTiers] = useState(() => r?.fees ? [
+    { id: 1, from: '0', to: '3',   flat: String(r.fees.flatUpTo3kg),    expanded: false, breakdown: defaultBreakdown(r.fees) },
+    { id: 2, from: '3.5', to: '9.5', flat: String(r.fees.perHalfKgRate), expanded: false, breakdown: [] },
   ] : [
-    { id: 1, label: 'Frais de base',           amount: 50 },
-    { id: 2, label: 'Frais de douane',          amount: 5  },
-    { id: 3, label: 'Carton / manutention',     amount: 1  },
-    { id: 4, label: "Formalités d'expédition",  amount: 4  },
-    { id: 5, label: 'Frais de service',         amount: 5  },
+    { id: 1, from: '0', to: '3',   flat: '65', expanded: false, breakdown: defaultBreakdown(null) },
   ]);
 
-  const totalFlat = feeRows.reduce((s, row) => s + (parseFloat(row.amount) || 0), 0);
-  const addRow    = () => setFeeRows(rs => [...rs, { id: Date.now(), label: '', amount: 0 }]);
-  const delRow    = id => setFeeRows(rs => rs.filter(row => row.id !== id));
-  const updRow    = (id, k, v) => setFeeRows(rs => rs.map(row => row.id === id ? { ...row, [k]: v } : row));
+  const toggleTier = id => setTiers(ts => ts.map(t => t.id === id ? { ...t, expanded: !t.expanded } : t));
+  const delTier    = id => setTiers(ts => ts.filter(t => t.id !== id));
+  const updTier    = (id, k, v) => setTiers(ts => ts.map(t => t.id === id ? { ...t, [k]: v } : t));
+  const addTier    = () => setTiers(ts => [...ts, { id: Date.now(), from: '', to: '', flat: '', expanded: true, breakdown: [] }]);
+
+  const addBRow  = tid => setTiers(ts => ts.map(t => t.id === tid ? { ...t, breakdown: [...t.breakdown, { id: Date.now(), label: '', amount: '' }] } : t));
+  const delBRow  = (tid, rid) => setTiers(ts => ts.map(t => t.id === tid ? { ...t, breakdown: t.breakdown.filter(b => b.id !== rid) } : t));
+  const updBRow  = (tid, rid, k, v) => setTiers(ts => ts.map(t => t.id === tid ? { ...t, breakdown: t.breakdown.map(b => b.id === rid ? { ...b, [k]: v } : b) } : t));
+
+  const tierTotal = tier => tier.breakdown.length > 0
+    ? tier.breakdown.reduce((s, b) => s + (parseFloat(b.amount) || 0), 0)
+    : parseFloat(tier.flat) || 0;
 
   return (
-    <Modal width={700} onClose={onClose} title={isNew ? 'Nouvelle route' : `Modifier la route — ${r?.fromCity ?? ''} → ${r?.toCity ?? ''}`}>
+    <Modal width={740} onClose={onClose} title={isNew ? 'Nouvelle route' : `Modifier la route — ${r?.fromCity ?? ''} → ${r?.toCity ?? ''}`}>
       {/* ── Infos générales ── */}
       <div style={{ fontSize: 10.5, fontWeight: 700, letterSpacing: '.08em', textTransform: 'uppercase', color: 'var(--ink-400)', marginBottom: 10 }}>Informations générales</div>
       <div className="field-row field-row--2">
@@ -362,99 +361,153 @@ function RouteEditModal({ editRoute, onClose }) {
         </div>
       </div>
 
-      {/* ── Tarification ── */}
+      {/* ── Grille tarifaire ── */}
       <div style={{ borderTop: '1px solid var(--border-soft)', margin: '18px 0 14px', paddingTop: 18 }}>
-        <div style={{ fontSize: 10.5, fontWeight: 700, letterSpacing: '.08em', textTransform: 'uppercase', color: 'var(--ink-400)', marginBottom: 14 }}>Tarification</div>
+        <div style={{ fontSize: 10.5, fontWeight: 700, letterSpacing: '.08em', textTransform: 'uppercase', color: 'var(--ink-400)', marginBottom: 14 }}>Grille tarifaire</div>
 
-        {/* Fee breakdown table */}
-        <div style={{ marginBottom: 16 }}>
-          <div style={{ fontSize: 12.5, fontWeight: 700, color: 'var(--ink-700)', marginBottom: 8 }}>Composition du forfait 0 – 3 kg</div>
-          <table className="tbl" style={{ marginBottom: 0 }}>
-            <thead>
-              <tr>
-                <th style={{ borderRadius: 0 }}>Libellé du frais</th>
-                <th style={{ textAlign: 'right', width: 130 }}>Montant ({currency})</th>
-                <th style={{ width: 40, borderRadius: 0 }}></th>
-              </tr>
-            </thead>
-            <tbody>
-              {feeRows.map(row => (
-                <tr key={row.id}>
+        <table className="tbl" style={{ marginBottom: 0 }}>
+          <thead>
+            <tr>
+              <th style={{ width: 90 }}>De (kg)</th>
+              <th style={{ width: 90 }}>À (kg)</th>
+              <th>Forfait ({currency})</th>
+              <th style={{ textAlign: 'right', width: 130 }}>Total calculé</th>
+              <th style={{ textAlign: 'center', width: 100 }}>Détail</th>
+              <th style={{ width: 40 }}></th>
+            </tr>
+          </thead>
+          <tbody>
+            {tiers.map(tier => (
+              <Fragment key={tier.id}>
+                <tr>
                   <td>
-                    <input
-                      className="input input--sm"
-                      value={row.label}
-                      onChange={e => updRow(row.id, 'label', e.target.value)}
-                      placeholder="Libellé…"
-                      style={{ border: 'none', background: 'transparent', width: '100%', padding: '2px 0' }}
-                    />
+                    <input className="input input--sm mono" type="number" value={tier.from}
+                      onChange={e => updTier(tier.id, 'from', e.target.value)}
+                      style={{ width: 60 }} />
+                  </td>
+                  <td>
+                    <input className="input input--sm mono" type="number" value={tier.to}
+                      onChange={e => updTier(tier.id, 'to', e.target.value)}
+                      style={{ width: 60 }} />
+                  </td>
+                  <td>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                      <input className="input input--sm mono" type="number" value={tier.flat}
+                        onChange={e => updTier(tier.id, 'flat', e.target.value)}
+                        style={{ width: 80 }} />
+                      <span style={{ fontSize: 11.5, color: 'var(--ink-400)' }}>{currency}</span>
+                    </div>
                   </td>
                   <td style={{ textAlign: 'right' }}>
-                    <input
-                      className="input input--sm mono"
-                      type="number"
-                      value={row.amount}
-                      onChange={e => updRow(row.id, 'amount', e.target.value)}
-                      style={{ width: 80, textAlign: 'right' }}
-                    />
+                    <span className="mono" style={{ fontWeight: 700, color: tierTotal(tier) > 0 ? 'var(--ok-600)' : 'var(--ink-300)' }}>
+                      {tierTotal(tier)} {currency}
+                    </span>
+                  </td>
+                  <td style={{ textAlign: 'center' }}>
+                    <button className="btn btn--ghost btn--sm" onClick={() => toggleTier(tier.id)} style={{ fontSize: 11.5, padding: '3px 8px' }}>
+                      {tier.expanded ? '▴ Masquer' : '▾ Voir'}
+                    </button>
                   </td>
                   <td>
-                    <button
-                      className="icon-btn"
-                      onClick={() => delRow(row.id)}
-                      disabled={feeRows.length === 1}
-                      style={{ color: feeRows.length === 1 ? 'var(--ink-200)' : 'var(--bad-400)' }}
-                    ><I.Trash /></button>
+                    <button className="icon-btn" onClick={() => delTier(tier.id)}
+                      disabled={tiers.length === 1}
+                      style={{ color: tiers.length === 1 ? 'var(--ink-200)' : 'var(--bad-400)' }}>
+                      <I.Trash />
+                    </button>
                   </td>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 12px', background: 'var(--bg-soft)', border: '1px solid var(--border)', borderTop: 'none' }}>
-            <button className="btn btn--ghost btn--sm" onClick={addRow}><I.Plus />Ajouter une ligne</button>
-            <div style={{ fontSize: 13, fontWeight: 700 }}>
-              Total forfait :&nbsp;
-              <span className="mono" style={{ color: totalFlat > 0 ? 'var(--ok-600)' : 'var(--ink-400)' }}>
-                {totalFlat} {currency}
-              </span>
-            </div>
-          </div>
-        </div>
+                {tier.expanded && (
+                  <tr>
+                    <td colSpan={6} style={{ padding: '8px 0 12px 24px', background: 'var(--bg-soft)' }}>
+                      <div style={{ fontSize: 11.5, fontWeight: 700, color: 'var(--ink-500)', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '.06em' }}>
+                        Composition du forfait {tier.from} – {tier.to} kg
+                      </div>
+                      <table className="tbl" style={{ marginBottom: 0, background: 'white' }}>
+                        <thead>
+                          <tr>
+                            <th style={{ borderRadius: 0 }}>Libellé du frais</th>
+                            <th style={{ textAlign: 'right', width: 130 }}>Montant ({currency})</th>
+                            <th style={{ width: 40, borderRadius: 0 }}></th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {tier.breakdown.length === 0 && (
+                            <tr>
+                              <td colSpan={3} style={{ fontSize: 12, color: 'var(--ink-400)', textAlign: 'center', padding: '10px 0' }}>
+                                Aucun détail. Cliquez &laquo; + Ajouter &raquo; pour décomposer ce forfait.
+                              </td>
+                            </tr>
+                          )}
+                          {tier.breakdown.map(row => (
+                            <tr key={row.id}>
+                              <td>
+                                <input className="input input--sm" value={row.label}
+                                  onChange={e => updBRow(tier.id, row.id, 'label', e.target.value)}
+                                  placeholder="Libellé…"
+                                  style={{ border: 'none', background: 'transparent', width: '100%' }} />
+                              </td>
+                              <td style={{ textAlign: 'right' }}>
+                                <input className="input input--sm mono" type="number" value={row.amount}
+                                  onChange={e => updBRow(tier.id, row.id, 'amount', e.target.value)}
+                                  style={{ width: 80, textAlign: 'right' }} />
+                              </td>
+                              <td>
+                                <button className="icon-btn" onClick={() => delBRow(tier.id, row.id)}
+                                  style={{ color: 'var(--bad-400)' }}>
+                                  <I.Trash />
+                                </button>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '7px 12px', border: '1px solid var(--border)', borderTop: 'none', background: 'white' }}>
+                        <button className="btn btn--ghost btn--sm" onClick={() => addBRow(tier.id)}><I.Plus />Ajouter une ligne</button>
+                        {tier.breakdown.length > 0 && (
+                          <div style={{ fontSize: 12, fontWeight: 700 }}>
+                            Total :&nbsp;
+                            <span className="mono" style={{ color: 'var(--ok-600)' }}>
+                              {tier.breakdown.reduce((s, b) => s + (parseFloat(b.amount) || 0), 0)} {currency}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                )}
+              </Fragment>
+            ))}
+          </tbody>
+        </table>
+        <button className="btn btn--ghost btn--sm" style={{ marginTop: 8 }} onClick={addTier}><I.Plus />Ajouter une tranche</button>
 
-        {/* Surplus + delivery */}
-        <div className="field-row field-row--2">
-          <div className="field">
-            <label className="label">Taux par 0,5 kg au-delà de 3 kg</label>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <input className="input mono" type="number" defaultValue={r?.fees?.perHalfKgRate ?? 9} style={{ flex: 1 }} />
-              <span style={{ fontSize: 12, color: 'var(--ink-400)', whiteSpace: 'nowrap' }}>{currency} / 0,5 kg</span>
-            </div>
-          </div>
-          <div className="field">
-            <label className="label">Livraison Grand Montréal</label>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <input className="input mono" type="number" defaultValue={r?.fees?.montrealDelivery ?? 25} style={{ flex: 1 }} />
-              <span style={{ fontSize: 12, color: 'var(--ink-400)', whiteSpace: 'nowrap' }}>{currency}</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Bag prices */}
-        <div style={{ fontSize: 12.5, fontWeight: 700, color: 'var(--ink-700)', marginBottom: 8 }}>Prix des sacs</div>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8 }}>
-          {[
-            { label: 'Petit sac',  key: 'smallBag',  def: 3  },
-            { label: 'Moyen sac', key: 'mediumBag', def: 5  },
-            { label: 'Grand sac', key: 'largeBag',  def: 10 },
-          ].map(s => (
-            <div key={s.key} className="field" style={{ marginBottom: 0 }}>
-              <label className="label">{s.label}</label>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                <input className="input mono" type="number" defaultValue={r?.fees?.addons?.[s.key] ?? s.def} style={{ flex: 1 }} />
-                <span style={{ fontSize: 12, color: 'var(--ink-400)' }}>{currency}</span>
+        {/* Delivery + bags */}
+        <div style={{ marginTop: 20 }}>
+          <div className="field-row field-row--2">
+            <div className="field">
+              <label className="label">Livraison Grand Montréal</label>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <input className="input mono" type="number" defaultValue={r?.fees?.montrealDelivery ?? 25} style={{ flex: 1 }} />
+                <span style={{ fontSize: 12, color: 'var(--ink-400)', whiteSpace: 'nowrap' }}>{currency}</span>
               </div>
             </div>
-          ))}
+          </div>
+          <div style={{ fontSize: 12.5, fontWeight: 700, color: 'var(--ink-700)', marginBottom: 8 }}>Prix des sacs</div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8 }}>
+            {[
+              { label: 'Petit sac',  key: 'smallBag',  def: 3  },
+              { label: 'Moyen sac', key: 'mediumBag', def: 5  },
+              { label: 'Grand sac', key: 'largeBag',  def: 10 },
+            ].map(s => (
+              <div key={s.key} className="field" style={{ marginBottom: 0 }}>
+                <label className="label">{s.label}</label>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <input className="input mono" type="number" defaultValue={r?.fees?.addons?.[s.key] ?? s.def} style={{ flex: 1 }} />
+                  <span style={{ fontSize: 12, color: 'var(--ink-400)' }}>{currency}</span>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
 
@@ -520,7 +573,7 @@ export default function SettingsScreen({ onNav }) {
           {section === 'auto'      && <SectionAutoNotif />}
           {section === 'campaigns' && <SectionCampaigns />}
           {section === 'codes'     && <SectionCodes />}
-          {section === 'security'  && <SectionSecurity />}
+          {section === 'security'  && <SectionSecurity onNav={onNav} />}
         </div>
       </div>
 

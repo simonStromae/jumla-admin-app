@@ -22,6 +22,7 @@ export function Sidebar({ route, onNav }) {
   ];
   const admin = [
     { id: 'agents',   label: 'Agents',      en: 'Agents',    icon: I.Users,    route: '/admin/agents' },
+    { id: 'logs',     label: 'Journal',     en: 'Activity',  icon: I.Activity, route: '/admin/logs' },
     { id: 'settings', label: 'Paramètres',  en: 'Settings',  icon: I.Settings, route: '/admin/settings' },
   ];
   const isActive = (r) => route === r || route.startsWith(r + '/');

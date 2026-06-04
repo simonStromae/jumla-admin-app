@@ -483,12 +483,6 @@ export default function BookingScreen({ onNav }) {
                               <span>{k}</span><span>{v} {route.currency}</span>
                             </div>
                           ))}
-                          {price.surplusKg > 0 && (
-                            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: 'var(--ink-600)', paddingLeft: 10 }}>
-                              <span>Surplus {price.surplusKg} kg ({price.surplusIncrements}× 0,5 kg)</span>
-                              <span>+{(price.surplusIncrements * price.perHalfKgRate).toFixed(0)} {route.currency}</span>
-                            </div>
-                          )}
                           {price.addonTotal > 0 && (
                             <>
                               <div style={{ fontSize: 10.5, fontWeight: 700, letterSpacing: '.08em', textTransform: 'uppercase', color: 'var(--brand-500)', marginTop: 6, marginBottom: 2 }}>
@@ -655,12 +649,6 @@ export default function BookingScreen({ onNav }) {
                             <span>{k}</span><span>{v} {route.currency}</span>
                           </div>
                         ))}
-                        {price.surplusKg > 0 && (
-                          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: 'var(--ink-500)', paddingLeft: 14 }}>
-                            <span>Surplus {price.surplusKg} kg ({price.surplusIncrements}× 0,5 kg @ {price.perHalfKgRate} {route.currency})</span>
-                            <span>+{(price.surplusIncrements * price.perHalfKgRate).toFixed(0)} {route.currency}</span>
-                          </div>
-                        )}
                       </div>
 
                       {/* Addons */}
