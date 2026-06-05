@@ -20,6 +20,13 @@ export default function AnalyticsScreen({ onNav }) {
   const totalWeight = weight.reduce((a, b) => a + b, 0);
   const recoveryRate = Math.round(totalColl / totalRev * 100);
 
+  const costs           = [28000, 43000, 48000, 44000, 0, 0, 0, 0, 0, 0, 0, 0];
+  const totalCosts      = costs.reduce((a, b) => a + b, 0);
+  const grossMargin     = totalColl - totalCosts;
+  const grossMarginPct  = Math.round(grossMargin / (totalColl || 1) * 100);
+  const avgCostPerKg    = totalWeight > 0 ? totalCosts / totalWeight : 0;
+  const marginPerParcel = totalParcels > 0 ? Math.round(grossMargin / totalParcels) : 0;
+
   return (
     <div className="page">
       <div className="page__head">
@@ -58,6 +65,13 @@ export default function AnalyticsScreen({ onNav }) {
         <KpiCard label="Impayés" en="Outstanding" value="28,1k" unit="CAD" delta={-15} deltaLabel="vs T1" deltaInverse color="var(--bad-500)" sub="12 colis · 8 clients" />
       </div>
 
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 18 }}>
+        <KpiCard label="Coûts opérationnels" en="Op. Costs" value={(totalCosts/1000).toFixed(1)+'k'} unit="CAD" delta={5} deltaLabel="vs 2025" deltaInverse color="var(--bad-500)" spark={[8,12,14,13,0,0,0,0,0,0,0,0]} />
+        <KpiCard label="Coût moyen / kg" en="Cost / kg" value={avgCostPerKg.toFixed(2)} unit="CAD/kg" delta={-3} deltaLabel="vs 2025" color="var(--brand-500)" sub="par kilogramme expédié" />
+        <KpiCard label="Marge brute" en="Gross Margin" value={(grossMargin/1000).toFixed(1)+'k'} unit="CAD" delta={22} deltaLabel="vs 2025" color="var(--ok-500)" spark={[10,16,18,15,0,0,0,0,0,0,0,0]} big />
+        <KpiCard label="Marge / colis" en="Per Parcel" value={marginPerParcel} unit="CAD" delta={8} deltaLabel="vs 2025" color="var(--ok-500)" sub={`Taux ${grossMarginPct}%`} />
+      </div>
+
       <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 14, marginBottom: 14 }}>
         <ChartCard title="Évolution du chiffre d'affaires" sub="CA facturé vs encaissé · par mois">
           <RevenueChart months={months} revenue={revenue} collected={collected} />
@@ -76,6 +90,21 @@ export default function AnalyticsScreen({ onNav }) {
             <GaugeRow label="Délai moyen paiement" v={2.4} target={3} unit=" j" inverse />
             <GaugeRow label="Délai livraison post-arrivée" v={1.8} target={2.5} unit=" j" inverse />
             <GaugeRow label="Bordereaux validés à temps" v={92} target={95} unit="%" />
+          </div>
+        </ChartCard>
+      </div>
+
+      <div style={{ marginBottom: 14 }}>
+        <ChartCard title="Revenus vs Coûts" sub="CA encaissé · coûts opérationnels · marge brute — par mois">
+          <RevsVsCostsChart months={months} revenue={collected} costs={costs} />
+          <div style={{ display: 'flex', alignItems: 'center', gap: 18, marginTop: 14, padding: '10px 0 0', borderTop: '1px solid var(--border-soft)' }}>
+            <LegendItem color="var(--ok-400)" label="Marge brute" v={(grossMargin/1000).toFixed(1)+'k CAD'} />
+            <LegendItem color="var(--bad-300)" label="Coûts opérationnels" v={(totalCosts/1000).toFixed(1)+'k CAD'} />
+            <div style={{ flex: 1 }} />
+            <span style={{ fontSize: 11.5, color: 'var(--ink-400)' }}>
+              Taux de marge <strong style={{ color: 'var(--ok-600)' }}>{grossMarginPct}%</strong>
+              <span style={{ marginLeft: 12 }}>Marge / colis <strong style={{ color: 'var(--ink-700)' }}>{marginPerParcel} CAD</strong></span>
+            </span>
           </div>
         </ChartCard>
       </div>
@@ -393,6 +422,39 @@ function RankingCard({ title, sub, icon, items }) {
         ))}
       </div>
     </ChartCard>
+  );
+}
+
+function RevsVsCostsChart({ months, revenue, costs }) {
+  const max = Math.max(...revenue, ...costs, 1);
+  const w = 100, h = 140;
+  const barW = w / months.length * 0.58;
+  return (
+    <div>
+      <svg viewBox={`0 0 ${w} ${h}`} preserveAspectRatio="none" style={{ width: '100%', height: 160 }}>
+        {[0.25, 0.5, 0.75, 1].map((g, i) => (
+          <line key={i} x1="0" x2={w} y1={h*(1-g)} y2={h*(1-g)} stroke="var(--border-soft)" strokeWidth=".3" vectorEffect="non-scaling-stroke" />
+        ))}
+        {months.map((m, i) => {
+          if (!revenue[i]) return null;
+          const x = (i + 0.5) * (w / months.length) - barW / 2;
+          const hRev  = (revenue[i] / max) * h;
+          const hCost = (costs[i] / max) * h;
+          const hMargin = Math.max(0, hRev - hCost);
+          return (
+            <g key={i}>
+              <rect x={x} y={h - hCost}   width={barW} height={hCost   || 0.1} fill="var(--bad-300)"  rx="1.4" vectorEffect="non-scaling-stroke" />
+              <rect x={x} y={h - hRev}    width={barW} height={hMargin || 0.1} fill="var(--ok-400)"   rx="1.4" vectorEffect="non-scaling-stroke" />
+            </g>
+          );
+        })}
+      </svg>
+      <div style={{ display: 'grid', gridTemplateColumns: `repeat(${months.length}, 1fr)`, marginTop: 6 }}>
+        {months.map((m, i) => (
+          <div key={i} style={{ fontSize: 10.5, textAlign: 'center', color: revenue[i] ? 'var(--ink-600)' : 'var(--ink-300)', fontWeight: 500 }}>{m}</div>
+        ))}
+      </div>
+    </div>
   );
 }
 

@@ -113,7 +113,7 @@ function ClientsListView({ clients, setOpen, page, pageSize }) {
           <th>Expéditeur</th>
           <th>Ville</th>
           <th>Téléphone</th>
-          <th style={{ textAlign: 'center' }}>Cargaisons</th>
+          <th style={{ textAlign: 'center' }}>Nb d'envois</th>
           <th style={{ textAlign: 'right' }}>Poids</th>
           <th style={{ textAlign: 'right' }}>CA total</th>
           <th>Dernière</th>
