@@ -18,6 +18,7 @@ export function Sidebar({ route, onNav }) {
     { id: 'verify',    label: 'Vérification', en: 'Arrival check',icon: I.Check,    route: '/admin/verify',    badge: 1 },
     { id: 'clients',   label: 'Clients',      en: 'Clients',      icon: I.Users,    route: '/admin/clients',   count: 312 },
     { id: 'payments',  label: 'Paiements',    en: 'Payments',     icon: I.Wallet,   route: '/admin/payments' },
+    { id: 'costs',     label: 'Coûts',        en: 'Cost tracking',icon: I.Coins,    route: '/admin/costs' },
     { id: 'messaging', label: 'Messagerie',   en: 'Messaging',    icon: I.Chat,     route: '/admin/messaging' },
   ];
   const admin = [

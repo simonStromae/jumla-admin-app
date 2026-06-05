@@ -88,14 +88,14 @@ export const ROUTES = [
 ];
 
 export const CAMPAIGNS = [
-  { id: 'c1',  code: 'DLA-YUL-APR-02', route: 'r-dla-yul', month: 'Avril 2026', dep: '28 avr. 2026', status: 'in-transit', parcels: 64, weight: 1842, invoiced: 32450, collected: 18920, alerts: 3 },
-  { id: 'c2',  code: 'DLA-YUL-APR-01', route: 'r-dla-yul', month: 'Avril 2026', dep: '14 avr. 2026', status: 'closed',     parcels: 58, weight: 1622, invoiced: 28100, collected: 28100, alerts: 0 },
-  { id: 'c3',  code: 'LOS-YUL-APR-01', route: 'r-los-yul', month: 'Avril 2026', dep: '10 avr. 2026', status: 'closed',     parcels: 41, weight: 1108, invoiced: 19600, collected: 19200, alerts: 1 },
-  { id: 'c4',  code: 'DLA-YUL-MAR-02', route: 'r-dla-yul', month: 'Mars 2026',  dep: '28 mars 2026', status: 'closed',     parcels: 71, weight: 2014, invoiced: 35200, collected: 35200, alerts: 0 },
-  { id: 'c5',  code: 'DLA-YUL-MAR-01', route: 'r-dla-yul', month: 'Mars 2026',  dep: '14 mars 2026', status: 'closed',     parcels: 62, weight: 1722, invoiced: 30650, collected: 30650, alerts: 0 },
-  { id: 'c6',  code: 'DLA-BRU-MAR-01', route: 'r-dla-bru', month: 'Mars 2026',  dep: '08 mars 2026', status: 'closed',     parcels: 34, weight: 962,  invoiced: 11400, collected: 11400, alerts: 0 },
-  { id: 'c7',  code: 'DLA-YUL-FEB-02', route: 'r-dla-yul', month: 'Février 2026', dep: '26 fév. 2026', status: 'closed',   parcels: 67, weight: 1880, invoiced: 32100, collected: 32100, alerts: 0 },
-  { id: 'c8',  code: 'DLA-YUL-FEB-01', route: 'r-dla-yul', month: 'Février 2026', dep: '12 fév. 2026', status: 'closed',   parcels: 55, weight: 1542, invoiced: 27300, collected: 27300, alerts: 0 },
+  { id: 'c1', code: 'DLA-YUL-APR-02', route: 'r-dla-yul', month: 'Avril 2026',    dep: '28 avr. 2026', status: 'in-transit', parcels: 64, weight: 1842, invoiced: 32450, collected: 18920, alerts: 3, costs: { fret: 8200, manutention: 960,  douane: 720, transport: 420, divers: 180 } },
+  { id: 'c2', code: 'DLA-YUL-APR-01', route: 'r-dla-yul', month: 'Avril 2026',    dep: '14 avr. 2026', status: 'closed',     parcels: 58, weight: 1622, invoiced: 28100, collected: 28100, alerts: 0, costs: { fret: 7400, manutention: 820,  douane: 640, transport: 360, divers: 140 } },
+  { id: 'c3', code: 'LOS-YUL-APR-01', route: 'r-los-yul', month: 'Avril 2026',    dep: '10 avr. 2026', status: 'closed',     parcels: 41, weight: 1108, invoiced: 19600, collected: 19200, alerts: 1, costs: { fret: 5800, manutention: 640,  douane: 520, transport: 280, divers: 120 } },
+  { id: 'c4', code: 'DLA-YUL-MAR-02', route: 'r-dla-yul', month: 'Mars 2026',     dep: '28 mars 2026', status: 'closed',     parcels: 71, weight: 2014, invoiced: 35200, collected: 35200, alerts: 0, costs: { fret: 9000, manutention: 1100, douane: 780, transport: 480, divers: 220 } },
+  { id: 'c5', code: 'DLA-YUL-MAR-01', route: 'r-dla-yul', month: 'Mars 2026',     dep: '14 mars 2026', status: 'closed',     parcels: 62, weight: 1722, invoiced: 30650, collected: 30650, alerts: 0, costs: { fret: 7800, manutention: 880,  douane: 680, transport: 400, divers: 160 } },
+  { id: 'c6', code: 'DLA-BRU-MAR-01', route: 'r-dla-bru', month: 'Mars 2026',     dep: '08 mars 2026', status: 'closed',     parcels: 34, weight: 962,  invoiced: 11400, collected: 11400, alerts: 0, costs: { fret: 3600, manutention: 460,  douane: 320, transport: 200, divers: 80  } },
+  { id: 'c7', code: 'DLA-YUL-FEB-02', route: 'r-dla-yul', month: 'Février 2026',  dep: '26 fév. 2026', status: 'closed',     parcels: 67, weight: 1880, invoiced: 32100, collected: 32100, alerts: 0, costs: { fret: 8400, manutention: 940,  douane: 700, transport: 420, divers: 180 } },
+  { id: 'c8', code: 'DLA-YUL-FEB-01', route: 'r-dla-yul', month: 'Février 2026',  dep: '12 fév. 2026', status: 'closed',     parcels: 55, weight: 1542, invoiced: 27300, collected: 27300, alerts: 0, costs: { fret: 6900, manutention: 760,  douane: 600, transport: 340, divers: 140 } },
 ];
 
 export const PARCELS = [
