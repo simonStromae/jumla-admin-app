@@ -1,0 +1,171 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum UserRole {
+  client
+  agent
+  admin
+}
+
+enum CampaignStatus {
+  open
+  in_transit
+  arrived
+  closed
+}
+
+enum ParcelStatus {
+  en_attente
+  recu
+  en_transit
+  en_douane
+  arrive
+  livre
+}
+
+enum PaymentStatus {
+  pending
+  completed
+  failed
+  refunded
+}
+
+model User {
+  id               String    @id @default(cuid())
+  email            String    @unique
+  passwordHash     String
+  name             String
+  phone            String?
+  role             UserRole  @default(client)
+  emailVerified    Boolean   @default(false)
+  verifyToken      String?
+  permissions      Json      @default("{}")
+  city             String?
+  country          String    @default("CM")
+  createdAt        DateTime  @default(now())
+
+  parcels          Parcel[]
+  payments         Payment[]
+  sentMessages     Message[]       @relation("sender")
+  receivedMessages Message[]       @relation("recipient")
+  trackingEvents   TrackingEvent[]
+  campaignCosts    CampaignCost[]
+  campaigns        Campaign[]
+
+  @@map("users")
+}
+
+model Route {
+  id          String     @id @default(cuid())
+  origin      String
+  destination String
+  label       String?
+  active      Boolean    @default(true)
+  campaigns   Campaign[]
+
+  @@map("routes")
+}
+
+model Campaign {
+  id            String         @id @default(cuid())
+  code          String         @unique
+  routeId       String
+  route         Route          @relation(fields: [routeId], references: [id])
+  departureDate DateTime?
+  arrivalDate   DateTime?
+  status        CampaignStatus @default(open)
+  capacityKg    Float?
+  createdById   String?
+  createdBy     User?          @relation(fields: [createdById], references: [id])
+  createdAt     DateTime       @default(now())
+
+  costs         CampaignCost?
+  parcels       Parcel[]
+
+  @@map("campaigns")
+}
+
+model CampaignCost {
+  campaignId  String   @id
+  campaign    Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  fret        Int      @default(0)
+  manutention Int      @default(0)
+  douane      Int      @default(0)
+  transport   Int      @default(0)
+  divers      Int      @default(0)
+  enteredById String?
+  enteredBy   User?    @relation(fields: [enteredById], references: [id])
+  updatedAt   DateTime @updatedAt
+
+  @@map("campaign_costs")
+}
+
+model Parcel {
+  id            String       @id @default(cuid())
+  clientId      String
+  client        User         @relation(fields: [clientId], references: [id])
+  campaignId    String
+  campaign      Campaign     @relation(fields: [campaignId], references: [id])
+  trackingCode  String       @unique
+  description   String?
+  weightKg      Float?
+  declaredValue Float?
+  priceXaf      Int?
+  status        ParcelStatus @default(en_attente)
+  confirmed     Boolean      @default(false)
+  notes         String?
+  createdAt     DateTime     @default(now())
+
+  payment        Payment?
+  trackingEvents TrackingEvent[]
+
+  @@map("parcels")
+}
+
+model Payment {
+  id         String        @id @default(cuid())
+  parcelId   String        @unique
+  parcel     Parcel        @relation(fields: [parcelId], references: [id])
+  clientId   String
+  client     User          @relation(fields: [clientId], references: [id])
+  amount     Int
+  status     PaymentStatus @default(pending)
+  interacRef String?
+  paidAt     DateTime?
+  createdAt  DateTime      @default(now())
+
+  @@map("payments")
+}
+
+model TrackingEvent {
+  id          String       @id @default(cuid())
+  parcelId    String
+  parcel      Parcel       @relation(fields: [parcelId], references: [id], onDelete: Cascade)
+  status      ParcelStatus
+  location    String?
+  note        String?
+  createdById String?
+  createdBy   User?        @relation(fields: [createdById], references: [id])
+  createdAt   DateTime     @default(now())
+
+  @@map("tracking_events")
+}
+
+model Message {
+  id          String    @id @default(cuid())
+  senderId    String
+  sender      User      @relation("sender", fields: [senderId], references: [id])
+  recipientId String
+  recipient   User      @relation("recipient", fields: [recipientId], references: [id])
+  campaignId  String?
+  body        String
+  readAt      DateTime?
+  createdAt   DateTime  @default(now())
+
+  @@map("messages")
+}

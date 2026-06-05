@@ -1,4 +1,5 @@
 import '@/src/styles/tokens.css';
+import Providers from './providers';
 
 export const metadata = {
   title: 'Jumla Shipping',
@@ -16,7 +17,7 @@ export default function RootLayout({ children }) {
           rel="stylesheet"
         />
       </head>
-      <body>{children}</body>
+      <body><Providers>{children}</Providers></body>
     </html>
   );
 }
