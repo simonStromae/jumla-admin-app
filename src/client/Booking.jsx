@@ -298,6 +298,9 @@ export default function BookingScreen({ onNav }) {
   ]);
   const [showBreakdown, setShowBreakdown] = useState(false);
   const [createAccount, setCreateAccount] = useState(false);
+  // 'idle' | 'card' | 'interac' | 'processing' | 'pending' | 'confirmed'
+  const [payStatus, setPayStatus] = useState('idle');
+  const [cardFields, setCardFields] = useState({ name: '', num: '', exp: '', cvv: '' });
 
   const upd      = (k, v) => setForm(f => ({ ...f, [k]: v }));
   const updAddon = (k, v) => setForm(f => ({ ...f, addons: { ...f.addons, [k]: v } }));
@@ -307,7 +310,7 @@ export default function BookingScreen({ onNav }) {
 
   const route     = ROUTES_DATA.find(r => r.id === form.route);
   const departure = DEPARTURES[form.route]?.find(d => d.id === form.departure);
-  const isDone    = step === STEPS.length;
+  const isDone    = payStatus === 'confirmed' || payStatus === 'pending';
 
   const city     = CITIES.find(c => c.label === form.recipCity);
   const cityZone = city?.zone || 'montreal-ile';
@@ -325,19 +328,37 @@ export default function BookingScreen({ onNav }) {
     return true;
   };
 
-  const prev = () => step > 0 ? setStep(s => s - 1) : onNav?.('/');
+  const prev = () => {
+    if (payStatus !== 'idle') { setPayStatus('idle'); return; }
+    if (step > 0) setStep(s => s - 1); else onNav?.('/');
+  };
   const next = () => setStep(s => s + 1);
 
-  const [refCode] = useState(() => `#${Math.random().toString(36).slice(2, 7).toUpperCase()}`);
-
-  // Delivery label helper
-  const deliveryLabel = () => {
-    if (form.delivery === 'pickup') return 'Retrait entrepôt — Gratuit';
-    if (form.delivery === 'expedition') return 'Expédition postale — Frais évalués';
-    if (cityZone === 'montreal-ile')    return `Livraison île de Montréal — +${route?.fees.montrealIleDelivery} ${route?.currency}`;
-    if (cityZone === 'montreal-grand')  return `Livraison Grand Montréal — +${route?.fees.montrealGrandDelivery} ${route?.currency}`;
-    return 'Livraison hors région — Frais évalués';
+  // Called when the user clicks "Payer →"
+  const handlePay = () => {
+    if (form.payMethod === 'cash') {
+      setPayStatus('confirmed');
+    } else if (form.payMethod === 'interac') {
+      setPayStatus('interac');
+    } else {
+      setPayStatus('card');
+    }
   };
+
+  // Card form submit — simulate processing then confirmation
+  const submitCard = () => {
+    if (!cardFields.name || !cardFields.num || !cardFields.exp || !cardFields.cvv) return;
+    setPayStatus('processing');
+    setTimeout(() => setPayStatus('confirmed'), 2000);
+  };
+
+  // Interac — user declares they sent the transfer (pending verification)
+  const confirmInterac = () => {
+    setPayStatus('processing');
+    setTimeout(() => setPayStatus('pending'), 1500);
+  };
+
+  const [refCode] = useState(() => `#${Math.random().toString(36).slice(2, 7).toUpperCase()}`);
 
   return (
     <div className="co-wrap">
@@ -366,15 +387,31 @@ export default function BookingScreen({ onNav }) {
         <div className="co-main">
           {isDone ? (
             <div className="co-done">
-              <div className="co-done__icon">✓</div>
-              <h2 className="co-done__title">Réservation confirmée !</h2>
-              <p className="co-done__sub">
-                Votre colis a été enregistré sous la référence <strong>{refCode}</strong>.
-                Vous recevrez un email de confirmation et notre équipe vous contactera pour organiser la collecte.
-              </p>
+              {payStatus === 'pending' ? (
+                <>
+                  <div className="co-done__icon" style={{ background: 'var(--warn-100)', color: 'var(--warn-700)' }}>⏳</div>
+                  <h2 className="co-done__title">Virement en cours de vérification</h2>
+                  <p className="co-done__sub">
+                    Votre réservation <strong>{refCode}</strong> est enregistrée. Dès que notre équipe reçoit et confirme votre virement Interac, vous recevrez un email de validation.
+                  </p>
+                  <div style={{ background: 'var(--warn-50)', border: '1px solid var(--warn-200)', borderRadius: 'var(--radius)', padding: '14px 18px', fontSize: 13, color: 'var(--warn-700)', maxWidth: 420, textAlign: 'left', lineHeight: 1.7, marginBottom: 8 }}>
+                    <strong>Important :</strong> votre colis ne sera pris en charge qu'après confirmation du paiement. Si le virement n'est pas reçu sous 48h, votre réservation sera annulée automatiquement.
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="co-done__icon">✓</div>
+                  <h2 className="co-done__title">Paiement reçu — Réservation confirmée !</h2>
+                  <p className="co-done__sub">
+                    Votre colis a été enregistré sous la référence <strong>{refCode}</strong>.
+                    {form.payMethod === 'cash' && ' Présentez-vous à notre agence avec le montant exact pour valider votre envoi.'}
+                    {form.payMethod !== 'cash' && ' Vous recevrez un email de confirmation et notre équipe vous contactera pour organiser la collecte.'}
+                  </p>
+                </>
+              )}
               {(price?.isOutsideDelivery || price?.isExpedition) && (
-                <div style={{ background: 'var(--warn-50)', border: '1px solid var(--warn-200)', borderRadius: 'var(--radius)', padding: '14px 18px', fontSize: 13, color: 'var(--warn-700)', maxWidth: 400, textAlign: 'left', lineHeight: 1.6 }}>
-                  <strong>Frais de livraison :</strong> les frais vers <strong>{form.recipCity === 'Hors région' ? form.recipCityCustom : form.recipCity}</strong> seront évalués à l'arrivée à Montréal. Vous recevrez une facture et un lien de paiement par email.
+                <div style={{ background: 'var(--warn-50)', border: '1px solid var(--warn-200)', borderRadius: 'var(--radius)', padding: '14px 18px', fontSize: 13, color: 'var(--warn-700)', maxWidth: 420, textAlign: 'left', lineHeight: 1.6, marginBottom: 8 }}>
+                  <strong>Frais de livraison :</strong> les frais vers <strong>{form.recipCity === 'Hors région' ? form.recipCityCustom : form.recipCity}</strong> seront évalués à l'arrivée à Montréal.
                 </div>
               )}
               <button className="co-btn co-btn--ghost" style={{ marginTop: 8 }} onClick={() => onNav?.('/')}>← Retour à l'accueil</button>
@@ -848,22 +885,109 @@ export default function BookingScreen({ onNav }) {
                 </div>
               )}
 
-              {/* Navigation */}
-              <div className="co-nav">
-                <button className="co-btn co-btn--ghost" onClick={prev}>
-                  ← {step === 0 ? "Retour à l'accueil" : 'Précédent'}
-                </button>
-                <button
-                  className={`co-btn ${step === STEPS.length - 1 ? 'co-btn--brand' : 'co-btn--primary'}`}
-                  onClick={next}
-                  disabled={!canNext()}
-                  style={{ opacity: canNext() ? 1 : 0.4, cursor: canNext() ? 'pointer' : 'default' }}
-                >
-                  {step === STEPS.length - 1
-                    ? `Payer ${price ? price.total.toFixed(0) + ' ' + route.currency : ''} →`
-                    : 'Continuer →'}
-                </button>
-              </div>
+              {/* ── Payment flow: Card ── */}
+              {step === 3 && payStatus === 'card' && (
+                <div className="co-section">
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 18 }}>
+                    <div style={{ fontSize: 22 }}>💳</div>
+                    <div>
+                      <div className="co-section__title" style={{ marginBottom: 0 }}>Paiement sécurisé</div>
+                      <div style={{ fontSize: 12, color: 'var(--ink-400)', marginTop: 2 }}>Vos données sont chiffrées et protégées.</div>
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                    <Field label="Nom du titulaire">
+                      <input className="co-input" value={cardFields.name} onChange={e => setCardFields(f => ({ ...f, name: e.target.value }))} placeholder="Jean Mbarga" />
+                    </Field>
+                    <Field label="Numéro de carte">
+                      <input className="co-input" value={cardFields.num} onChange={e => setCardFields(f => ({ ...f, num: e.target.value }))} placeholder="1234 5678 9012 3456" maxLength={19} style={{ fontFamily: 'ui-monospace, monospace', letterSpacing: '.08em' }} />
+                    </Field>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                      <Field label="Date d'expiration">
+                        <input className="co-input" value={cardFields.exp} onChange={e => setCardFields(f => ({ ...f, exp: e.target.value }))} placeholder="MM/AA" maxLength={5} style={{ fontFamily: 'ui-monospace, monospace' }} />
+                      </Field>
+                      <Field label="CVV">
+                        <input className="co-input" type="password" value={cardFields.cvv} onChange={e => setCardFields(f => ({ ...f, cvv: e.target.value }))} placeholder="•••" maxLength={4} style={{ fontFamily: 'ui-monospace, monospace' }} />
+                      </Field>
+                    </div>
+                  </div>
+                  <button
+                    className="co-btn co-btn--brand"
+                    onClick={submitCard}
+                    disabled={!cardFields.name || !cardFields.num || !cardFields.exp || !cardFields.cvv}
+                    style={{ marginTop: 20, width: '100%', opacity: (!cardFields.name || !cardFields.num || !cardFields.exp || !cardFields.cvv) ? .45 : 1 }}
+                  >
+                    Payer {price?.total.toFixed(0)} {route?.currency} →
+                  </button>
+                  <button className="co-btn co-btn--ghost" onClick={() => setPayStatus('idle')} style={{ marginTop: 8, width: '100%' }}>
+                    ← Changer de mode de paiement
+                  </button>
+                </div>
+              )}
+
+              {/* ── Payment flow: Interac ── */}
+              {step === 3 && payStatus === 'interac' && (
+                <div className="co-section">
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 18 }}>
+                    <div style={{ fontSize: 22 }}>🏦</div>
+                    <div>
+                      <div className="co-section__title" style={{ marginBottom: 0 }}>Virement Interac</div>
+                      <div style={{ fontSize: 12, color: 'var(--ink-400)', marginTop: 2 }}>Envoyez le montant exact à notre adresse courriel.</div>
+                    </div>
+                  </div>
+                  <div style={{ background: 'var(--bg-soft)', border: '1.5px solid var(--border)', borderRadius: 'var(--radius)', padding: '16px 18px', display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 20 }}>
+                    {[
+                      ['Adresse courriel', 'paiement@jumla.cargo'],
+                      ['Montant à envoyer', `${price?.total.toFixed(0)} ${route?.currency}`],
+                      ['Message / Référence', refCode],
+                    ].map(([k, v]) => (
+                      <div key={k} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 13.5, borderBottom: '1px solid var(--border-soft)', paddingBottom: 8 }}>
+                        <span style={{ color: 'var(--ink-400)', fontWeight: 500 }}>{k}</span>
+                        <span style={{ fontWeight: 700, color: 'var(--ink-900)', fontFamily: k !== 'Montant à envoyer' ? 'ui-monospace, monospace' : 'inherit', fontSize: k === 'Montant à envoyer' ? 16 : 13.5 }}>{v}</span>
+                      </div>
+                    ))}
+                  </div>
+                  <div style={{ background: 'var(--warn-50)', border: '1px solid var(--warn-200)', borderRadius: 'var(--radius)', padding: '12px 16px', fontSize: 12.5, color: 'var(--warn-700)', lineHeight: 1.6, marginBottom: 20 }}>
+                    ⚠️ Votre colis ne sera pris en charge qu'<strong>après réception et vérification</strong> du virement. N'oubliez pas d'inclure la référence <strong>{refCode}</strong> dans le message.
+                  </div>
+                  <button className="co-btn co-btn--brand" onClick={confirmInterac} style={{ width: '100%' }}>
+                    J'ai effectué mon virement →
+                  </button>
+                  <button className="co-btn co-btn--ghost" onClick={() => setPayStatus('idle')} style={{ marginTop: 8, width: '100%' }}>
+                    ← Changer de mode de paiement
+                  </button>
+                </div>
+              )}
+
+              {/* ── Payment flow: Processing ── */}
+              {step === 3 && payStatus === 'processing' && (
+                <div style={{ textAlign: 'center', padding: '48px 24px' }}>
+                  <div style={{ width: 52, height: 52, border: '4px solid var(--border)', borderTopColor: 'var(--brand-500)', borderRadius: '50%', margin: '0 auto 20px', animation: 'spin 0.8s linear infinite' }} />
+                  <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--ink-800)', marginBottom: 6 }}>
+                    {form.payMethod === 'interac' ? 'Enregistrement de votre virement…' : 'Traitement du paiement…'}
+                  </div>
+                  <p style={{ fontSize: 13, color: 'var(--ink-400)' }}>Merci de patienter quelques instants.</p>
+                </div>
+              )}
+
+              {/* Navigation — hidden during payment sub-flows */}
+              {payStatus === 'idle' && (
+                <div className="co-nav">
+                  <button className="co-btn co-btn--ghost" onClick={prev}>
+                    ← {step === 0 ? "Retour à l'accueil" : 'Précédent'}
+                  </button>
+                  <button
+                    className={`co-btn ${step === STEPS.length - 1 ? 'co-btn--brand' : 'co-btn--primary'}`}
+                    onClick={step === STEPS.length - 1 ? handlePay : next}
+                    disabled={!canNext()}
+                    style={{ opacity: canNext() ? 1 : 0.4, cursor: canNext() ? 'pointer' : 'default' }}
+                  >
+                    {step === STEPS.length - 1
+                      ? `Payer ${price ? price.total.toFixed(0) + ' ' + route.currency : ''} →`
+                      : 'Continuer →'}
+                  </button>
+                </div>
+              )}
             </>
           )}
         </div>
