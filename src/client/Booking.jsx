@@ -4,7 +4,17 @@ import { TopBar, SiteNav, SiteFooter } from './SiteLayout.jsx';
 import '@/src/styles/client-omega.css';
 import '@/src/styles/booking.css';
 
-// ── Routes with configurable fee structure ──
+// ── Catégories d'articles ──
+const ITEM_CATEGORIES = [
+  { id: 'standard',     label: 'Standard',                   icon: '📦', extraPerKg: 0,  hint: 'Épices, mèches, cube maggi, arachides, conserves…' },
+  { id: 'vetements',    label: 'Vêtements / Chaussures / Sacs', icon: '👗', extraPerKg: 2,  hint: 'Robes, pantalons, chaussures, sacs à main…' },
+  { id: 'cosmetiques',  label: 'Cosmétiques / Hygiène',      icon: '💄', extraPerKg: 3,  hint: 'Crèmes, parfums, produits capillaires…' },
+  { id: 'alimentaire',  label: 'Alimentaire / Épices',       icon: '🥘', extraPerKg: 0,  hint: 'Ndolè, poisson fumé, café, cacao…' },
+  { id: 'electronique', label: 'Électronique',               icon: '📱', extraPerKg: 5,  hint: 'Téléphones, ordinateurs, accessoires…' },
+  { id: 'documents',    label: 'Documents',                  icon: '📄', extraPerKg: -2, hint: 'Papiers administratifs, courrier officiel…' },
+];
+
+// ── Routes ──
 const ROUTES_DATA = [
   {
     id: 'dla-yul', label: 'Douala → Montréal', code: 'DLA → YUL',
@@ -12,8 +22,10 @@ const ROUTES_DATA = [
     fees: {
       base: 50, customs: 5, carton: 1, formality: 4, service: 5,
       flatUpTo3kg: 65, perHalfKgRate: 9,
+      cartonBase: 1, cartonPerUnit: 1.5,
       addons: { smallBag: 3, mediumBag: 5, largeBag: 10 },
-      montrealDelivery: 25,
+      montrealIleDelivery: 25,
+      montrealGrandDelivery: 30,
     },
   },
   {
@@ -22,53 +34,55 @@ const ROUTES_DATA = [
     fees: {
       base: 55, customs: 6, carton: 1, formality: 4, service: 4,
       flatUpTo3kg: 70, perHalfKgRate: 10,
+      cartonBase: 1, cartonPerUnit: 1.5,
       addons: { smallBag: 3, mediumBag: 5, largeBag: 10 },
-      montrealDelivery: 25,
+      montrealIleDelivery: 25,
+      montrealGrandDelivery: 30,
     },
   },
 ];
 
 const DEPARTURES = {
   'dla-yul': [
-    { id: 'd1', label: 'Mar 9 Juin',   spots: 12 },
-    { id: 'd2', label: 'Mar 16 Juin',  spots: 8  },
-    { id: 'd3', label: 'Mar 23 Juin',  spots: 15 },
-    { id: 'd4', label: 'Mar 30 Juin',  spots: 3  },
-    { id: 'd5', label: 'Mar 7 Juil',   spots: 18 },
-    { id: 'd6', label: 'Mar 14 Juil',  spots: 20 },
+    { id: 'd1', label: 'Mar 9 Juin',  spots: 12 },
+    { id: 'd2', label: 'Mar 16 Juin', spots: 8  },
+    { id: 'd3', label: 'Mar 23 Juin', spots: 15 },
+    { id: 'd4', label: 'Mar 30 Juin', spots: 3  },
+    { id: 'd5', label: 'Mar 7 Juil',  spots: 18 },
+    { id: 'd6', label: 'Mar 14 Juil', spots: 20 },
   ],
   'los-yul': [
-    { id: 'd1', label: 'Jeu 11 Juin',  spots: 10 },
-    { id: 'd2', label: 'Jeu 18 Juin',  spots: 5  },
-    { id: 'd3', label: 'Jeu 25 Juin',  spots: 14 },
-    { id: 'd4', label: 'Jeu 2 Juil',   spots: 20 },
+    { id: 'd1', label: 'Jeu 11 Juin', spots: 10 },
+    { id: 'd2', label: 'Jeu 18 Juin', spots: 5  },
+    { id: 'd3', label: 'Jeu 25 Juin', spots: 14 },
+    { id: 'd4', label: 'Jeu 2 Juil',  spots: 20 },
   ],
 };
 
+// ── Villes avec 3 zones ──
 const CITIES = [
-  { label: 'Montréal',              zone: 'montreal' },
-  { label: 'Laval',                 zone: 'montreal' },
-  { label: 'Longueuil',             zone: 'montreal' },
-  { label: 'Brossard',              zone: 'montreal' },
-  { label: 'Saint-Lambert',         zone: 'montreal' },
-  { label: 'Westmount',             zone: 'montreal' },
-  { label: 'Outremont',             zone: 'montreal' },
-  { label: 'Côte-Saint-Luc',        zone: 'montreal' },
-  { label: 'LaSalle',               zone: 'montreal' },
-  { label: 'Verdun',                zone: 'montreal' },
-  { label: 'Lachine',               zone: 'montreal' },
-  { label: 'Dorval',                zone: 'montreal' },
-  { label: 'Pointe-Claire',         zone: 'montreal' },
-  { label: 'Dollard-des-Ormeaux',   zone: 'montreal' },
-  { label: 'Mont-Royal',            zone: 'montreal' },
-  { label: 'Gatineau',   zone: 'other' },
-  { label: 'Québec',     zone: 'other' },
-  { label: 'Ottawa',     zone: 'other' },
-  { label: 'Toronto',    zone: 'other' },
-  { label: 'Vancouver',  zone: 'other' },
-  { label: 'Calgary',    zone: 'other' },
-  { label: 'Edmonton',   zone: 'other' },
-  { label: 'Winnipeg',   zone: 'other' },
+  // Île de Montréal
+  { label: 'Montréal',            zone: 'montreal-ile' },
+  { label: 'Westmount',           zone: 'montreal-ile' },
+  { label: 'Outremont',           zone: 'montreal-ile' },
+  { label: 'Côte-Saint-Luc',      zone: 'montreal-ile' },
+  { label: 'LaSalle',             zone: 'montreal-ile' },
+  { label: 'Verdun',              zone: 'montreal-ile' },
+  { label: 'Lachine',             zone: 'montreal-ile' },
+  { label: 'Dorval',              zone: 'montreal-ile' },
+  { label: 'Pointe-Claire',       zone: 'montreal-ile' },
+  { label: 'Dollard-des-Ormeaux', zone: 'montreal-ile' },
+  { label: 'Mont-Royal',          zone: 'montreal-ile' },
+  // Grand Montréal
+  { label: 'Laval',               zone: 'montreal-grand' },
+  { label: 'Longueuil',           zone: 'montreal-grand' },
+  { label: 'Brossard',            zone: 'montreal-grand' },
+  { label: 'Saint-Lambert',       zone: 'montreal-grand' },
+  { label: 'Boucherville',        zone: 'montreal-grand' },
+  { label: 'Repentigny',          zone: 'montreal-grand' },
+  { label: 'Terrebonne',          zone: 'montreal-grand' },
+  // Hors région
+  { label: 'Hors région',         zone: 'other' },
 ];
 
 const STEPS = [
@@ -78,38 +92,61 @@ const STEPS = [
   { label: 'Paiement' },
 ];
 
-// ── Pricing helpers ──
-function roundUpToHalfKg(kg) {
-  return Math.ceil(kg * 2) / 2;
-}
+// ── Helpers ──
+function roundUpToHalfKg(kg) { return Math.ceil(kg * 2) / 2; }
 
-function calcPrice(kg, fees, addons, delivery, cityZone) {
-  if (kg <= 0) return null;
-  const billedKg = kg <= 3 ? kg : roundUpToHalfKg(kg);
-  const surplusKg = billedKg > 3 ? billedKg - 3 : 0;
-  const surplusIncrements = surplusKg / 0.5;
-  const shipping = fees.flatUpTo3kg + surplusIncrements * fees.perHalfKgRate;
+function calcPrice(items, fees, addons, delivery, cityZone) {
+  const totalKg = items.reduce((s, i) => s + (parseFloat(i.kg) || 0), 0);
+  if (totalKg <= 0) return null;
+
+  const billedKg = totalKg <= 3 ? totalKg : roundUpToHalfKg(totalKg);
+  const surplusIncrements = billedKg > 3 ? (billedKg - 3) / 0.5 : 0;
+  const baseShipping = fees.flatUpTo3kg + surplusIncrements * fees.perHalfKgRate;
+
+  // Group kg by category
+  const catGroups = {};
+  items.forEach(item => {
+    const kg = parseFloat(item.kg) || 0;
+    if (kg <= 0) return;
+    const cat = item.cat || 'standard';
+    catGroups[cat] = (catGroups[cat] || 0) + kg;
+  });
+
+  // Surcharge par catégorie (extraPerKg × kg de la catégorie)
+  const catSurchargeLines = Object.entries(catGroups).map(([catId, kg]) => {
+    const def = ITEM_CATEGORIES.find(c => c.id === catId);
+    const extra = def?.extraPerKg || 0;
+    return { catId, label: def?.label || catId, kg, extra, amount: kg * extra };
+  }).filter(l => l.extra !== 0);
+  const catSurchargeTotal = catSurchargeLines.reduce((s, l) => s + l.amount, 0);
 
   const addonSmall  = (addons.smallBag  || 0) * fees.addons.smallBag;
   const addonMedium = (addons.mediumBag || 0) * fees.addons.mediumBag;
   const addonLarge  = (addons.largeBag  || 0) * fees.addons.largeBag;
-  const addonTotal  = addonSmall + addonMedium + addonLarge;
+  const cartonRate  = totalKg <= 3 ? (fees.cartonBase || 1) : (fees.cartonPerUnit || 1.5);
+  const cartonFee   = (addons.cartons || 0) * cartonRate;
+  const addonTotal  = addonSmall + addonMedium + addonLarge + cartonFee;
 
-  const isMontrealDelivery = delivery === 'home' && cityZone === 'montreal';
-  const isOutsideDelivery  = delivery === 'home' && cityZone === 'other';
-  const deliveryFee        = isMontrealDelivery ? fees.montrealDelivery : 0;
+  const isExpedition      = delivery === 'expedition';
+  const isMontrealIle     = !isExpedition && delivery === 'home' && cityZone === 'montreal-ile';
+  const isMontrealGrand   = !isExpedition && delivery === 'home' && cityZone === 'montreal-grand';
+  const isOutsideDelivery = !isExpedition && delivery === 'home' && cityZone === 'other';
+  const deliveryFee       = isMontrealIle   ? (fees.montrealIleDelivery   || 25)
+                          : isMontrealGrand ? (fees.montrealGrandDelivery || 30) : 0;
+
+  const shipping = baseShipping + catSurchargeTotal;
 
   return {
-    rawKg: kg, billedKg, surplusKg, surplusIncrements,
-    perHalfKgRate: fees.perHalfKgRate,
+    totalKg, billedKg, surplusIncrements,
+    baseShipping, catSurchargeLines, catSurchargeTotal, catGroups,
     breakdown: { base: fees.base, customs: fees.customs, carton: fees.carton, formality: fees.formality, service: fees.service },
-    shipping, addonSmall, addonMedium, addonLarge, addonTotal,
-    deliveryFee, isOutsideDelivery,
-    total: shipping + addonTotal + deliveryFee,
+    shipping, addonSmall, addonMedium, addonLarge, cartonFee, cartonRate, addonTotal,
+    deliveryFee, isExpedition, isMontrealIle, isMontrealGrand, isOutsideDelivery,
+    total: shipping + addonTotal + (isExpedition || isOutsideDelivery ? 0 : deliveryFee),
   };
 }
 
-// ── Shared atoms ──
+// ── Atoms ──
 function Field({ label, children }) {
   return (
     <div className="co-field">
@@ -132,11 +169,11 @@ function Stepper({ value, onChange, min = 0 }) {
   );
 }
 
-// ── Item icon by content keyword ──
-function itemIcon(desc) {
+function itemIcon(desc, cat) {
+  const def = ITEM_CATEGORIES.find(c => c.id === cat);
+  if (def?.icon) return def.icon;
   const d = (desc || '').toLowerCase();
   if (d.match(/valise|sac|bag|vêt|habit|cloth/)) return '👜';
-  if (d.match(/carton|colis|box/)) return '📦';
   if (d.match(/chaussure|sandale|shoe/)) return '👟';
   if (d.match(/téléphone|phone|élec|laptop|ordi/)) return '📱';
   if (d.match(/ndolè|épice|food|alim|congel/)) return '🥘';
@@ -144,32 +181,30 @@ function itemIcon(desc) {
   return '📦';
 }
 
-// ── Right panel ──
-function Summary({ route, departure, items, totalKg, price, form, step, isDone }) {
+// ── Summary panel ──
+function Summary({ route, departure, items, price, form, step, isDone }) {
   const [promoCode, setPromoCode] = useState('');
   const city     = CITIES.find(c => c.label === form.recipCity);
-  const cityZone = city?.zone || 'montreal';
-
+  const cityZone = city?.zone || 'montreal-ile';
   const filledItems = items.filter(i => i.desc || parseFloat(i.kg) > 0);
 
   return (
     <div className="co-summary">
       <div className="co-summary__head">Votre réservation</div>
 
-      {/* ── Articles du colis (like Shopify product rows) ── */}
       {filledItems.length > 0 && (
         <div className="co-summary__items">
           {filledItems.map(item => (
             <div key={item.id} className="co-summary__item">
               <div className="co-summary__item-thumb">
-                {itemIcon(item.desc)}
-                <span className="co-summary__item-qty">{item.paquets || 1}</span>
+                {itemIcon(item.desc, item.cat)}
+                {item.pieces > 1 && <span className="co-summary__item-qty">{item.pieces}</span>}
               </div>
               <div className="co-summary__item-info">
                 <div className="co-summary__item-name">{item.desc || 'Article'}</div>
                 <div className="co-summary__item-sub">
-                  {item.paquets > 1 ? `${item.paquets} paquets` : '1 paquet'}
-                  {item.pieces > 1 ? ` · ${item.pieces} pièces` : ''}
+                  {ITEM_CATEGORIES.find(c => c.id === item.cat)?.label || 'Standard'}
+                  {item.cat !== 'standard' && item.pieces > 1 ? ` · ${item.pieces} pièces` : ''}
                 </div>
               </div>
               <span className="co-summary__item-kg">{item.kg || '—'} kg</span>
@@ -178,18 +213,12 @@ function Summary({ route, departure, items, totalKg, price, form, step, isDone }
         </div>
       )}
 
-      {/* ── Code promo ── */}
       <div className="co-summary__promo">
-        <input
-          className="co-summary__promo-input"
-          placeholder="Code promo ou bon de réduction"
-          value={promoCode}
-          onChange={e => setPromoCode(e.target.value)}
-        />
+        <input className="co-summary__promo-input" placeholder="Code promo ou bon de réduction"
+          value={promoCode} onChange={e => setPromoCode(e.target.value)} />
         <button className="co-summary__promo-btn">Appliquer</button>
       </div>
 
-      {/* ── Itinéraire ── */}
       <div className="co-summary__section">
         <div className="co-summary__label">Itinéraire</div>
         <div className={`co-summary__row${route ? '' : ' co-summary__row--muted'}`}>
@@ -201,29 +230,36 @@ function Summary({ route, departure, items, totalKg, price, form, step, isDone }
         {route && <div className="co-summary__row co-summary__row--muted"><span>Transit estimé</span><span>~{route.transit} jours</span></div>}
       </div>
 
-      {/* ── Frais ── */}
       {step >= 1 && (
         <div className="co-summary__section">
           <div className="co-summary__label">Frais</div>
           {price ? (
             <>
               <div className="co-summary__row">
-                <span>Envoi {price.billedKg} kg{price.billedKg !== price.rawKg ? ` (déclaré ${price.rawKg} kg)` : ''}</span>
-                <span>{price.shipping.toFixed(0)} {route.currency}</span>
+                <span>Transport {price.billedKg} kg{price.billedKg !== price.totalKg ? ` (déclaré ${price.totalKg} kg)` : ''}</span>
+                <span>{price.baseShipping.toFixed(0)} {route.currency}</span>
               </div>
-              {price.addonTotal > 0 && <div className="co-summary__row"><span>Sacs</span><span>+{price.addonTotal} {route.currency}</span></div>}
+              {price.catSurchargeLines.map(l => (
+                <div key={l.catId} className="co-summary__row">
+                  <span>Suppl. {l.label}</span>
+                  <span>{l.amount >= 0 ? '+' : ''}{l.amount.toFixed(0)} {route.currency}</span>
+                </div>
+              ))}
+              {price.addonTotal > 0 && <div className="co-summary__row"><span>Accessoires</span><span>+{price.addonTotal} {route.currency}</span></div>}
               {step >= 2 && (
-                form.delivery === 'pickup' ? (
+                price.isExpedition ? (
+                  <div className="co-summary__row co-summary__row--muted"><span>Expédition</span><span>À évaluer</span></div>
+                ) : form.delivery === 'pickup' ? (
                   <div className="co-summary__row"><span>Livraison</span><span>Gratuit</span></div>
-                ) : cityZone === 'montreal' ? (
-                  <div className="co-summary__row"><span>Livraison domicile</span><span>+{route?.fees.montrealDelivery} {route?.currency}</span></div>
+                ) : price.isMontrealIle ? (
+                  <div className="co-summary__row"><span>Livraison île de Mtl</span><span>+{price.deliveryFee} {route.currency}</span></div>
+                ) : price.isMontrealGrand ? (
+                  <div className="co-summary__row"><span>Livraison Grand Mtl</span><span>+{price.deliveryFee} {route.currency}</span></div>
                 ) : (
                   <div className="co-summary__row co-summary__row--muted"><span>Livraison hors région</span><span>À évaluer</span></div>
                 )
               )}
-              {step < 2 && (
-                <div className="co-summary__row co-summary__row--muted"><span>Livraison</span><span>Calculé à l'étape suivante</span></div>
-              )}
+              {step < 2 && <div className="co-summary__row co-summary__row--muted"><span>Livraison</span><span>Étape suivante</span></div>}
             </>
           ) : (
             <div className="co-summary__row co-summary__row--muted"><span>Aucun article renseigné</span><span>—</span></div>
@@ -238,37 +274,34 @@ function Summary({ route, departure, items, totalKg, price, form, step, isDone }
         </div>
         <div style={{ textAlign: 'right' }}>
           {route && <div style={{ fontSize: 11, color: 'var(--ink-400)', marginBottom: 2 }}>{route.currency}</div>}
-          <span className="co-summary__total-price">
-            {price ? `${price.total.toFixed(0)}` : '—'}
-          </span>
+          <span className="co-summary__total-price">{price ? `${price.total.toFixed(0)}` : '—'}</span>
         </div>
       </div>
     </div>
   );
 }
 
-// ── Main component ──
+// ── Main ──
 export default function BookingScreen({ onNav }) {
   const [step, setStep] = useState(0);
   const [form, setForm] = useState({
-    route: 'dla-yul',
-    departure: '',
-    addons: { smallBag: 0, mediumBag: 0, largeBag: 0 },
+    route: 'dla-yul', departure: '',
+    addons: { smallBag: 0, mediumBag: 0, largeBag: 0, cartons: 0 },
     senderName: '', senderPhone: '', senderEmail: '',
-    recipName: '', recipPhone: '', recipCity: 'Montréal',
+    recipName: '', recipPhone: '', recipCity: 'Montréal', recipCityCustom: '',
     delivery: 'pickup',
     recipAddress: '', recipApt: '', recipProvince: 'QC', recipPostal: '',
     payMethod: 'card',
   });
   const [items, setItems] = useState([
-    { id: 1, desc: '', paquets: 1, pieces: 1, kg: '' },
+    { id: 1, cat: 'standard', desc: '', pieces: 1, kg: '' },
   ]);
   const [showBreakdown, setShowBreakdown] = useState(false);
   const [createAccount, setCreateAccount] = useState(false);
 
   const upd      = (k, v) => setForm(f => ({ ...f, [k]: v }));
   const updAddon = (k, v) => setForm(f => ({ ...f, addons: { ...f.addons, [k]: v } }));
-  const addItem    = () => setItems(is => [...is, { id: Date.now(), desc: '', paquets: 1, pieces: 1, kg: '' }]);
+  const addItem    = () => setItems(is => [...is, { id: Date.now(), cat: 'standard', desc: '', pieces: 1, kg: '' }]);
   const removeItem = id => setItems(is => is.filter(i => i.id !== id));
   const updItem    = (id, k, v) => setItems(is => is.map(i => i.id === id ? { ...i, [k]: v } : i));
 
@@ -277,10 +310,13 @@ export default function BookingScreen({ onNav }) {
   const isDone    = step === STEPS.length;
 
   const city     = CITIES.find(c => c.label === form.recipCity);
-  const cityZone = city?.zone || 'montreal';
+  const cityZone = city?.zone || 'montreal-ile';
 
   const totalKg = items.reduce((sum, i) => sum + (parseFloat(i.kg) || 0), 0);
-  const price   = route && totalKg > 0 ? calcPrice(totalKg, route.fees, form.addons, form.delivery, cityZone) : null;
+  const price   = route && totalKg > 0 ? calcPrice(items, route.fees, form.addons, form.delivery, cityZone) : null;
+
+  const montréalIleCities    = CITIES.filter(c => c.zone === 'montreal-ile');
+  const montréalGrandCities  = CITIES.filter(c => c.zone === 'montreal-grand');
 
   const canNext = () => {
     if (step === 0) return !!form.departure;
@@ -292,10 +328,16 @@ export default function BookingScreen({ onNav }) {
   const prev = () => step > 0 ? setStep(s => s - 1) : onNav?.('/');
   const next = () => setStep(s => s + 1);
 
-  const montréalCities = CITIES.filter(c => c.zone === 'montreal');
-  const otherCities    = CITIES.filter(c => c.zone === 'other');
-
   const [refCode] = useState(() => `#${Math.random().toString(36).slice(2, 7).toUpperCase()}`);
+
+  // Delivery label helper
+  const deliveryLabel = () => {
+    if (form.delivery === 'pickup') return 'Retrait entrepôt — Gratuit';
+    if (form.delivery === 'expedition') return 'Expédition postale — Frais évalués';
+    if (cityZone === 'montreal-ile')    return `Livraison île de Montréal — +${route?.fees.montrealIleDelivery} ${route?.currency}`;
+    if (cityZone === 'montreal-grand')  return `Livraison Grand Montréal — +${route?.fees.montrealGrandDelivery} ${route?.currency}`;
+    return 'Livraison hors région — Frais évalués';
+  };
 
   return (
     <div className="co-wrap">
@@ -323,7 +365,6 @@ export default function BookingScreen({ onNav }) {
       <div className="co-body">
         <div className="co-main">
           {isDone ? (
-            /* ── CONFIRMATION ── */
             <div className="co-done">
               <div className="co-done__icon">✓</div>
               <h2 className="co-done__title">Réservation confirmée !</h2>
@@ -331,9 +372,9 @@ export default function BookingScreen({ onNav }) {
                 Votre colis a été enregistré sous la référence <strong>{refCode}</strong>.
                 Vous recevrez un email de confirmation et notre équipe vous contactera pour organiser la collecte.
               </p>
-              {price?.isOutsideDelivery && (
+              {(price?.isOutsideDelivery || price?.isExpedition) && (
                 <div style={{ background: 'var(--warn-50)', border: '1px solid var(--warn-200)', borderRadius: 'var(--radius)', padding: '14px 18px', fontSize: 13, color: 'var(--warn-700)', maxWidth: 400, textAlign: 'left', lineHeight: 1.6 }}>
-                  <strong>Livraison hors région :</strong> les frais vers <strong>{form.recipCity}</strong> seront évalués à l'arrivée à Montréal. Vous recevrez une facture et un lien de paiement par email.
+                  <strong>Frais de livraison :</strong> les frais vers <strong>{form.recipCity === 'Hors région' ? form.recipCityCustom : form.recipCity}</strong> seront évalués à l'arrivée à Montréal. Vous recevrez une facture et un lien de paiement par email.
                 </div>
               )}
               <button className="co-btn co-btn--ghost" style={{ marginTop: 8 }} onClick={() => onNav?.('/')}>← Retour à l'accueil</button>
@@ -344,7 +385,6 @@ export default function BookingScreen({ onNav }) {
               {step === 0 && (
                 <div className="co-section">
                   <div className="co-section__title">Route & Date de départ</div>
-
                   <div style={{ marginBottom: 24 }}>
                     <div className="co-label" style={{ marginBottom: 10 }}>Direction</div>
                     <div className="co-opts">
@@ -361,7 +401,6 @@ export default function BookingScreen({ onNav }) {
                       ))}
                     </div>
                   </div>
-
                   <div>
                     <div className="co-label" style={{ marginBottom: 10 }}>Date de départ</div>
                     <div className="co-dates">
@@ -382,72 +421,93 @@ export default function BookingScreen({ onNav }) {
                 </div>
               )}
 
-              {/* ── Step 1 : Votre colis ── */}
+              {/* ── Step 1 : Contenu du colis ── */}
               {step === 1 && (
                 <div className="co-section">
                   <div className="co-section__title">Contenu du colis</div>
 
-                  {/* Items table */}
-                  <div style={{ marginBottom: 20 }}>
-                    <div className="co-label" style={{ marginBottom: 10 }}>Articles</div>
-                    <div className="co-table-wrap">
-                      <div className="co-table-head" style={{ gridTemplateColumns: '1fr 76px 76px 96px 38px' }}>
-                        <div>Description</div>
-                        <div>Paquets</div>
-                        <div>Pièces</div>
-                        <div>Poids (kg)</div>
-                        <div></div>
-                      </div>
-                      {items.map(item => (
-                        <div key={item.id} className="co-table-row" style={{ gridTemplateColumns: '1fr 76px 76px 96px 38px' }}>
+                  {/* Info hint */}
+                  <div style={{ background: 'var(--brand-50)', border: '1px solid var(--brand-100)', borderRadius: 'var(--radius)', padding: '10px 14px', fontSize: 12.5, color: 'var(--brand-700)', marginBottom: 16, lineHeight: 1.6 }}>
+                    💡 Créez <strong>une ligne par produit</strong>. Si votre produit n'apparaît pas dans les catégories, choisissez <strong>Standard</strong>.
+                  </div>
+
+                  {/* Articles table */}
+                  <div className="co-label" style={{ marginBottom: 10 }}>Articles</div>
+                  <div className="co-table-wrap">
+                    <div className="co-table-head" style={{ gridTemplateColumns: '160px 1fr 76px 96px 38px' }}>
+                      <div>Catégorie</div>
+                      <div>Description</div>
+                      <div>Pièces</div>
+                      <div>Poids (kg)</div>
+                      <div></div>
+                    </div>
+                    {items.map(item => {
+                      const isStd = item.cat === 'standard';
+                      return (
+                        <div key={item.id} className="co-table-row" style={{ gridTemplateColumns: '160px 1fr 76px 96px 38px' }}>
+                          <select
+                            className="co-input"
+                            value={item.cat}
+                            onChange={e => updItem(item.id, 'cat', e.target.value)}
+                            style={{ fontSize: 12.5 }}
+                          >
+                            {ITEM_CATEGORIES.map(c => (
+                              <option key={c.id} value={c.id}>{c.icon} {c.label}</option>
+                            ))}
+                          </select>
                           <input className="co-input" value={item.desc}
                             onChange={e => updItem(item.id, 'desc', e.target.value)}
-                            placeholder="Ex : valise vêtements, carton ndolè…" />
-                          <input className="co-input" type="number" min="1" value={item.paquets}
-                            onChange={e => updItem(item.id, 'paquets', e.target.value)} />
+                            placeholder={ITEM_CATEGORIES.find(c => c.id === item.cat)?.hint || 'Description…'} />
                           <input className="co-input" type="number" min="1" value={item.pieces}
-                            onChange={e => updItem(item.id, 'pieces', e.target.value)} />
+                            disabled={isStd}
+                            onChange={e => updItem(item.id, 'pieces', e.target.value)}
+                            style={{ opacity: isStd ? .35 : 1, cursor: isStd ? 'not-allowed' : 'text' }}
+                            title={isStd ? 'Non requis pour Standard' : ''} />
                           <input className="co-input" type="number" min="0" step="0.5" value={item.kg}
                             onChange={e => updItem(item.id, 'kg', e.target.value)} placeholder="0" />
                           <button className="co-table-del" disabled={items.length === 1}
                             onClick={() => removeItem(item.id)}>×</button>
                         </div>
-                      ))}
-                    </div>
-                    <button className="co-add-row" onClick={addItem}>+ Ajouter un article</button>
-
-                    {/* Total weight */}
-                    {totalKg > 0 && (
-                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 10, padding: '10px 4px 0', fontSize: 13 }}>
-                        <span style={{ color: 'var(--ink-500)' }}>Poids total :</span>
-                        <strong style={{ color: 'var(--ink-900)' }}>{totalKg} kg</strong>
-                        {totalKg > 3 && (
-                          <span style={{ color: 'var(--ink-400)', fontSize: 12 }}>
-                            → facturé {roundUpToHalfKg(totalKg)} kg (arrondi au 0,5 kg supérieur)
-                          </span>
-                        )}
-                        {totalKg <= 3 && (
-                          <span style={{ color: 'var(--ok-600)', fontSize: 12, fontWeight: 600 }}>
-                            ≤ 3 kg — forfait {route.fees.flatUpTo3kg} {route.currency}
-                          </span>
-                        )}
-                      </div>
-                    )}
+                      );
+                    })}
                   </div>
+                  <button className="co-add-row" onClick={addItem}>+ Ajouter un article</button>
 
-                  {/* Addons */}
-                  <div style={{ marginBottom: price ? 20 : 0 }}>
-                    <div className="co-label" style={{ marginBottom: 10 }}>Sacs (optionnel)</div>
+                  {/* Poids total */}
+                  {totalKg > 0 && (
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 10, padding: '10px 4px 0', fontSize: 13 }}>
+                      <span style={{ color: 'var(--ink-500)' }}>Poids total :</span>
+                      <strong style={{ color: 'var(--ink-900)' }}>{totalKg} kg</strong>
+                      {totalKg > 3 && (
+                        <span style={{ color: 'var(--ink-400)', fontSize: 12 }}>
+                          → facturé {roundUpToHalfKg(totalKg)} kg
+                        </span>
+                      )}
+                      {totalKg <= 3 && (
+                        <span style={{ color: 'var(--ok-600)', fontSize: 12, fontWeight: 600 }}>
+                          ≤ 3 kg — forfait {route.fees.flatUpTo3kg} {route.currency}
+                        </span>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Accessoires */}
+                  <div style={{ marginTop: 20, marginBottom: price ? 20 : 0 }}>
+                    <div className="co-label" style={{ marginBottom: 10 }}>Accessoires (optionnel)</div>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                       {[
-                        { key: 'smallBag',  label: 'Petit sac',  unitPrice: route.fees.addons.smallBag },
-                        { key: 'mediumBag', label: 'Moyen sac',  unitPrice: route.fees.addons.mediumBag },
-                        { key: 'largeBag',  label: 'Grand sac',  unitPrice: route.fees.addons.largeBag },
-                      ].map(({ key, label, unitPrice }) => (
+                        { key: 'smallBag',  label: 'Petit sac',   unitPrice: route.fees.addons.smallBag,  icon: '🛍️' },
+                        { key: 'mediumBag', label: 'Moyen sac',   unitPrice: route.fees.addons.mediumBag, icon: '🛍️' },
+                        { key: 'largeBag',  label: 'Grand sac',   unitPrice: route.fees.addons.largeBag,  icon: '🛍️' },
+                        { key: 'cartons',   label: 'Carton',      unitPrice: totalKg <= 3 ? route.fees.cartonBase : route.fees.cartonPerUnit, icon: '📦',
+                          sub: totalKg <= 3 ? `${route.fees.cartonBase} ${route.currency} / carton` : `${route.fees.cartonPerUnit} ${route.currency} / carton (> 3 kg)` },
+                      ].map(({ key, label, unitPrice, icon, sub }) => (
                         <div key={key} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', background: 'var(--bg-soft)', border: '1.5px solid var(--border)', borderRadius: 'var(--radius)' }}>
                           <div>
-                            <span style={{ fontSize: 13.5, fontWeight: 600, color: 'var(--ink-800)' }}>{label}</span>
-                            <span style={{ fontSize: 12, color: 'var(--ink-400)', marginLeft: 8 }}>{unitPrice} {route.currency} / unité</span>
+                            <span style={{ fontSize: 13.5, fontWeight: 600, color: 'var(--ink-800)' }}>{icon} {label}</span>
+                            <span style={{ fontSize: 12, color: 'var(--ink-400)', marginLeft: 8 }}>
+                              {sub || `${unitPrice} ${route.currency} / unité`}
+                            </span>
                           </div>
                           <Stepper value={form.addons[key]} onChange={v => updAddon(key, v)} />
                         </div>
@@ -455,7 +515,7 @@ export default function BookingScreen({ onNav }) {
                     </div>
                   </div>
 
-                  {/* Live fee preview */}
+                  {/* Estimation */}
                   {price && (
                     <div style={{ background: 'var(--brand-50)', border: '1.5px solid var(--brand-100)', borderRadius: 'var(--radius)', padding: '14px 16px' }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: showBreakdown ? 12 : 0 }}>
@@ -469,28 +529,47 @@ export default function BookingScreen({ onNav }) {
                       </div>
                       {showBreakdown && (
                         <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+                          {/* Base forfait */}
                           <div style={{ fontSize: 10.5, fontWeight: 700, letterSpacing: '.08em', textTransform: 'uppercase', color: 'var(--brand-500)', marginBottom: 4 }}>
-                            Frais d'envoi — {price.billedKg} kg — {price.shipping.toFixed(0)} {route.currency}
+                            Transport — {price.billedKg} kg — {price.baseShipping.toFixed(0)} {route.currency}
                           </div>
                           {[
-                            ['Frais de base', price.breakdown.base],
-                            ['Frais de douane', price.breakdown.customs],
-                            ['Carton / manutention', price.breakdown.carton],
-                            ['Formalités', price.breakdown.formality],
-                            ['Frais de service', price.breakdown.service],
+                            ['Frais de base',           price.breakdown.base],
+                            ['Frais de douane',          price.breakdown.customs],
+                            ['Carton / manutention',     price.breakdown.carton],
+                            ['Formalités',               price.breakdown.formality],
+                            ['Frais de service',         price.breakdown.service],
                           ].map(([k, v]) => (
                             <div key={k} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: 'var(--ink-600)', paddingLeft: 10 }}>
                               <span>{k}</span><span>{v} {route.currency}</span>
                             </div>
                           ))}
+
+                          {/* Surcharges catégories */}
+                          {price.catSurchargeLines.length > 0 && (
+                            <>
+                              <div style={{ fontSize: 10.5, fontWeight: 700, letterSpacing: '.08em', textTransform: 'uppercase', color: 'var(--brand-500)', marginTop: 6, marginBottom: 2 }}>
+                                Suppléments catégories — {price.catSurchargeTotal >= 0 ? '+' : ''}{price.catSurchargeTotal.toFixed(0)} {route.currency}
+                              </div>
+                              {price.catSurchargeLines.map(l => (
+                                <div key={l.catId} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: 'var(--ink-600)', paddingLeft: 10 }}>
+                                  <span>{l.label} ({l.kg} kg × {l.extra >= 0 ? '+' : ''}{l.extra} {route.currency}/kg)</span>
+                                  <span>{l.amount >= 0 ? '+' : ''}{l.amount.toFixed(0)} {route.currency}</span>
+                                </div>
+                              ))}
+                            </>
+                          )}
+
+                          {/* Accessoires */}
                           {price.addonTotal > 0 && (
                             <>
                               <div style={{ fontSize: 10.5, fontWeight: 700, letterSpacing: '.08em', textTransform: 'uppercase', color: 'var(--brand-500)', marginTop: 6, marginBottom: 2 }}>
-                                Sacs — {price.addonTotal} {route.currency}
+                                Accessoires — {price.addonTotal} {route.currency}
                               </div>
                               {price.addonSmall  > 0 && <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: 'var(--ink-600)', paddingLeft: 10 }}><span>Petits sacs × {form.addons.smallBag}</span><span>{price.addonSmall} {route.currency}</span></div>}
                               {price.addonMedium > 0 && <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: 'var(--ink-600)', paddingLeft: 10 }}><span>Moyens sacs × {form.addons.mediumBag}</span><span>{price.addonMedium} {route.currency}</span></div>}
                               {price.addonLarge  > 0 && <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: 'var(--ink-600)', paddingLeft: 10 }}><span>Grands sacs × {form.addons.largeBag}</span><span>{price.addonLarge} {route.currency}</span></div>}
+                              {price.cartonFee  > 0 && <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: 'var(--ink-600)', paddingLeft: 10 }}><span>Cartons × {form.addons.cartons} ({price.cartonRate} {route.currency}/u)</span><span>{price.cartonFee.toFixed(2)} {route.currency}</span></div>}
                             </>
                           )}
                         </div>
@@ -529,45 +608,79 @@ export default function BookingScreen({ onNav }) {
                       </Field>
                       <Field label="Ville">
                         <select className="co-select" value={form.recipCity} onChange={e => upd('recipCity', e.target.value)}>
-                          <optgroup label="Grand Montréal">
-                            {montréalCities.map(c => <option key={c.label}>{c.label}</option>)}
+                          <optgroup label="Île de Montréal (+25 CAD livraison)">
+                            {montréalIleCities.map(c => <option key={c.label}>{c.label}</option>)}
                           </optgroup>
-                          <optgroup label="Hors région">
-                            {otherCities.map(c => <option key={c.label}>{c.label}</option>)}
+                          <optgroup label="Grand Montréal (+30 CAD livraison)">
+                            {montréalGrandCities.map(c => <option key={c.label}>{c.label}</option>)}
+                          </optgroup>
+                          <optgroup label="Partout ailleurs">
+                            <option value="Hors région">Hors région</option>
                           </optgroup>
                         </select>
                       </Field>
+                      {form.recipCity === 'Hors région' && (
+                        <Field label="Votre ville">
+                          <input className="co-input" value={form.recipCityCustom}
+                            onChange={e => upd('recipCityCustom', e.target.value)}
+                            placeholder="Ex : Québec, Ottawa, Toronto…" />
+                        </Field>
+                      )}
                     </div>
                   </div>
 
+                  {/* Mode de livraison */}
                   <div style={{ marginTop: 22 }}>
                     <div className="co-label" style={{ marginBottom: 10 }}>Mode de livraison</div>
-                    <div className="co-opts co-opts--2">
+                    <div className="co-opts" style={{ flexDirection: 'column', gap: 8 }}>
+                      {/* Retrait */}
                       <button className={`co-opt${form.delivery === 'pickup' ? ' is-sel' : ''}`} onClick={() => upd('delivery', 'pickup')}>
                         <div className="co-opt__radio" />
                         <div className="co-opt__body">
-                          <div className="co-opt__label">Retrait entrepôt</div>
-                          <div className="co-opt__sub">Lachine, Montréal</div>
+                          <div className="co-opt__label">Retrait à l'entrepôt</div>
+                          <div className="co-opt__sub">Lachine, Montréal · Sur rendez-vous</div>
                         </div>
                         <span className="co-opt__badge">Gratuit</span>
                       </button>
-                      <button className={`co-opt${form.delivery === 'home' ? ' is-sel' : ''}`} onClick={() => upd('delivery', 'home')}>
+
+                      {/* Livraison domicile */}
+                      <button
+                        className={`co-opt${form.delivery === 'home' ? ' is-sel' : ''}`}
+                        onClick={() => upd('delivery', 'home')}
+                        disabled={form.recipCity === 'Hors région' && !form.recipCityCustom}
+                      >
                         <div className="co-opt__radio" />
                         <div className="co-opt__body">
                           <div className="co-opt__label">Livraison à domicile</div>
-                          <div className="co-opt__sub">{cityZone === 'montreal' ? 'Grand Montréal' : 'Hors région'}</div>
+                          <div className="co-opt__sub">
+                            {cityZone === 'montreal-ile'   ? 'Île de Montréal'    :
+                             cityZone === 'montreal-grand' ? 'Grand Montréal'     : 'Hors région'}
+                          </div>
                         </div>
                         <span className="co-opt__badge">
-                          {cityZone === 'montreal' ? `+${route.fees.montrealDelivery} ${route.currency}` : 'À évaluer'}
+                          {cityZone === 'montreal-ile'   ? `+${route.fees.montrealIleDelivery} ${route.currency}`   :
+                           cityZone === 'montreal-grand' ? `+${route.fees.montrealGrandDelivery} ${route.currency}` : 'À évaluer'}
                         </span>
+                      </button>
+
+                      {/* Expédition postale */}
+                      <button className={`co-opt${form.delivery === 'expedition' ? ' is-sel' : ''}`} onClick={() => upd('delivery', 'expedition')}>
+                        <div className="co-opt__radio" />
+                        <div className="co-opt__body">
+                          <div className="co-opt__label">Expédition par la poste</div>
+                          <div className="co-opt__sub">Colis envoyé par Postes Canada vers votre adresse</div>
+                        </div>
+                        <span className="co-opt__badge">Frais évalués</span>
                       </button>
                     </div>
                   </div>
 
-                  {/* Full shipping address — shown when home delivery */}
-                  {form.delivery === 'home' && (
+                  {/* Adresse de livraison */}
+                  {(form.delivery === 'home' || form.delivery === 'expedition') && (
                     <div style={{ marginTop: 18, padding: '16px 18px', background: 'var(--bg-soft)', border: '1.5px solid var(--border)', borderRadius: 'var(--radius)' }}>
-                      <div className="co-label" style={{ marginBottom: 14 }}>Adresse de livraison</div>
+                      <div className="co-label" style={{ marginBottom: 14 }}>
+                        {form.delivery === 'expedition' ? 'Adresse d\'expédition' : 'Adresse de livraison'}
+                      </div>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                         <div className="co-field" style={{ marginBottom: 0 }}>
                           <label className="co-label">Adresse (numéro et rue)</label>
@@ -581,7 +694,7 @@ export default function BookingScreen({ onNav }) {
                           <div className="co-field" style={{ marginBottom: 0 }}>
                             <label className="co-label">Ville</label>
                             <div className="co-input" style={{ background: 'var(--ink-50)', color: 'var(--ink-500)', cursor: 'default', display: 'flex', alignItems: 'center' }}>
-                              {form.recipCity}
+                              {form.recipCity === 'Hors région' ? (form.recipCityCustom || 'Hors région') : form.recipCity}
                             </div>
                           </div>
                           <div className="co-field" style={{ marginBottom: 0 }}>
@@ -603,11 +716,17 @@ export default function BookingScreen({ onNav }) {
                           <input className="co-input" value={form.recipPostal} onChange={e => upd('recipPostal', e.target.value)} placeholder="H3H 1A1" style={{ maxWidth: 160 }} />
                         </div>
                       </div>
-                      {cityZone === 'other' && (
+
+                      {(form.delivery === 'expedition' || cityZone === 'other') && (
                         <div style={{ marginTop: 12, background: 'var(--warn-50)', border: '1px solid var(--warn-200)', borderRadius: 'var(--radius)', padding: '10px 14px', fontSize: 12.5, color: 'var(--warn-700)', lineHeight: 1.6 }}>
-                          ℹ️ Les frais vers <strong>{form.recipCity}</strong> seront évalués à l'arrivée à Montréal. Vous recevrez une facture et un lien de paiement par email.
+                          ℹ️ Les frais vers <strong>{form.recipCity === 'Hors région' ? (form.recipCityCustom || 'votre ville') : form.recipCity}</strong> seront évalués à l'arrivée à Montréal. Vous recevrez une facture et un lien de paiement par email.
                         </div>
                       )}
+
+                      <label style={{ display: 'flex', alignItems: 'flex-start', gap: 10, marginTop: 14, cursor: 'pointer', fontSize: 12.5 }}>
+                        <input type="checkbox" style={{ marginTop: 2, flexShrink: 0 }} />
+                        <span style={{ color: 'var(--ink-600)' }}>Enregistrer cette adresse pour mes prochaines réservations</span>
+                      </label>
                     </div>
                   )}
 
@@ -632,17 +751,17 @@ export default function BookingScreen({ onNav }) {
                     </div>
 
                     <div style={{ padding: '16px 16px 0' }}>
-                      {/* Shipping */}
+                      {/* Transport */}
                       <div style={{ marginBottom: 14 }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13.5, fontWeight: 700, color: 'var(--ink-800)', marginBottom: 6 }}>
-                          <span>Frais d'envoi{price.billedKg !== price.rawKg ? ` (${price.billedKg} kg facturés)` : ` (${price.billedKg} kg)`}</span>
-                          <span>{price.shipping.toFixed(0)} {route.currency}</span>
+                          <span>Frais de transport — {price.billedKg} kg</span>
+                          <span>{price.baseShipping.toFixed(0)} {route.currency}</span>
                         </div>
                         {[
                           ['Frais de base',           price.breakdown.base],
                           ['Frais de douane',          price.breakdown.customs],
                           ['Carton / manutention',     price.breakdown.carton],
-                          ["Formalités d'expédition", price.breakdown.formality],
+                          ["Formalités d'expédition",  price.breakdown.formality],
                           ['Frais de service',         price.breakdown.service],
                         ].map(([k, v]) => (
                           <div key={k} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: 'var(--ink-500)', paddingLeft: 14, marginBottom: 2 }}>
@@ -651,37 +770,54 @@ export default function BookingScreen({ onNav }) {
                         ))}
                       </div>
 
-                      {/* Addons */}
-                      {price.addonTotal > 0 && (
+                      {/* Suppléments catégories */}
+                      {price.catSurchargeLines.length > 0 && (
                         <div style={{ borderTop: '1px solid var(--border-soft)', paddingTop: 12, marginBottom: 14 }}>
                           <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13.5, fontWeight: 700, color: 'var(--ink-800)', marginBottom: 4 }}>
-                            <span>Sacs</span><span>{price.addonTotal} {route.currency}</span>
+                            <span>Suppléments catégories</span>
+                            <span>{price.catSurchargeTotal >= 0 ? '+' : ''}{price.catSurchargeTotal.toFixed(0)} {route.currency}</span>
                           </div>
-                          {price.addonSmall  > 0 && <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: 'var(--ink-500)', paddingLeft: 14, marginBottom: 2 }}><span>Petits sacs × {form.addons.smallBag}</span><span>{price.addonSmall} {route.currency}</span></div>}
-                          {price.addonMedium > 0 && <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: 'var(--ink-500)', paddingLeft: 14, marginBottom: 2 }}><span>Moyens sacs × {form.addons.mediumBag}</span><span>{price.addonMedium} {route.currency}</span></div>}
-                          {price.addonLarge  > 0 && <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: 'var(--ink-500)', paddingLeft: 14 }}><span>Grands sacs × {form.addons.largeBag}</span><span>{price.addonLarge} {route.currency}</span></div>}
+                          {price.catSurchargeLines.map(l => (
+                            <div key={l.catId} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: 'var(--ink-500)', paddingLeft: 14, marginBottom: 2 }}>
+                              <span>{l.label} — {l.kg} kg × {l.extra >= 0 ? '+' : ''}{l.extra} {route.currency}/kg</span>
+                              <span>{l.amount >= 0 ? '+' : ''}{l.amount.toFixed(0)} {route.currency}</span>
+                            </div>
+                          ))}
                         </div>
                       )}
 
-                      {/* Delivery */}
+                      {/* Accessoires */}
+                      {price.addonTotal > 0 && (
+                        <div style={{ borderTop: '1px solid var(--border-soft)', paddingTop: 12, marginBottom: 14 }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13.5, fontWeight: 700, color: 'var(--ink-800)', marginBottom: 4 }}>
+                            <span>Accessoires</span><span>{price.addonTotal.toFixed(2)} {route.currency}</span>
+                          </div>
+                          {price.addonSmall  > 0 && <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: 'var(--ink-500)', paddingLeft: 14, marginBottom: 2 }}><span>Petits sacs × {form.addons.smallBag}</span><span>{price.addonSmall} {route.currency}</span></div>}
+                          {price.addonMedium > 0 && <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: 'var(--ink-500)', paddingLeft: 14, marginBottom: 2 }}><span>Moyens sacs × {form.addons.mediumBag}</span><span>{price.addonMedium} {route.currency}</span></div>}
+                          {price.addonLarge  > 0 && <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: 'var(--ink-500)', paddingLeft: 14, marginBottom: 2 }}><span>Grands sacs × {form.addons.largeBag}</span><span>{price.addonLarge} {route.currency}</span></div>}
+                          {price.cartonFee   > 0 && <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: 'var(--ink-500)', paddingLeft: 14 }}><span>Cartons × {form.addons.cartons} ({price.cartonRate} {route.currency}/u)</span><span>{price.cartonFee.toFixed(2)} {route.currency}</span></div>}
+                        </div>
+                      )}
+
+                      {/* Livraison */}
                       <div style={{ borderTop: '1px solid var(--border-soft)', paddingTop: 12, paddingBottom: 16 }}>
                         {form.delivery === 'pickup' ? (
                           <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13.5, fontWeight: 700, color: 'var(--ink-800)' }}>
-                            <span>Livraison (retrait entrepôt)</span><span>Gratuit</span>
+                            <span>Retrait entrepôt</span><span>Gratuit</span>
                           </div>
-                        ) : cityZone === 'montreal' ? (
-                          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13.5, fontWeight: 700, color: 'var(--ink-800)' }}>
-                            <span>Livraison à domicile — Grand Montréal</span>
-                            <span>{price.deliveryFee} {route.currency}</span>
-                          </div>
-                        ) : (
+                        ) : price.isExpedition || price.isOutsideDelivery ? (
                           <div>
                             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13.5, fontWeight: 700, color: 'var(--warn-700)' }}>
-                              <span>Livraison hors région</span><span>À évaluer</span>
+                              <span>{price.isExpedition ? 'Expédition postale' : 'Livraison hors région'}</span><span>À évaluer</span>
                             </div>
                             <p style={{ fontSize: 11.5, color: 'var(--ink-400)', marginTop: 4, lineHeight: 1.5 }}>
                               Facture envoyée par email à l'arrivée de votre colis à Montréal.
                             </p>
+                          </div>
+                        ) : (
+                          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13.5, fontWeight: 700, color: 'var(--ink-800)' }}>
+                            <span>{price.isMontrealIle ? 'Livraison île de Montréal' : 'Livraison Grand Montréal'}</span>
+                            <span>{price.deliveryFee} {route.currency}</span>
                           </div>
                         )}
                       </div>
@@ -697,7 +833,7 @@ export default function BookingScreen({ onNav }) {
                   <div className="co-opts">
                     {[
                       { id: 'card',    label: 'Carte bancaire',     sub: 'Visa, Mastercard, Amex' },
-                      { id: 'interac', label: 'Virement Interac',   sub: 'Paiement sécurisé par courriel' },
+                      { id: 'interac', label: 'Virement Interac',   sub: 'Demande envoyée à votre courriel' },
                       { id: 'cash',    label: "Espèces à l'agence", sub: "À régler avant l'expédition" },
                     ].map(m => (
                       <button key={m.id} className={`co-opt${form.payMethod === m.id ? ' is-sel' : ''}`} onClick={() => upd('payMethod', m.id)}>
@@ -712,7 +848,7 @@ export default function BookingScreen({ onNav }) {
                 </div>
               )}
 
-              {/* ── Navigation ── */}
+              {/* Navigation */}
               <div className="co-nav">
                 <button className="co-btn co-btn--ghost" onClick={prev}>
                   ← {step === 0 ? "Retour à l'accueil" : 'Précédent'}
@@ -734,14 +870,8 @@ export default function BookingScreen({ onNav }) {
 
         <aside className="co-aside">
           <Summary
-            route={route}
-            departure={departure}
-            items={items}
-            totalKg={totalKg}
-            price={price}
-            form={form}
-            step={step}
-            isDone={isDone}
+            route={route} departure={departure}
+            items={items} price={price} form={form} step={step} isDone={isDone}
           />
         </aside>
       </div>
