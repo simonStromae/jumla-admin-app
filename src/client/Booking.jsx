@@ -281,6 +281,147 @@ function Summary({ route, departure, items, price, form, step, isDone }) {
   );
 }
 
+// ── Auth gate ──
+function AuthGate({ onAuth, onNav }) {
+  const [tab, setTab]       = useState('login');
+  const [fields, setFields] = useState({ email: '', name: '', password: '', confirm: '' });
+  const [code, setCode]     = useState('');
+  const [expected, setExpected] = useState('');
+  const [error, setError]   = useState('');
+  const [loading, setLoading] = useState(false);
+
+  const upd = (k, v) => { setFields(f => ({ ...f, [k]: v })); setError(''); };
+
+  const doLogin = () => {
+    if (!fields.email || !fields.password) { setError('Remplissez tous les champs.'); return; }
+    setLoading(true);
+    setTimeout(() => {
+      const user = { name: fields.email.split('@')[0], email: fields.email };
+      localStorage.setItem('jumla_user', JSON.stringify(user));
+      onAuth(user);
+    }, 800);
+  };
+
+  const doRegister = () => {
+    if (!fields.name || !fields.email || !fields.password) { setError('Remplissez tous les champs.'); return; }
+    if (fields.password !== fields.confirm) { setError('Les mots de passe ne correspondent pas.'); return; }
+    if (fields.password.length < 6) { setError('Mot de passe trop court (6 caractères min.).'); return; }
+    const gen = Math.floor(100000 + Math.random() * 900000).toString();
+    setExpected(gen);
+    setTab('verify');
+    setError('');
+  };
+
+  const doVerify = () => {
+    if (code !== expected) { setError('Code incorrect, réessayez.'); return; }
+    setLoading(true);
+    setTimeout(() => {
+      const user = { name: fields.name, email: fields.email };
+      localStorage.setItem('jumla_user', JSON.stringify(user));
+      onAuth(user);
+    }, 600);
+  };
+
+  const errBox = error && (
+    <div style={{ fontSize: 12.5, color: '#DC2626', background: '#FEF2F2', border: '1px solid #FECACA', borderRadius: 'var(--radius-sm)', padding: '8px 12px' }}>{error}</div>
+  );
+
+  return (
+    <div className="co-wrap">
+      <TopBar />
+      <SiteNav onNav={onNav} onBook={() => {}} mode="booking" />
+      <div style={{ minHeight: '72vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '48px 16px' }}>
+        <div style={{ width: '100%', maxWidth: 440, background: 'white', border: '1.5px solid var(--border)', borderRadius: 'var(--radius-lg)', padding: '32px 36px', boxShadow: '0 4px 32px rgba(0,0,0,.07)' }}>
+
+          <div style={{ textAlign: 'center', marginBottom: 26 }}>
+            <div style={{ width: 48, height: 48, background: 'var(--brand-500)', borderRadius: 'var(--radius)', display: 'grid', placeItems: 'center', fontSize: 22, fontWeight: 900, color: 'white', margin: '0 auto 10px' }}>J</div>
+            <div style={{ fontSize: 17, fontWeight: 800, color: 'var(--ink-900)' }}>Réserver un envoi</div>
+            <div style={{ fontSize: 13, color: 'var(--ink-400)', marginTop: 3 }}>Connectez-vous ou créez un compte pour continuer</div>
+          </div>
+
+          {tab !== 'verify' && (
+            <div style={{ display: 'flex', border: '1.5px solid var(--border)', borderRadius: 'var(--radius)', overflow: 'hidden', marginBottom: 22 }}>
+              {[['login', 'Se connecter'], ['register', 'Créer un compte']].map(([t, l]) => (
+                <button key={t} onClick={() => { setTab(t); setError(''); }}
+                  style={{ flex: 1, padding: '9px 0', fontSize: 13, fontWeight: 600, border: 'none', cursor: 'pointer',
+                    background: tab === t ? 'var(--ink-900)' : 'white',
+                    color: tab === t ? 'white' : 'var(--ink-500)' }}>
+                  {l}
+                </button>
+              ))}
+            </div>
+          )}
+
+          {tab === 'login' && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              <Field label="Adresse email">
+                <input className="co-input" type="email" value={fields.email} onChange={e => upd('email', e.target.value)}
+                  placeholder="vous@email.com" onKeyDown={e => e.key === 'Enter' && doLogin()} autoFocus />
+              </Field>
+              <Field label="Mot de passe">
+                <input className="co-input" type="password" value={fields.password} onChange={e => upd('password', e.target.value)}
+                  placeholder="••••••••" onKeyDown={e => e.key === 'Enter' && doLogin()} />
+              </Field>
+              {errBox}
+              <button className="co-btn co-btn--brand" onClick={doLogin} disabled={loading} style={{ marginTop: 4 }}>
+                {loading ? '…' : 'Se connecter →'}
+              </button>
+            </div>
+          )}
+
+          {tab === 'register' && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              <Field label="Nom complet">
+                <input className="co-input" value={fields.name} onChange={e => upd('name', e.target.value)} placeholder="Awa Nkemdirim" autoFocus />
+              </Field>
+              <Field label="Adresse email">
+                <input className="co-input" type="email" value={fields.email} onChange={e => upd('email', e.target.value)} placeholder="vous@email.com" />
+              </Field>
+              <Field label="Mot de passe">
+                <input className="co-input" type="password" value={fields.password} onChange={e => upd('password', e.target.value)} placeholder="6 caractères min." />
+              </Field>
+              <Field label="Confirmer le mot de passe">
+                <input className="co-input" type="password" value={fields.confirm} onChange={e => upd('confirm', e.target.value)}
+                  placeholder="••••••••" onKeyDown={e => e.key === 'Enter' && doRegister()} />
+              </Field>
+              {errBox}
+              <button className="co-btn co-btn--brand" onClick={doRegister} style={{ marginTop: 4 }}>
+                Créer mon compte →
+              </button>
+            </div>
+          )}
+
+          {tab === 'verify' && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 14, textAlign: 'center' }}>
+              <div style={{ fontSize: 38, marginBottom: 2 }}>📧</div>
+              <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--ink-900)' }}>Vérifiez votre boîte mail</div>
+              <p style={{ fontSize: 13, color: 'var(--ink-500)', lineHeight: 1.65 }}>
+                Un code a été envoyé à<br /><strong>{fields.email}</strong>
+              </p>
+              <div style={{ background: 'var(--brand-50)', border: '1px solid var(--brand-100)', borderRadius: 'var(--radius)', padding: '10px 14px', fontSize: 12.5, color: 'var(--brand-700)' }}>
+                Code de démonstration : <strong style={{ fontFamily: 'ui-monospace, monospace', fontSize: 15 }}>{expected}</strong>
+              </div>
+              <input className="co-input" value={code} onChange={e => { setCode(e.target.value); setError(''); }}
+                placeholder="· · · · · ·" maxLength={6} autoFocus
+                style={{ textAlign: 'center', fontSize: 24, fontFamily: 'ui-monospace, monospace', letterSpacing: '.2em', fontWeight: 700 }}
+                onKeyDown={e => e.key === 'Enter' && doVerify()} />
+              {errBox}
+              <button className="co-btn co-btn--brand" onClick={doVerify} disabled={loading}>
+                {loading ? '…' : 'Vérifier →'}
+              </button>
+              <button style={{ background: 'none', border: 'none', color: 'var(--ink-400)', fontSize: 12.5, cursor: 'pointer', marginTop: 2 }}
+                onClick={() => { setTab('register'); setCode(''); setError(''); }}>
+                ← Retour
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+      <SiteFooter />
+    </div>
+  );
+}
+
 // ── Main ──
 export default function BookingScreen({ onNav }) {
   const [step, setStep] = useState(0);
@@ -298,9 +439,11 @@ export default function BookingScreen({ onNav }) {
   ]);
   const [showBreakdown, setShowBreakdown] = useState(false);
   const [createAccount, setCreateAccount] = useState(false);
-  // 'idle' | 'card' | 'interac' | 'processing' | 'pending' | 'confirmed'
+  // 'idle' | 'interac' | 'processing' | 'pending'
   const [payStatus, setPayStatus] = useState('idle');
-  const [cardFields, setCardFields] = useState({ name: '', num: '', exp: '', cvv: '' });
+  const [user, setUser] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('jumla_user')); } catch { return null; }
+  });
 
   const upd      = (k, v) => setForm(f => ({ ...f, [k]: v }));
   const updAddon = (k, v) => setForm(f => ({ ...f, addons: { ...f.addons, [k]: v } }));
@@ -310,7 +453,7 @@ export default function BookingScreen({ onNav }) {
 
   const route     = ROUTES_DATA.find(r => r.id === form.route);
   const departure = DEPARTURES[form.route]?.find(d => d.id === form.departure);
-  const isDone    = payStatus === 'confirmed' || payStatus === 'pending';
+  const isDone    = payStatus === 'pending';
 
   const city     = CITIES.find(c => c.label === form.recipCity);
   const cityZone = city?.zone || 'montreal-ile';
@@ -334,23 +477,7 @@ export default function BookingScreen({ onNav }) {
   };
   const next = () => setStep(s => s + 1);
 
-  // Called when the user clicks "Payer →"
-  const handlePay = () => {
-    if (form.payMethod === 'cash') {
-      setPayStatus('confirmed');
-    } else if (form.payMethod === 'interac') {
-      setPayStatus('interac');
-    } else {
-      setPayStatus('card');
-    }
-  };
-
-  // Card form submit — simulate processing then confirmation
-  const submitCard = () => {
-    if (!cardFields.name || !cardFields.num || !cardFields.exp || !cardFields.cvv) return;
-    setPayStatus('processing');
-    setTimeout(() => setPayStatus('confirmed'), 2000);
-  };
+  const handlePay = () => setPayStatus('interac');
 
   // Interac — user declares they sent the transfer (pending verification)
   const confirmInterac = () => {
@@ -359,6 +486,8 @@ export default function BookingScreen({ onNav }) {
   };
 
   const [refCode] = useState(() => `#${Math.random().toString(36).slice(2, 7).toUpperCase()}`);
+
+  if (!user) return <AuthGate onAuth={setUser} onNav={onNav} />;
 
   return (
     <div className="co-wrap">
@@ -369,6 +498,16 @@ export default function BookingScreen({ onNav }) {
       <div className="co-subhead">
         <div className="co-subhead__inner">
           <span className="co-subhead__title">Réservation</span>
+          <span style={{ fontSize: 12, color: 'var(--ink-400)', display: 'flex', alignItems: 'center', gap: 6 }}>
+            <span style={{ width: 24, height: 24, borderRadius: 999, background: 'var(--brand-100)', color: 'var(--brand-700)', fontSize: 11, fontWeight: 800, display: 'grid', placeItems: 'center', flexShrink: 0 }}>
+              {user.name.charAt(0).toUpperCase()}
+            </span>
+            {user.name} · {user.email}
+            <button onClick={() => { localStorage.removeItem('jumla_user'); setUser(null); }}
+              style={{ background: 'none', border: 'none', color: 'var(--ink-300)', fontSize: 11, cursor: 'pointer', marginLeft: 4 }}>
+              Déconnexion
+            </button>
+          </span>
           <nav className="co-crumbs">
             {STEPS.map((s, i) => (
               <span key={i} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
@@ -387,26 +526,16 @@ export default function BookingScreen({ onNav }) {
         <div className="co-main">
           {isDone ? (
             <div className="co-done">
-              {payStatus === 'pending' ? (
+              {payStatus === 'pending' && (
                 <>
                   <div className="co-done__icon" style={{ background: 'var(--warn-100)', color: 'var(--warn-700)' }}>⏳</div>
-                  <h2 className="co-done__title">Virement en cours de vérification</h2>
+                  <h2 className="co-done__title">Virement en attente de confirmation</h2>
                   <p className="co-done__sub">
-                    Votre réservation <strong>{refCode}</strong> est enregistrée. Dès que notre équipe reçoit et confirme votre virement Interac, vous recevrez un email de validation.
+                    Réservation <strong>{refCode}</strong> enregistrée. Dès que votre virement Interac est reçu et vérifié par notre équipe, vous recevrez un email de confirmation à <strong>{user.email}</strong>.
                   </p>
                   <div style={{ background: 'var(--warn-50)', border: '1px solid var(--warn-200)', borderRadius: 'var(--radius)', padding: '14px 18px', fontSize: 13, color: 'var(--warn-700)', maxWidth: 420, textAlign: 'left', lineHeight: 1.7, marginBottom: 8 }}>
-                    <strong>Important :</strong> votre colis ne sera pris en charge qu'après confirmation du paiement. Si le virement n'est pas reçu sous 48h, votre réservation sera annulée automatiquement.
+                    <strong>Important :</strong> votre colis ne sera pris en charge qu'après confirmation du paiement. Si le virement n'est pas reçu sous 48h, la réservation sera annulée automatiquement.
                   </div>
-                </>
-              ) : (
-                <>
-                  <div className="co-done__icon">✓</div>
-                  <h2 className="co-done__title">Paiement reçu — Réservation confirmée !</h2>
-                  <p className="co-done__sub">
-                    Votre colis a été enregistré sous la référence <strong>{refCode}</strong>.
-                    {form.payMethod === 'cash' && ' Présentez-vous à notre agence avec le montant exact pour valider votre envoi.'}
-                    {form.payMethod !== 'cash' && ' Vous recevrez un email de confirmation et notre équipe vous contactera pour organiser la collecte.'}
-                  </p>
                 </>
               )}
               {(price?.isOutsideDelivery || price?.isExpedition) && (
@@ -866,95 +995,47 @@ export default function BookingScreen({ onNav }) {
                     </div>
                   </div>
 
-                  <div className="co-label" style={{ marginBottom: 10 }}>Mode de paiement</div>
-                  <div className="co-opts">
-                    {[
-                      { id: 'card',    label: 'Carte bancaire',     sub: 'Visa, Mastercard, Amex' },
-                      { id: 'interac', label: 'Virement Interac',   sub: 'Demande envoyée à votre courriel' },
-                      { id: 'cash',    label: "Espèces à l'agence", sub: "À régler avant l'expédition" },
-                    ].map(m => (
-                      <button key={m.id} className={`co-opt${form.payMethod === m.id ? ' is-sel' : ''}`} onClick={() => upd('payMethod', m.id)}>
-                        <div className="co-opt__radio" />
-                        <div className="co-opt__body">
-                          <div className="co-opt__label">{m.label}</div>
-                          <div className="co-opt__sub">{m.sub}</div>
-                        </div>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* ── Payment flow: Card ── */}
-              {step === 3 && payStatus === 'card' && (
-                <div className="co-section">
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 18 }}>
-                    <div style={{ fontSize: 22 }}>💳</div>
+                  <div style={{ background: 'var(--brand-50)', border: '1px solid var(--brand-100)', borderRadius: 'var(--radius)', padding: '12px 16px', fontSize: 13, color: 'var(--brand-700)', display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <span style={{ fontSize: 18 }}>🏦</span>
                     <div>
-                      <div className="co-section__title" style={{ marginBottom: 0 }}>Paiement sécurisé</div>
-                      <div style={{ fontSize: 12, color: 'var(--ink-400)', marginTop: 2 }}>Vos données sont chiffrées et protégées.</div>
+                      <div style={{ fontWeight: 700 }}>Paiement par virement Interac</div>
+                      <div style={{ fontSize: 12, marginTop: 2, color: 'var(--brand-600)' }}>Vous recevrez les instructions à l'étape suivante.</div>
                     </div>
                   </div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                    <Field label="Nom du titulaire">
-                      <input className="co-input" value={cardFields.name} onChange={e => setCardFields(f => ({ ...f, name: e.target.value }))} placeholder="Jean Mbarga" />
-                    </Field>
-                    <Field label="Numéro de carte">
-                      <input className="co-input" value={cardFields.num} onChange={e => setCardFields(f => ({ ...f, num: e.target.value }))} placeholder="1234 5678 9012 3456" maxLength={19} style={{ fontFamily: 'ui-monospace, monospace', letterSpacing: '.08em' }} />
-                    </Field>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-                      <Field label="Date d'expiration">
-                        <input className="co-input" value={cardFields.exp} onChange={e => setCardFields(f => ({ ...f, exp: e.target.value }))} placeholder="MM/AA" maxLength={5} style={{ fontFamily: 'ui-monospace, monospace' }} />
-                      </Field>
-                      <Field label="CVV">
-                        <input className="co-input" type="password" value={cardFields.cvv} onChange={e => setCardFields(f => ({ ...f, cvv: e.target.value }))} placeholder="•••" maxLength={4} style={{ fontFamily: 'ui-monospace, monospace' }} />
-                      </Field>
-                    </div>
-                  </div>
-                  <button
-                    className="co-btn co-btn--brand"
-                    onClick={submitCard}
-                    disabled={!cardFields.name || !cardFields.num || !cardFields.exp || !cardFields.cvv}
-                    style={{ marginTop: 20, width: '100%', opacity: (!cardFields.name || !cardFields.num || !cardFields.exp || !cardFields.cvv) ? .45 : 1 }}
-                  >
-                    Payer {price?.total.toFixed(0)} {route?.currency} →
-                  </button>
-                  <button className="co-btn co-btn--ghost" onClick={() => setPayStatus('idle')} style={{ marginTop: 8, width: '100%' }}>
-                    ← Changer de mode de paiement
-                  </button>
                 </div>
               )}
 
               {/* ── Payment flow: Interac ── */}
               {step === 3 && payStatus === 'interac' && (
                 <div className="co-section">
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 18 }}>
-                    <div style={{ fontSize: 22 }}>🏦</div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 20 }}>
+                    <div style={{ fontSize: 26 }}>🏦</div>
                     <div>
                       <div className="co-section__title" style={{ marginBottom: 0 }}>Virement Interac</div>
-                      <div style={{ fontSize: 12, color: 'var(--ink-400)', marginTop: 2 }}>Envoyez le montant exact à notre adresse courriel.</div>
+                      <div style={{ fontSize: 12, color: 'var(--ink-400)', marginTop: 2 }}>Envoyez le montant exact depuis votre banque en ligne.</div>
                     </div>
                   </div>
-                  <div style={{ background: 'var(--bg-soft)', border: '1.5px solid var(--border)', borderRadius: 'var(--radius)', padding: '16px 18px', display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 20 }}>
+                  <div style={{ background: 'var(--bg-soft)', border: '1.5px solid var(--border)', borderRadius: 'var(--radius)', overflow: 'hidden', marginBottom: 18 }}>
                     {[
-                      ['Adresse courriel', 'paiement@jumla.cargo'],
-                      ['Montant à envoyer', `${price?.total.toFixed(0)} ${route?.currency}`],
-                      ['Message / Référence', refCode],
-                    ].map(([k, v]) => (
-                      <div key={k} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 13.5, borderBottom: '1px solid var(--border-soft)', paddingBottom: 8 }}>
-                        <span style={{ color: 'var(--ink-400)', fontWeight: 500 }}>{k}</span>
-                        <span style={{ fontWeight: 700, color: 'var(--ink-900)', fontFamily: k !== 'Montant à envoyer' ? 'ui-monospace, monospace' : 'inherit', fontSize: k === 'Montant à envoyer' ? 16 : 13.5 }}>{v}</span>
+                      ['Envoyer à',            'paiement@jumla.cargo',             false],
+                      ['Depuis votre adresse', user.email,                          true ],
+                      ['Montant',              `${price?.total.toFixed(0)} ${route?.currency}`, false],
+                      ['Message / Référence',  refCode,                             false],
+                    ].map(([k, v, highlight], idx) => (
+                      <div key={k} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '11px 16px', borderBottom: idx < 3 ? '1px solid var(--border-soft)' : 'none', background: highlight ? 'var(--brand-50)' : 'transparent' }}>
+                        <span style={{ fontSize: 12.5, color: 'var(--ink-400)', fontWeight: 500 }}>{k}</span>
+                        <span style={{ fontWeight: 700, color: highlight ? 'var(--brand-700)' : 'var(--ink-900)', fontFamily: 'ui-monospace, monospace', fontSize: k === 'Montant' ? 17 : 13 }}>{v}</span>
                       </div>
                     ))}
                   </div>
-                  <div style={{ background: 'var(--warn-50)', border: '1px solid var(--warn-200)', borderRadius: 'var(--radius)', padding: '12px 16px', fontSize: 12.5, color: 'var(--warn-700)', lineHeight: 1.6, marginBottom: 20 }}>
-                    ⚠️ Votre colis ne sera pris en charge qu'<strong>après réception et vérification</strong> du virement. N'oubliez pas d'inclure la référence <strong>{refCode}</strong> dans le message.
+                  <div style={{ background: 'var(--warn-50)', border: '1px solid var(--warn-200)', borderRadius: 'var(--radius)', padding: '12px 16px', fontSize: 12.5, color: 'var(--warn-700)', lineHeight: 1.65, marginBottom: 20 }}>
+                    ⚠️ Votre colis ne sera traité qu'<strong>après réception et confirmation</strong> du virement. Incluez la référence <strong>{refCode}</strong> dans le message du virement.
                   </div>
                   <button className="co-btn co-btn--brand" onClick={confirmInterac} style={{ width: '100%' }}>
                     J'ai effectué mon virement →
                   </button>
                   <button className="co-btn co-btn--ghost" onClick={() => setPayStatus('idle')} style={{ marginTop: 8, width: '100%' }}>
-                    ← Changer de mode de paiement
+                    ← Retour à la facture
                   </button>
                 </div>
               )}
@@ -963,9 +1044,7 @@ export default function BookingScreen({ onNav }) {
               {step === 3 && payStatus === 'processing' && (
                 <div style={{ textAlign: 'center', padding: '48px 24px' }}>
                   <div style={{ width: 52, height: 52, border: '4px solid var(--border)', borderTopColor: 'var(--brand-500)', borderRadius: '50%', margin: '0 auto 20px', animation: 'spin 0.8s linear infinite' }} />
-                  <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--ink-800)', marginBottom: 6 }}>
-                    {form.payMethod === 'interac' ? 'Enregistrement de votre virement…' : 'Traitement du paiement…'}
-                  </div>
+                  <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--ink-800)', marginBottom: 6 }}>Enregistrement de votre virement…</div>
                   <p style={{ fontSize: 13, color: 'var(--ink-400)' }}>Merci de patienter quelques instants.</p>
                 </div>
               )}
