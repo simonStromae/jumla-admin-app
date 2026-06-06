@@ -1,8 +1,16 @@
 'use client';
+import { Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { useNav } from '@/src/lib/nav';
 import AllParcelsScreen from '@/src/screens/AllParcels';
 
-export default function ParcelsPage() {
+function ParcelsContent() {
   const onNav = useNav();
-  return <AllParcelsScreen onNav={onNav} />;
+  const params = useSearchParams();
+  const initialSearch = params.get('q') || '';
+  return <AllParcelsScreen onNav={onNav} initialSearch={initialSearch} />;
+}
+
+export default function ParcelsPage() {
+  return <Suspense><ParcelsContent /></Suspense>;
 }

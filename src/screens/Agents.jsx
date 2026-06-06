@@ -1,5 +1,4 @@
-import { useState } from 'react';
-import { DATA } from '../data.js';
+import { useState, useEffect } from 'react';
 import I from '../components/Icons.jsx';
 import { Bi, Avatar } from '../components/Shell.jsx';
 import { Pagination, ViewToggle } from '../components/Pagination.jsx';
@@ -32,51 +31,54 @@ function AgentsGridView({ agents, setEditing }) {
       padding: 14, background: 'white', border: '1px solid var(--border)',
       borderRadius: '0 0 12px 12px',
     }}>
-      {agents.map(a => (
-        <div key={a.id} className="card" style={{ padding: 0, overflow: 'hidden' }}>
-          <div style={{ padding: 14, borderBottom: '1px solid var(--border-soft)', display: 'flex', alignItems: 'flex-start', gap: 12 }}>
-            <Avatar initials={a.initials} color={a.color} size="lg" />
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 3 }}>
-                <span style={{ fontSize: 15, fontWeight: 700 }}>{a.name}</span>
-                {a.role === 'admin'    && <span className="badge badge--brand">Admin</span>}
-                {a.role === 'agent'    && <span className="badge badge--info">Agent</span>}
-                {a.role === 'readonly' && <span className="badge badge--neutral">Lecture seule</span>}
+      {agents.map(a => {
+        const perms = a.permissions || a.perms || {};
+        return (
+          <div key={a.id} className="card" style={{ padding: 0, overflow: 'hidden' }}>
+            <div style={{ padding: 14, borderBottom: '1px solid var(--border-soft)', display: 'flex', alignItems: 'flex-start', gap: 12 }}>
+              <Avatar initials={a.initials} color={a.color} size="lg" />
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 3 }}>
+                  <span style={{ fontSize: 15, fontWeight: 700 }}>{a.name}</span>
+                  {a.role === 'admin'    && <span className="badge badge--brand">Admin</span>}
+                  {a.role === 'agent'    && <span className="badge badge--info">Agent</span>}
+                  {a.role === 'readonly' && <span className="badge badge--neutral">Lecture seule</span>}
+                </div>
+                <div style={{ fontSize: 12, color: 'var(--ink-500)', display: 'flex', alignItems: 'center', gap: 4 }}>
+                  <I.Pin style={{ width: 11, height: 11 }} />
+                  {a.city}
+                  <span style={{ color: 'var(--ink-300)', margin: '0 4px' }}>·</span>
+                  <span style={{ color: 'var(--ink-400)' }}>{a.lastLogin}</span>
+                </div>
               </div>
-              <div style={{ fontSize: 12, color: 'var(--ink-500)', display: 'flex', alignItems: 'center', gap: 4 }}>
-                <I.Pin style={{ width: 11, height: 11 }} />
-                {a.city}
-                <span style={{ color: 'var(--ink-300)', margin: '0 4px' }}>·</span>
-                <span style={{ color: 'var(--ink-400)' }}>{a.lastLogin}</span>
+              <button className="icon-btn" onClick={() => setEditing(a)}><I.Edit /></button>
+            </div>
+
+            <div style={{ padding: '10px 14px', display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 6, background: 'var(--bg-soft)', borderBottom: '1px solid var(--border-soft)' }}>
+              <Mini label="Cargaisons" v={a.campaigns} />
+              <Mini label="Colis gérés" v={a.parcels} />
+              <Mini label="Encaissé" v={(a.collected / 1000).toFixed(0) + 'k'} unit="CAD" />
+            </div>
+
+            <div style={{ padding: 14 }}>
+              <div style={{ fontSize: 10.5, fontWeight: 700, letterSpacing: '.04em', color: 'var(--ink-400)', textTransform: 'uppercase', marginBottom: 8 }}>Permissions</div>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5 }}>
+                {Object.entries(perms).map(([k, v]) => (
+                  <span key={k} style={{
+                    padding: '3px 8px', fontSize: 10.5, fontWeight: 600, borderRadius: 4,
+                    background: v ? 'var(--ok-50)' : 'var(--bg-soft)',
+                    color: v ? 'var(--ok-700)' : 'var(--ink-300)',
+                    border: '1px solid ' + (v ? 'var(--ok-100)' : 'var(--border-soft)'),
+                    textDecoration: v ? 'none' : 'line-through',
+                  }}>
+                    {v ? '✓ ' : '✗ '}{permLabels[k]}
+                  </span>
+                ))}
               </div>
             </div>
-            <button className="icon-btn" onClick={() => setEditing(a)}><I.Edit /></button>
           </div>
-
-          <div style={{ padding: '10px 14px', display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 6, background: 'var(--bg-soft)', borderBottom: '1px solid var(--border-soft)' }}>
-            <Mini label="Cargaisons" v={a.campaigns} />
-            <Mini label="Colis gérés" v={a.parcels} />
-            <Mini label="Encaissé" v={(a.collected / 1000).toFixed(0) + 'k'} unit="CAD" />
-          </div>
-
-          <div style={{ padding: 14 }}>
-            <div style={{ fontSize: 10.5, fontWeight: 700, letterSpacing: '.04em', color: 'var(--ink-400)', textTransform: 'uppercase', marginBottom: 8 }}>Permissions</div>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5 }}>
-              {Object.entries(a.perms).map(([k, v]) => (
-                <span key={k} style={{
-                  padding: '3px 8px', fontSize: 10.5, fontWeight: 600, borderRadius: 4,
-                  background: v ? 'var(--ok-50)' : 'var(--bg-soft)',
-                  color: v ? 'var(--ok-700)' : 'var(--ink-300)',
-                  border: '1px solid ' + (v ? 'var(--ok-100)' : 'var(--border-soft)'),
-                  textDecoration: v ? 'none' : 'line-through',
-                }}>
-                  {v ? '✓ ' : '✗ '}{permLabels[k]}
-                </span>
-              ))}
-            </div>
-          </div>
-        </div>
-      ))}
+        );
+      })}
 
       <div onClick={() => setEditing('new')} style={{
         border: '2px dashed var(--border)', borderRadius: 12, padding: 28,
@@ -113,8 +115,9 @@ function AgentsListView({ agents, setEditing, page, pageSize }) {
       </thead>
       <tbody>
         {paged.map(a => {
-          const enabledPerms = Object.values(a.perms).filter(Boolean).length;
-          const totalPerms = Object.keys(a.perms).length;
+          const perms = a.permissions || a.perms || {};
+          const enabledPerms = Object.values(perms).filter(Boolean).length;
+          const totalPerms = Object.keys(perms).length;
           return (
             <tr key={a.id}>
               <td><input type="checkbox" style={{ accentColor: 'var(--brand-500)' }} /></td>
@@ -123,7 +126,7 @@ function AgentsListView({ agents, setEditing, page, pageSize }) {
                   <Avatar initials={a.initials} color={a.color} size="sm" />
                   <div>
                     <div style={{ fontSize: 13, fontWeight: 600 }}>{a.name}</div>
-                    <div className="mono" style={{ fontSize: 10.5, color: 'var(--ink-400)' }}>{a.initials.toLowerCase()}@jumla.cargo</div>
+                    <div className="mono" style={{ fontSize: 10.5, color: 'var(--ink-400)' }}>{a.email || (a.initials?.toLowerCase() + '@jumla.cargo')}</div>
                   </div>
                 </div>
               </td>
@@ -145,7 +148,7 @@ function AgentsListView({ agents, setEditing, page, pageSize }) {
               <td>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                   <div style={{ width: 60, height: 4, background: 'var(--ink-100)', borderRadius: 999, overflow: 'hidden' }}>
-                    <div style={{ width: (enabledPerms / totalPerms * 100) + '%', height: '100%', background: 'var(--brand-500)', borderRadius: 999 }} />
+                    <div style={{ width: (totalPerms > 0 ? enabledPerms / totalPerms * 100 : 0) + '%', height: '100%', background: 'var(--brand-500)', borderRadius: 999 }} />
                   </div>
                   <span className="mono" style={{ fontSize: 11.5, color: 'var(--ink-600)', fontWeight: 600 }}>{enabledPerms}/{totalPerms}</span>
                 </div>
@@ -166,21 +169,49 @@ function AgentsListView({ agents, setEditing, page, pageSize }) {
 }
 
 export default function AgentsScreen({ onNav }) {
-  const agents = DATA.AGENTS;
+  const [agents, setAgents] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState('all');
   const [editing, setEditing] = useState(null);
   const [view, setView] = useState('grid');
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
 
+  useEffect(() => {
+    fetch('/api/users')
+      .then(r => r.json())
+      .then(data => { setAgents(Array.isArray(data) ? data : []); setLoading(false); })
+      .catch(() => setLoading(false));
+  }, []);
+
   const filtered = tab === 'all' ? agents : agents.filter(a => a.role === tab);
+
+  const adminCount    = agents.filter(a => a.role === 'admin').length;
+  const agentCount    = agents.filter(a => a.role === 'agent').length;
+  const readonlyCount = agents.filter(a => a.role === 'readonly').length;
+
+  if (loading) {
+    return (
+      <div className="page">
+        <div className="page__head">
+          <div>
+            <div className="page__title"><Bi fr="Agents & permissions" en="Agents & permissions" /></div>
+            <div className="page__sub">Chargement…</div>
+          </div>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '60px 0', color: 'var(--ink-400)', fontSize: 14 }}>
+          Chargement en cours…
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="page">
       <div className="page__head">
         <div>
           <div className="page__title"><Bi fr="Agents & permissions" en="Agents & permissions" /></div>
-          <div className="page__sub">{agents.length} membres · 2 admins · 3 agents · 1 lecture seule</div>
+          <div className="page__sub">{agents.length} membres · {adminCount} admins · {agentCount} agents{readonlyCount > 0 ? ` · ${readonlyCount} lecture seule` : ''}</div>
         </div>
         <div className="page__actions">
           <button className="btn btn--ghost"><I.Download />Export liste</button>
@@ -191,9 +222,9 @@ export default function AgentsScreen({ onNav }) {
       <div className="toolbar">
         <div className="tabs">
           <button className={'tab ' + (tab === 'all'      ? 'is-active' : '')} onClick={() => setTab('all')}>Tous <span className="count">{agents.length}</span></button>
-          <button className={'tab ' + (tab === 'admin'    ? 'is-active' : '')} onClick={() => setTab('admin')}>Admins <span className="count">2</span></button>
-          <button className={'tab ' + (tab === 'agent'    ? 'is-active' : '')} onClick={() => setTab('agent')}>Agents <span className="count">3</span></button>
-          <button className={'tab ' + (tab === 'readonly' ? 'is-active' : '')} onClick={() => setTab('readonly')}>Lecture seule <span className="count">1</span></button>
+          <button className={'tab ' + (tab === 'admin'    ? 'is-active' : '')} onClick={() => setTab('admin')}>Admins <span className="count">{adminCount}</span></button>
+          <button className={'tab ' + (tab === 'agent'    ? 'is-active' : '')} onClick={() => setTab('agent')}>Agents <span className="count">{agentCount}</span></button>
+          <button className={'tab ' + (tab === 'readonly' ? 'is-active' : '')} onClick={() => setTab('readonly')}>Lecture seule <span className="count">{readonlyCount}</span></button>
         </div>
         <div className="spacer" />
         <div style={{ position: 'relative' }}>

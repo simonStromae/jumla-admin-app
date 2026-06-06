@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { useSession, signOut } from 'next-auth/react';
 import I from './Icons.jsx';
 
 export function Bi({ fr, en, sep = '/' }) {
@@ -11,13 +12,25 @@ export function Bi({ fr, en, sep = '/' }) {
 }
 
 export function Sidebar({ route, onNav }) {
+  const { data: session } = useSession();
+  const [stats, setStats] = useState({ campaigns: 0, clients: 0, verifyPending: 0, unpaidPayments: 0 });
+
+  useEffect(() => {
+    fetch('/api/stats/sidebar').then(r => r.json()).then(setStats).catch(() => {});
+  }, []);
+
+  const user     = session?.user;
+  const name     = user?.name ?? '…';
+  const role     = (user)?.role ?? '';
+  const initials = name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
+
   const items = [
-    { id: 'home',      label: 'Cargaisons',   en: 'Shipments',    icon: I.Plane,    route: '/admin/campaigns', count: 22 },
+    { id: 'home',      label: 'Cargaisons',   en: 'Shipments',    icon: I.Plane,    route: '/admin/campaigns', count: stats.campaigns || null },
     { id: 'analytics', label: 'Analyses',     en: 'Analytics',    icon: I.Activity, route: '/admin/analytics' },
     { id: 'parcels',   label: 'Colis',        en: 'Parcels',      icon: I.Box,      route: '/admin/parcels' },
-    { id: 'verify',    label: 'Vérification', en: 'Arrival check',icon: I.Check,    route: '/admin/verify',    badge: 1 },
-    { id: 'clients',   label: 'Clients',      en: 'Clients',      icon: I.Users,    route: '/admin/clients',   count: 312 },
-    { id: 'payments',  label: 'Paiements',    en: 'Payments',     icon: I.Wallet,   route: '/admin/payments' },
+    { id: 'verify',    label: 'Vérification', en: 'Arrival check',icon: I.Check,    route: '/admin/verify',    badge: stats.verifyPending || null },
+    { id: 'clients',   label: 'Clients',      en: 'Clients',      icon: I.Users,    route: '/admin/clients',   count: stats.clients || null },
+    { id: 'payments',  label: 'Paiements',    en: 'Payments',     icon: I.Wallet,   route: '/admin/payments',  badge: stats.unpaidPayments || null },
     { id: 'costs',     label: 'Coûts',        en: 'Cost tracking',icon: I.Coins,    route: '/admin/costs' },
     { id: 'messaging', label: 'Messagerie',   en: 'Messaging',    icon: I.Chat,     route: '/admin/messaging' },
   ];
@@ -63,12 +76,12 @@ export function Sidebar({ route, onNav }) {
         })}
       </nav>
       <div className="sidebar__footer">
-        <div className="sidebar__avatar">AM</div>
+        <div className="sidebar__avatar">{initials}</div>
         <div className="sidebar__userinfo">
-          <span className="sidebar__username">Aïcha Mbarga</span>
-          <span className="sidebar__userrole">Admin · Douala</span>
+          <span className="sidebar__username">{name}</span>
+          <span className="sidebar__userrole">{role === 'admin' ? 'Admin' : role === 'agent' ? 'Agent' : role}</span>
         </div>
-        <button className="icon-btn" title="Déconnexion" onClick={() => onNav('/login')}>
+        <button className="icon-btn" title="Déconnexion" onClick={() => signOut({ callbackUrl: '/login' })}>
           <I.Logout />
         </button>
       </div>
@@ -77,27 +90,68 @@ export function Sidebar({ route, onNav }) {
 }
 
 export function Topbar({ title, sub, actions, onNav }) {
-  const [lang, setLang] = useState('FR');
+  const [lang, setLang]           = useState('FR');
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [searchQ, setSearchQ]     = useState('');
+  const inputRef = useRef(null);
+
+  useEffect(() => {
+    if (searchOpen) setTimeout(() => inputRef.current?.focus(), 50);
+  }, [searchOpen]);
+
+  useEffect(() => {
+    const handler = (e) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') { e.preventDefault(); setSearchOpen(true); }
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, []);
+
+  const handleKey = (e) => {
+    if (e.key === 'Enter' && searchQ.trim()) {
+      onNav?.('/admin/parcels?q=' + encodeURIComponent(searchQ.trim()));
+      setSearchOpen(false); setSearchQ('');
+    }
+    if (e.key === 'Escape') { setSearchOpen(false); setSearchQ(''); }
+  };
+
   return (
-    <header className="topbar">
-      <div>
-        <span className="topbar__title">{title}</span>
-        {sub && <span className="topbar__subtitle">· {sub}</span>}
-      </div>
-      <div className="topbar__spacer" />
-      <div className="topbar__search">
-        <I.Search style={{ width: 14, height: 14 }} />
-        <span>Rechercher cargaisons, clients, bordereaux…</span>
-        <kbd>⌘K</kbd>
-      </div>
-      <div className="topbar__lang">
-        <button className={lang === 'FR' ? 'is-active' : ''} onClick={() => setLang('FR')}>FR</button>
-        <button className={lang === 'EN' ? 'is-active' : ''} onClick={() => setLang('EN')}>EN</button>
-      </div>
-      <button className="icon-btn"><I.Help /></button>
-      <button className="icon-btn"><I.Bell /><span className="dot" /></button>
-      {actions}
-    </header>
+    <>
+      <header className="topbar">
+        {title && <div><span className="topbar__title">{title}</span>{sub && <span className="topbar__subtitle">· {sub}</span>}</div>}
+        <div className="topbar__spacer" />
+        <div className="topbar__search" onClick={() => setSearchOpen(true)} style={{ cursor: 'pointer' }}>
+          <I.Search style={{ width: 14, height: 14 }} />
+          <span>Rechercher cargaisons, clients, colis…</span>
+          <kbd>⌘K</kbd>
+        </div>
+        <div className="topbar__lang">
+          <button className={lang === 'FR' ? 'is-active' : ''} onClick={() => setLang('FR')}>FR</button>
+          <button className={lang === 'EN' ? 'is-active' : ''} onClick={() => setLang('EN')}>EN</button>
+        </div>
+        <button className="icon-btn" title="Aide"><I.Help /></button>
+        <button className="icon-btn" title="Paiements en attente" onClick={() => onNav?.('/admin/payments')}><I.Bell /></button>
+        {actions}
+      </header>
+
+      {searchOpen && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(15,23,42,.45)', zIndex: 600, display: 'flex', justifyContent: 'center', paddingTop: 80 }}
+          onClick={e => e.target === e.currentTarget && (setSearchOpen(false), setSearchQ(''))}>
+          <div style={{ width: 580, height: 'fit-content', borderRadius: 14, overflow: 'hidden', boxShadow: '0 24px 80px rgba(0,0,0,.28)' }}>
+            <div style={{ background: 'white', padding: '14px 18px', display: 'flex', gap: 12, alignItems: 'center' }}>
+              <I.Search style={{ width: 18, height: 18, color: 'var(--ink-400)', flexShrink: 0 }} />
+              <input ref={inputRef} value={searchQ} onChange={e => setSearchQ(e.target.value)} onKeyDown={handleKey}
+                placeholder="Colis, client, cargaison… (Entrée pour chercher)"
+                style={{ flex: 1, border: 0, outline: 0, fontSize: 16, color: 'var(--ink-900)', background: 'transparent' }} />
+              <kbd style={{ fontSize: 11, color: 'var(--ink-400)', border: '1px solid var(--border)', borderRadius: 4, padding: '2px 6px' }}>Esc</kbd>
+            </div>
+            <div style={{ background: 'var(--bg-soft)', padding: '10px 18px', borderTop: '1px solid var(--border-soft)', fontSize: 12, color: 'var(--ink-400)' }}>
+              Appuyez sur <strong>Entrée</strong> pour chercher dans les colis · <strong>Échap</strong> pour fermer
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   );
 }
 

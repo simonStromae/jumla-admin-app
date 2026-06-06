@@ -1,24 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import I from '../components/Icons.jsx';
 import { Bi } from '../components/Shell.jsx';
-
-const ALL_LOGS = [
-  { id: 1,  ts: '2026-06-04 14:48', user: 'Aïcha M.',  action: 'Paiement validé',       obj: 'CLI-0418 · Colis #01',      kind: 'ok',      cat: 'payment' },
-  { id: 2,  ts: '2026-06-04 14:32', user: 'Marc L.',   action: 'Bordereau créé',         obj: 'BL-2604-01',                kind: 'info',    cat: 'parcel'  },
-  { id: 3,  ts: '2026-06-04 13:55', user: 'Aïcha M.',  action: 'Cargaison clôturée',     obj: 'DLA-YUL-APR-01',            kind: 'warn',    cat: 'campaign'},
-  { id: 4,  ts: '2026-06-04 13:21', user: 'Admin',     action: 'Agent invité',           obj: 'Thomas D. · agent@jumla.cm',kind: 'neutral', cat: 'admin'   },
-  { id: 5,  ts: '2026-06-04 12:07', user: 'Marc L.',   action: 'Colis vérifié',          obj: 'P-0139 — 12,5 kg',          kind: 'ok',      cat: 'parcel'  },
-  { id: 6,  ts: '2026-06-04 11:44', user: 'Aïcha M.',  action: 'Statut modifié',         obj: 'DLA-YUL-APR-01 → En transit',kind: 'info',   cat: 'campaign'},
-  { id: 7,  ts: '2026-06-04 10:30', user: 'Admin',     action: 'Route modifiée',         obj: 'DLA → YUL · tarif mis à jour',kind: 'warn',  cat: 'settings'},
-  { id: 8,  ts: '2026-06-04 09:15', user: 'Aïcha M.',  action: 'Client créé',            obj: 'Jean Mbarga · CLI-0419',    kind: 'info',    cat: 'client'  },
-  { id: 9,  ts: '2026-06-03 17:02', user: 'Marc L.',   action: 'Paiement remboursé',     obj: 'CLI-0402 · 65 CAD',         kind: 'warn',    cat: 'payment' },
-  { id: 10, ts: '2026-06-03 16:48', user: 'Admin',     action: 'Connexion',              obj: 'Chrome · 192.168.1.x',      kind: 'neutral', cat: 'security'},
-  { id: 11, ts: '2026-06-03 15:33', user: 'Aïcha M.',  action: 'Facture complément',     obj: 'CLI-0415 · 27 CAD envoyé',  kind: 'ok',      cat: 'payment' },
-  { id: 12, ts: '2026-06-03 14:00', user: 'Thomas D.', action: 'Colis créé',             obj: 'P-0142',                    kind: 'info',    cat: 'parcel'  },
-  { id: 13, ts: '2026-06-03 11:20', user: 'Admin',     action: 'Paramètres modifiés',    obj: 'Notifications WhatsApp',    kind: 'neutral', cat: 'settings'},
-  { id: 14, ts: '2026-06-03 09:45', user: 'Marc L.',   action: 'Cargaison créée',        obj: 'DLA-YUL-JUN-02',            kind: 'ok',      cat: 'campaign'},
-  { id: 15, ts: '2026-06-02 17:11', user: 'Aïcha M.',  action: 'Bordereau imprimé',      obj: 'BL-2604-01 × 3 copies',     kind: 'neutral', cat: 'parcel'  },
-];
 
 const CATEGORIES = [
   { id: '',         label: 'Tout' },
@@ -39,12 +21,23 @@ const KIND_LABELS = {
 };
 
 export default function LogsScreen({ onNav }) {
+  const [logs, setLogs] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [cat, setCat]    = useState('');
   const [search, setSearch] = useState('');
   const [page, setPage]  = useState(0);
   const PER_PAGE = 10;
 
-  const filtered = ALL_LOGS.filter(l => {
+  useEffect(() => {
+    fetch('/api/logs')
+      .then(r => r.json())
+      .then(data => { setLogs(Array.isArray(data) ? data : []); setLoading(false); })
+      .catch(() => setLoading(false));
+  }, []);
+
+  const today = new Date().toISOString().slice(0, 10);
+
+  const filtered = logs.filter(l => {
     const matchCat    = !cat || l.cat === cat;
     const q           = search.toLowerCase();
     const matchSearch = !q || l.action.toLowerCase().includes(q) || l.user.toLowerCase().includes(q) || l.obj.toLowerCase().includes(q);
@@ -56,6 +49,22 @@ export default function LogsScreen({ onNav }) {
 
   const changeSearch = v => { setSearch(v); setPage(0); };
   const changeCat    = v => { setCat(v);    setPage(0); };
+
+  if (loading) {
+    return (
+      <div className="page">
+        <div className="page__head">
+          <div>
+            <div className="page__title"><Bi fr="Journal d'activité" en="Activity Log" /></div>
+            <div className="page__sub">Historique de toutes les actions réalisées par les agents de la plateforme</div>
+          </div>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '60px 0', color: 'var(--ink-400)', fontSize: 14 }}>
+          Chargement en cours…
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="page">
@@ -70,10 +79,10 @@ export default function LogsScreen({ onNav }) {
       {/* KPIs */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 20 }}>
         {[
-          { label: "Aujourd'hui",   v: ALL_LOGS.filter(l => l.ts.startsWith('2026-06-04')).length, color: 'var(--brand-600)' },
-          { label: 'Cette semaine', v: ALL_LOGS.length, color: 'var(--ok-600)' },
-          { label: 'Agents actifs', v: [...new Set(ALL_LOGS.map(l => l.user))].length, color: 'var(--ink-700)' },
-          { label: 'Alertes',       v: ALL_LOGS.filter(l => l.kind === 'warn').length, color: 'var(--warn-600)' },
+          { label: "Aujourd'hui",   v: logs.filter(l => new Date(l.ts).toISOString().slice(0, 10) === today).length, color: 'var(--brand-600)' },
+          { label: 'Cette semaine', v: logs.length, color: 'var(--ok-600)' },
+          { label: 'Agents actifs', v: [...new Set(logs.map(l => l.user))].length, color: 'var(--ink-700)' },
+          { label: 'Alertes',       v: logs.filter(l => l.kind === 'warn').length, color: 'var(--warn-600)' },
         ].map((k, i) => (
           <div key={i} className="kpi" style={{ padding: '14px 18px' }}>
             <div className="kpi__label">{k.label}</div>
@@ -126,7 +135,9 @@ export default function LogsScreen({ onNav }) {
             )}
             {visible.map(log => {
               const kd = KIND_LABELS[log.kind] || KIND_LABELS.neutral;
-              const [date, time] = log.ts.split(' ');
+              const dt = new Date(log.ts);
+              const date = dt.toISOString().slice(0, 10);
+              const time = dt.toTimeString().slice(0, 5);
               return (
                 <tr key={log.id}>
                   <td>

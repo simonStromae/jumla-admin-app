@@ -4,9 +4,10 @@ import I from '../components/Icons.jsx';
 import { Bi, Avatar, ParcelActionsMenu } from '../components/Shell.jsx';
 import { Pagination } from '../components/Pagination.jsx';
 
-export default function AllParcelsScreen({ onNav }) {
+export default function AllParcelsScreen({ onNav, initialSearch = '' }) {
   const [tab, setTab]                     = useState('all');
   const [campaignFilter, setCampaignFilter] = useState('all');
+  const [search, setSearch]               = useState(initialSearch);
   const [page, setPage]                   = useState(1);
   const [pageSize, setPageSize]           = useState(25);
   const [allParcels, setAllParcels]       = useState([]);
@@ -30,6 +31,13 @@ export default function AllParcelsScreen({ onNav }) {
     if (tab === 'pending') return p.paid === 'pending';
     if (tab === 'overrun') return p.overrun;
     if (tab === 'home') return p.delivery === 'home';
+    if (search.trim()) {
+      const q = search.toLowerCase();
+      return (p.code || '').toLowerCase().includes(q) ||
+             (p.senderName || '').toLowerCase().includes(q) ||
+             (p.recipName || '').toLowerCase().includes(q) ||
+             (p.campaign || '').toLowerCase().includes(q);
+    }
     return true;
   });
   const paged = filtered.slice((page - 1) * pageSize, page * pageSize);
@@ -82,7 +90,8 @@ export default function AllParcelsScreen({ onNav }) {
         <div className="spacer" />
         <div style={{ position: 'relative' }}>
           <I.Search style={{ position: 'absolute', left: 10, top: 9, width: 14, height: 14, color: 'var(--ink-400)' }} />
-          <input className="input input--sm" placeholder="Code, expéditeur, destinataire..." style={{ width: 260, paddingLeft: 32 }} />
+          <input className="input input--sm" placeholder="Code, expéditeur, destinataire..." style={{ width: 260, paddingLeft: 32 }}
+            value={search} onChange={e => { setSearch(e.target.value); setPage(1); }} />
         </div>
         <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '4px 6px 4px 10px', border: '1px solid var(--border)', borderRadius: 7, background: 'white', fontSize: 12 }}>
           <I.Plane style={{ width: 12, height: 12, color: 'var(--ink-400)' }} />

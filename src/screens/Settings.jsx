@@ -1,5 +1,4 @@
-import { useState, Fragment } from 'react';
-import { DATA } from '../data.js';
+import { useState, useEffect, Fragment } from 'react';
 import I from '../components/Icons.jsx';
 import { Bi, RoutePill, Modal, Drawer } from '../components/Shell.jsx';
 
@@ -78,14 +77,19 @@ function SectionCompany() {
   );
 }
 
-function SectionRoutes({ onEdit, onDetail }) {
+function SectionRoutes({ routes, onEdit, onDetail }) {
   return (
     <SettingsCard
       title="Routes commerciales"
       sub="Définissez les trajets que vous opérez. Chaque cargaison est rattachée à une route."
       actions={<button className="btn btn--brand btn--sm" onClick={() => onEdit('new')}><I.Plus />Nouvelle route</button>}>
       <div style={{ display: 'grid', gap: 10 }}>
-        {DATA.ROUTES.map(r => (
+        {routes.length === 0 && (
+          <div style={{ padding: '32px 0', textAlign: 'center', color: 'var(--ink-400)', fontSize: 13 }}>
+            Aucune route configurée. Créez votre première route pour commencer.
+          </div>
+        )}
+        {routes.map(r => (
           <div key={r.id} className="card" style={{ padding: 16, cursor: 'pointer', borderColor: r.active ? 'var(--border)' : 'var(--border-soft)' }} onClick={() => onDetail(r)}>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: 16, alignItems: 'center' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
@@ -94,38 +98,18 @@ function SectionRoutes({ onEdit, onDetail }) {
                 </div>
                 <div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 3 }}>
-                    <span style={{ fontSize: 15, fontWeight: 700 }}>{r.fromCity} → {r.toCity}</span>
+                    <span style={{ fontSize: 15, fontWeight: 700 }}>{r.label || r.code}</span>
                     <RoutePill from={r.fromIATA} to={r.toIATA} />
                     {r.active
                       ? <span className="badge badge--dot badge--ok">Active</span>
                       : <span className="badge badge--dot badge--neutral">Archivée</span>}
                   </div>
                   <div style={{ fontSize: 12, color: 'var(--ink-500)' }}>
-                    {r.fromCountry} → {r.toCountry}
-                    <span style={{ color: 'var(--ink-300)', margin: '0 8px' }}>·</span>
-                    Transit <strong>{r.transitDays} j</strong>
-                    <span style={{ color: 'var(--ink-300)', margin: '0 8px' }}>·</span>
-                    Devise <strong>{r.currency}</strong>
-                    {r.fees && (
-                      <>
-                        <span style={{ color: 'var(--ink-300)', margin: '0 8px' }}>·</span>
-                        Forfait 0-3 kg : <strong>{r.fees.flatUpTo3kg} {r.currency}</strong>
-                        <span style={{ color: 'var(--ink-300)', margin: '0 8px' }}>·</span>
-                        +{r.fees.perHalfKgRate} {r.currency}/0,5 kg
-                      </>
-                    )}
+                    {r.fromIATA} → {r.toIATA}
                   </div>
                 </div>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 18 }}>
-                <div style={{ textAlign: 'right' }}>
-                  <div className="mono" style={{ fontSize: 16, fontWeight: 700 }}>{r.cargosCount}</div>
-                  <div style={{ fontSize: 10.5, color: 'var(--ink-400)', textTransform: 'uppercase', letterSpacing: '.04em', fontWeight: 600 }}>Cargaisons</div>
-                </div>
-                <div style={{ textAlign: 'right' }}>
-                  <div className="mono" style={{ fontSize: 16, fontWeight: 700, color: 'var(--ok-600)' }}>{(r.revenueTotal / 1000).toFixed(0)}k</div>
-                  <div style={{ fontSize: 10.5, color: 'var(--ink-400)', textTransform: 'uppercase', letterSpacing: '.04em', fontWeight: 600 }}>CA · {r.currency}</div>
-                </div>
                 <button className="btn btn--ghost btn--sm" onClick={e => { e.stopPropagation(); onEdit(r); }}><I.Edit />Modifier</button>
                 <I.ChevronRight style={{ color: 'var(--ink-300)' }} />
               </div>
@@ -137,37 +121,34 @@ function SectionRoutes({ onEdit, onDetail }) {
   );
 }
 
-function SectionPricing() {
+function SectionPricing({ routes }) {
   return (
     <SettingsCard title="Grille tarifaire" sub="Tarifs par tranche de poids, frais supplémentaires et règles d'arrondi.">
-      <table className="tbl">
-        <thead>
-          <tr>
-            <th style={{ borderRadius: 0 }}>Route</th>
-            <th>De (kg)</th>
-            <th>À (kg)</th>
-            <th style={{ textAlign: 'right' }}>Prix / kg</th>
-            <th>Devise</th>
-            <th style={{ borderRadius: 0 }}></th>
-          </tr>
-        </thead>
-        <tbody>
-          {DATA.ROUTES.filter(r => r.active).flatMap(r =>
-            r.pricing.map((p, i) => (
-              <tr key={r.id + '-' + i}>
+      {routes.length === 0 ? (
+        <div style={{ padding: '24px 0', textAlign: 'center', color: 'var(--ink-400)', fontSize: 13 }}>
+          Configurez vos routes d'abord pour définir les tarifs.
+        </div>
+      ) : (
+        <table className="tbl">
+          <thead>
+            <tr>
+              <th style={{ borderRadius: 0 }}>Route</th>
+              <th style={{ borderRadius: 0 }}>Statut</th>
+            </tr>
+          </thead>
+          <tbody>
+            {routes.filter(r => r.active).map(r => (
+              <tr key={r.id}>
                 <td className="mono" style={{ fontWeight: 600, fontSize: 12 }}>
                   <RoutePill from={r.fromIATA} to={r.toIATA} />
+                  <span style={{ marginLeft: 8 }}>{r.label || r.code}</span>
                 </td>
-                <td className="mono">{p.from}</td>
-                <td className="mono">{p.to || '∞'}</td>
-                <td style={{ textAlign: 'right' }}><span className="mono" style={{ fontWeight: 700 }}>{p.rate}</span></td>
-                <td><span className="badge badge--neutral">{r.currency}</span></td>
-                <td><button className="icon-btn"><I.Edit /></button></td>
+                <td style={{ fontSize: 12, color: 'var(--ink-400)', fontStyle: 'italic' }}>Tarification à configurer</td>
               </tr>
-            ))
-          )}
-        </tbody>
-      </table>
+            ))}
+          </tbody>
+        </table>
+      )}
       <button className="btn btn--ghost btn--sm" style={{ marginTop: 12 }}><I.Plus />Ajouter une tranche</button>
     </SettingsCard>
   );
@@ -520,9 +501,14 @@ function RouteEditModal({ editRoute, onClose }) {
 }
 
 export default function SettingsScreen({ onNav }) {
-  const [section, setSection] = useState('company');
-  const [editRoute, setEditRoute] = useState(null);
+  const [section, setSection]       = useState('company');
+  const [editRoute, setEditRoute]   = useState(null);
   const [routeDetail, setRouteDetail] = useState(null);
+  const [routes, setRoutes]         = useState([]);
+
+  useEffect(() => {
+    fetch('/api/routes').then(r => r.json()).then(data => setRoutes(Array.isArray(data) ? data : [])).catch(() => {});
+  }, []);
 
   const nav = [
     { id: 'company',   l: 'Entreprise',           icon: I.Building },
@@ -568,7 +554,7 @@ export default function SettingsScreen({ onNav }) {
         {/* Content */}
         <div>
           {section === 'company'   && <SectionCompany />}
-          {section === 'routes'    && <SectionRoutes onEdit={setEditRoute} onDetail={setRouteDetail} />}
+          {section === 'routes'    && <SectionRoutes routes={routes} onEdit={setEditRoute} onDetail={setRouteDetail} />}
           {section === 'whatsapp'  && <SectionWhatsapp />}
           {section === 'auto'      && <SectionAutoNotif />}
           {section === 'campaigns' && <SectionCampaigns />}
