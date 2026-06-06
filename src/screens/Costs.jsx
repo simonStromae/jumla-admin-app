@@ -30,8 +30,9 @@ function CostModal({ campaign, currentCosts, onSave, onClose }) {
 
   const val  = k => parseInt(draft[k]) || 0;
   const total = COST_FIELDS.reduce((s, f) => s + val(f.key), 0);
-  const mg    = campaign.collected - total;
-  const mp    = campaign.collected > 0 ? Math.round(mg / campaign.collected * 100) : 0;
+  const col   = campaign.collected ?? 0;
+  const mg    = col - total;
+  const mp    = col > 0 ? Math.round(mg / col * 100) : 0;
   const upd   = (k, v) => setDraft(d => ({ ...d, [k]: v }));
 
   const save = () => {
@@ -63,7 +64,7 @@ function CostModal({ campaign, currentCosts, onSave, onClose }) {
         <div style={{ padding: '10px 20px', background: 'var(--brand-50)', borderBottom: '1px solid var(--brand-100)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <span style={{ fontSize: 12.5, color: 'var(--brand-700)', fontWeight: 600 }}>CA encaissé (référence)</span>
           <span className="mono" style={{ fontSize: 18, fontWeight: 800, color: 'var(--brand-700)' }}>
-            {campaign.collected.toLocaleString('fr')}
+            {col.toLocaleString('fr')}
             <span style={{ fontSize: 11, fontWeight: 500, marginLeft: 4 }}>{route?.currency}</span>
           </span>
         </div>
@@ -226,7 +227,7 @@ export default function CostsScreen({ onNav }) {
         <CostKpi icon="📈" label="Marge brute"         value={(allMargin / 1000).toFixed(1) + 'k'} unit="CAD" color="var(--ok-500)" />
         <CostKpi icon="%" label="Taux de marge"        value={allPct}  unit="%" color={allPct >= 55 ? 'var(--ok-500)' : 'var(--warn-500)'} progress={allPct} />
         <CostKpi icon="⚖️" label="Coût moyen / kg"    value={costPerKg} unit="CAD/kg" color="var(--brand-500)" />
-        <CostKpi icon="🏆" label="Meilleure marge"     value={marginPct(best) + '%'} unit="" color="var(--ok-600)" sub={best?.code} />
+        <CostKpi icon="🏆" label="Meilleure marge"     value={best ? marginPct(best) + '%' : '—'} unit="" color="var(--ok-600)" sub={best?.code} />
       </div>
 
       {/* Table */}
@@ -266,8 +267,8 @@ export default function CostsScreen({ onNav }) {
                   </td>
 
                   <td style={{ textAlign: 'right' }}>
-                    <span className="mono" style={{ fontWeight: 700 }}>{c.collected.toLocaleString('fr')}</span>
-                    <span style={{ fontSize: 10.5, color: 'var(--ink-400)', marginLeft: 3 }}>{CAD}</span>
+                    <span className="mono" style={{ fontWeight: 700 }}>{(c.collected ?? 0).toLocaleString('fr')}</span>
+                    <span style={{ fontSize: 10.5, color: 'var(--ink-400)', marginLeft: 3 }}>CAD</span>
                   </td>
 
                   <td style={{ textAlign: 'right' }}>
