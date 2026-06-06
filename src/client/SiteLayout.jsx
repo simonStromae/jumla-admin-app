@@ -34,21 +34,6 @@ export function TopBar() {
 
 /* ─── Nav ─── */
 export function SiteNav({ onNav, onBook, mode = 'landing' }) {
-  const goOrBack = (id) => {
-    if (mode === 'landing') {
-      document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
-    } else {
-      onNav?.('/');
-    }
-  };
-  const links = [
-    { l: 'Accueil',  fn: () => mode === 'landing' ? window.scrollTo({ top: 0, behavior: 'smooth' }) : onNav?.('/') },
-    { l: 'À propos', fn: () => goOrBack('jabout') },
-    { l: 'Services', fn: () => goOrBack('jsvc') },
-    { l: 'Tarifs',   fn: () => goOrBack('jest') },
-    { l: 'Suivi',    fn: () => onNav?.('/suivi'), active: mode === 'tracking' },
-    { l: 'Contact',  fn: () => goOrBack('jfoot') },
-  ];
   return (
     <div className="jnav">
       <div className="jc">
@@ -58,15 +43,10 @@ export function SiteNav({ onNav, onBook, mode = 'landing' }) {
             <div className="jnav__logo-mark">J</div>
             Jumla Shipping
           </button>
-          <div className="jnav__links">
-            {links.map(({ l, fn, active }) => (
-              <button key={l} className={'jnav__link' + (active ? ' is-active' : '')} onClick={fn}>{l}</button>
-            ))}
-          </div>
-          <div className="jnav__right">
+          <div className="jnav__right" style={{ marginLeft: 'auto' }}>
             <button className="jnav__signin" onClick={() => onNav?.('/login')}>Se connecter</button>
-            <button className="jbtn-nav" onClick={onBook}>
-              Réserver un envoi <I.ArrowRight style={{ width: 15, height: 15 }} />
+            <button className="jbtn-nav" onClick={() => onNav?.('/login')}>
+              Créer un compte <I.ArrowRight style={{ width: 15, height: 15 }} />
             </button>
           </div>
         </div>

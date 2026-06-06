@@ -241,7 +241,7 @@ a { color: inherit; text-decoration: none; }
   border: 1px solid transparent;
   border-radius: var(--radius);
   padding: 7px 11px;
-  width: 280px;
+  width: 400px;
   color: var(--ink-400);
   font-size: 13px;
 }

@@ -90,7 +90,6 @@ export function Sidebar({ route, onNav }) {
 }
 
 export function Topbar({ title, sub, actions, onNav }) {
-  const [lang, setLang]           = useState('FR');
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQ, setSearchQ]     = useState('');
   const inputRef = useRef(null);
@@ -125,10 +124,7 @@ export function Topbar({ title, sub, actions, onNav }) {
           <span>Rechercher cargaisons, clients, colis…</span>
           <kbd>⌘K</kbd>
         </div>
-        <div className="topbar__lang">
-          <button className={lang === 'FR' ? 'is-active' : ''} onClick={() => setLang('FR')}>FR</button>
-          <button className={lang === 'EN' ? 'is-active' : ''} onClick={() => setLang('EN')}>EN</button>
-        </div>
+        <button className="icon-btn" title="Voir le site public" onClick={() => onNav?.('/')}><I.Globe /></button>
         <button className="icon-btn" title="Aide"><I.Help /></button>
         <button className="icon-btn" title="Paiements en attente" onClick={() => onNav?.('/admin/payments')}><I.Bell /></button>
         {actions}
