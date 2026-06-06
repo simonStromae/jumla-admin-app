@@ -1,58 +1,179 @@
-import { useState } from 'react';
-import { DATA, getRoute } from '../data.js';
+import { useState, useEffect, useCallback } from 'react';
 import I from '../components/Icons.jsx';
-import { RoutePill, Avatar } from '../components/Shell.jsx';
+import { RoutePill } from '../components/Shell.jsx';
 
-const CATS = DATA.PARCEL_CATEGORIES;
+const PRODUCT_TYPES = [
+  { id: 'standard',    label: 'Standard',                       desc: 'Tous produits généraux' },
+  { id: 'cosmetique',  label: 'Cosmétiques / Compléments',      desc: '+3 $/kg supplément' },
+  { id: 'vetements',   label: 'Vêtements & Chaussures',         desc: '+2 $/kg supplément' },
+  { id: 'biere',       label: 'Bière',                          desc: '6 $/kg + frais SAQ' },
+  { id: 'manioc_huile',label: 'Bâton de manioc / Huile rouge',  desc: 'Tarif spécial' },
+];
+
+function NumField({ label, value, onChange, min = 0 }) {
+  return (
+    <div className="field" style={{ marginBottom: 0 }}>
+      <label className="label">{label}</label>
+      <input
+        className="input input--sm mono"
+        type="number"
+        min={min}
+        value={value}
+        onChange={e => onChange(Math.max(min, parseInt(e.target.value) || 0))}
+        style={{ width: '100%' }}
+      />
+    </div>
+  );
+}
+
+function PriceRow({ label, value, bold }) {
+  if (!value && value !== 0) return null;
+  return (
+    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: bold ? 13 : 12, fontWeight: bold ? 700 : 400, color: bold ? 'var(--ink-900)' : 'var(--ink-600)', padding: '3px 0' }}>
+      <span>{label}</span>
+      <span className="mono">{value.toFixed(2)} $</span>
+    </div>
+  );
+}
 
 export default function ParcelFormPage({ mode = 'create', parcel, campaign, onNav }) {
   const isEdit = mode === 'edit';
-  const route = getRoute(campaign?.route) || DATA.ROUTES[0];
 
-  const [data, setData] = useState(() => ({
-    campaignId: campaign?.id || '',
-    code: parcel?.code || '#65',
-    senderName: parcel?.senderName || '',
-    senderPhone: parcel?.senderPhone || '',
-    recipName: parcel?.recipName || '',
-    recipPhone: parcel?.recipPhone || '',
-    recipCity: parcel?.recipCity || 'Montréal',
-    recipAddress: parcel?.recipAddress || '',
-    recipApt: parcel?.recipApt || '',
-    recipProvince: parcel?.recipProvince || 'QC',
-    recipPostal: parcel?.recipPostal || '',
-    items: parcel?.items || [
-      { id: 1, name: '', packs: 1, pieces: 1, weight: 0, category: 'standard', note: '' },
-    ],
-    delivery: parcel?.delivery || 'home',
-    paid: parcel?.paid || 'unpaid',
-    method: parcel?.method || '',
-    agent: parcel?.agent || 'AM',
-    contents: parcel?.contents || '',
-    insurance: parcel?.insurance || false,
-  }));
+  const [campaigns, setCampaigns]   = useState([]);
+  const [clients, setClients]       = useState([]);
+  const [clientSearch, setClientSearch] = useState('');
+  const [loading, setLoading]       = useState(true);
+  const [saving, setSaving]         = useState(false);
+  const [err, setErr]               = useState('');
+  const [pricing, setPricing]       = useState(null);
+  const [calcLoading, setCalcLoading] = useState(false);
+
+  const [data, setData] = useState({
+    campaignId:       campaign?.id || '',
+    clientId:         '',
+    description:      parcel?.description || '',
+    weightKg:         parcel?.weightKg    || '',
+    productType:      parcel?.productType || 'standard',
+    nbCartons:        parcel?.nbCartons   || 0,
+    nbPetitsSacs:     parcel?.nbPetitsSacs    || 0,
+    nbSacsMoyens:     parcel?.nbSacsMoyens    || 0,
+    nbGrandsSacs:     parcel?.nbGrandsSacs    || 0,
+    nbPlastiques:     parcel?.nbPlastiques    || 0,
+    nbPlastiquesBiere:parcel?.nbPlastiquesBiere || 0,
+    nbCasiers24x65:   parcel?.nbCasiers24x65  || 0,
+    nbCasiers24x33:   parcel?.nbCasiers24x33  || 0,
+    nbCasiers12x50:   parcel?.nbCasiers12x50  || 0,
+    marginPct:        parcel?.marginPct   || 30,
+    delivery:         'pickup',
+    notes:            parcel?.notes       || '',
+  });
 
   const upd = (k, v) => setData(d => ({ ...d, [k]: v }));
 
-  const activeCampaign = campaign || DATA.CAMPAIGNS.find(c => c.id === data.campaignId);
-  const activeRoute = activeCampaign ? getRoute(activeCampaign.route) : route;
-  const grid = activeRoute.pricing;
+  useEffect(() => {
+    Promise.all([
+      fetch('/api/campaigns').then(r => r.json()),
+      fetch('/api/clients').then(r => r.json()),
+    ]).then(([campData, clientData]) => {
+      const open = Array.isArray(campData) ? campData.filter(c => c.status === 'open' || c.status === 'Ouverte') : [];
+      setCampaigns(open.length > 0 ? open : (Array.isArray(campData) ? campData : []));
+      setClients(Array.isArray(clientData) ? clientData : []);
+      setLoading(false);
+    }).catch(() => setLoading(false));
+  }, []);
 
-  const totalItemWeight = data.items.reduce((a, i) => a + (+i.weight || 0), 0);
-  const baseRate = getTierRate(totalItemWeight, grid);
-  const itemsTotal = data.items.reduce((a, i) => {
-    const cat = CATS.find(c => c.id === i.category) || CATS[0];
-    return a + Math.round((+i.weight || 0) * baseRate * (1 + cat.pct / 100));
-  }, 0);
-  const deliveryFee = data.delivery === 'home' ? 25 : 0;
-  const handlingFee = 8;
-  const insuranceFee = data.insurance ? Math.round(itemsTotal * 0.03) : 0;
-  const total = itemsTotal + deliveryFee + handlingFee + insuranceFee;
+  const calcPrice = useCallback(async (d) => {
+    if (!d.weightKg || Number(d.weightKg) <= 0) { setPricing(null); return; }
+    setCalcLoading(true);
+    try {
+      const res = await fetch('/api/pricing/calculate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          weightKg:         Number(d.weightKg),
+          productType:      d.productType,
+          nbCartons:        d.nbCartons,
+          nbPetitsSacs:     d.nbPetitsSacs,
+          nbSacsMoyens:     d.nbSacsMoyens,
+          nbGrandsSacs:     d.nbGrandsSacs,
+          nbPlastiques:     d.nbPlastiques,
+          nbPlastiquesBiere:d.nbPlastiquesBiere,
+          nbCasiers24x65:   d.nbCasiers24x65,
+          nbCasiers24x33:   d.nbCasiers24x33,
+          nbCasiers12x50:   d.nbCasiers12x50,
+          marginPct:        Number(d.marginPct),
+        }),
+      });
+      const json = await res.json();
+      setPricing(json);
+    } catch { setPricing(null); }
+    setCalcLoading(false);
+  }, []);
 
-  const handleCancel = () => {
-    if (campaign) onNav('/campaign/' + campaign.id);
-    else onNav('/parcels');
-  };
+  // Recalculate whenever pricing-relevant fields change
+  useEffect(() => {
+    const timer = setTimeout(() => calcPrice(data), 300);
+    return () => clearTimeout(timer);
+  }, [
+    data.weightKg, data.productType, data.nbCartons, data.nbPetitsSacs, data.nbSacsMoyens,
+    data.nbGrandsSacs, data.nbPlastiques, data.nbPlastiquesBiere,
+    data.nbCasiers24x65, data.nbCasiers24x33, data.nbCasiers12x50, data.marginPct,
+  ]);
+
+  const activeCampaign = campaigns.find(c => c.id === data.campaignId) || campaign || null;
+  const filteredClients = clients.filter(c =>
+    !clientSearch || c.name?.toLowerCase().includes(clientSearch.toLowerCase()) || c.email?.toLowerCase().includes(clientSearch.toLowerCase())
+  ).slice(0, 20);
+
+  async function handleSubmit() {
+    if (!data.campaignId) { setErr('Veuillez sélectionner une cargaison'); return; }
+    if (!data.clientId)   { setErr('Veuillez sélectionner un client'); return; }
+    if (!data.weightKg || Number(data.weightKg) <= 0) { setErr('Le poids est obligatoire'); return; }
+
+    setSaving(true); setErr('');
+    const deliveryFee = data.delivery === 'home' ? 25 : 0;
+    const finalPrice  = pricing ? Math.round(pricing.prixClient + deliveryFee) : null;
+
+    try {
+      const res = await fetch('/api/parcels', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          clientId:          data.clientId,
+          campaignId:        data.campaignId,
+          description:       data.description || null,
+          weightKg:          Number(data.weightKg),
+          priceXaf:          finalPrice,
+          notes:             data.notes || null,
+          productType:       data.productType,
+          nbCartons:         data.nbCartons,
+          nbPetitsSacs:      data.nbPetitsSacs,
+          nbSacsMoyens:      data.nbSacsMoyens,
+          nbGrandsSacs:      data.nbGrandsSacs,
+          nbPlastiques:      data.nbPlastiques,
+          nbPlastiquesBiere: data.nbPlastiquesBiere,
+          nbCasiers24x65:    data.nbCasiers24x65,
+          nbCasiers24x33:    data.nbCasiers24x33,
+          nbCasiers12x50:    data.nbCasiers12x50,
+          marginPct:         Number(data.marginPct),
+          pricingDetails:    pricing || null,
+        }),
+      });
+      const json = await res.json();
+      if (!res.ok) { setErr(json.error || 'Erreur lors de la création'); setSaving(false); return; }
+      if (campaign) onNav('/campaign/' + campaign.id);
+      else onNav('/parcels');
+    } catch { setErr('Erreur réseau'); setSaving(false); }
+  }
+
+  if (loading) {
+    return (
+      <div className="page">
+        <div className="page__head"><div className="page__title">Nouveau colis</div></div>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '60px 0', color: 'var(--ink-400)', fontSize: 14 }}>Chargement…</div>
+      </div>
+    );
+  }
 
   return (
     <div className="page">
@@ -66,494 +187,269 @@ export default function ParcelFormPage({ mode = 'create', parcel, campaign, onNa
           </>
         )}
         <I.ChevronRight style={{ width: 12, height: 12 }} />
-        <span style={{ color: 'var(--ink-600)', fontWeight: 600 }}>
-          {isEdit ? data.code : 'Nouveau colis'}
-        </span>
+        <span style={{ color: 'var(--ink-600)', fontWeight: 600 }}>{isEdit ? 'Modifier' : 'Nouveau colis'}</span>
       </div>
 
-      {/* Page head */}
       <div className="page__head" style={{ marginBottom: 22 }}>
         <div>
           <div className="page__title">
             {isEdit ? 'Modifier le colis' : 'Nouveau colis'}
-            <span style={{ color: 'var(--ink-400)', fontWeight: 400, fontSize: '.7em', marginLeft: 8 }}>
-              / {isEdit ? 'Edit parcel' : 'New parcel'}
-            </span>
+            <span style={{ color: 'var(--ink-400)', fontWeight: 400, fontSize: '.7em', marginLeft: 8 }}>/ {isEdit ? 'Edit parcel' : 'New parcel'}</span>
           </div>
           <div className="page__sub">
             {activeCampaign
-              ? <>Cargaison <span className="mono" style={{ color: 'var(--ink-700)', fontWeight: 600 }}>{activeCampaign.code}</span> · {activeRoute.fromIATA} → {activeRoute.toIATA}</>
-              : <span style={{ color: 'var(--ink-400)' }}>Sélectionnez une cargaison</span>
-            }
+              ? <>Cargaison <span className="mono" style={{ fontWeight: 600 }}>{activeCampaign.code}</span> · {activeCampaign.from} → {activeCampaign.to}</>
+              : 'Sélectionnez une cargaison'}
           </div>
         </div>
         <div className="page__actions">
-          {isEdit && <button className="btn btn--ghost" style={{ color: 'var(--bad-600)' }}><I.Trash />Supprimer</button>}
-          <button className="btn btn--ghost" onClick={handleCancel}>Annuler</button>
-          {!isEdit && <button className="btn btn--soft" onClick={handleCancel}>Enregistrer &amp; ajouter un autre</button>}
-          <button className="btn btn--brand" onClick={handleCancel}>
-            <I.Check />{isEdit ? 'Enregistrer les modifications' : 'Créer le colis'}
+          <button className="btn btn--ghost" onClick={() => campaign ? onNav('/campaign/' + campaign.id) : onNav('/parcels')}>Annuler</button>
+          <button className="btn btn--brand" onClick={handleSubmit} disabled={saving}>
+            <I.Check />{saving ? 'Enregistrement…' : isEdit ? 'Enregistrer' : 'Créer le colis'}
           </button>
         </div>
       </div>
 
+      {err && (
+        <div style={{ padding: '10px 16px', background: 'var(--bad-50)', color: 'var(--bad-700)', borderRadius: 8, fontSize: 13, marginBottom: 16 }}>
+          {err}
+        </div>
+      )}
+
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 300px', gap: 22, alignItems: 'start' }}>
         <div>
-          {/* Campaign selector — only when called outside a campaign */}
+          {/* Campaign selector */}
           {!campaign && (
             <div className="card" style={{ padding: 16, marginBottom: 14 }}>
               <div className="section-title" style={{ marginBottom: 12 }}>
                 <I.Plane style={{ width: 14, height: 14, color: 'var(--brand-600)' }} /> Cargaison
               </div>
               <div className="field" style={{ marginBottom: 0 }}>
-                <label className="label">Sélectionner la cargaison <span className="opt">/ Shipment</span></label>
-                <select className="select" value={data.campaignId || ''} onChange={e => upd('campaignId', e.target.value)}>
-                  <option value="">— Choisir une cargaison ouverte</option>
-                  {DATA.CAMPAIGNS.filter(c => c.status !== 'closed').map(c => (
-                    <option key={c.id} value={c.id}>{c.code} · {c.dep}</option>
+                <label className="label">Cargaison <span className="opt">/ Shipment</span></label>
+                <select className="select" value={data.campaignId} onChange={e => upd('campaignId', e.target.value)}>
+                  <option value="">— Choisir une cargaison</option>
+                  {campaigns.map(c => (
+                    <option key={c.id} value={c.id}>{c.code} · {c.from} → {c.to}</option>
                   ))}
                 </select>
               </div>
             </div>
           )}
 
-          <PartyField kind="Expéditeur · Douala" en="Sender" iconColor="var(--brand-500)" color={1} data={data} prefix="sender" cityLabel="Cameroun" upd={upd} />
-          <PartyField kind="Destinataire · Canada" en="Recipient" iconColor="var(--info-600)" color={2} data={data} prefix="recip" cityLabel={data.recipCity} upd={upd} withAddress />
-
-          {/* Items — with weight + category per line */}
-          <ItemsSection data={data} upd={upd} currency={activeRoute.currency} baseRate={baseRate} />
-
-          {/* Notes & options */}
+          {/* Client */}
           <div className="card" style={{ padding: 16, marginBottom: 14 }}>
             <div className="section-title" style={{ marginBottom: 12 }}>
-              <I.Tag style={{ width: 14, height: 14, color: 'var(--brand-600)' }} /> Notes & options
+              <I.User style={{ width: 14, height: 14, color: 'var(--brand-600)' }} /> Client / Expéditeur
+            </div>
+            <div className="field" style={{ marginBottom: 8 }}>
+              <label className="label">Rechercher un client</label>
+              <div style={{ position: 'relative' }}>
+                <I.Search style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', width: 13, height: 13, color: 'var(--ink-400)' }} />
+                <input
+                  className="input"
+                  placeholder="Nom, email, téléphone…"
+                  value={clientSearch}
+                  onChange={e => setClientSearch(e.target.value)}
+                  style={{ paddingLeft: 32 }}
+                />
+              </div>
+            </div>
+            <div style={{ display: 'grid', gap: 6, maxHeight: 180, overflowY: 'auto' }}>
+              {filteredClients.length === 0 && (
+                <div style={{ fontSize: 12, color: 'var(--ink-400)', padding: '8px 0', textAlign: 'center' }}>Aucun client trouvé</div>
+              )}
+              {filteredClients.map(c => (
+                <label key={c.id} style={{
+                  display: 'flex', alignItems: 'center', gap: 10, padding: '8px 12px',
+                  border: '1px solid ' + (data.clientId === c.id ? 'var(--brand-500)' : 'var(--border)'),
+                  borderRadius: 8, cursor: 'pointer',
+                  background: data.clientId === c.id ? 'var(--brand-50)' : 'white',
+                }}>
+                  <input type="radio" name="client" checked={data.clientId === c.id}
+                    onChange={() => upd('clientId', c.id)} style={{ accentColor: 'var(--brand-500)' }} />
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 13, fontWeight: 600 }}>{c.name}</div>
+                    <div style={{ fontSize: 11.5, color: 'var(--ink-400)' }}>{c.email} {c.phone ? '· ' + c.phone : ''}</div>
+                  </div>
+                </label>
+              ))}
+            </div>
+            {clients.length === 0 && (
+              <div style={{ marginTop: 8, fontSize: 12, color: 'var(--ink-400)', textAlign: 'center' }}>
+                Aucun client. <a style={{ color: 'var(--brand-600)', cursor: 'pointer', fontWeight: 600 }} onClick={() => onNav('/admin/clients')}>Créer un client →</a>
+              </div>
+            )}
+          </div>
+
+          {/* Product & Weight */}
+          <div className="card" style={{ padding: 16, marginBottom: 14 }}>
+            <div className="section-title" style={{ marginBottom: 14 }}>
+              <I.Box style={{ width: 14, height: 14, color: 'var(--brand-600)' }} /> Contenu & Poids
             </div>
             <div className="field">
-              <label className="label">Note générale <span className="opt">/ General note</span></label>
-              <textarea className="textarea" rows={2} value={data.contents} onChange={e => upd('contents', e.target.value)} placeholder="Instructions de manutention, précautions..." />
+              <label className="label">Description du contenu</label>
+              <input className="input" value={data.description} onChange={e => upd('description', e.target.value)} placeholder="Ex: Vêtements, cosmétiques, alimentaire…" />
             </div>
-            <div className="field" style={{ marginBottom: 0 }}>
-              <label className="label">Options</label>
-              <div style={{ display: 'flex', gap: 6 }}>
-                <ToggleChip checked={data.insurance} onChange={() => upd('insurance', !data.insurance)} icon="🛡">Assurance +3%</ToggleChip>
+            <div className="field-row field-row--2">
+              <div className="field" style={{ marginBottom: 0 }}>
+                <label className="label">Poids réel (kg)</label>
+                <input className="input mono" type="number" min="0.1" step="0.1"
+                  value={data.weightKg} onChange={e => upd('weightKg', e.target.value)}
+                  placeholder="ex: 15.5" />
+              </div>
+              <div className="field" style={{ marginBottom: 0 }}>
+                <label className="label">Marge commerciale (%)</label>
+                <input className="input mono" type="number" min="0" step="1"
+                  value={data.marginPct} onChange={e => upd('marginPct', e.target.value)} />
+              </div>
+            </div>
+
+            <div style={{ marginTop: 14 }}>
+              <label className="label">Type de produit</label>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
+                {PRODUCT_TYPES.map(pt => (
+                  <label key={pt.id} style={{
+                    display: 'flex', alignItems: 'center', gap: 8, padding: '10px 12px',
+                    border: '1px solid ' + (data.productType === pt.id ? 'var(--brand-500)' : 'var(--border)'),
+                    borderRadius: 8, cursor: 'pointer',
+                    background: data.productType === pt.id ? 'var(--brand-50)' : 'white',
+                  }}>
+                    <input type="radio" name="productType" checked={data.productType === pt.id}
+                      onChange={() => upd('productType', pt.id)} style={{ accentColor: 'var(--brand-500)' }} />
+                    <div>
+                      <div style={{ fontSize: 12.5, fontWeight: 600 }}>{pt.label}</div>
+                      <div style={{ fontSize: 11, color: 'var(--ink-400)' }}>{pt.desc}</div>
+                    </div>
+                  </label>
+                ))}
               </div>
             </div>
           </div>
 
-          {/* Delivery */}
+          {/* Packaging */}
           <div className="card" style={{ padding: 16, marginBottom: 14 }}>
-            <div className="section-title" style={{ marginBottom: 12 }}>
-              <I.Truck style={{ width: 14, height: 14, color: 'var(--brand-600)' }} /> Mode de livraison
+            <div className="section-title" style={{ marginBottom: 14 }}>
+              <I.Tag style={{ width: 14, height: 14, color: 'var(--brand-600)' }} /> Emballage & Conditionnement
             </div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
-              <DeliveryCard sel={data.delivery === 'home'} onClick={() => upd('delivery', 'home')} icon={<I.Truck style={{ width: 18, height: 18 }} />} label="Livraison à domicile" en="Home delivery" extra={`+25 ${activeRoute.currency}`} />
-              <DeliveryCard sel={data.delivery === 'pickup'} onClick={() => upd('delivery', 'pickup')} icon={<I.Warehouse style={{ width: 18, height: 18 }} />} label="Retrait entrepôt" en="Warehouse pickup" extra="Gratuit" />
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10, marginBottom: 14 }}>
+              <NumField label="Cartons" value={data.nbCartons} onChange={v => upd('nbCartons', v)} />
+              <NumField label="Petits sacs" value={data.nbPetitsSacs} onChange={v => upd('nbPetitsSacs', v)} />
+              <NumField label="Sacs moyens" value={data.nbSacsMoyens} onChange={v => upd('nbSacsMoyens', v)} />
+              <NumField label="Grands sacs" value={data.nbGrandsSacs} onChange={v => upd('nbGrandsSacs', v)} />
+              <NumField label="Plastiques std" value={data.nbPlastiques} onChange={v => upd('nbPlastiques', v)} />
+              {data.productType === 'biere' && (
+                <NumField label="Plastiques bière" value={data.nbPlastiquesBiere} onChange={v => upd('nbPlastiquesBiere', v)} />
+              )}
             </div>
+
+            {data.productType === 'biere' && (
+              <>
+                <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.06em', color: 'var(--ink-400)', marginBottom: 10 }}>Frais SAQ — Casiers de bière</div>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10 }}>
+                  <NumField label="Casiers 24×65cl" value={data.nbCasiers24x65} onChange={v => upd('nbCasiers24x65', v)} />
+                  <NumField label="Casiers 24×33cl" value={data.nbCasiers24x33} onChange={v => upd('nbCasiers24x33', v)} />
+                  <NumField label="Casiers 12×50cl" value={data.nbCasiers12x50} onChange={v => upd('nbCasiers12x50', v)} />
+                </div>
+              </>
+            )}
           </div>
 
-          {/* Payment */}
+          {/* Delivery + Notes */}
           <div className="card" style={{ padding: 16, marginBottom: 14 }}>
             <div className="section-title" style={{ marginBottom: 12 }}>
-              <I.Wallet style={{ width: 14, height: 14, color: 'var(--brand-600)' }} /> Paiement & affectation
+              <I.Truck style={{ width: 14, height: 14, color: 'var(--brand-600)' }} /> Livraison & Notes
             </div>
-            <div className="field-row field-row--3">
-              <div className="field">
-                <label className="label">Statut paiement</label>
-                <select className="select" value={data.paid} onChange={e => upd('paid', e.target.value)}>
-                  <option value="unpaid">Impayé</option>
-                  <option value="pending">Acompte / Partiel</option>
-                  <option value="paid">Payé intégralement</option>
-                </select>
-              </div>
-              <div className="field">
-                <label className="label">Méthode</label>
-                <select className="select" value={data.method} onChange={e => upd('method', e.target.value)}>
-                  <option value="">—</option>
-                  <option>Espèces</option>
-                  <option>Virement Interac</option>
-                  <option>Virement bancaire</option>
-                  <option>Mobile Money</option>
-                </select>
-              </div>
-              <div className="field">
-                <label className="label">Agent en charge</label>
-                <select className="select" value={data.agent} onChange={e => upd('agent', e.target.value)}>
-                  {DATA.AGENTS.map(a => <option key={a.id} value={a.initials}>{a.initials} — {a.name}</option>)}
-                </select>
-              </div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 14 }}>
+              {[
+                { id: 'pickup', label: 'Retrait entrepôt', en: 'Warehouse pickup', extra: 'Gratuit' },
+                { id: 'home',   label: 'Livraison à domicile', en: 'Home delivery', extra: '+25 $ CAD' },
+              ].map(opt => (
+                <label key={opt.id} style={{
+                  display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px',
+                  border: '1px solid ' + (data.delivery === opt.id ? 'var(--brand-500)' : 'var(--border)'),
+                  borderRadius: 8, cursor: 'pointer',
+                  background: data.delivery === opt.id ? 'var(--brand-50)' : 'white',
+                }}>
+                  <input type="radio" name="delivery" checked={data.delivery === opt.id}
+                    onChange={() => upd('delivery', opt.id)} style={{ accentColor: 'var(--brand-500)' }} />
+                  <div>
+                    <div style={{ fontSize: 12.5, fontWeight: 600 }}>{opt.label}</div>
+                    <div style={{ fontSize: 11, color: 'var(--ink-400)' }}>{opt.extra}</div>
+                  </div>
+                </label>
+              ))}
             </div>
             <div className="field" style={{ marginBottom: 0 }}>
-              <label className="label">Observations <span className="opt">/ Notes</span></label>
-              <input className="input" value={data.note || ''} onChange={e => upd('note', e.target.value)} placeholder="Note interne..." />
+              <label className="label">Notes internes <span className="opt">/ optionnel</span></label>
+              <textarea className="textarea" rows={2} value={data.notes} onChange={e => upd('notes', e.target.value)} placeholder="Instructions, précautions…" />
             </div>
           </div>
         </div>
 
-        {/* Right: live summary */}
+        {/* Right: price summary */}
         <div style={{ position: 'sticky', top: 24 }}>
           <div className="card" style={{ overflow: 'hidden' }}>
             <div style={{ padding: '14px 16px', background: 'linear-gradient(135deg, var(--ink-900), var(--ink-800))', color: 'white' }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
-                <span className="mono" style={{ fontSize: 14, fontWeight: 700 }}>{data.code}</span>
-                <RoutePill from={activeRoute.fromIATA} to={activeRoute.toIATA} />
+                <span style={{ fontSize: 13, fontWeight: 700, opacity: .7 }}>Calcul du prix</span>
+                {activeCampaign && <RoutePill from={activeCampaign.from} to={activeCampaign.to} />}
               </div>
-              <div style={{ fontSize: 11, color: 'rgba(255,255,255,.55)' }}>
-                {activeCampaign?.code || '—'} · Aperçu en direct
+              <div style={{ fontSize: 26, fontWeight: 800 }}>
+                {calcLoading ? '…' : pricing
+                  ? `${(pricing.prixClient + (data.delivery === 'home' ? 25 : 0)).toFixed(2)} $`
+                  : data.weightKg > 0 ? '—' : '— $'}
+              </div>
+              <div style={{ fontSize: 11, opacity: .55, marginTop: 2 }}>
+                CAD · Marge {data.marginPct}% · {data.weightKg || 0} kg
               </div>
             </div>
 
             <div style={{ padding: 16 }}>
-              <div style={{ fontSize: 10.5, color: 'var(--ink-400)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.04em', marginBottom: 8 }}>
-                Tarif · {baseRate} {activeRoute.currency}/kg
-              </div>
-
-              {/* Per-item lines */}
-              {data.items.map((it, idx) => {
-                if (!it.weight) return null;
-                const cat = CATS.find(c => c.id === it.category) || CATS[0];
-                const linePrice = Math.round(it.weight * baseRate * (1 + cat.pct / 100));
-                return (
-                  <div key={it.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', padding: '4px 0', fontSize: 12, gap: 6, borderBottom: idx < data.items.length - 1 ? '1px solid var(--border-soft)' : 'none' }}>
-                    <span style={{ color: 'var(--ink-600)', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                      <span style={{ marginRight: 4 }}>{cat.icon}</span>
-                      {it.name || `Ligne ${idx + 1}`}
-                      <span style={{ color: 'var(--ink-300)', marginLeft: 4 }}>· {it.weight}kg</span>
-                      {cat.pct !== 0 && <span style={{ marginLeft: 4, fontSize: 10, color: cat.pct > 0 ? 'var(--warn-600)' : 'var(--ok-600)', fontWeight: 700 }}>{cat.pct > 0 ? '+' : ''}{cat.pct}%</span>}
-                    </span>
-                    <span className="mono" style={{ fontWeight: 600, color: 'var(--ink-900)', whiteSpace: 'nowrap', fontSize: 12 }}>{linePrice} <span style={{ color: 'var(--ink-400)', fontWeight: 400, fontSize: 10 }}>{activeRoute.currency}</span></span>
-                  </div>
-                );
-              })}
-
-              <div style={{ marginTop: 8, paddingTop: 8, borderTop: '1px solid var(--border-soft)' }}>
-                <SummaryLine l={`Sous-total articles (${totalItemWeight.toFixed(1)} kg)`} v={itemsTotal} cur={activeRoute.currency} />
-                {data.delivery === 'home' && <SummaryLine l="Livraison domicile" v={deliveryFee} cur={activeRoute.currency} />}
-                <SummaryLine l="Manutention" v={handlingFee} cur={activeRoute.currency} />
-                {data.insurance && <SummaryLine l="Assurance 3%" v={insuranceFee} cur={activeRoute.currency} />}
-              </div>
-
-              <div style={{ borderTop: '2px solid var(--ink-900)', marginTop: 10, paddingTop: 12, display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
-                <span style={{ fontWeight: 700 }}>Total dû</span>
-                <span className="mono" style={{ fontSize: 22, fontWeight: 700 }}>
-                  {total} <span style={{ fontSize: 12, color: 'var(--ink-400)' }}>{activeRoute.currency}</span>
-                </span>
-              </div>
-
-              {data.paid === 'paid' && (
-                <div style={{ marginTop: 10, padding: 8, background: 'var(--ok-50)', fontSize: 11.5, color: 'var(--ok-700)', fontWeight: 600 }}>
-                  ✓ Marqué comme payé · {data.method || '—'}
+              {!pricing && !calcLoading && (
+                <div style={{ color: 'var(--ink-400)', fontSize: 12, textAlign: 'center', padding: '12px 0' }}>
+                  Saisissez le poids pour calculer le prix
                 </div>
               )}
-              {data.paid === 'unpaid' && total > 0 && (
-                <div style={{ marginTop: 10, padding: 8, background: 'var(--bad-50)', fontSize: 11.5, color: 'var(--bad-700)', fontWeight: 600 }}>
-                  ⚠ Reste à percevoir <span className="mono">{total} {activeRoute.currency}</span>
+              {calcLoading && (
+                <div style={{ color: 'var(--ink-400)', fontSize: 12, textAlign: 'center', padding: '12px 0' }}>
+                  Calcul en cours…
+                </div>
+              )}
+              {pricing && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                  <PriceRow label="Transport" value={pricing.transport} />
+                  {pricing.cartons > 0   && <PriceRow label="Cartons" value={pricing.cartons} />}
+                  {pricing.sacs > 0      && <PriceRow label="Sacs" value={pricing.sacs} />}
+                  <PriceRow label="Manutention" value={pricing.manutention} />
+                  {pricing.douane > 0    && <PriceRow label="Douane & terminal" value={pricing.douane} />}
+                  {pricing.formalites > 0 && <PriceRow label="Formalités" value={pricing.formalites} />}
+                  {pricing.conditionnement > 0 && <PriceRow label="Conditionnement" value={pricing.conditionnement} />}
+                  {pricing.fraisSAQ > 0  && <PriceRow label="Frais SAQ" value={pricing.fraisSAQ} />}
+                  <div style={{ borderTop: '1px solid var(--border-soft)', margin: '6px 0' }} />
+                  <PriceRow label="Sous-total" value={pricing.sousTotal} />
+                  <PriceRow label={`Marge ${data.marginPct}%`} value={pricing.marge} />
+                  {data.delivery === 'home' && <PriceRow label="Livraison domicile" value={25} />}
+                  <div style={{ borderTop: '2px solid var(--ink-200)', margin: '6px 0' }} />
+                  <PriceRow label="Prix client" value={pricing.prixClient + (data.delivery === 'home' ? 25 : 0)} bold />
                 </div>
               )}
             </div>
 
-            {/* Pricing grid */}
-            <div style={{ padding: '12px 16px', borderTop: '1px solid var(--border-soft)', background: 'var(--bg-soft)' }}>
-              <div style={{ fontSize: 10.5, color: 'var(--ink-400)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.04em', marginBottom: 6 }}>
-                Grille — {activeRoute.code}
-              </div>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
-                {grid.map((p, i) => {
-                  const active = totalItemWeight > p.from && totalItemWeight <= p.to;
-                  return (
-                    <span key={i} className="mono" style={{
-                      padding: '2px 7px', fontSize: 10.5, fontWeight: 600,
-                      background: active ? 'var(--brand-500)' : 'white',
-                      color: active ? 'white' : 'var(--ink-600)',
-                      border: '1px solid ' + (active ? 'var(--brand-500)' : 'var(--border)'),
-                    }}>
-                      {p.from}–{p.to}: {p.rate}
-                    </span>
-                  );
-                })}
-              </div>
-            </div>
-          </div>
-
-          <div className="card" style={{ marginTop: 12, padding: 14 }}>
-            <div style={{ fontSize: 10.5, color: 'var(--ink-400)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.04em', marginBottom: 8 }}>À l'enregistrement</div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 6, fontSize: 12 }}>
-              <AutoCheck checked label="Générer le bordereau (BL)" />
-              <AutoCheck checked label="Envoyer la facture par WhatsApp" />
-              <AutoCheck label="Notifier l'expéditeur" />
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-/* ── Helpers ── */
-
-function calcPrice(weight, grid) {
-  if (!weight) return 0;
-  for (const tier of grid) {
-    if (weight > tier.from && weight <= tier.to) return Math.round(weight * tier.rate);
-  }
-  return Math.round(weight * grid[grid.length - 1].rate);
-}
-
-function getTierRate(weight, grid) {
-  if (!weight) return grid[0].rate;
-  for (const tier of grid) {
-    if (weight > tier.from && weight <= tier.to) return tier.rate;
-  }
-  return grid[grid.length - 1].rate;
-}
-
-/* ── Items table ── */
-
-function ItemsSection({ data, upd, currency, baseRate }) {
-  const items = data.items || [];
-  const addRow = () => upd('items', [...items, {
-    id: (items[items.length - 1]?.id || 0) + 1,
-    name: '', packs: 1, pieces: 1, weight: 0, category: 'standard', note: '',
-  }]);
-  const removeRow = (id) => upd('items', items.filter(i => i.id !== id));
-  const updRow = (id, k, v) => upd('items', items.map(i => i.id === id ? { ...i, [k]: v } : i));
-  const duplicateRow = (row) => upd('items', [...items, { ...row, id: (items[items.length - 1]?.id || 0) + 1 }]);
-
-  const totalWeight = items.reduce((a, i) => a + (+i.weight || 0), 0);
-  const totalPieces = items.reduce((a, i) => a + (+i.pieces || 0), 0);
-
-  return (
-    <div className="card" style={{ padding: 0, marginBottom: 14, overflow: 'hidden' }}>
-      <div style={{ padding: '14px 16px', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: 10 }}>
-        <I.Box style={{ width: 14, height: 14, color: 'var(--brand-600)' }} />
-        <div style={{ flex: 1 }}>
-          <div style={{ fontSize: 13.5, fontWeight: 700 }}>Articles du colis <span style={{ color: 'var(--ink-400)', fontWeight: 500, fontSize: 12, marginLeft: 4 }}>/ Items</span></div>
-          <div style={{ fontSize: 11.5, color: 'var(--ink-400)', marginTop: 2 }}>Chaque ligne a son propre poids et sa catégorie tarifaire.</div>
-        </div>
-        <div style={{ display: 'flex', gap: 14, fontSize: 11.5 }}>
-          <MiniStat label="Lignes" v={items.length} />
-          <MiniStat label="Pièces" v={totalPieces} />
-          <MiniStat label="Poids total" v={totalWeight.toFixed(1)} unit="kg" />
-        </div>
-      </div>
-
-      <div style={{ overflowX: 'auto' }}>
-        <table className="tbl tbl--compact" style={{ borderRadius: 0, minWidth: 620 }}>
-          <thead>
-            <tr>
-              <th style={{ borderRadius: 0, width: 30, textAlign: 'center' }}>#</th>
-              <th>Article</th>
-              <th style={{ width: 55 }}>Colis</th>
-              <th style={{ width: 55 }}>Pièces</th>
-              <th style={{ width: 80 }}>Poids (kg)</th>
-              <th style={{ width: 165 }}>Catégorie</th>
-              <th style={{ width: 75, textAlign: 'right', borderRadius: 0 }}>Montant</th>
-              <th style={{ width: 50, borderRadius: 0 }}></th>
-            </tr>
-          </thead>
-          <tbody>
-            {items.map((it, idx) => {
-              const cat = CATS.find(c => c.id === it.category) || CATS[0];
-              const linePrice = Math.round((+it.weight || 0) * baseRate * (1 + cat.pct / 100));
+            {/* Selected client summary */}
+            {data.clientId && (() => {
+              const c = clients.find(x => x.id === data.clientId);
+              if (!c) return null;
               return (
-                <tr key={it.id}>
-                  <td className="mono" style={{ color: 'var(--ink-400)', fontSize: 12, textAlign: 'center' }}>{idx + 1}</td>
-                  <td style={{ padding: '5px 8px' }}>
-                    <input className="input input--sm" value={it.name} onChange={e => updRow(it.id, 'name', e.target.value)} placeholder="Ex: Boissons, poissons fumés..." />
-                  </td>
-                  <td style={{ padding: '5px 6px' }}>
-                    <input className="input input--sm mono" type="number" min="0" value={it.packs} onChange={e => updRow(it.id, 'packs', +e.target.value)} style={{ textAlign: 'center' }} />
-                  </td>
-                  <td style={{ padding: '5px 6px' }}>
-                    <input className="input input--sm mono" type="number" min="0" value={it.pieces} onChange={e => updRow(it.id, 'pieces', +e.target.value)} style={{ textAlign: 'center' }} />
-                  </td>
-                  <td style={{ padding: '5px 6px' }}>
-                    <input className="input input--sm mono" type="number" min="0" step="0.1" value={it.weight} onChange={e => updRow(it.id, 'weight', +e.target.value)} style={{ textAlign: 'right' }} />
-                  </td>
-                  <td style={{ padding: '5px 6px' }}>
-                    <select
-                      className="select input--sm"
-                      value={it.category}
-                      onChange={e => updRow(it.id, 'category', e.target.value)}
-                      style={{ fontSize: 12, height: 30, padding: '0 6px' }}
-                    >
-                      {CATS.map(c => (
-                        <option key={c.id} value={c.id}>
-                          {c.icon} {c.label} ({c.pct > 0 ? '+' : ''}{c.pct}%)
-                        </option>
-                      ))}
-                    </select>
-                  </td>
-                  <td style={{ textAlign: 'right', padding: '5px 8px' }}>
-                    {it.weight > 0
-                      ? <span className="mono" style={{ fontSize: 12, fontWeight: 600, color: 'var(--ink-800)' }}>{linePrice}</span>
-                      : <span style={{ color: 'var(--ink-300)', fontSize: 12 }}>—</span>
-                    }
-                  </td>
-                  <td style={{ padding: '5px 6px', whiteSpace: 'nowrap' }}>
-                    <button className="icon-btn" onClick={() => duplicateRow(it)} style={{ width: 24, height: 24 }} title="Dupliquer"><I.Copy style={{ width: 12, height: 12 }} /></button>
-                    <button className="icon-btn" onClick={() => removeRow(it.id)} disabled={items.length <= 1} style={{ width: 24, height: 24, color: items.length <= 1 ? 'var(--ink-300)' : 'var(--bad-500)' }}><I.Trash style={{ width: 12, height: 12 }} /></button>
-                  </td>
-                </tr>
+                <div style={{ padding: '10px 16px', borderTop: '1px solid var(--border-soft)', background: 'var(--bg-soft)' }}>
+                  <div style={{ fontSize: 10.5, color: 'var(--ink-400)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.04em', marginBottom: 4 }}>Client</div>
+                  <div style={{ fontSize: 13, fontWeight: 600 }}>{c.name}</div>
+                  <div style={{ fontSize: 11.5, color: 'var(--ink-500)' }}>{c.email}</div>
+                </div>
               );
-            })}
-          </tbody>
-        </table>
-      </div>
-
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', background: 'var(--bg-soft)', borderTop: '1px solid var(--border-soft)' }}>
-        <button className="btn btn--ghost btn--sm" onClick={addRow}><I.Plus />Ajouter une ligne</button>
-        <div style={{ fontSize: 11.5, color: 'var(--ink-500)' }}>
-          {totalPieces} pièces · <strong className="mono" style={{ color: 'var(--ink-800)' }}>{totalWeight.toFixed(1)} kg</strong> total déclaré
-        </div>
-      </div>
-    </div>
-  );
-}
-
-/* ── Party field ── */
-
-function PartyField({ kind, en, iconColor, color, data, prefix, cityLabel, upd, withAddress }) {
-  const name = data[prefix + 'Name'];
-  const phone = data[prefix + 'Phone'];
-  return (
-    <div className="card" style={{ padding: 16, marginBottom: 14 }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12, gap: 10 }}>
-        <div className="section-title" style={{ margin: 0 }}>
-          <I.Pin style={{ width: 14, height: 14, color: iconColor }} />
-          <span>{kind}</span>
-          <span style={{ color: 'var(--ink-300)', fontWeight: 500 }}>/ {en}</span>
-        </div>
-        {prefix === 'sender' && <button className="btn btn--ghost btn--sm"><I.Search />Choisir expéditeur</button>}
-      </div>
-
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: 10, background: name ? 'var(--bg-soft)' : 'transparent', border: name ? 'none' : '1px dashed var(--border)', marginBottom: 12 }}>
-        {name ? (
-          <>
-            <Avatar initials={name.split(' ').map(x => x[0]).slice(0, 2).join('')} color={color} size="lg" />
-            <div style={{ flex: 1 }}>
-              <div style={{ fontSize: 14, fontWeight: 700 }}>{name}</div>
-              <div className="mono" style={{ fontSize: 11.5, color: 'var(--ink-500)' }}>{phone} · {cityLabel}</div>
-            </div>
-            <button className="btn btn--ghost btn--sm" onClick={() => { upd(prefix + 'Name', ''); upd(prefix + 'Phone', ''); }}><I.Refresh />Changer</button>
-          </>
-        ) : (
-          <div style={{ flex: 1, color: 'var(--ink-400)', fontSize: 12.5, padding: '6px 0' }}>
-            {prefix === 'sender' ? 'Sélectionnez un expéditeur existant ou renseignez ci-dessous.' : 'Renseignez les coordonnées du destinataire.'}
+            })()}
           </div>
-        )}
-      </div>
-
-      <div className="field-row field-row--2">
-        <div className="field" style={{ marginBottom: withAddress ? 14 : 0 }}>
-          <label className="label">Nom complet</label>
-          <input className="input" value={name} onChange={e => upd(prefix + 'Name', e.target.value)} placeholder="Nom prénom" />
-        </div>
-        <div className="field" style={{ marginBottom: withAddress ? 14 : 0 }}>
-          <label className="label">Téléphone</label>
-          <input className="input mono" value={phone} onChange={e => upd(prefix + 'Phone', e.target.value)} placeholder={prefix === 'sender' ? '+237 6XX...' : '+1 514...'} />
         </div>
       </div>
-
-      {withAddress && (
-        <>
-          <div style={{ background: 'var(--bg-soft)', border: '1px solid var(--border-soft)', borderRadius: 8, padding: '12px 14px', marginBottom: 0 }}>
-            <div style={{ fontSize: 10.5, fontWeight: 700, letterSpacing: '.08em', textTransform: 'uppercase', color: 'var(--ink-400)', marginBottom: 10 }}>Adresse de livraison</div>
-            <div className="field" style={{ marginBottom: 10 }}>
-              <label className="label">Adresse (numéro et rue)</label>
-              <input className="input" value={data.recipAddress} onChange={e => upd('recipAddress', e.target.value)} placeholder="123 rue Sainte-Catherine" />
-            </div>
-            <div className="field" style={{ marginBottom: 10 }}>
-              <label className="label">Appartement, bureau (optionnel)</label>
-              <input className="input" value={data.recipApt} onChange={e => upd('recipApt', e.target.value)} placeholder="Apt 4B" />
-            </div>
-            <div className="field-row field-row--2" style={{ marginBottom: 10 }}>
-              <div className="field" style={{ marginBottom: 0 }}>
-                <label className="label">Ville</label>
-                <select className="select" value={data.recipCity} onChange={e => upd('recipCity', e.target.value)}>
-                  <optgroup label="Grand Montréal">
-                    {['Montréal','Laval','Longueuil','Brossard','Saint-Lambert','Westmount','Outremont','Côte-Saint-Luc','LaSalle','Verdun','Lachine','Dorval','Pointe-Claire','Dollard-des-Ormeaux','Mont-Royal'].map(c => <option key={c}>{c}</option>)}
-                  </optgroup>
-                  <optgroup label="Hors région">
-                    {['Gatineau','Québec','Ottawa','Toronto','Vancouver','Calgary','Edmonton','Winnipeg'].map(c => <option key={c}>{c}</option>)}
-                  </optgroup>
-                </select>
-              </div>
-              <div className="field" style={{ marginBottom: 0 }}>
-                <label className="label">Province</label>
-                <select className="select" value={data.recipProvince} onChange={e => upd('recipProvince', e.target.value)}>
-                  <option value="QC">Québec</option>
-                  <option value="ON">Ontario</option>
-                  <option value="BC">Colombie-Britannique</option>
-                  <option value="AB">Alberta</option>
-                  <option value="MB">Manitoba</option>
-                  <option value="SK">Saskatchewan</option>
-                  <option value="NS">Nouvelle-Écosse</option>
-                  <option value="NB">Nouveau-Brunswick</option>
-                </select>
-              </div>
-            </div>
-            <div className="field" style={{ marginBottom: 0 }}>
-              <label className="label">Code postal</label>
-              <input className="input mono" value={data.recipPostal} onChange={e => upd('recipPostal', e.target.value)} placeholder="H3H 1A1" style={{ maxWidth: 160 }} />
-            </div>
-          </div>
-        </>
-      )}
     </div>
-  );
-}
-
-/* ── Small components ── */
-
-function DeliveryCard({ sel, onClick, icon, label, en, extra }) {
-  return (
-    <label onClick={onClick} style={{ padding: 14, border: '1px solid ' + (sel ? 'var(--brand-500)' : 'var(--border)'), background: sel ? 'var(--brand-50)' : 'white', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 10, color: sel ? 'var(--brand-700)' : 'var(--ink-700)' }}>
-      <input type="radio" checked={sel} readOnly style={{ accentColor: 'var(--brand-500)' }} />
-      <div style={{ color: sel ? 'var(--brand-600)' : 'var(--ink-500)' }}>{icon}</div>
-      <div style={{ flex: 1 }}>
-        <div style={{ fontSize: 13, fontWeight: 700 }}>{label}</div>
-        <div style={{ fontSize: 11, opacity: .7 }}>{en}</div>
-      </div>
-      <span className="mono" style={{ fontSize: 12, fontWeight: 600 }}>{extra}</span>
-    </label>
-  );
-}
-
-function ToggleChip({ checked, onChange, icon, children }) {
-  return (
-    <button onClick={onChange} style={{ padding: '8px 12px', fontSize: 12, fontWeight: 600, background: checked ? 'var(--brand-500)' : 'white', color: checked ? 'white' : 'var(--ink-600)', border: '1px solid ' + (checked ? 'var(--brand-500)' : 'var(--border)'), display: 'inline-flex', alignItems: 'center', gap: 5, cursor: 'pointer' }}>
-      <span>{icon}</span>{children}
-    </button>
-  );
-}
-
-function MiniStat({ label, v, unit }) {
-  return (
-    <div style={{ textAlign: 'center' }}>
-      <div className="mono" style={{ fontSize: 13, fontWeight: 700, color: 'var(--ink-900)' }}>
-        {v}{unit && <span style={{ fontSize: 10, color: 'var(--ink-400)', marginLeft: 2, fontWeight: 500 }}>{unit}</span>}
-      </div>
-      <div style={{ fontSize: 9.5, color: 'var(--ink-400)', textTransform: 'uppercase', letterSpacing: '.04em', fontWeight: 600 }}>{label}</div>
-    </div>
-  );
-}
-
-function SummaryLine({ l, sub, v, cur, warn }) {
-  return (
-    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', padding: '4px 0', fontSize: 12, gap: 8 }}>
-      <span style={{ color: warn ? 'var(--warn-700)' : 'var(--ink-600)', flex: 1 }}>
-        {l}{sub && <span style={{ color: 'var(--ink-300)', marginLeft: 4, fontSize: 10 }}>· {sub}</span>}
-      </span>
-      <span className="mono" style={{ fontWeight: 600, whiteSpace: 'nowrap' }}>{v} <span style={{ color: 'var(--ink-400)', fontWeight: 400, fontSize: 10 }}>{cur}</span></span>
-    </div>
-  );
-}
-
-function AutoCheck({ checked, label }) {
-  return (
-    <label style={{ display: 'flex', alignItems: 'center', gap: 7, cursor: 'pointer', color: 'var(--ink-700)' }}>
-      <input type="checkbox" defaultChecked={checked} style={{ accentColor: 'var(--brand-500)' }} />
-      {label}
-    </label>
   );
 }

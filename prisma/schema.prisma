@@ -116,6 +116,19 @@ model Parcel {
   weightKg      Float?
   declaredValue Float?
   priceXaf      Int?
+  // Tarification
+  productType       String?  @default("standard")
+  nbCartons         Int?     @default(0)
+  nbPetitsSacs      Int?     @default(0)
+  nbSacsMoyens      Int?     @default(0)
+  nbGrandsSacs      Int?     @default(0)
+  nbPlastiques      Int?     @default(0)
+  nbPlastiquesBiere Int?     @default(0)
+  nbCasiers24x65    Int?     @default(0)
+  nbCasiers24x33    Int?     @default(0)
+  nbCasiers12x50    Int?     @default(0)
+  marginPct         Float?   @default(30)
+  pricingDetails    Json?
   status        ParcelStatus @default(en_attente)
   confirmed     Boolean      @default(false)
   notes         String?

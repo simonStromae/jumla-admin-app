@@ -57,13 +57,18 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  const { error, session } = await requireAdmin();
+  const { error } = await requireAdmin();
   if (error) return error;
 
   const body = await req.json();
-  const { clientId, campaignId, description, weightKg, priceXaf, declaredValue, notes } = body;
+  const {
+    clientId, campaignId, description, weightKg, priceXaf, declaredValue, notes,
+    productType, nbCartons, nbPetitsSacs, nbSacsMoyens, nbGrandsSacs,
+    nbPlastiques, nbPlastiquesBiere, nbCasiers24x65, nbCasiers24x33, nbCasiers12x50,
+    marginPct, pricingDetails,
+  } = body;
 
-  if (!clientId || !campaignId || !weightKg || !priceXaf) {
+  if (!clientId || !campaignId || !weightKg) {
     return NextResponse.json({ error: 'Champs obligatoires manquants' }, { status: 400 });
   }
 
@@ -71,12 +76,24 @@ export async function POST(req: NextRequest) {
     data: {
       clientId,
       campaignId,
-      trackingCode: genTrackingCode(),
+      trackingCode:     genTrackingCode(),
       description,
-      weightKg:     Number(weightKg),
-      priceXaf:     Number(priceXaf),
-      declaredValue: declaredValue ? Number(declaredValue) : null,
+      weightKg:         Number(weightKg),
+      priceXaf:         priceXaf ? Number(priceXaf) : null,
+      declaredValue:    declaredValue ? Number(declaredValue) : null,
       notes,
+      productType:      productType      ?? 'standard',
+      nbCartons:        nbCartons        ? Number(nbCartons)        : 0,
+      nbPetitsSacs:     nbPetitsSacs     ? Number(nbPetitsSacs)     : 0,
+      nbSacsMoyens:     nbSacsMoyens     ? Number(nbSacsMoyens)     : 0,
+      nbGrandsSacs:     nbGrandsSacs     ? Number(nbGrandsSacs)     : 0,
+      nbPlastiques:     nbPlastiques     ? Number(nbPlastiques)     : 0,
+      nbPlastiquesBiere:nbPlastiquesBiere? Number(nbPlastiquesBiere): 0,
+      nbCasiers24x65:   nbCasiers24x65   ? Number(nbCasiers24x65)   : 0,
+      nbCasiers24x33:   nbCasiers24x33   ? Number(nbCasiers24x33)   : 0,
+      nbCasiers12x50:   nbCasiers12x50   ? Number(nbCasiers12x50)   : 0,
+      marginPct:        marginPct        ? Number(marginPct)        : 30,
+      pricingDetails:   pricingDetails   ?? undefined,
     },
     include: { client: true, campaign: true },
   });
