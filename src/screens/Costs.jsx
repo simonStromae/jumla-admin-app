@@ -1,5 +1,4 @@
-import { useState } from 'react';
-import { DATA } from '../data.js';
+import { useState, useEffect } from 'react';
 import I from '../components/Icons.jsx';
 import { Bi, RoutePill } from '../components/Shell.jsx';
 
@@ -24,7 +23,7 @@ function hasCosts(cd) {
 
 // ── Modal de saisie des coûts ──────────────────────────────────────
 function CostModal({ campaign, currentCosts, onSave, onClose }) {
-  const route = DATA.ROUTES.find(r => r.id === campaign.route);
+  const route = { fromIATA: campaign.from, toIATA: campaign.to };
   const [draft, setDraft] = useState(
     Object.fromEntries(COST_FIELDS.map(f => [f.key, currentCosts?.[f.key] || '']))
   );
@@ -151,34 +150,47 @@ function CostModal({ campaign, currentCosts, onSave, onClose }) {
 
 // ── Main screen ────────────────────────────────────────────────────
 export default function CostsScreen({ onNav }) {
-  const [costsData, setCostsData] = useState(() =>
-    Object.fromEntries(DATA.CAMPAIGNS.map(c => [c.id, { ...c.costs }]))
-  );
-  const [modal, setModal]           = useState(null); // campaign object
+  const [campaigns, setCampaigns]     = useState([]);
+  const [costsData, setCostsData]     = useState({});
+  const [modal, setModal]             = useState(null);
   const [routeFilter, setRouteFilter] = useState('all');
+  const [loading, setLoading]         = useState(true);
 
-  const campaigns = DATA.CAMPAIGNS.filter(c =>
-    routeFilter === 'all' || c.route === routeFilter
-  );
+  useEffect(() => {
+    fetch('/api/campaigns').then(r => r.json()).then(data => {
+      const arr = Array.isArray(data) ? data : [];
+      setCampaigns(arr);
+      setCostsData(Object.fromEntries(arr.map(c => [c.id, c.costs ?? {}])));
+      setLoading(false);
+    });
+  }, []);
+
+  const filtered = campaigns.filter(c => routeFilter === 'all' || c.route === routeFilter);
 
   const totalCost = c => COST_FIELDS.reduce((s, f) => s + (costsData[c.id]?.[f.key] || 0), 0);
-  const margin    = c => c.collected - totalCost(c);
-  const marginPct = c => c.collected > 0 ? Math.round(margin(c) / c.collected * 100) : 0;
+  const margin    = c => (c.collected ?? 0) - totalCost(c);
+  const marginPct = c => (c.collected ?? 0) > 0 ? Math.round(margin(c) / c.collected * 100) : 0;
 
-  const allCollected = campaigns.reduce((s, c) => s + c.collected, 0);
-  const allCosts     = campaigns.reduce((s, c) => s + totalCost(c), 0);
+  const allCollected = filtered.reduce((s, c) => s + (c.collected ?? 0), 0);
+  const allCosts     = filtered.reduce((s, c) => s + totalCost(c), 0);
   const allMargin    = allCollected - allCosts;
   const allPct       = allCollected > 0 ? Math.round(allMargin / allCollected * 100) : 0;
-  const allWeight    = campaigns.reduce((s, c) => s + c.weight, 0);
+  const allWeight    = filtered.reduce((s, c) => s + (c.weight ?? 0), 0);
   const costPerKg    = allWeight > 0 ? (allCosts / allWeight).toFixed(2) : '—';
-  const best         = [...DATA.CAMPAIGNS].sort((a, b) => marginPct(b) - marginPct(a))[0];
+  const best         = [...filtered].sort((a, b) => marginPct(b) - marginPct(a))[0];
 
-  const saveCosts = (id, saved) => {
+  const saveCosts = async (id, saved) => {
+    await fetch(`/api/costs/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(saved),
+    });
     setCostsData(d => ({ ...d, [id]: saved }));
     setModal(null);
   };
 
-  const routeOf = id => DATA.ROUTES.find(r => r.id === id);
+  const routes = [...new Map(campaigns.map(c => [c.route, { id: c.route, code: c.routeCode }])).values()];
+  const routeOf = id => campaigns.find(c => c.id === id) ?? null;
 
   return (
     <div className="page">
@@ -201,7 +213,7 @@ export default function CostsScreen({ onNav }) {
             <I.Route style={{ width: 14, height: 14, color: 'var(--ink-400)' }} />
             <select value={routeFilter} onChange={e => setRouteFilter(e.target.value)} style={{ border: 0, background: 'transparent', fontWeight: 600, paddingRight: 4 }}>
               <option value="all">Toutes les routes</option>
-              {DATA.ROUTES.filter(r => r.active).map(r => <option key={r.id} value={r.id}>{r.code}</option>)}
+              {routes.map(r => <option key={r.id} value={r.id}>{r.code}</option>)}
             </select>
           </div>
           <button className="btn btn--ghost"><I.Download />Export</button>
@@ -231,8 +243,7 @@ export default function CostsScreen({ onNav }) {
             </tr>
           </thead>
           <tbody>
-            {campaigns.map(c => {
-              const r   = routeOf(c.route);
+            {filtered.map(c => {
               const tc  = totalCost(c);
               const mg  = margin(c);
               const mp  = marginPct(c);
@@ -241,7 +252,7 @@ export default function CostsScreen({ onNav }) {
                 <tr key={c.id}>
                   <td>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                      <RoutePill from={r?.fromIATA} to={r?.toIATA} />
+                      <RoutePill from={c.from} to={c.to} />
                       <div>
                         <div className="mono" style={{ fontSize: 12.5, fontWeight: 700 }}>{c.code}</div>
                         <div style={{ fontSize: 11, color: 'var(--ink-400)', marginTop: 1 }}>
@@ -256,14 +267,14 @@ export default function CostsScreen({ onNav }) {
 
                   <td style={{ textAlign: 'right' }}>
                     <span className="mono" style={{ fontWeight: 700 }}>{c.collected.toLocaleString('fr')}</span>
-                    <span style={{ fontSize: 10.5, color: 'var(--ink-400)', marginLeft: 3 }}>{r?.currency}</span>
+                    <span style={{ fontSize: 10.5, color: 'var(--ink-400)', marginLeft: 3 }}>{CAD}</span>
                   </td>
 
                   <td style={{ textAlign: 'right' }}>
                     {renseigné ? (
                       <>
                         <span className="mono" style={{ fontWeight: 700, color: 'var(--ink-800)' }}>{tc.toLocaleString('fr')}</span>
-                        <span style={{ fontSize: 10.5, color: 'var(--ink-400)', marginLeft: 3 }}>{r?.currency}</span>
+                        <span style={{ fontSize: 10.5, color: 'var(--ink-400)', marginLeft: 3 }}>{CAD}</span>
                       </>
                     ) : (
                       <span style={{ fontSize: 12, color: 'var(--ink-300)', fontStyle: 'italic' }}>Non renseigné</span>
@@ -274,7 +285,7 @@ export default function CostsScreen({ onNav }) {
                     {renseigné ? (
                       <>
                         <span className="mono" style={{ fontWeight: 700, color: mg >= 0 ? 'var(--ok-600)' : 'var(--bad-500)' }}>{mg.toLocaleString('fr')}</span>
-                        <span style={{ fontSize: 10.5, color: 'var(--ink-400)', marginLeft: 3 }}>{r?.currency}</span>
+                        <span style={{ fontSize: 10.5, color: 'var(--ink-400)', marginLeft: 3 }}>{CAD}</span>
                       </>
                     ) : (
                       <span style={{ fontSize: 12, color: 'var(--ink-300)', fontStyle: 'italic' }}>—</span>
@@ -329,20 +340,21 @@ export default function CostsScreen({ onNav }) {
 
       {/* Per-route breakdown */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12 }}>
-        {DATA.ROUTES.filter(r => r.active).map(r => {
-          const rc    = DATA.CAMPAIGNS.filter(c => c.route === r.id);
+        {routes.map(r => {
+          const rc    = filtered.filter(c => c.route === r.id);
           if (!rc.length) return null;
-          const rColl  = rc.reduce((s, c) => s + c.collected, 0);
+          const rColl  = rc.reduce((s, c) => s + (c.collected ?? 0), 0);
           const rCosts = rc.reduce((s, c) => s + totalCost(c), 0);
           const rMg    = rColl - rCosts;
           const rPct   = rColl > 0 ? Math.round(rMg / rColl * 100) : 0;
-          const rWt    = rc.reduce((s, c) => s + c.weight, 0);
+          const rWt    = rc.reduce((s, c) => s + (c.weight ?? 0), 0);
+          const [from, to] = r.code.split(' → ');
           return (
             <div key={r.id} className="card" style={{ padding: '14px 16px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
-                <RoutePill from={r.fromIATA} to={r.toIATA} />
+                <RoutePill from={from} to={to} />
                 <div>
-                  <div style={{ fontSize: 13, fontWeight: 700 }}>{r.fromCity} → {r.toCity}</div>
+                  <div style={{ fontSize: 13, fontWeight: 700 }}>{r.code}</div>
                   <div style={{ fontSize: 11, color: 'var(--ink-400)' }}>{rc.length} cargaisons · {(rWt / 1000).toFixed(1)} t</div>
                 </div>
               </div>

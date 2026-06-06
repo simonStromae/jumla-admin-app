@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { DATA } from '../data.js';
+import { useState, useEffect } from 'react';
+
 import I from '../components/Icons.jsx';
 import { Bi, Avatar, Drawer } from '../components/Shell.jsx';
 import { Pagination, ViewToggle } from '../components/Pagination.jsx';
@@ -11,7 +11,15 @@ export default function ClientsScreen({ onNav }) {
   const [view, setView] = useState('grid');
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(12);
-  const clients = DATA.CLIENTS;
+  const [clients, setClients] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetch('/api/clients').then(r => r.json()).then(d => {
+      setClients(Array.isArray(d) ? d : []);
+      setLoading(false);
+    });
+  }, []);
 
   return (
     <div className="page">

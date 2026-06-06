@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { DATA, STATUS } from '../data.js';
+import { useState, useEffect } from 'react';
+import { STATUS } from '../data.js';
 import I from '../components/Icons.jsx';
 import { Bi, Avatar, Modal } from '../components/Shell.jsx';
 import { Progress } from '../components/Shell.jsx';
@@ -34,7 +34,7 @@ function PaymentModal({ payment, onClose, onSave }) {
           <label className="label">Cargaison</label>
           <select className="select" value={data.campaign} onChange={e => upd('campaign', e.target.value)}>
             <option value="">— Sélectionner</option>
-            {DATA.CAMPAIGNS.map(c => <option key={c.id} value={c.code}>{c.code}</option>)}
+            {campaigns.map(c => <option key={c.id} value={c.code}>{c.code}</option>)}
           </select>
         </div>
         <div className="field">
@@ -86,7 +86,7 @@ function PaymentModal({ payment, onClose, onSave }) {
         <div className="field">
           <label className="label">Agent</label>
           <select className="select">
-            {DATA.AGENTS.map(a => <option key={a.id}>{a.name}</option>)}
+            <option>AM</option><option>ML</option>
           </select>
         </div>
       </div>
@@ -100,9 +100,22 @@ function PaymentModal({ payment, onClose, onSave }) {
 }
 
 export default function PaymentsScreen({ onNav }) {
-  const [tab, setTab] = useState('all');
-  const [modal, setModal] = useState(null);
-  const payments = DATA.PAYMENTS;
+  const [tab, setTab]         = useState('all');
+  const [modal, setModal]     = useState(null);
+  const [payments, setPayments] = useState([]);
+  const [campaigns, setCampaigns] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    Promise.all([
+      fetch('/api/payments').then(r => r.json()),
+      fetch('/api/campaigns').then(r => r.json()),
+    ]).then(([pData, cData]) => {
+      setPayments(Array.isArray(pData) ? pData : []);
+      setCampaigns(Array.isArray(cData) ? cData : []);
+      setLoading(false);
+    });
+  }, []);
   const tabs = [
     { id: 'all',     l: 'Tous',     n: payments.length },
     { id: 'paid',    l: 'Payés',    n: payments.filter(p => p.status === 'paid').length,    cls: 'ok' },

@@ -1,23 +1,28 @@
-import { useState } from 'react';
-import { DATA, STATUS } from '../data.js';
+import { useState, useEffect } from 'react';
+import { STATUS } from '../data.js';
 import I from '../components/Icons.jsx';
 import { Bi, Avatar, ParcelActionsMenu } from '../components/Shell.jsx';
 import { Pagination } from '../components/Pagination.jsx';
 
 export default function AllParcelsScreen({ onNav }) {
-  const [tab, setTab] = useState('all');
+  const [tab, setTab]                     = useState('all');
   const [campaignFilter, setCampaignFilter] = useState('all');
-  const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(25);
+  const [page, setPage]                   = useState(1);
+  const [pageSize, setPageSize]           = useState(25);
+  const [allParcels, setAllParcels]       = useState([]);
+  const [campaigns, setCampaigns]         = useState([]);
+  const [loading, setLoading]             = useState(true);
 
-  const allParcels = DATA.CAMPAIGNS.flatMap(c =>
-    DATA.PARCELS.slice(0, Math.min(c.parcels, 4)).map(p => ({
-      ...p,
-      id: c.id + '-' + p.id,
-      campaign: c.code,
-      campaignId: c.id,
-    }))
-  );
+  useEffect(() => {
+    Promise.all([
+      fetch('/api/parcels').then(r => r.json()),
+      fetch('/api/campaigns').then(r => r.json()),
+    ]).then(([pData, cData]) => {
+      setAllParcels(Array.isArray(pData) ? pData : []);
+      setCampaigns(Array.isArray(cData) ? cData : []);
+      setLoading(false);
+    });
+  }, []);
 
   const filtered = allParcels.filter(p => {
     if (campaignFilter !== 'all' && p.campaignId !== campaignFilter) return false;
@@ -83,7 +88,7 @@ export default function AllParcelsScreen({ onNav }) {
           <I.Plane style={{ width: 12, height: 12, color: 'var(--ink-400)' }} />
           <select value={campaignFilter} onChange={e => setCampaignFilter(e.target.value)} style={{ border: 0, background: 'transparent', fontWeight: 600, paddingRight: 4 }}>
             <option value="all">Toutes cargaisons</option>
-            {DATA.CAMPAIGNS.map(c => <option key={c.id} value={c.id}>{c.code}</option>)}
+            {campaigns.map(c => <option key={c.id} value={c.id}>{c.code}</option>)}
           </select>
         </div>
       </div>
