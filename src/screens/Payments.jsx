@@ -1,10 +1,15 @@
 import { useState, useEffect } from 'react';
-import { STATUS } from '../data.js';
 import I from '../components/Icons.jsx';
-import { Bi, Avatar, Modal } from '../components/Shell.jsx';
-import { Progress } from '../components/Shell.jsx';
+import { Bi, Avatar, Modal, Progress } from '../components/Shell.jsx';
 
-function PaymentModal({ payment, onClose, onSave }) {
+const PAY_STATUS = {
+  completed: { label: 'Payé',       cls: 'ok' },
+  pending:   { label: 'En attente', cls: 'warn' },
+  failed:    { label: 'Échoué',     cls: 'bad' },
+  refunded:  { label: 'Remboursé',  cls: 'neutral' },
+};
+
+function PaymentModal({ payment, onClose, onSave, campaigns = [] }) {
   const isNew = !payment;
   const [data, setData] = useState({
     parcel:    payment?.parcel    || '',
@@ -138,28 +143,38 @@ export default function PaymentsScreen({ onNav }) {
         </div>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14, marginBottom: 18 }}>
-        <div className="kpi">
-          <div className="kpi__label">Facturé <span style={{ textTransform: 'none', color: 'var(--ink-300)' }}>/ Invoiced</span></div>
-          <div className="kpi__value">2 380 <span style={{ fontSize: 14, color: 'var(--ink-400)' }}>CAD</span></div>
-          <div className="kpi__delta">8 colis</div>
-        </div>
-        <div className="kpi" style={{ background: 'var(--ok-50)', borderColor: 'var(--ok-100)' }}>
-          <div className="kpi__label" style={{ color: 'var(--ok-700)' }}>Perçu <span style={{ textTransform: 'none', opacity: .6 }}>/ Collected</span></div>
-          <div className="kpi__value" style={{ color: 'var(--ok-700)' }}>1 855 <span style={{ fontSize: 14, opacity: .6 }}>CAD</span></div>
-          <Progress pct={78} />
-        </div>
-        <div className="kpi" style={{ background: 'var(--bad-50)', borderColor: 'var(--bad-100)' }}>
-          <div className="kpi__label" style={{ color: 'var(--bad-700)' }}>Impayés <span style={{ textTransform: 'none', opacity: .6 }}>/ Outstanding</span></div>
-          <div className="kpi__value" style={{ color: 'var(--bad-700)' }}>525 <span style={{ fontSize: 14, opacity: .6 }}>CAD</span></div>
-          <div className="kpi__delta" style={{ color: 'var(--bad-600)' }}>2 colis · 2 clients</div>
-        </div>
-        <div className="kpi">
-          <div className="kpi__label">Acomptes / Crédits</div>
-          <div className="kpi__value">200 <span style={{ fontSize: 14, color: 'var(--ink-400)' }}>CAD</span></div>
-          <div className="kpi__delta">1 acompte</div>
-        </div>
-      </div>
+      {(() => {
+        const facture = payments.reduce((s, p) => s + (p.amount || 0), 0);
+        const percu   = payments.filter(p => p.status === 'completed').reduce((s, p) => s + (p.amount || 0), 0);
+        const impayesAmt = payments.filter(p => p.status === 'pending' || p.status === 'failed').reduce((s, p) => s + (p.amount || 0), 0);
+        const impayesCount = payments.filter(p => p.status === 'pending' || p.status === 'failed').length;
+        const percuPct = Math.round(percu / (facture || 1) * 100) || 0;
+        const tauxRecouvrement = Math.round(percu / (facture || 1) * 100) || 0;
+        return (
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14, marginBottom: 18 }}>
+            <div className="kpi">
+              <div className="kpi__label">Facturé <span style={{ textTransform: 'none', color: 'var(--ink-300)' }}>/ Invoiced</span></div>
+              <div className="kpi__value">{facture.toLocaleString('fr')} <span style={{ fontSize: 14, color: 'var(--ink-400)' }}>CAD</span></div>
+              <div className="kpi__delta">{payments.length} colis</div>
+            </div>
+            <div className="kpi" style={{ background: 'var(--ok-50)', borderColor: 'var(--ok-100)' }}>
+              <div className="kpi__label" style={{ color: 'var(--ok-700)' }}>Perçu <span style={{ textTransform: 'none', opacity: .6 }}>/ Collected</span></div>
+              <div className="kpi__value" style={{ color: 'var(--ok-700)' }}>{percu.toLocaleString('fr')} <span style={{ fontSize: 14, opacity: .6 }}>CAD</span></div>
+              <Progress pct={percuPct} />
+            </div>
+            <div className="kpi" style={{ background: 'var(--bad-50)', borderColor: 'var(--bad-100)' }}>
+              <div className="kpi__label" style={{ color: 'var(--bad-700)' }}>Impayés <span style={{ textTransform: 'none', opacity: .6 }}>/ Outstanding</span></div>
+              <div className="kpi__value" style={{ color: 'var(--bad-700)' }}>{impayesAmt.toLocaleString('fr')} <span style={{ fontSize: 14, opacity: .6 }}>CAD</span></div>
+              <div className="kpi__delta" style={{ color: 'var(--bad-600)' }}>{impayesCount} paiement{impayesCount !== 1 ? 's' : ''}</div>
+            </div>
+            <div className="kpi">
+              <div className="kpi__label">Taux recouvrement</div>
+              <div className="kpi__value">{tauxRecouvrement}<span style={{ fontSize: 14, color: 'var(--ink-400)' }}>%</span></div>
+              <Progress pct={tauxRecouvrement} />
+            </div>
+          </div>
+        );
+      })()}
 
       <div className="toolbar">
         <div className="tabs">
@@ -216,9 +231,9 @@ export default function PaymentsScreen({ onNav }) {
                 {p.received > 0 && <span style={{ fontSize: 11, color: 'var(--ok-700)', opacity: .7, marginLeft: 3 }}>CAD</span>}
               </td>
               <td>
-                <span className={'badge badge--dot badge--' + STATUS.payment[p.status].cls}>
-                  {STATUS.payment[p.status].label}
-                </span>
+                {(() => { const s = PAY_STATUS[p.status] || { label: p.status, cls: 'neutral' }; return (
+                  <span className={'badge badge--dot badge--' + s.cls}>{s.label}</span>
+                ); })()}
               </td>
               <td style={{ fontSize: 12, color: 'var(--ink-600)' }}>{p.method}</td>
               <td><Avatar initials={p.agent} color={p.agent === 'AM' ? 1 : 2} size="sm" /></td>
@@ -240,6 +255,7 @@ export default function PaymentsScreen({ onNav }) {
       {modal && (
         <PaymentModal
           payment={modal?.new ? null : modal}
+          campaigns={campaigns}
           onClose={() => setModal(null)}
           onSave={() => setModal(null)}
         />

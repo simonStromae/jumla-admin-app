@@ -76,8 +76,8 @@ export function Sidebar({ route, onNav }) {
         })}
       </nav>
       <div className="sidebar__footer">
-        <div className="sidebar__avatar">{initials}</div>
-        <div className="sidebar__userinfo">
+        <div className="sidebar__avatar" onClick={() => onNav('/admin/profile')} style={{ cursor: 'pointer' }}>{initials}</div>
+        <div className="sidebar__userinfo" onClick={() => onNav('/admin/profile')} style={{ cursor: 'pointer' }}>
           <span className="sidebar__username">{name}</span>
           <span className="sidebar__userrole">{role === 'admin' ? 'Admin' : role === 'agent' ? 'Agent' : role}</span>
         </div>

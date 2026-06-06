@@ -1,10 +1,16 @@
 import { useState, useEffect } from 'react';
-import { STATUS } from '../data.js';
 import I from '../components/Icons.jsx';
 import { Bi, RoutePill, StatusDot, Progress } from '../components/Shell.jsx';
 
+const CAMPAIGN_STATUS = {
+  open:         { label: 'Ouverte',    dot: 'brand' },
+  'in-transit': { label: 'En transit', dot: 'warn' },
+  arrived:      { label: 'Arrivée',    dot: 'info' },
+  closed:       { label: 'Clôturée',   dot: 'neutral' },
+};
+
 export function CampaignCard({ c, onClick }) {
-  const s   = STATUS.campaign[c.status] ?? { label: c.status, dot: 'neutral' };
+  const s   = CAMPAIGN_STATUS[c.status] ?? { label: c.status, dot: 'neutral' };
   const pct = (c.invoiced ?? 0) > 0 ? Math.round((c.collected ?? 0) / c.invoiced * 100) : 0;
   const outstanding = (c.invoiced ?? 0) - (c.collected ?? 0);
 

@@ -104,12 +104,9 @@ export default function AnalyticsScreen({ onNav }) {
           </div>
         </ChartCard>
 
-        <ChartCard title="Performance opérationnelle" sub="3 indicateurs clés">
+        <ChartCard title="Performance opérationnelle" sub="Indicateur clé">
           <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
             <GaugeRow label="Taux recouvrement" v={recoveryRate} target={95} unit="%" />
-            <GaugeRow label="Délai moyen paiement" v={2.4} target={3} unit=" j" inverse />
-            <GaugeRow label="Délai livraison post-arrivée" v={1.8} target={2.5} unit=" j" inverse />
-            <GaugeRow label="Bordereaux validés à temps" v={92} target={95} unit="%" />
           </div>
         </ChartCard>
       </div>
@@ -134,18 +131,14 @@ export default function AnalyticsScreen({ onNav }) {
           <RoutesBar routes={routes} />
         </ChartCard>
         <ChartCard title="Modes de livraison" sub="Répartition des colis">
-          <Donut data={[
-            { l: 'Domicile', v: 178, color: 'var(--brand-500)' },
-            { l: 'Retrait',  v: 64,  color: 'var(--ink-400)' },
-          ]} center={{ value: 242, label: 'colis' }} />
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 120, color: 'var(--ink-400)', fontSize: 13 }}>
+            Données en cours de chargement
+          </div>
         </ChartCard>
         <ChartCard title="Méthodes de paiement" sub="Volume reçu par canal">
-          <Donut data={[
-            { l: 'Virement',     v: 92400, color: 'var(--info-500)' },
-            { l: 'Espèces',      v: 41200, color: 'var(--brand-500)' },
-            { l: 'Interac',      v: 58800, color: 'var(--ok-500)' },
-            { l: 'Mobile Money', v: 16300, color: 'var(--warn-500)' },
-          ]} center={{ value: (totalCollected/1000).toFixed(0)+'k', label: 'CAD' }} />
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 120, color: 'var(--ink-400)', fontSize: 13 }}>
+            Données en cours de chargement
+          </div>
         </ChartCard>
       </div>
 

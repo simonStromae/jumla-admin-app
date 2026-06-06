@@ -1,320 +1,286 @@
-import { useState } from 'react';
-import { DATA, getCampaign, getRoute, STATUS, STATUS_STEPS } from '../data.js';
+import { useState, useEffect } from 'react';
 import I from '../components/Icons.jsx';
-import { RoutePill, StatusDot, Avatar, Modal, ParcelActionsMenu } from '../components/Shell.jsx';
-import { StatusPanel, StatusTransitionModal } from './StatusWorkflow.jsx';
-import CampaignVerifyPanel from './CampaignVerify.jsx';
+import { RoutePill, Avatar, Modal } from '../components/Shell.jsx';
 
-export default function CampaignDetailScreen({ id, onNav, onEdit, onClose: onCloseCampaign }) {
-  const c = getCampaign(id) || DATA.CAMPAIGNS[0];
-  const r = getRoute(c.route);
-  const s = STATUS.campaign[c.status];
-  const [tab, setTab] = useState('all');
-  const [statusTransition, setStatusTransition] = useState(null);
-  const [showClose, setShowClose] = useState(false);
-  const [verifyMode, setVerifyMode] = useState(false);
+const STEPS = [
+  { id: 'open',       label: 'Ouverte',    color: 'var(--brand-500)' },
+  { id: 'in-transit', label: 'En transit', color: 'var(--warn-500)' },
+  { id: 'arrived',    label: 'Arrivée',    color: 'var(--info-500)' },
+  { id: 'closed',     label: 'Clôturée',   color: 'var(--ink-500)' },
+];
+const STEP_LABELS = { open: 'Ouverte', 'in-transit': 'En transit', arrived: 'Arrivée', closed: 'Clôturée' };
+const PAYMENT_STATUS = {
+  completed: { label: 'Payé',       cls: 'ok' },
+  pending:   { label: 'En attente', cls: 'warn' },
+  failed:    { label: 'Échoué',     cls: 'bad' },
+};
+const PARCEL_STATUS = {
+  en_attente: 'En attente', recu: 'Reçu', en_transit: 'En transit',
+  en_douane: 'En douane', arrive: 'Arrivé', livre: 'Livré',
+};
 
-  const workflowStatus = c.status === 'closed' ? 'arrived' : c.status === 'in-transit' ? 'in-transit' : 'open';
-  const lockedStates = ['locked', 'in-transit', 'arrived', 'closed'];
-  const isLocked = lockedStates.includes(workflowStatus) || c.status === 'closed';
-  const parcels = DATA.PARCELS;
-  const pct = Math.round(c.collected / c.invoiced * 100);
+export default function CampaignDetailScreen({ id, onNav }) {
+  const [campaign, setCampaign] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [advancing, setAdvancing] = useState(false);
 
-  const tabs = [
-    { id: 'all',     label: 'Tous',           n: parcels.length },
-    { id: 'unpaid',  label: 'Impayés',        n: 2, cls: 'bad' },
-    { id: 'todeliv', label: 'À livrer',       n: 5 },
-    { id: 'noslip',  label: 'Sans bordereau', n: 2, cls: 'warn' },
-    { id: 'overrun', label: 'Dépassement',    n: 3, cls: 'warn' },
-  ];
+  useEffect(() => {
+    fetch('/api/campaigns/' + id)
+      .then(r => r.json())
+      .then(c => { setCampaign(c); setLoading(false); })
+      .catch(() => setLoading(false));
+  }, [id]);
+
+  if (loading) {
+    return (
+      <div className="page" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 320 }}>
+        <div style={{ textAlign: 'center', color: 'var(--ink-400)' }}>
+          <div style={{ fontSize: 28, marginBottom: 12 }}>⏳</div>
+          <div style={{ fontSize: 14 }}>Chargement de la cargaison…</div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!campaign) {
+    return (
+      <div className="page" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 320 }}>
+        <div style={{ textAlign: 'center', color: 'var(--ink-400)' }}>
+          <div style={{ fontSize: 28, marginBottom: 12 }}>📦</div>
+          <div style={{ fontSize: 16, fontWeight: 600, color: 'var(--ink-700)' }}>Cargaison introuvable</div>
+          <button className="btn btn--ghost" style={{ marginTop: 16 }} onClick={() => onNav('/')}>← Retour</button>
+        </div>
+      </div>
+    );
+  }
+
+  const parcels = campaign.parcels || [];
+  const totalWeight = parcels.reduce((s, p) => s + (p.weightKg || 0), 0);
+  const invoiced = parcels.reduce((s, p) => s + (p.priceXaf || 0), 0);
+  const collected = parcels.reduce((s, p) => s + (p.payment?.status === 'completed' ? (p.payment.amount || 0) : 0), 0);
+  const outstanding = invoiced - collected;
+  const pct = invoiced > 0 ? Math.round(collected / invoiced * 100) : 0;
+
+  const currentStepIdx = STEPS.findIndex(s => s.id === campaign.status);
+  const nextStep = currentStepIdx >= 0 && currentStepIdx < STEPS.length - 1 ? STEPS[currentStepIdx + 1] : null;
+
+  async function handleAdvance() {
+    if (!nextStep) return;
+    setAdvancing(true);
+    try {
+      const res = await fetch('/api/campaigns/' + id, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: nextStep.id }),
+      });
+      if (res.ok) {
+        const updated = await fetch('/api/campaigns/' + id).then(r => r.json());
+        setCampaign(updated);
+      }
+    } catch (e) {
+      // silent fail — user can retry
+    } finally {
+      setAdvancing(false);
+    }
+  }
+
+  const route = campaign.route || {};
+  const depDate = campaign.departureDate ? new Date(campaign.departureDate).toLocaleDateString('fr-CA') : '—';
+  const arrDate = campaign.arrivalDate ? new Date(campaign.arrivalDate).toLocaleDateString('fr-CA') : '—';
 
   return (
     <div className="page">
+      {/* Breadcrumb */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12.5, color: 'var(--ink-400)', marginBottom: 8 }}>
         <a style={{ cursor: 'pointer' }} onClick={() => onNav('/')}>Cargaisons</a>
         <I.ChevronRight style={{ width: 12, height: 12 }} />
-        <span style={{ color: 'var(--ink-600)', fontWeight: 600 }}>{c.code}</span>
+        <span style={{ color: 'var(--ink-600)', fontWeight: 600 }}>{campaign.code}</span>
       </div>
 
+      {/* Header */}
       <div className="page__head" style={{ marginBottom: 16 }}>
         <div style={{ flex: 1 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 6 }}>
-            <h1 className="page__title" style={{ margin: 0 }}>{c.code}</h1>
-            <RoutePill from={r.fromIATA} to={r.toIATA} size="lg" />
-            <StatusDot kind={s.dot} label={s.label} />
+            <h1 className="page__title" style={{ margin: 0 }}>{campaign.code}</h1>
+            {route.origin && route.destination && (
+              <RoutePill from={route.origin} to={route.destination} size="lg" />
+            )}
+            {campaign.status && (
+              <span
+                className="badge badge--dot badge--neutral"
+                style={{ color: STEPS.find(s => s.id === campaign.status)?.color }}
+              >
+                {STEP_LABELS[campaign.status] || campaign.status}
+              </span>
+            )}
           </div>
           <div className="page__sub">
             <I.Calendar style={{ width: 12, height: 12, display: 'inline', verticalAlign: -2, marginRight: 4 }} />
-            Départ <strong style={{ color: 'var(--ink-700)' }}>{c.dep}</strong> ·
-            Arrivée estimée <strong style={{ color: 'var(--ink-700)' }}>12 mai 2026</strong> ·
-            Responsable <strong style={{ color: 'var(--ink-700)' }}>Aïcha M.</strong>
+            Départ <strong style={{ color: 'var(--ink-700)' }}>{depDate}</strong>
+            {' · '}
+            Arrivée estimée <strong style={{ color: 'var(--ink-700)' }}>{arrDate}</strong>
           </div>
         </div>
         <div className="page__actions">
-          <button className="btn btn--ghost"><I.Download />Export Excel</button>
-          <button className="btn btn--ghost" onClick={() => onNav('/campaign/' + c.id + '/labels')}><I.Print />Étiquettes</button>
-          <button className="btn btn--ghost" onClick={onEdit} disabled={isLocked} style={isLocked ? { opacity: 0.4, cursor: 'not-allowed' } : {}}><I.Edit />Modifier</button>
-          {c.status !== 'closed' && <button className="btn btn--primary" onClick={() => setShowClose(true)}><I.Check />Clôturer</button>}
-          <button className="btn btn--ghost" onClick={() => setVerifyMode(true)}><I.Check />Vérifier arrivée</button>
-          <button className="btn btn--brand" onClick={() => !isLocked && onNav('/parcels/new?campaign=' + c.id)} disabled={isLocked} style={isLocked ? { opacity: 0.4, cursor: 'not-allowed' } : {}}><I.Plus />Nouveau colis</button>
+          <button
+            className="btn btn--brand"
+            onClick={() => onNav('/parcels/new?campaign=' + id)}
+          >
+            <I.Plus />Ajouter un colis
+          </button>
         </div>
       </div>
 
+      {/* KPI strip */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', background: 'white', border: '1px solid var(--border)', borderRadius: 12, overflow: 'hidden', marginBottom: 16 }}>
         {[
-          { l: 'Colis',              v: c.parcels,                              u: '' },
-          { l: 'Poids total',        v: c.weight.toLocaleString('fr'),          u: 'kg' },
-          { l: 'Facturé',            v: c.invoiced.toLocaleString('fr'),        u: 'CAD' },
-          { l: 'Perçu',              v: c.collected.toLocaleString('fr'),       u: 'CAD', col: 'var(--ok-600)' },
-          { l: 'Reste à percevoir',  v: (c.invoiced - c.collected).toLocaleString('fr'), u: 'CAD', col: 'var(--bad-600)' },
-          { l: 'Taux recouvrement',  v: pct,                                    u: '%', col: pct >= 95 ? 'var(--ok-600)' : 'var(--warn-700)' },
+          { l: 'Colis',             v: parcels.length,                          u: '' },
+          { l: 'Poids total',       v: totalWeight.toLocaleString('fr'),         u: 'kg' },
+          { l: 'Facturé',           v: invoiced.toLocaleString('fr'),            u: 'XAF' },
+          { l: 'Perçu',             v: collected.toLocaleString('fr'),           u: 'XAF', col: 'var(--ok-600)' },
+          { l: 'Reste à percevoir', v: outstanding.toLocaleString('fr'),         u: 'XAF', col: outstanding > 0 ? 'var(--bad-600)' : 'var(--ok-600)' },
+          { l: 'Taux recouvrement', v: pct,                                      u: '%',   col: pct >= 95 ? 'var(--ok-600)' : 'var(--warn-700)' },
         ].map((k, i) => (
           <div key={i} style={{ padding: '14px 18px', borderRight: i < 5 ? '1px solid var(--border-soft)' : 'none' }}>
-            <div style={{ fontSize: 10.5, color: 'var(--ink-400)', textTransform: 'uppercase', letterSpacing: '.04em', fontWeight: 600, marginBottom: 4 }}>{k.l}</div>
-            <div style={{ fontSize: 18, fontWeight: 700, color: k.col || 'var(--ink-900)' }} className="mono">
+            <div className="kpi__label" style={{ fontSize: 10.5, color: 'var(--ink-400)', textTransform: 'uppercase', letterSpacing: '.04em', fontWeight: 600, marginBottom: 4 }}>{k.l}</div>
+            <div className="kpi__value mono" style={{ fontSize: 18, fontWeight: 700, color: k.col || 'var(--ink-900)' }}>
               {k.v}<span style={{ fontSize: 11, color: 'var(--ink-400)', fontWeight: 500, marginLeft: 4 }}>{k.u}</span>
             </div>
           </div>
         ))}
       </div>
 
-      <StatusPanel
-        status={workflowStatus}
-        onAdvance={() => {
-          const idx = STATUS_STEPS.findIndex(s => s.id === workflowStatus);
-          const next = STATUS_STEPS[idx + 1];
-          if (next) setStatusTransition({ from: workflowStatus, to: next.id });
-        }}
-        onJump={(target, i) => {
-          const idx = STATUS_STEPS.findIndex(s => s.id === workflowStatus);
-          if (i === idx + 1) setStatusTransition({ from: workflowStatus, to: target.id });
-        }}
-      />
-
-      {isLocked && (
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 16px', marginBottom: 14, background: c.status === 'closed' ? 'var(--bg-soft)' : 'var(--warn-50)', border: '1px solid ' + (c.status === 'closed' ? 'var(--border)' : 'var(--warn-100)'), borderRadius: 10 }}>
-          <div style={{ width: 32, height: 32, borderRadius: 8, background: 'white', display: 'grid', placeItems: 'center', color: c.status === 'closed' ? 'var(--ink-500)' : 'var(--warn-700)' }}>
-            <I.Lock />
-          </div>
-          <div style={{ flex: 1 }}>
-            <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--ink-800)' }}>
-              {c.status === 'closed' ? 'Cargaison clôturée — lecture seule' : 'Cargaison verrouillée — plus de modifications possibles'}
-            </div>
-            <div style={{ fontSize: 12, color: 'var(--ink-500)', marginTop: 2 }}>
-              {c.status === 'closed' ? 'Aucune modification possible. La cargaison est archivée.' : 'Plus d\'ajout ni de modification de colis.'}
-            </div>
-          </div>
-          {c.status !== 'closed' && <button className="btn btn--ghost btn--sm"><I.ArrowLeft />Rouvrir</button>}
+      {/* Status stepper */}
+      <div className="card" style={{ marginBottom: 16, padding: '16px 20px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 0 }}>
+          {STEPS.map((step, i) => {
+            const isActive = step.id === campaign.status;
+            const isDone = i < currentStepIdx;
+            return (
+              <div key={step.id} style={{ display: 'flex', alignItems: 'center', flex: i < STEPS.length - 1 ? 1 : 'none' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
+                  <div style={{
+                    width: 32, height: 32, borderRadius: '50%', display: 'grid', placeItems: 'center',
+                    background: isActive ? step.color : isDone ? 'var(--ok-500)' : 'var(--border)',
+                    color: isActive || isDone ? 'white' : 'var(--ink-400)',
+                    fontWeight: 700, fontSize: 13, transition: 'background .2s',
+                  }}>
+                    {isDone ? '✓' : i + 1}
+                  </div>
+                  <span style={{
+                    fontSize: 11.5, fontWeight: isActive ? 700 : 500,
+                    color: isActive ? step.color : isDone ? 'var(--ok-600)' : 'var(--ink-400)',
+                    whiteSpace: 'nowrap',
+                  }}>
+                    {step.label}
+                  </span>
+                </div>
+                {i < STEPS.length - 1 && (
+                  <div style={{
+                    flex: 1, height: 2, margin: '0 8px', marginBottom: 18,
+                    background: isDone ? 'var(--ok-500)' : 'var(--border)',
+                  }} />
+                )}
+              </div>
+            );
+          })}
         </div>
-      )}
 
-      {verifyMode ? (
-        <CampaignVerifyPanel parcels={parcels} campaign={c} onExit={() => setVerifyMode(false)} />
-      ) : (
-        <>
-          <div className="toolbar">
-            <div className="tabs">
-              {tabs.map(t => (
-                <button key={t.id} className={'tab ' + (tab === t.id ? 'is-active' : '')} onClick={() => setTab(t.id)}>
-                  {t.label} <span className="count">{t.n}</span>
-                </button>
-              ))}
-            </div>
-            <div className="spacer" />
-            <div style={{ position: 'relative' }}>
-              <I.Search style={{ position: 'absolute', left: 10, top: 9, width: 14, height: 14, color: 'var(--ink-400)' }} />
-              <input className="input input--sm" placeholder="Rechercher colis, expéditeur, destinataire..." style={{ width: 280, paddingLeft: 32 }} />
-            </div>
-            <button className="btn btn--ghost btn--sm"><I.Filter />Filtres</button>
+        {nextStep && (
+          <div style={{ marginTop: 16, display: 'flex', justifyContent: 'flex-end' }}>
+            <button
+              className="btn btn--primary"
+              onClick={handleAdvance}
+              disabled={advancing}
+            >
+              {advancing ? 'Mise à jour…' : `Faire avancer → ${nextStep.label}`}
+            </button>
           </div>
+        )}
+      </div>
 
-          <table className="tbl" style={{ borderTopLeftRadius: 0, borderTopRightRadius: 0 }}>
-            <thead>
-              <tr>
-                <th style={{ width: 32, borderRadius: 0 }}><input type="checkbox" style={{ accentColor: 'var(--brand-500)' }} /></th>
-                <th style={{ borderRadius: 0 }}>Code</th>
-                <th>Expéditeur · Douala</th>
-                <th>Destinataire · Canada</th>
-                <th>Poids</th>
-                <th>Contenu</th>
-                <th style={{ textAlign: 'right' }}>Montant</th>
-                <th>Paiement</th>
-                <th>Livraison</th>
-                <th>Agent</th>
-                <th style={{ width: 44, borderRadius: 0 }}></th>
-              </tr>
-            </thead>
-            <tbody>
-              {parcels.map(p => (
-                <tr key={p.id}>
-                  <td><input type="checkbox" style={{ accentColor: 'var(--brand-500)' }} /></td>
-                  <td><a className="mono" style={{ fontWeight: 700, color: 'var(--brand-700)', cursor: 'pointer' }} onClick={() => onNav('/parcels/' + p.id)}>{p.code}</a></td>
+      {/* Parcel table */}
+      {parcels.length === 0 ? (
+        <div className="card" style={{ padding: '48px 24px', textAlign: 'center' }}>
+          <div style={{ fontSize: 32, marginBottom: 12 }}>📦</div>
+          <div style={{ fontSize: 16, fontWeight: 600, color: 'var(--ink-700)', marginBottom: 6 }}>Aucun colis dans cette cargaison</div>
+          <div style={{ fontSize: 13, color: 'var(--ink-400)', marginBottom: 20 }}>Ajoutez le premier colis pour commencer.</div>
+          <button className="btn btn--brand" onClick={() => onNav('/parcels/new?campaign=' + id)}>
+            <I.Plus />Ajouter un colis
+          </button>
+        </div>
+      ) : (
+        <table className="tbl">
+          <thead>
+            <tr>
+              <th>Code</th>
+              <th>Client</th>
+              <th>Poids (kg)</th>
+              <th>Contenu</th>
+              <th style={{ textAlign: 'right' }}>Montant (CAD)</th>
+              <th>Paiement</th>
+              <th>Statut colis</th>
+            </tr>
+          </thead>
+          <tbody>
+            {parcels.map(p => {
+              const payInfo = PAYMENT_STATUS[p.payment?.status] || { label: p.payment?.status || '—', cls: 'neutral' };
+              const parcelLabel = PARCEL_STATUS[p.status] || p.status || '—';
+              const clientName = p.client?.name || '—';
+              const initials = clientName.split(' ').map(x => x[0]).join('').slice(0, 2).toUpperCase();
+              return (
+                <tr
+                  key={p.id}
+                  style={{ cursor: 'pointer' }}
+                  onClick={() => onNav('/parcels/' + p.id)}
+                >
+                  <td>
+                    <span className="mono" style={{ fontWeight: 700, color: 'var(--brand-700)' }}>
+                      {p.trackingCode || p.id}
+                    </span>
+                  </td>
                   <td>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                      <Avatar initials={p.senderName.split(' ').map(x => x[0]).join('').slice(0, 2)} color={(p.id.charCodeAt(0) % 8) + 1} size="sm" />
-                      <div style={{ minWidth: 0 }}>
-                        <div style={{ fontWeight: 600 }}>{p.senderName}</div>
-                        <div className="mono" style={{ fontSize: 11, color: 'var(--ink-400)' }}>{p.senderPhone}</div>
+                      <Avatar initials={initials} size="sm" />
+                      <div>
+                        <div style={{ fontWeight: 600 }}>{clientName}</div>
+                        {p.client?.phone && (
+                          <div className="mono" style={{ fontSize: 11, color: 'var(--ink-400)' }}>{p.client.phone}</div>
+                        )}
                       </div>
                     </div>
                   </td>
                   <td>
-                    <div style={{ fontWeight: 600 }}>{p.recipName}</div>
-                    <div style={{ fontSize: 11, color: 'var(--ink-400)' }}>
-                      <span className="mono">{p.recipPhone}</span>
-                      <span style={{ marginLeft: 6, color: 'var(--ink-500)' }}>· {p.recipCity}</span>
-                    </div>
+                    <span className="mono" style={{ fontWeight: 600 }}>{p.weightKg != null ? p.weightKg : '—'}</span>
                   </td>
-                  <td>
-                    <div className="mono" style={{ fontSize: 12, lineHeight: 1.3 }}>
-                      <span style={{ color: 'var(--ink-400)' }}>Rés.</span> <strong>{p.reservedKg}</strong> kg<br />
-                      <span style={{ color: 'var(--ink-400)' }}>Réel</span> <strong style={{ color: p.overrun ? 'var(--warn-700)' : 'var(--ink-800)' }}>{p.actualKg}</strong> kg
-                      {p.overrun && <span style={{ marginLeft: 4, color: 'var(--warn-700)', fontSize: 10 }}>⚠</span>}
+                  <td style={{ maxWidth: 180, fontSize: 12, color: 'var(--ink-600)' }}>
+                    <div style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {p.description || '—'}
                     </div>
-                  </td>
-                  <td style={{ maxWidth: 200, fontSize: 12, color: 'var(--ink-600)' }}>
-                    <div style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.contents}</div>
                   </td>
                   <td style={{ textAlign: 'right' }}>
-                    <span className="mono" style={{ fontWeight: 700, color: 'var(--ink-900)' }}>{p.amount}</span>
-                    <span style={{ fontSize: 11, color: 'var(--ink-400)', marginLeft: 4 }}>CAD</span>
-                  </td>
-                  <td>
-                    <span className={'badge badge--dot badge--' + STATUS.payment[p.paid].cls}>
-                      {STATUS.payment[p.paid].label}
+                    <span className="mono" style={{ fontWeight: 700, color: 'var(--ink-900)' }}>
+                      {p.priceXaf != null ? p.priceXaf.toLocaleString('fr') : '—'}
                     </span>
                   </td>
                   <td>
-                    <span style={{ fontSize: 12, display: 'inline-flex', alignItems: 'center', gap: 4, color: 'var(--ink-600)' }}>
-                      {p.delivery === 'home' ? <><I.Truck style={{ width: 13, height: 13 }} /> Domicile</> : <><I.Warehouse style={{ width: 13, height: 13 }} /> Retrait</>}
+                    <span className={`badge badge--dot badge--${payInfo.cls}`}>
+                      {payInfo.label}
                     </span>
                   </td>
                   <td>
-                    <Avatar initials={p.agent} color={p.agent === 'AM' ? 1 : 2} size="sm" />
-                  </td>
-                  <td style={{ overflow: 'visible' }}>
-                    <ParcelActionsMenu parcel={p} onNav={onNav} isLocked={isLocked} />
+                    <span className="badge badge--neutral">{parcelLabel}</span>
                   </td>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-
-          <div style={{ marginTop: 12, fontSize: 12, color: 'var(--ink-400)', display: 'flex', justifyContent: 'space-between' }}>
-            <span>{parcels.length} colis affichés sur {c.parcels}</span>
-            <span>Dernière modif. : Marc L. — 26 avr. 2026, 14:32</span>
-          </div>
-        </>
-      )}
-
-      {statusTransition && (
-        <StatusTransitionModal
-          from={statusTransition.from}
-          to={statusTransition.to}
-          onClose={() => setStatusTransition(null)}
-          onConfirm={() => setStatusTransition(null)}
-        />
-      )}
-
-      {showClose && (
-        <CloseCampaignModal
-          id={id}
-          onClose={() => setShowClose(false)}
-          onConfirm={() => setShowClose(false)}
-        />
-      )}
-    </div>
-  );
-}
-
-export function CloseCampaignModal({ id, onClose, onConfirm }) {
-  const c = getCampaign(id) || DATA.CAMPAIGNS[0];
-  const outstanding = c.invoiced - c.collected;
-  const internalTotal = 6950;
-  const margin = c.collected - internalTotal;
-  const marginPct = Math.round(margin / c.collected * 100);
-
-  return (
-    <Modal width={780} onClose={onClose}
-      title={<span>Clôturer la cargaison <span style={{ color: 'var(--ink-400)', fontWeight: 400, fontSize: '.85em', marginLeft: 6 }}>/ Close shipment</span></span>}
-      sub={<><span className="mono">{c.code}</span> — vérifiez le bilan avant de clôturer</>}
-      footer={
-        <>
-          <button className="btn btn--ghost" onClick={onClose}>Annuler</button>
-          <button className="btn btn--soft">Imprimer rapport</button>
-          <button className="btn btn--primary" onClick={onConfirm}><I.Check />Confirmer la clôture</button>
-        </>
-      }>
-      <div style={{ display: 'flex', gap: 14, marginBottom: 18 }}>
-        <div className="card" style={{ flex: 1, padding: 14 }}>
-          <div style={{ fontSize: 11, color: 'var(--ink-400)', textTransform: 'uppercase', letterSpacing: '.04em', fontWeight: 600 }}>Facturé</div>
-          <div className="mono" style={{ fontSize: 22, fontWeight: 700, marginTop: 4 }}>{c.invoiced.toLocaleString('fr')} <span style={{ fontSize: 12, color: 'var(--ink-400)' }}>CAD</span></div>
-        </div>
-        <div className="card" style={{ flex: 1, padding: 14, background: 'var(--ok-50)', borderColor: 'var(--ok-100)' }}>
-          <div style={{ fontSize: 11, color: 'var(--ok-700)', textTransform: 'uppercase', letterSpacing: '.04em', fontWeight: 600 }}>Perçu</div>
-          <div className="mono" style={{ fontSize: 22, fontWeight: 700, marginTop: 4, color: 'var(--ok-700)' }}>{c.collected.toLocaleString('fr')} <span style={{ fontSize: 12, opacity: .7 }}>CAD</span></div>
-        </div>
-        <div className="card" style={{ flex: 1, padding: 14, background: outstanding > 0 ? 'var(--bad-50)' : 'var(--bg-soft)', borderColor: outstanding > 0 ? 'var(--bad-100)' : 'var(--border)' }}>
-          <div style={{ fontSize: 11, color: outstanding > 0 ? 'var(--bad-700)' : 'var(--ink-400)', textTransform: 'uppercase', letterSpacing: '.04em', fontWeight: 600 }}>Impayés</div>
-          <div className="mono" style={{ fontSize: 22, fontWeight: 700, marginTop: 4, color: outstanding > 0 ? 'var(--bad-700)' : 'var(--ink-700)' }}>{outstanding.toLocaleString('fr')} <span style={{ fontSize: 12, opacity: .7 }}>CAD</span></div>
-        </div>
-      </div>
-
-      {outstanding > 0 && (
-        <div style={{ display: 'flex', gap: 10, padding: 12, background: 'var(--warn-50)', border: '1px solid var(--warn-100)', borderRadius: 8, marginBottom: 18 }}>
-          <I.Alert style={{ flex: '0 0 16px', color: 'var(--warn-700)', marginTop: 1 }} />
-          <div style={{ flex: 1 }}>
-            <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--ink-800)' }}>Impayés non régularisés</div>
-            <div style={{ fontSize: 12, color: 'var(--ink-600)', marginTop: 2 }}>3 colis présentent des impayés ({outstanding.toLocaleString('fr')} CAD). Choisissez comment les traiter :</div>
-            <div style={{ marginTop: 10, display: 'flex', gap: 8 }}>
-              {['Reporter sur la prochaine cargaison', 'Marquer comme perte', 'Garder ouvert'].map((opt, i) => (
-                <label key={i} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, padding: '5px 10px', background: 'white', border: '1px solid var(--border)', borderRadius: 6, cursor: 'pointer' }}>
-                  <input type="radio" name="outstanding" defaultChecked={i === 0} style={{ accentColor: 'var(--brand-500)' }} /> {opt}
-                </label>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
-
-      <div className="section-title">Bilan financier</div>
-      <div style={{ border: '1px solid var(--border)', borderRadius: 10, overflow: 'hidden' }}>
-        <table className="tbl tbl--compact" style={{ borderRadius: 0 }}>
-          <tbody>
-            {[
-              { l: 'Recettes colis',            v: c.invoiced, type: 'in' },
-              { l: 'Frais de livraison facturés', v: 480,      type: 'in' },
-              { l: 'Dépassements de poids',      v: 320,       type: 'in' },
-              { l: 'Transport aérien',           v: -4200,     type: 'out' },
-              { l: 'Douane & dédouanement',      v: -1800,     type: 'out' },
-              { l: 'Entrepôt & logistique',      v: -950,      type: 'out' },
-            ].map((row, i) => (
-              <tr key={i}>
-                <td style={{ fontSize: 13 }}>{row.l}</td>
-                <td style={{ textAlign: 'right', width: 160 }}>
-                  <span className="mono" style={{ fontWeight: 600, color: row.type === 'in' ? 'var(--ok-600)' : 'var(--bad-600)' }}>
-                    {row.type === 'in' ? '+' : ''}{row.v.toLocaleString('fr')} CAD
-                  </span>
-                </td>
-              </tr>
-            ))}
-            <tr style={{ background: 'var(--ink-900)', color: 'white' }}>
-              <td style={{ fontWeight: 700, color: 'white' }}>Marge nette</td>
-              <td style={{ textAlign: 'right' }}>
-                <span className="mono" style={{ fontWeight: 700, fontSize: 16, color: '#F5A524' }}>+{margin.toLocaleString('fr')} CAD</span>
-                <span style={{ marginLeft: 8, color: 'rgba(255,255,255,.5)', fontSize: 12 }}>· {marginPct}%</span>
-              </td>
-            </tr>
+              );
+            })}
           </tbody>
         </table>
-      </div>
+      )}
 
-      <div style={{ display: 'flex', gap: 10, padding: 12, marginTop: 14, background: 'var(--info-50)', border: '1px solid var(--info-100)', borderRadius: 8 }}>
-        <I.Info style={{ flex: '0 0 16px', color: 'var(--info-600)', marginTop: 1 }} />
-        <div style={{ fontSize: 12.5, color: 'var(--ink-700)', lineHeight: 1.5 }}>
-          La clôture archive la cargaison en lecture seule, génère le rapport financier PDF et envoie un récap par WhatsApp à chaque destinataire.
-        </div>
+      <div style={{ marginTop: 12, fontSize: 12, color: 'var(--ink-400)' }}>
+        {parcels.length} colis · Capacité {campaign.capacityKg != null ? campaign.capacityKg + ' kg' : '—'}
       </div>
-    </Modal>
+    </div>
   );
 }
