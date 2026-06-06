@@ -1,41 +1,92 @@
-import { useState } from 'react';
-import { DATA, getRoute } from '../data.js';
+import { useState, useEffect } from 'react';
 import I from '../components/Icons.jsx';
 import { RoutePill, Avatar } from '../components/Shell.jsx';
 
+function autoCode(route) {
+  if (!route) return '';
+  const now = new Date();
+  const months = ['JAN','FEV','MAR','AVR','MAI','JUN','JUL','AOU','SEP','OCT','NOV','DEC'];
+  return `${route.fromIATA}-${route.toIATA}-${months[now.getMonth()]}-01`;
+}
+
 export default function CampaignFormPage({ mode = 'create', campaign, onNav }) {
   const isEdit = mode === 'edit';
-  const routes = DATA.ROUTES.filter(r => r.active);
 
-  const [data, setData] = useState(() => {
-    const firstRoute = routes[0];
-    return {
-      routeId:    campaign?.route    || firstRoute?.id || '',
-      code:       campaign?.code     || autoCode(firstRoute),
-      depDate:    campaign?.dep      || '',
-      arrDate:    '',
-      agentOrigin: campaign?.agentOrigin || DATA.AGENTS.find(a => ['Douala', 'Lagos'].includes(a.city))?.id || '',
-      agentDest:   campaign?.agentDest   || DATA.AGENTS.find(a => ['Montréal', 'Bruxelles'].includes(a.city))?.id || '',
-      notes:      campaign?.notes   || '',
-    };
+  const [routes, setRoutes]   = useState([]);
+  const [agents, setAgents]   = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving]   = useState(false);
+  const [err, setErr]         = useState('');
+
+  const [data, setData] = useState({
+    routeId:     campaign?.route    || '',
+    code:        campaign?.code     || '',
+    depDate:     campaign?.dep      || '',
+    arrDate:     '',
+    capacityKg:  '',
+    agentOrigin: '',
+    agentDest:   '',
+    notes:       '',
   });
 
+  useEffect(() => {
+    Promise.all([
+      fetch('/api/routes').then(r => r.json()),
+      fetch('/api/users').then(r => r.json()),
+    ]).then(([routeData, userData]) => {
+      const activeRoutes = Array.isArray(routeData) ? routeData.filter(r => r.active) : [];
+      const allAgents = Array.isArray(userData) ? userData : [];
+      setRoutes(activeRoutes);
+      setAgents(allAgents);
+      if (!isEdit && activeRoutes.length > 0 && !data.routeId) {
+        const first = activeRoutes[0];
+        setData(d => ({ ...d, routeId: first.id, code: autoCode(first) }));
+      }
+      setLoading(false);
+    }).catch(() => setLoading(false));
+  }, []);
+
   const upd = (k, v) => setData(d => ({ ...d, [k]: v }));
-  const route = getRoute(data.routeId) || routes[0];
+  const route = routes.find(r => r.id === data.routeId) || null;
 
   function handleRouteChange(routeId) {
-    const r = getRoute(routeId);
-    upd('routeId', routeId);
-    upd('code', autoCode(r));
+    const r = routes.find(x => x.id === routeId);
+    setData(d => ({ ...d, routeId, code: autoCode(r) }));
   }
 
-  function handleDepDateChange(val) {
-    upd('depDate', val);
-    if (val && route?.transitDays) {
-      const d = new Date(val);
-      d.setDate(d.getDate() + route.transitDays);
-      upd('arrDate', d.toISOString().slice(0, 10));
-    }
+  async function handleSubmit() {
+    if (!data.routeId) { setErr('Veuillez sélectionner une route'); return; }
+    if (!data.code.trim()) { setErr('Le code de cargaison est obligatoire'); return; }
+    setSaving(true); setErr('');
+    try {
+      const res = await fetch('/api/campaigns', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          code:          data.code.trim(),
+          routeId:       data.routeId,
+          departureDate: data.depDate || null,
+          arrivalDate:   data.arrDate || null,
+          capacityKg:    data.capacityKg ? Number(data.capacityKg) : null,
+        }),
+      });
+      const json = await res.json();
+      if (!res.ok) { setErr(json.error || 'Erreur lors de la création'); setSaving(false); return; }
+      onNav('/');
+    } catch { setErr('Erreur réseau'); setSaving(false); }
+  }
+
+  if (loading) {
+    return (
+      <div className="page">
+        <div className="page__head" style={{ marginBottom: 28 }}>
+          <div className="page__title">{isEdit ? 'Modifier la cargaison' : 'Nouvelle cargaison'}</div>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '60px 0', color: 'var(--ink-400)', fontSize: 14 }}>
+          Chargement en cours…
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -59,18 +110,22 @@ export default function CampaignFormPage({ mode = 'create', campaign, onNav }) {
             </span>
           </div>
           <div className="page__sub">
-            {route
-              ? <>{route.fromCity} → {route.toCity} · Transit ~{route.transitDays} jours</>
-              : 'Sélectionnez une route'}
+            {route ? `${route.fromIATA} → ${route.toIATA} · ${route.label || route.code}` : 'Sélectionnez une route'}
           </div>
         </div>
         <div className="page__actions">
           <button className="btn btn--ghost" onClick={() => onNav('/')}>Annuler</button>
-          <button className="btn btn--brand" onClick={() => onNav('/')}>
-            <I.Check />{isEdit ? 'Enregistrer' : 'Créer la cargaison'}
+          <button className="btn btn--brand" onClick={handleSubmit} disabled={saving}>
+            <I.Check />{saving ? 'Enregistrement…' : isEdit ? 'Enregistrer' : 'Créer la cargaison'}
           </button>
         </div>
       </div>
+
+      {err && (
+        <div style={{ padding: '10px 16px', background: 'var(--bad-50)', color: 'var(--bad-700)', borderRadius: 8, fontSize: 13, marginBottom: 16 }}>
+          {err}
+        </div>
+      )}
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 280px', gap: 22, alignItems: 'start' }}>
         <div>
@@ -79,35 +134,38 @@ export default function CampaignFormPage({ mode = 'create', campaign, onNav }) {
             <div className="section-title" style={{ marginBottom: 14 }}>
               <I.Plane style={{ width: 14, height: 14, color: 'var(--brand-600)' }} /> Route
             </div>
-            <div style={{ display: 'grid', gap: 10, marginBottom: 20 }}>
-              {routes.map(r => (
-                <label key={r.id} style={{
-                  display: 'grid', gridTemplateColumns: '20px 1fr auto', gap: 14,
-                  padding: '14px 16px',
-                  border: '1px solid ' + (data.routeId === r.id ? 'var(--brand-500)' : 'var(--border)'),
-                  borderRadius: 'var(--radius)',
-                  background: data.routeId === r.id ? 'var(--brand-50)' : 'white',
-                  cursor: 'pointer', alignItems: 'center',
-                }}>
-                  <input type="radio" name="route" checked={data.routeId === r.id}
-                    onChange={() => handleRouteChange(r.id)}
-                    style={{ accentColor: 'var(--brand-500)' }} />
-                  <div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 3 }}>
-                      <RoutePill from={r.fromIATA} to={r.toIATA} />
-                      <span style={{ fontWeight: 700, fontSize: 13.5 }}>{r.fromCity} → {r.toCity}</span>
+
+            {routes.length === 0 ? (
+              <div style={{ padding: '24px', textAlign: 'center', background: 'var(--bg-soft)', borderRadius: 8, color: 'var(--ink-400)', fontSize: 13 }}>
+                Aucune route active. <a style={{ color: 'var(--brand-600)', cursor: 'pointer', fontWeight: 600 }} onClick={() => onNav('/admin/settings')}>Créer une route dans les paramètres →</a>
+              </div>
+            ) : (
+              <div style={{ display: 'grid', gap: 10, marginBottom: 20 }}>
+                {routes.map(r => (
+                  <label key={r.id} style={{
+                    display: 'grid', gridTemplateColumns: '20px 1fr',
+                    gap: 14, padding: '14px 16px',
+                    border: '1px solid ' + (data.routeId === r.id ? 'var(--brand-500)' : 'var(--border)'),
+                    borderRadius: 'var(--radius)',
+                    background: data.routeId === r.id ? 'var(--brand-50)' : 'white',
+                    cursor: 'pointer', alignItems: 'center',
+                  }}>
+                    <input type="radio" name="route" checked={data.routeId === r.id}
+                      onChange={() => handleRouteChange(r.id)}
+                      style={{ accentColor: 'var(--brand-500)' }} />
+                    <div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 3 }}>
+                        <RoutePill from={r.fromIATA} to={r.toIATA} />
+                        <span style={{ fontWeight: 700, fontSize: 13.5 }}>{r.label || r.code}</span>
+                      </div>
+                      <div style={{ fontSize: 12, color: 'var(--ink-500)' }}>
+                        {r.fromIATA} → {r.toIATA}
+                      </div>
                     </div>
-                    <div style={{ fontSize: 12, color: 'var(--ink-500)' }}>
-                      Transit ~{r.transitDays} j · {r.currency} · Entrepôt {r.warehouseFrom}
-                    </div>
-                  </div>
-                  <div style={{ textAlign: 'right', fontSize: 11.5, color: 'var(--ink-400)' }}>
-                    <div className="mono" style={{ fontWeight: 600 }}>{r.cargosCount} cargaisons</div>
-                    <div>{r.parcelsTotal.toLocaleString('fr')} colis</div>
-                  </div>
-                </label>
-              ))}
-            </div>
+                  </label>
+                ))}
+              </div>
+            )}
 
             <div className="field-row field-row--2">
               <div className="field" style={{ marginBottom: 0 }}>
@@ -115,10 +173,9 @@ export default function CampaignFormPage({ mode = 'create', campaign, onNav }) {
                 <input className="input mono" value={data.code} onChange={e => upd('code', e.target.value)} />
               </div>
               <div className="field" style={{ marginBottom: 0 }}>
-                <label className="label" style={{ visibility: 'hidden' }}>—</label>
-                <div style={{ padding: '9px 12px', background: 'var(--bg-soft)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', fontSize: 12, color: 'var(--ink-500)' }}>
-                  Format <span className="mono" style={{ fontWeight: 600 }}>ROUTE-MOIS-NN</span>
-                </div>
+                <label className="label">Capacité (kg) <span className="opt">/ optionnel</span></label>
+                <input className="input mono" type="number" value={data.capacityKg}
+                  onChange={e => upd('capacityKg', e.target.value)} placeholder="ex: 500" />
               </div>
             </div>
           </div>
@@ -132,43 +189,44 @@ export default function CampaignFormPage({ mode = 'create', campaign, onNav }) {
               <div className="field" style={{ marginBottom: 0 }}>
                 <label className="label">Date de départ <span className="opt">/ Departure</span></label>
                 <input className="input" type="date" value={data.depDate}
-                  onChange={e => handleDepDateChange(e.target.value)} />
+                  onChange={e => upd('depDate', e.target.value)} />
               </div>
               <div className="field" style={{ marginBottom: 0 }}>
-                <label className="label">Arrivée estimée <span className="opt">/ ETA — auto</span></label>
+                <label className="label">Arrivée estimée <span className="opt">/ ETA</span></label>
                 <input className="input" type="date" value={data.arrDate}
                   onChange={e => upd('arrDate', e.target.value)} />
-                {route && <div className="hint">Départ + {route.transitDays} jours de transit.</div>}
               </div>
             </div>
           </div>
 
           {/* Équipe */}
-          <div className="card" style={{ padding: 20, marginBottom: 16 }}>
-            <div className="section-title" style={{ marginBottom: 14 }}>
-              <I.Users style={{ width: 14, height: 14, color: 'var(--brand-600)' }} /> Équipe
-            </div>
-            <div className="field-row field-row--2">
-              <div className="field" style={{ marginBottom: 0 }}>
-                <label className="label">Responsable origine <span className="opt">/ Origin lead</span></label>
-                <select className="select" value={data.agentOrigin} onChange={e => upd('agentOrigin', e.target.value)}>
-                  <option value="">— Choisir</option>
-                  {DATA.AGENTS.filter(a => ['Douala', 'Lagos'].includes(a.city)).map(a => (
-                    <option key={a.id} value={a.id}>{a.name} — {a.city}</option>
-                  ))}
-                </select>
+          {agents.length > 0 && (
+            <div className="card" style={{ padding: 20, marginBottom: 16 }}>
+              <div className="section-title" style={{ marginBottom: 14 }}>
+                <I.Users style={{ width: 14, height: 14, color: 'var(--brand-600)' }} /> Équipe <span style={{ fontSize: 11, color: 'var(--ink-400)', fontWeight: 400 }}>(optionnel)</span>
               </div>
-              <div className="field" style={{ marginBottom: 0 }}>
-                <label className="label">Responsable destination <span className="opt">/ Dest. lead</span></label>
-                <select className="select" value={data.agentDest} onChange={e => upd('agentDest', e.target.value)}>
-                  <option value="">— Choisir</option>
-                  {DATA.AGENTS.filter(a => ['Montréal', 'Bruxelles'].includes(a.city)).map(a => (
-                    <option key={a.id} value={a.id}>{a.name} — {a.city}</option>
-                  ))}
-                </select>
+              <div className="field-row field-row--2">
+                <div className="field" style={{ marginBottom: 0 }}>
+                  <label className="label">Responsable origine</label>
+                  <select className="select" value={data.agentOrigin} onChange={e => upd('agentOrigin', e.target.value)}>
+                    <option value="">— Choisir</option>
+                    {agents.map(a => (
+                      <option key={a.id} value={a.id}>{a.name}{a.city && a.city !== '—' ? ` — ${a.city}` : ''}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="field" style={{ marginBottom: 0 }}>
+                  <label className="label">Responsable destination</label>
+                  <select className="select" value={data.agentDest} onChange={e => upd('agentDest', e.target.value)}>
+                    <option value="">— Choisir</option>
+                    {agents.map(a => (
+                      <option key={a.id} value={a.id}>{a.name}{a.city && a.city !== '—' ? ` — ${a.city}` : ''}</option>
+                    ))}
+                  </select>
+                </div>
               </div>
             </div>
-          </div>
+          )}
 
           {/* Notes */}
           <div className="card" style={{ padding: 20, marginBottom: 16 }}>
@@ -194,11 +252,11 @@ export default function CampaignFormPage({ mode = 'create', campaign, onNav }) {
 
             <div style={{ padding: 16, display: 'flex', flexDirection: 'column', gap: 10 }}>
               {[
-                { label: 'Route', value: route ? `${route.fromCity} → ${route.toCity}` : '—' },
-                { label: 'Départ', value: data.depDate || '—' },
+                { label: 'Route',           value: route ? `${route.fromIATA} → ${route.toIATA}` : '—' },
+                { label: 'Libellé',         value: route?.label || '—' },
+                { label: 'Départ',          value: data.depDate || '—' },
                 { label: 'Arrivée estimée', value: data.arrDate || '—' },
-                { label: 'Devise', value: route?.currency || '—' },
-                { label: 'Transit', value: route ? `~${route.transitDays} jours` : '—' },
+                { label: 'Capacité',        value: data.capacityKg ? `${data.capacityKg} kg` : '—' },
               ].map(({ label, value }) => (
                 <div key={label} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12 }}>
                   <span style={{ color: 'var(--ink-400)' }}>{label}</span>
@@ -210,15 +268,19 @@ export default function CampaignFormPage({ mode = 'create', campaign, onNav }) {
             {(data.agentOrigin || data.agentDest) && (
               <div style={{ padding: '12px 16px', borderTop: '1px solid var(--border-soft)', background: 'var(--bg-soft)' }}>
                 <div style={{ fontSize: 10.5, color: 'var(--ink-400)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.04em', marginBottom: 8 }}>Équipe</div>
-                {[data.agentOrigin, data.agentDest].map((id, i) => {
-                  const agent = DATA.AGENTS.find(a => a.id === id);
+                {[
+                  { id: data.agentOrigin, role: 'Origine' },
+                  { id: data.agentDest,   role: 'Dest.' },
+                ].map(({ id, role }) => {
+                  if (!id) return null;
+                  const agent = agents.find(a => a.id === id);
                   if (!agent) return null;
                   return (
-                    <div key={id} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: i === 0 ? 6 : 0 }}>
+                    <div key={id} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
                       <Avatar initials={agent.initials} color={agent.color} size="sm" />
                       <div style={{ fontSize: 12 }}>
                         <span style={{ fontWeight: 600 }}>{agent.name}</span>
-                        <span style={{ color: 'var(--ink-400)', marginLeft: 4 }}>· {i === 0 ? 'Origine' : 'Dest.'}</span>
+                        <span style={{ color: 'var(--ink-400)', marginLeft: 4 }}>· {role}</span>
                       </div>
                     </div>
                   );
@@ -230,11 +292,4 @@ export default function CampaignFormPage({ mode = 'create', campaign, onNav }) {
       </div>
     </div>
   );
-}
-
-function autoCode(route) {
-  if (!route) return '';
-  const now = new Date();
-  const months = ['JAN','FÉV','MAR','AVR','MAI','JUN','JUL','AOÛ','SEP','OCT','NOV','DÉC'];
-  return `${route.fromIATA}-${route.toIATA}-${months[now.getMonth()]}-01`;
 }

@@ -285,15 +285,15 @@ function SectionAutoNotif() {
   );
 }
 
-const PROVINCES = [
-  { v: 'QC', l: 'Québec' }, { v: 'ON', l: 'Ontario' }, { v: 'BC', l: 'Colombie-Britannique' },
-  { v: 'AB', l: 'Alberta' }, { v: 'MB', l: 'Manitoba' }, { v: 'SK', l: 'Saskatchewan' },
-];
-
-function RouteEditModal({ editRoute, onClose }) {
+function RouteEditModal({ editRoute, onClose, onSaved }) {
   const isNew = editRoute === 'new';
   const r = isNew ? null : editRoute;
   const currency = r?.currency || 'CAD';
+  const [saving, setSaving] = useState(false);
+  const [err, setErr] = useState('');
+  const [origin, setOrigin] = useState(r?.fromIATA || '');
+  const [destination, setDestination] = useState(r?.toIATA || '');
+  const [label, setLabel] = useState(r?.label || '');
 
   const defaultBreakdown = (fees) => [
     { id: 1, label: 'Frais de base',          amount: fees?.base      ?? 50 },
@@ -323,17 +323,33 @@ function RouteEditModal({ editRoute, onClose }) {
     ? tier.breakdown.reduce((s, b) => s + (parseFloat(b.amount) || 0), 0)
     : parseFloat(tier.flat) || 0;
 
+  const handleSave = async () => {
+    if (!origin.trim() || !destination.trim()) { setErr('Codes IATA obligatoires'); return; }
+    setSaving(true); setErr('');
+    try {
+      const res = await fetch('/api/routes', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ origin, destination, label }),
+      });
+      if (!res.ok) { const d = await res.json(); setErr(d.error || 'Erreur'); setSaving(false); return; }
+      onSaved?.();
+      onClose();
+    } catch { setErr('Erreur réseau'); setSaving(false); }
+  };
+
   return (
-    <Modal width={740} onClose={onClose} title={isNew ? 'Nouvelle route' : `Modifier la route — ${r?.fromCity ?? ''} → ${r?.toCity ?? ''}`}>
+    <Modal width={740} onClose={onClose} title={isNew ? 'Nouvelle route' : `Modifier la route — ${r?.label ?? r?.code ?? ''}`}>
       {/* ── Infos générales ── */}
       <div style={{ fontSize: 10.5, fontWeight: 700, letterSpacing: '.08em', textTransform: 'uppercase', color: 'var(--ink-400)', marginBottom: 10 }}>Informations générales</div>
+      {err && <div style={{ padding: '8px 12px', background: 'var(--bad-50)', color: 'var(--bad-700)', borderRadius: 6, fontSize: 12.5, marginBottom: 12 }}>{err}</div>}
       <div className="field-row field-row--2">
-        <div className="field"><label className="label">Ville départ</label><input className="input" defaultValue={r?.fromCity || ''} /></div>
-        <div className="field"><label className="label">Ville arrivée</label><input className="input" defaultValue={r?.toCity || ''} /></div>
+        <div className="field"><label className="label">Code IATA départ</label><input className="input mono" value={origin} onChange={e => setOrigin(e.target.value.toUpperCase())} placeholder="DLA" maxLength={3} /></div>
+        <div className="field"><label className="label">Code IATA arrivée</label><input className="input mono" value={destination} onChange={e => setDestination(e.target.value.toUpperCase())} placeholder="YUL" maxLength={3} /></div>
       </div>
-      <div className="field-row field-row--2">
-        <div className="field"><label className="label">Code IATA départ</label><input className="input mono" defaultValue={r?.fromIATA || ''} placeholder="DLA" /></div>
-        <div className="field"><label className="label">Code IATA arrivée</label><input className="input mono" defaultValue={r?.toIATA || ''} placeholder="YUL" /></div>
+      <div className="field">
+        <label className="label">Libellé <span className="opt">/ optionnel</span></label>
+        <input className="input" value={label} onChange={e => setLabel(e.target.value)} placeholder="ex: Douala → Montréal" />
       </div>
       <div className="field-row field-row--2">
         <div className="field"><label className="label">Transit (jours)</label><input className="input" type="number" defaultValue={r?.transitDays || 14} /></div>
@@ -494,7 +510,7 @@ function RouteEditModal({ editRoute, onClose }) {
 
       <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 8 }}>
         <button className="btn btn--ghost" onClick={onClose}>Annuler</button>
-        <button className="btn btn--brand" onClick={onClose}><I.Check />Enregistrer</button>
+        <button className="btn btn--brand" onClick={handleSave} disabled={saving}><I.Check />{saving ? 'Enregistrement…' : 'Enregistrer'}</button>
       </div>
     </Modal>
   );
@@ -554,7 +570,12 @@ export default function SettingsScreen({ onNav }) {
         {/* Content */}
         <div>
           {section === 'company'   && <SectionCompany />}
-          {section === 'routes'    && <SectionRoutes routes={routes} onEdit={setEditRoute} onDetail={setRouteDetail} />}
+          {section === 'routes'    && (
+            <>
+              <SectionRoutes routes={routes} onEdit={setEditRoute} onDetail={setRouteDetail} />
+              <SectionPricing routes={routes} />
+            </>
+          )}
           {section === 'whatsapp'  && <SectionWhatsapp />}
           {section === 'auto'      && <SectionAutoNotif />}
           {section === 'campaigns' && <SectionCampaigns />}
@@ -563,13 +584,14 @@ export default function SettingsScreen({ onNav }) {
         </div>
       </div>
 
-      {editRoute && <RouteEditModal editRoute={editRoute} onClose={() => setEditRoute(null)} />}
+      {editRoute && <RouteEditModal editRoute={editRoute} onClose={() => setEditRoute(null)}
+        onSaved={() => fetch('/api/routes').then(r => r.json()).then(data => setRoutes(Array.isArray(data) ? data : []))} />}
 
       {routeDetail && (
         <Drawer onClose={() => setRouteDetail(null)}>
           <div className="drawer__head">
             <div style={{ flex: 1 }}>
-              <div style={{ fontSize: 16, fontWeight: 700 }}>{routeDetail.fromCity} → {routeDetail.toCity}</div>
+              <div style={{ fontSize: 16, fontWeight: 700 }}>{routeDetail.label || routeDetail.code}</div>
               <div style={{ fontSize: 12, color: 'var(--ink-400)', marginTop: 4, display: 'flex', gap: 8 }}>
                 <RoutePill from={routeDetail.fromIATA} to={routeDetail.toIATA} />
                 <span>{routeDetail.active ? '✓ Active' : 'Archivée'}</span>
@@ -580,10 +602,10 @@ export default function SettingsScreen({ onNav }) {
           <div className="drawer__body" style={{ padding: 22 }}>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 20 }}>
               {[
-                { l: 'Cargaisons', v: routeDetail.cargosCount },
-                { l: 'Colis total', v: routeDetail.parcelsTotal.toLocaleString('fr') },
-                { l: 'CA total', v: (routeDetail.revenueTotal / 1000).toFixed(0) + 'k ' + routeDetail.currency },
-                { l: 'Transit', v: routeDetail.transitDays + ' jours' },
+                { l: 'Cargaisons',  v: '—' },
+                { l: 'Colis total', v: '—' },
+                { l: 'CA total',    v: '—' },
+                { l: 'Transit',     v: '—' },
               ].map((k, i) => (
                 <div key={i} className="kpi" style={{ padding: 12 }}>
                   <div className="kpi__label">{k.l}</div>
@@ -592,38 +614,7 @@ export default function SettingsScreen({ onNav }) {
               ))}
             </div>
             <div className="section-title">Tarification</div>
-            {routeDetail.fees ? (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid var(--border-soft)', fontSize: 13 }}>
-                  <span style={{ fontWeight: 600 }}>Forfait 0 – 3 kg</span>
-                  <span className="mono" style={{ fontWeight: 700 }}>{routeDetail.fees.flatUpTo3kg} {routeDetail.currency}</span>
-                </div>
-                {[
-                  ['Frais de base', routeDetail.fees.base],
-                  ['Frais de douane', routeDetail.fees.customs],
-                  ['Carton / manutention', routeDetail.fees.carton],
-                  ['Formalités', routeDetail.fees.formality],
-                  ['Service', routeDetail.fees.service],
-                ].map(([k, v]) => (
-                  <div key={k} style={{ display: 'flex', justifyContent: 'space-between', padding: '5px 0 5px 14px', borderBottom: '1px solid var(--border-soft)', fontSize: 12, color: 'var(--ink-500)' }}>
-                    <span>{k}</span><span>{v} {routeDetail.currency}</span>
-                  </div>
-                ))}
-                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid var(--border-soft)', fontSize: 13 }}>
-                  <span style={{ fontWeight: 600 }}>Au-delà de 3 kg (par 0,5 kg)</span>
-                  <span className="mono" style={{ fontWeight: 700 }}>+{routeDetail.fees.perHalfKgRate} {routeDetail.currency}</span>
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid var(--border-soft)', fontSize: 13 }}>
-                  <span style={{ fontWeight: 600 }}>Livraison Grand Montréal</span>
-                  <span className="mono" style={{ fontWeight: 700 }}>{routeDetail.fees.montrealDelivery} {routeDetail.currency}</span>
-                </div>
-                <div style={{ padding: '8px 0', fontSize: 12, color: 'var(--ink-500)' }}>
-                  Sacs : petit {routeDetail.fees.addons.smallBag} · moyen {routeDetail.fees.addons.mediumBag} · grand {routeDetail.fees.addons.largeBag} {routeDetail.currency}
-                </div>
-              </div>
-            ) : (
-              <p style={{ fontSize: 12, color: 'var(--ink-400)' }}>Aucune tarification configurée.</p>
-            )}
+            <p style={{ fontSize: 12, color: 'var(--ink-400)' }}>Aucune tarification configurée.</p>
           </div>
         </Drawer>
       )}
