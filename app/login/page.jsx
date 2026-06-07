@@ -1,12 +1,14 @@
 'use client';
-import { useState } from 'react';
+import { useState, Suspense } from 'react';
 import { signIn } from 'next-auth/react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import I from '@/src/components/Icons.jsx';
 
-export default function LoginPage() {
+function LoginForm() {
   const router = useRouter();
-  const [tab, setTab]     = useState('login'); // 'login' | 'register' | 'verify'
+  const searchParams = useSearchParams();
+  const initialTab = searchParams.get('tab') === 'register' ? 'register' : 'login';
+  const [tab, setTab]     = useState(initialTab); // 'login' | 'register' | 'verify'
   const [fields, setFields] = useState({ email: '', name: '', password: '', confirm: '' });
   const [code, setCode]     = useState('');
   const [demoCode, setDemoCode] = useState('');
@@ -286,5 +288,13 @@ export default function LoginPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense>
+      <LoginForm />
+    </Suspense>
   );
 }

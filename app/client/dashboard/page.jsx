@@ -1,6 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
 import I from '@/src/components/Icons.jsx';
 
 const PARCEL_STATUS = {
@@ -111,6 +112,7 @@ function TrackingTimeline({ events }) {
 
 export default function ClientDashboard() {
   const { data: session } = useSession();
+  const router = useRouter();
   const [parcels, setParcels]   = useState([]);
   const [loading, setLoading]   = useState(true);
   const [selected, setSelected] = useState(null);
@@ -131,13 +133,26 @@ export default function ClientDashboard() {
   return (
     <div>
       {/* Header */}
-      <div style={{ marginBottom: 24 }}>
-        <h1 style={{ fontSize: 22, fontWeight: 700, margin: '0 0 4px', color: 'var(--ink-900)' }}>
-          Bonjour, {session?.user?.name?.split(' ')[0]} 👋
-        </h1>
-        <p style={{ fontSize: 14, color: 'var(--ink-400)', margin: 0 }}>
-          Suivez vos colis et gérez vos paiements.
-        </p>
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 24, gap: 16 }}>
+        <div>
+          <h1 style={{ fontSize: 22, fontWeight: 700, margin: '0 0 4px', color: 'var(--ink-900)' }}>
+            Bonjour, {session?.user?.name?.split(' ')[0]} 👋
+          </h1>
+          <p style={{ fontSize: 14, color: 'var(--ink-400)', margin: 0 }}>
+            Suivez vos colis et gérez vos paiements.
+          </p>
+        </div>
+        <button
+          onClick={() => router.push('/booking')}
+          style={{
+            display: 'inline-flex', alignItems: 'center', gap: 8,
+            padding: '10px 18px', borderRadius: 10, border: 'none', cursor: 'pointer',
+            background: 'linear-gradient(135deg, #F5A524, #D97706)',
+            color: 'white', fontWeight: 700, fontSize: 14, whiteSpace: 'nowrap',
+            boxShadow: '0 4px 12px rgba(217,119,6,.3)',
+          }}>
+          <span style={{ fontSize: 16 }}>📦</span> Réserver un envoi
+        </button>
       </div>
 
       {/* KPI */}
@@ -202,8 +217,17 @@ export default function ClientDashboard() {
       ) : parcels.length === 0 ? (
         <div style={{ textAlign: 'center', padding: 60, color: 'var(--ink-400)' }}>
           <div style={{ fontSize: 48, marginBottom: 12 }}>📦</div>
-          <div style={{ fontSize: 15, fontWeight: 600, marginBottom: 6 }}>Aucun colis enregistré</div>
-          <div style={{ fontSize: 13 }}>Votre agent Jumla ajoutera vos colis à votre compte.</div>
+          <div style={{ fontSize: 15, fontWeight: 600, marginBottom: 6, color: 'var(--ink-700)' }}>Aucun colis enregistré</div>
+          <div style={{ fontSize: 13, marginBottom: 20 }}>Commencez par réserver votre premier envoi.</div>
+          <button onClick={() => router.push('/booking')} style={{
+            display: 'inline-flex', alignItems: 'center', gap: 8,
+            padding: '10px 20px', borderRadius: 10, border: 'none', cursor: 'pointer',
+            background: 'linear-gradient(135deg, #F5A524, #D97706)',
+            color: 'white', fontWeight: 700, fontSize: 14,
+            boxShadow: '0 4px 12px rgba(217,119,6,.25)',
+          }}>
+            📦 Réserver mon premier envoi
+          </button>
         </div>
       ) : (
         <>

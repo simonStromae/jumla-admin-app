@@ -45,7 +45,7 @@ export function SiteNav({ onNav, onBook, mode = 'landing' }) {
           </button>
           <div className="jnav__right" style={{ marginLeft: 'auto' }}>
             <button className="jnav__signin" onClick={() => onNav?.('/login')}>Se connecter</button>
-            <button className="jbtn-nav" onClick={() => onNav?.('/login')}>
+            <button className="jbtn-nav" onClick={() => onNav?.('/login?tab=register')}>
               Créer un compte <I.ArrowRight style={{ width: 15, height: 15 }} />
             </button>
           </div>
