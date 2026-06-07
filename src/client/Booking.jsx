@@ -423,7 +423,8 @@ function AuthGate({ onAuth, onNav }) {
 }
 
 // ── Main ──
-export default function BookingScreen({ onNav }) {
+
+export default function BookingScreen({ onNav, embedded = false }) {
   const [step, setStep] = useState(0);
   const [form, setForm] = useState({
     route: 'dla-yul', departure: '',
@@ -487,12 +488,12 @@ export default function BookingScreen({ onNav }) {
 
   const [refCode] = useState(() => `#${Math.random().toString(36).slice(2, 7).toUpperCase()}`);
 
-  if (!user) return <AuthGate onAuth={setUser} onNav={onNav} />;
+  if (!user && !embedded) return <AuthGate onAuth={setUser} onNav={onNav} />;
 
   return (
-    <div className="co-wrap">
-      <TopBar />
-      <SiteNav onNav={onNav} onBook={() => {}} mode="booking" />
+    <div className={embedded ? '' : 'co-wrap'}>
+      {!embedded && <TopBar />}
+      {!embedded && <SiteNav onNav={onNav} onBook={() => {}} mode="booking" />}
 
       {/* Breadcrumb */}
       <div className="co-subhead">
@@ -1079,7 +1080,7 @@ export default function BookingScreen({ onNav }) {
         </aside>
       </div>
 
-      <SiteFooter />
+      {!embedded && <SiteFooter />}
     </div>
   );
 }

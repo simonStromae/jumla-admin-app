@@ -143,7 +143,7 @@ export default function ClientDashboard() {
           </p>
         </div>
         <button
-          onClick={() => router.push('/booking')}
+          onClick={() => router.push('/client/booking')}
           style={{
             display: 'inline-flex', alignItems: 'center', gap: 8,
             padding: '10px 18px', borderRadius: 10, border: 'none', cursor: 'pointer',
@@ -219,7 +219,7 @@ export default function ClientDashboard() {
           <div style={{ fontSize: 48, marginBottom: 12 }}>📦</div>
           <div style={{ fontSize: 15, fontWeight: 600, marginBottom: 6, color: 'var(--ink-700)' }}>Aucun colis enregistré</div>
           <div style={{ fontSize: 13, marginBottom: 20 }}>Commencez par réserver votre premier envoi.</div>
-          <button onClick={() => router.push('/booking')} style={{
+          <button onClick={() => router.push('/client/booking')} style={{
             display: 'inline-flex', alignItems: 'center', gap: 8,
             padding: '10px 20px', borderRadius: 10, border: 'none', cursor: 'pointer',
             background: 'linear-gradient(135deg, #F5A524, #D97706)',
