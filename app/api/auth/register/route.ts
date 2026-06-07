@@ -26,7 +26,10 @@ export async function POST(req: NextRequest) {
     data: { email, name, passwordHash, verifyToken, role: 'client' },
   });
 
-  await sendVerificationEmail(email, name, verifyToken).catch(() => {}); // never block registration if email fails
+  const emailSent = await sendVerificationEmail(email, name, verifyToken).then(() => true).catch(() => false);
 
-  return NextResponse.json({ ok: true, demoCode: verifyToken });
+  // Only expose the code in response when no email service is configured (local dev)
+  const demoCode = process.env.RESEND_API_KEY ? undefined : verifyToken;
+
+  return NextResponse.json({ ok: true, demoCode });
 }

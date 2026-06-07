@@ -1,14 +1,12 @@
 import { Resend } from 'resend';
 
-const resend = new Resend(process.env.RESEND_API_KEY);
-
 export async function sendVerificationEmail(email: string, name: string, code: string) {
   if (!process.env.RESEND_API_KEY) {
-    // No API key — skip silently (code still returned in dev mode)
     return;
   }
+  const resend = new Resend(process.env.RESEND_API_KEY);
   await resend.emails.send({
-    from: 'Jumla Shipping <no-reply@jumla.cargo>',
+    from: process.env.RESEND_FROM_EMAIL ?? 'Jumla Shipping <onboarding@resend.dev>',
     to: email,
     subject: 'Votre code de vérification Jumla',
     html: `
