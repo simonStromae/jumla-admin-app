@@ -22,14 +22,17 @@ export async function POST(req: NextRequest) {
   // 6-digit verification code (demo: returned in response since no email service)
   const verifyToken  = String(Math.floor(100000 + Math.random() * 900000));
 
+  const skipVerify = process.env.DISABLE_EMAIL_VERIFICATION === 'true';
   await prisma.user.create({
-    data: { email, name, passwordHash, verifyToken, role: 'client' },
+    data: { email, name, passwordHash, verifyToken, role: 'client', emailVerified: skipVerify },
   });
 
-  const emailSent = await sendVerificationEmail(email, name, verifyToken).then(() => true).catch(() => false);
+  if (!skipVerify) {
+    await sendVerificationEmail(email, name, verifyToken).catch(() => {});
+    const demoCode = process.env.RESEND_API_KEY ? undefined : verifyToken;
+    return NextResponse.json({ ok: true, demoCode });
+  }
 
-  // Only expose the code in response when no email service is configured (local dev)
-  const demoCode = process.env.RESEND_API_KEY ? undefined : verifyToken;
-
-  return NextResponse.json({ ok: true, demoCode });
+  // Verification disabled — account is immediately active
+  return NextResponse.json({ ok: true, verified: true });
 }

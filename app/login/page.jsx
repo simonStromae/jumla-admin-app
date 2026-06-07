@@ -45,6 +45,7 @@ function LoginForm() {
     const data = await res.json();
     setLoading(false);
     if (!res.ok) { setError(data.error); return; }
+    if (data.verified) { setTab('login'); return; } // email verification disabled — go straight to login
     setDemoCode(data.demoCode);
     setTab('verify');
   }
