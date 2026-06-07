@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
 import { prisma } from '@/src/lib/prisma';
+import { sendVerificationEmail } from '@/src/lib/email';
 
 export async function POST(req: NextRequest) {
   const { email, name, password } = await req.json();
@@ -25,7 +26,7 @@ export async function POST(req: NextRequest) {
     data: { email, name, passwordHash, verifyToken, role: 'client' },
   });
 
-  // In production: send verifyToken by email (Resend, Nodemailer, etc.)
-  // For now: return it in the response so the UI can display it
+  await sendVerificationEmail(email, name, verifyToken).catch(() => {}); // never block registration if email fails
+
   return NextResponse.json({ ok: true, demoCode: verifyToken });
 }
