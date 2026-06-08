@@ -417,11 +417,11 @@ export default function LandingPage({ onNav }) {
       <TopBar />
       <SiteNav onNav={onNav} onBook={onBook} mode="landing" />
       <JHero onBook={onBook} />
+      <JEstimator onBook={onBook} />
       <JAbout />
       <JCommit onBook={onBook} />
       <JFeats />
       <JServices onBook={onBook} />
-      <JEstimator onBook={onBook} />
       <JFAQ />
       <JCTA onBook={onBook} />
       <SiteFooter />
