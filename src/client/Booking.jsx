@@ -404,8 +404,10 @@ export default function BookingScreen({ onNav, embedded = false }) {
   ]);
   const [showBreakdown, setShowBreakdown] = useState(false);
   const [createAccount, setCreateAccount] = useState(false);
-  // 'idle' | 'interac' | 'processing' | 'pending'
-  const [payStatus, setPayStatus] = useState('idle');
+  // 'idle' | 'interac' | 'processing' | 'pending' | 'error'
+  const [payStatus, setPayStatus]   = useState('idle');
+  const [bookingRef, setBookingRef] = useState('');
+  const [bookingErr, setBookingErr] = useState('');
   const [user, setUser] = useState(() => {
     try { return JSON.parse(localStorage.getItem('jumla_user')); } catch { return null; }
   });
@@ -475,13 +477,46 @@ export default function BookingScreen({ onNav, embedded = false }) {
 
   const handlePay = () => setPayStatus('interac');
 
-  // Interac — user declares they sent the transfer (pending verification)
-  const confirmInterac = () => {
+  // Interac — save booking then mark as pending
+  const confirmInterac = async () => {
     setPayStatus('processing');
-    setTimeout(() => setPayStatus('pending'), 1500);
+    setBookingErr('');
+    try {
+      const res = await fetch('/api/client/book', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          campaignId:      form.departure,
+          items,
+          addons:          form.addons,
+          senderPhone:     form.senderPhone,
+          recipName:       form.recipName,
+          recipPhone:      form.recipPhone,
+          recipCity:       form.recipCity,
+          recipCityCustom: form.recipCityCustom,
+          recipAddress:    form.recipAddress,
+          recipApt:        form.recipApt,
+          recipProvince:   form.recipProvince,
+          recipPostal:     form.recipPostal,
+          delivery:        form.delivery,
+          totalPrice:      price?.total ?? null,
+        }),
+      });
+      const json = await res.json();
+      if (!res.ok || !json.ok) {
+        setBookingErr(json.error || 'Erreur lors de la réservation');
+        setPayStatus('interac');
+        return;
+      }
+      setBookingRef(json.trackingCode);
+      setPayStatus('pending');
+    } catch {
+      setBookingErr('Erreur réseau. Réessayez.');
+      setPayStatus('interac');
+    }
   };
 
-  const [refCode] = useState(() => `#${Math.random().toString(36).slice(2, 7).toUpperCase()}`);
+  const refCode = bookingRef || '';
 
   if (!user && !embedded) return <AuthGate onAuth={setUser} onNav={onNav} />;
 
@@ -529,10 +564,16 @@ export default function BookingScreen({ onNav, embedded = false }) {
                   <div className="co-done__icon" style={{ background: 'var(--warn-100)', color: 'var(--warn-700)' }}>⏳</div>
                   <h2 className="co-done__title">Virement en attente de confirmation</h2>
                   <p className="co-done__sub">
-                    Réservation <strong>{refCode}</strong> enregistrée. Dès que votre virement Interac est reçu et vérifié par notre équipe, vous recevrez un email de confirmation à <strong>{effectiveUser?.email}</strong>.
+                    Réservation enregistrée. Dès que votre virement Interac est reçu et vérifié par notre équipe, vous recevrez une confirmation à <strong>{effectiveUser?.email}</strong>.
                   </p>
+                  {refCode && (
+                    <div style={{ background: 'white', border: '2px solid var(--brand-200)', borderRadius: 'var(--radius)', padding: '14px 24px', marginBottom: 10, textAlign: 'center' }}>
+                      <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.08em', color: 'var(--ink-400)', marginBottom: 4 }}>Numéro de suivi</div>
+                      <div style={{ fontSize: 22, fontWeight: 800, fontFamily: 'ui-monospace, monospace', color: 'var(--ink-900)', letterSpacing: '.04em' }}>{refCode}</div>
+                    </div>
+                  )}
                   <div style={{ background: 'var(--warn-50)', border: '1px solid var(--warn-200)', borderRadius: 'var(--radius)', padding: '14px 18px', fontSize: 13, color: 'var(--warn-700)', maxWidth: 420, textAlign: 'left', lineHeight: 1.7, marginBottom: 8 }}>
-                    <strong>Important :</strong> votre colis ne sera pris en charge qu'après confirmation du paiement. Si le virement n'est pas reçu sous 48h, la réservation sera annulée automatiquement.
+                    <strong>Important :</strong> votre colis ne sera pris en charge qu'après confirmation du paiement. Incluez la référence <strong>{refCode}</strong> dans le message du virement.
                   </div>
                 </>
               )}
@@ -1051,6 +1092,11 @@ export default function BookingScreen({ onNav, embedded = false }) {
                   <div style={{ background: 'var(--warn-50)', border: '1px solid var(--warn-200)', borderRadius: 'var(--radius)', padding: '12px 16px', fontSize: 12.5, color: 'var(--warn-700)', lineHeight: 1.65, marginBottom: 20 }}>
                     ⚠️ Votre colis ne sera traité qu'<strong>après réception et confirmation</strong> du virement. Incluez la référence <strong>{refCode}</strong> dans le message du virement.
                   </div>
+                  {bookingErr && (
+                    <div style={{ padding: '10px 14px', background: '#FEF2F2', border: '1px solid #FECACA', borderRadius: 'var(--radius-sm)', fontSize: 12.5, color: '#DC2626', marginBottom: 12 }}>
+                      {bookingErr}
+                    </div>
+                  )}
                   <button className="co-btn co-btn--brand" onClick={confirmInterac} style={{ width: '100%' }}>
                     J'ai effectué mon virement →
                   </button>
