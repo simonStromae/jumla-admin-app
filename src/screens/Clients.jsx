@@ -13,12 +13,23 @@ export default function ClientsScreen({ onNav }) {
   const [pageSize, setPageSize] = useState(12);
   const [clients, setClients] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [fetchError, setFetchError] = useState('');
 
   useEffect(() => {
-    fetch('/api/clients').then(r => r.json()).then(d => {
-      setClients(Array.isArray(d) ? d : []);
-      setLoading(false);
-    });
+    fetch('/api/clients')
+      .then(r => r.json())
+      .then(d => {
+        if (Array.isArray(d)) {
+          setClients(d);
+        } else {
+          setFetchError(d?.error || 'Erreur de chargement');
+        }
+        setLoading(false);
+      })
+      .catch(() => {
+        setFetchError('Erreur réseau');
+        setLoading(false);
+      });
   }, []);
 
   return (
@@ -44,7 +55,21 @@ export default function ClientsScreen({ onNav }) {
         <ViewToggle value={view} onChange={setView} />
       </div>
 
-      {view === 'grid'
+      {loading ? (
+        <div style={{ padding: 40, textAlign: 'center', color: 'var(--ink-400)', fontSize: 14 }}>
+          Chargement…
+        </div>
+      ) : fetchError ? (
+        <div style={{ padding: 40, textAlign: 'center', color: 'var(--err-600)', fontSize: 14 }}>
+          Erreur : {fetchError}
+        </div>
+      ) : clients.length === 0 ? (
+        <div style={{ padding: 48, textAlign: 'center', color: 'var(--ink-400)', fontSize: 14 }}>
+          <I.Users style={{ width: 32, height: 32, marginBottom: 12, opacity: 0.3 }} />
+          <div style={{ fontWeight: 600, marginBottom: 4 }}>Aucun expéditeur enregistré</div>
+          <div style={{ fontSize: 12 }}>Les clients qui se créent un compte apparaissent ici.</div>
+        </div>
+      ) : view === 'grid'
         ? <ClientsGridView clients={clients} setOpen={setOpen} />
         : <ClientsListView clients={clients} setOpen={setOpen} page={page} pageSize={pageSize} />
       }
