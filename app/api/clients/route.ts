@@ -7,19 +7,25 @@ export async function GET() {
   const { error } = await requireAdmin();
   if (error) return error;
 
-  const clients = await prisma.user.findMany({
-    where: { role: 'client' },
-    orderBy: { createdAt: 'desc' },
-    include: {
-      parcels: {
-        include: {
-          campaign: { select: { code: true } },
-          payment:  true,
+  let clients;
+  try {
+    clients = await prisma.user.findMany({
+      where: { role: 'client' },
+      orderBy: { createdAt: 'desc' },
+      include: {
+        parcels: {
+          include: {
+            campaign: { select: { code: true } },
+            payment:  true,
+          },
+          orderBy: { createdAt: 'desc' },
         },
-        orderBy: { createdAt: 'desc' },
       },
-    },
-  });
+    });
+  } catch (e: any) {
+    console.error('[/api/clients] Prisma error:', e?.message);
+    return NextResponse.json({ error: e?.message || 'Erreur base de données' }, { status: 500 });
+  }
 
   const result = clients.map((u, i) => {
     const totalWeight   = u.parcels.reduce((s, p) => s + (p.weightKg ?? 0), 0);
