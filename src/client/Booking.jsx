@@ -1,5 +1,6 @@
 'use client';
 import { useState } from 'react';
+import { useSession } from 'next-auth/react';
 import { TopBar, SiteNav, SiteFooter } from './SiteLayout.jsx';
 import '@/src/styles/client-omega.css';
 import '@/src/styles/booking.css';
@@ -425,6 +426,7 @@ function AuthGate({ onAuth, onNav }) {
 // ── Main ──
 
 export default function BookingScreen({ onNav, embedded = false }) {
+  const { data: sessionData } = useSession();
   const [step, setStep] = useState(0);
   const [form, setForm] = useState({
     route: 'dla-yul', departure: '',
@@ -445,6 +447,8 @@ export default function BookingScreen({ onNav, embedded = false }) {
   const [user, setUser] = useState(() => {
     try { return JSON.parse(localStorage.getItem('jumla_user')); } catch { return null; }
   });
+  // When embedded in client layout, fall back to NextAuth session data
+  const effectiveUser = user ?? (embedded && sessionData?.user ? { name: sessionData.user.name ?? '', email: sessionData.user.email ?? '' } : null);
 
   const upd      = (k, v) => setForm(f => ({ ...f, [k]: v }));
   const updAddon = (k, v) => setForm(f => ({ ...f, addons: { ...f.addons, [k]: v } }));
@@ -501,9 +505,9 @@ export default function BookingScreen({ onNav, embedded = false }) {
           <span className="co-subhead__title">Réservation</span>
           <span style={{ fontSize: 12, color: 'var(--ink-400)', display: 'flex', alignItems: 'center', gap: 6 }}>
             <span style={{ width: 24, height: 24, borderRadius: 999, background: 'var(--brand-100)', color: 'var(--brand-700)', fontSize: 11, fontWeight: 800, display: 'grid', placeItems: 'center', flexShrink: 0 }}>
-              {user.name.charAt(0).toUpperCase()}
+              {effectiveUser?.name?.charAt(0).toUpperCase()}
             </span>
-            {user.name} · {user.email}
+            {effectiveUser?.name} · {effectiveUser?.email}
             <button onClick={() => { localStorage.removeItem('jumla_user'); setUser(null); }}
               style={{ background: 'none', border: 'none', color: 'var(--ink-300)', fontSize: 11, cursor: 'pointer', marginLeft: 4 }}>
               Déconnexion
@@ -532,7 +536,7 @@ export default function BookingScreen({ onNav, embedded = false }) {
                   <div className="co-done__icon" style={{ background: 'var(--warn-100)', color: 'var(--warn-700)' }}>⏳</div>
                   <h2 className="co-done__title">Virement en attente de confirmation</h2>
                   <p className="co-done__sub">
-                    Réservation <strong>{refCode}</strong> enregistrée. Dès que votre virement Interac est reçu et vérifié par notre équipe, vous recevrez un email de confirmation à <strong>{user.email}</strong>.
+                    Réservation <strong>{refCode}</strong> enregistrée. Dès que votre virement Interac est reçu et vérifié par notre équipe, vous recevrez un email de confirmation à <strong>{effectiveUser?.email}</strong>.
                   </p>
                   <div style={{ background: 'var(--warn-50)', border: '1px solid var(--warn-200)', borderRadius: 'var(--radius)', padding: '14px 18px', fontSize: 13, color: 'var(--warn-700)', maxWidth: 420, textAlign: 'left', lineHeight: 1.7, marginBottom: 8 }}>
                     <strong>Important :</strong> votre colis ne sera pris en charge qu'après confirmation du paiement. Si le virement n'est pas reçu sous 48h, la réservation sera annulée automatiquement.
@@ -1019,7 +1023,7 @@ export default function BookingScreen({ onNav, embedded = false }) {
                   <div style={{ background: 'var(--bg-soft)', border: '1.5px solid var(--border)', borderRadius: 'var(--radius)', overflow: 'hidden', marginBottom: 18 }}>
                     {[
                       ['Envoyer à',            'paiement@jumla.cargo',             false],
-                      ['Depuis votre adresse', user.email,                          true ],
+                      ['Depuis votre adresse', effectiveUser?.email ?? '',            true ],
                       ['Montant',              `${price?.total.toFixed(0)} ${route?.currency}`, false],
                       ['Message / Référence',  refCode,                             false],
                     ].map(([k, v, highlight], idx) => (

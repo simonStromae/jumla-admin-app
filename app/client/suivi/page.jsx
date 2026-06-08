@@ -1,5 +1,6 @@
 'use client';
-import { useRouter, useSearchParams, Suspense } from 'next/navigation';
+import { Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 
 function SuiviContent() {
   const router = useRouter();
