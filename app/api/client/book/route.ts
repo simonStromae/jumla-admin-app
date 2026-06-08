@@ -5,12 +5,14 @@ import { requireAuth } from '@/src/lib/api-auth';
 
 // Map client-side category IDs → admin productType values
 const CAT_TO_PRODUCT_TYPE: Record<string, string> = {
-  standard:    'standard',
-  vetements:   'vetements',
-  cosmetiques: 'cosmetique',
-  alimentaire: 'standard',
-  electronique: 'standard',
-  documents:   'standard',
+  standard:     'standard',
+  vetements:    'vetements',
+  cosmetique:   'cosmetique',
+  alimentaire:  'alimentaire',
+  biere:        'biere',
+  manioc_huile: 'manioc_huile',
+  electronique: 'electronique',
+  documents:    'documents',
 };
 
 function genTrackingCode() {

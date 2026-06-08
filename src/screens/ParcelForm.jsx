@@ -3,11 +3,14 @@ import I from '../components/Icons.jsx';
 import { RoutePill } from '../components/Shell.jsx';
 
 const PRODUCT_TYPES = [
-  { id: 'standard',    label: 'Standard',                       desc: 'Tous produits généraux' },
-  { id: 'cosmetique',  label: 'Cosmétiques / Compléments',      desc: '+3 $/kg supplément' },
-  { id: 'vetements',   label: 'Vêtements & Chaussures',         desc: '+2 $/kg supplément' },
-  { id: 'biere',       label: 'Bière',                          desc: '6 $/kg + frais SAQ' },
-  { id: 'manioc_huile',label: 'Bâton de manioc / Huile rouge',  desc: 'Tarif spécial' },
+  { id: 'standard',     label: 'Standard',                       desc: 'Savons, pagnes, articles généraux' },
+  { id: 'vetements',    label: 'Vêtements / Chaussures / Sacs',  desc: '+2 $/kg supplément' },
+  { id: 'cosmetique',   label: 'Cosmétiques / Compléments',      desc: '+3 $/kg supplément' },
+  { id: 'alimentaire',  label: 'Alimentaire / Épices',           desc: 'Ndolè, poisson fumé, café…' },
+  { id: 'biere',        label: 'Bière',                          desc: '6 $/kg + frais SAQ' },
+  { id: 'manioc_huile', label: 'Bâton de manioc / Huile rouge',  desc: 'Tarif spécial' },
+  { id: 'electronique', label: 'Électronique',                   desc: '+5 $/kg supplément' },
+  { id: 'documents',    label: 'Documents',                      desc: 'Tarif réduit -2 $/kg' },
 ];
 
 function NumField({ label, value, onChange, min = 0 }) {

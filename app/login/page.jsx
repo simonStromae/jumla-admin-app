@@ -87,7 +87,10 @@ function LoginForm() {
           <rect width="100%" height="100%" fill="url(#grid)" />
         </svg>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12, position: 'relative', zIndex: 2 }}>
+        <button onClick={() => router.push('/')} style={{
+          display: 'flex', alignItems: 'center', gap: 12, position: 'relative', zIndex: 2,
+          background: 'none', border: 'none', cursor: 'pointer', padding: 0, color: 'inherit',
+        }}>
           <div style={{
             width: 44, height: 44, borderRadius: 12,
             background: 'linear-gradient(135deg, #F5A524, #D97706)',
@@ -99,7 +102,7 @@ function LoginForm() {
             <div style={{ fontWeight: 700, fontSize: 18, letterSpacing: '-.01em' }}>Jumla Shipping</div>
             <div style={{ fontSize: 11.5, color: 'rgba(255,255,255,.55)', marginTop: 1 }}>Fret international · Douala</div>
           </div>
-        </div>
+        </button>
 
         <div style={{ marginTop: 'auto', position: 'relative', zIndex: 2 }}>
           <div className="route-pill" style={{

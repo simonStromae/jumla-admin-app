@@ -41,7 +41,10 @@ export default function ClientLayout({ children }) {
       }}>
         {/* Brand */}
         <div style={{ padding: '20px 18px 16px', borderBottom: '1px solid var(--border-soft)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <button onClick={() => router.push('/')} style={{
+            display: 'flex', alignItems: 'center', gap: 10,
+            background: 'none', border: 'none', cursor: 'pointer', padding: 0, width: '100%',
+          }}>
             <div style={{
               width: 34, height: 34, borderRadius: 9,
               background: 'linear-gradient(135deg, #F5A524, #D97706)',
@@ -49,11 +52,11 @@ export default function ClientLayout({ children }) {
               fontWeight: 800, fontSize: 15, color: 'white',
               boxShadow: '0 3px 8px rgba(217,119,6,.3)',
             }}>J</div>
-            <div>
+            <div style={{ textAlign: 'left' }}>
               <div style={{ fontWeight: 700, fontSize: 13, color: 'var(--ink-900)' }}>Jumla Shipping</div>
               <div style={{ fontSize: 10.5, color: 'var(--ink-400)' }}>Espace client</div>
             </div>
-          </div>
+          </button>
         </div>
 
         {/* Nav */}

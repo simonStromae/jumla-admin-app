@@ -5,14 +5,16 @@ import { TopBar, SiteNav, SiteFooter } from './SiteLayout.jsx';
 import '@/src/styles/client-omega.css';
 import '@/src/styles/booking.css';
 
-// ── Catégories d'articles ──
+// ── Catégories d'articles (alignées avec l'admin) ──
 const ITEM_CATEGORIES = [
-  { id: 'standard',     label: 'Standard',                   icon: '📦', extraPerKg: 0,  hint: 'Épices, mèches, cube maggi, arachides, conserves…' },
+  { id: 'standard',     label: 'Standard',                      icon: '📦', extraPerKg: 0,  hint: 'Savons, épices, cube Maggi, arachides, pagnes…' },
   { id: 'vetements',    label: 'Vêtements / Chaussures / Sacs', icon: '👗', extraPerKg: 2,  hint: 'Robes, pantalons, chaussures, sacs à main…' },
-  { id: 'cosmetiques',  label: 'Cosmétiques / Hygiène',      icon: '💄', extraPerKg: 3,  hint: 'Crèmes, parfums, produits capillaires…' },
-  { id: 'alimentaire',  label: 'Alimentaire / Épices',       icon: '🥘', extraPerKg: 0,  hint: 'Ndolè, poisson fumé, café, cacao…' },
-  { id: 'electronique', label: 'Électronique',               icon: '📱', extraPerKg: 5,  hint: 'Téléphones, ordinateurs, accessoires…' },
-  { id: 'documents',    label: 'Documents',                  icon: '📄', extraPerKg: -2, hint: 'Papiers administratifs, courrier officiel…' },
+  { id: 'cosmetique',   label: 'Cosmétiques / Compléments',     icon: '💄', extraPerKg: 3,  hint: 'Crèmes, parfums, produits capillaires…' },
+  { id: 'alimentaire',  label: 'Alimentaire / Épices',          icon: '🥘', extraPerKg: 0,  hint: 'Ndolè, poisson fumé, café, cacao, safou…' },
+  { id: 'biere',        label: 'Bière',                         icon: '🍺', extraPerKg: 6,  hint: 'Bouteilles ou canettes — frais SAQ inclus' },
+  { id: 'manioc_huile', label: 'Bâton de manioc / Huile rouge', icon: '🌿', extraPerKg: 0,  hint: 'Bâtons de manioc, huile de palme rouge…' },
+  { id: 'electronique', label: 'Électronique',                  icon: '📱', extraPerKg: 5,  hint: 'Téléphones, ordinateurs, accessoires…' },
+  { id: 'documents',    label: 'Documents',                     icon: '📄', extraPerKg: -2, hint: 'Papiers administratifs, courrier officiel…' },
 ];
 
 // ── Tarifs par défaut (règles d'affaires) ──

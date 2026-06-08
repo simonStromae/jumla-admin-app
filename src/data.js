@@ -166,13 +166,14 @@ export const AGENTS = [
 ];
 
 export const PARCEL_CATEGORIES = [
-  { id: 'standard',    label: 'Standard',        en: 'Standard',    pct: 0,   color: '#9CA3AF', icon: '📦', desc: 'Marchandises courantes sans précaution particulière' },
-  { id: 'food',        label: 'Alimentaire',     en: 'Food',        pct: 3,   color: '#10B981', icon: '🥫', desc: 'Produits secs, conserves, épices, condiments' },
-  { id: 'fragile',     label: 'Fragile',         en: 'Fragile',     pct: 8,   color: '#F59E0B', icon: '🥂', desc: 'Verrerie, céramique, articles sensibles aux chocs' },
-  { id: 'electronics', label: 'Électronique',    en: 'Electronics', pct: 5,   color: '#6366F1', icon: '📱', desc: 'Téléphones, ordinateurs, accessoires' },
-  { id: 'valuable',    label: 'Valeur déclarée', en: 'High value',  pct: 10,  color: '#EC4899', icon: '💎', desc: 'Bijoux, objets précieux, > 1 000 CAD' },
-  { id: 'oversize',    label: 'Hors gabarit',    en: 'Oversize',    pct: 12,  color: '#EF4444', icon: '🪑', desc: 'Mobilier, articles longs ou volumineux' },
-  { id: 'documents',   label: 'Documents',       en: 'Documents',   pct: -10, color: '#06B6D4', icon: '📄', desc: 'Papiers, courriers (tarif réduit)' },
+  { id: 'standard',     label: 'Standard',                      en: 'Standard',    pct: 0,   color: '#9CA3AF', icon: '📦', desc: 'Savons, pagnes, épices, articles généraux' },
+  { id: 'vetements',    label: 'Vêtements / Chaussures / Sacs', en: 'Clothing',    pct: 2,   color: '#8B5CF6', icon: '👗', desc: 'Robes, pantalons, chaussures, sacs à main' },
+  { id: 'cosmetique',   label: 'Cosmétiques / Compléments',     en: 'Cosmetics',   pct: 3,   color: '#EC4899', icon: '💄', desc: 'Crèmes, parfums, produits capillaires' },
+  { id: 'alimentaire',  label: 'Alimentaire / Épices',          en: 'Food',        pct: 0,   color: '#10B981', icon: '🥘', desc: 'Ndolè, poisson fumé, café, cacao, safou' },
+  { id: 'biere',        label: 'Bière',                         en: 'Beer',        pct: 6,   color: '#F59E0B', icon: '🍺', desc: 'Bouteilles ou canettes — frais SAQ inclus' },
+  { id: 'manioc_huile', label: 'Bâton de manioc / Huile rouge', en: 'Manioc/Oil',  pct: 0,   color: '#065F46', icon: '🌿', desc: 'Bâtons de manioc, huile de palme rouge' },
+  { id: 'electronique', label: 'Électronique',                  en: 'Electronics', pct: 5,   color: '#6366F1', icon: '📱', desc: 'Téléphones, ordinateurs, accessoires' },
+  { id: 'documents',    label: 'Documents',                     en: 'Documents',   pct: -2,  color: '#06B6D4', icon: '📄', desc: 'Papiers administratifs, courriers (tarif réduit)' },
 ];
 
 export const DATA = { ROUTES, CAMPAIGNS, PARCELS, CLIENTS, PAYMENTS, AGENTS, PARCEL_CATEGORIES };
