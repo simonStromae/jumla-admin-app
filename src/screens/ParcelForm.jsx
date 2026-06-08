@@ -88,7 +88,7 @@ export default function ParcelFormPage({ mode = 'create', parcel, campaign, onNa
       fetch('/api/clients').then(r => r.json()),
     ]).then(([campData, clientData]) => {
       const open = Array.isArray(campData) ? campData.filter(c => c.status === 'open' || c.status === 'Ouverte') : [];
-      setCampaigns(open.length > 0 ? open : (Array.isArray(campData) ? campData : []));
+      setCampaigns(open);
       setClients(Array.isArray(clientData) ? clientData : []);
       setLoading(false);
     }).catch(() => setLoading(false));

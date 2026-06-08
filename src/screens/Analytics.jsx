@@ -11,8 +11,12 @@ export default function AnalyticsScreen({ onNav }) {
   const [routes, setRoutes] = useState([]);
 
   useEffect(() => {
+    const params = new URLSearchParams({ year: String(year) });
+    if (routeFilter !== 'all') params.set('routeId', routeFilter);
+
+    setKpi(null);
     Promise.all([
-      fetch('/api/analytics').then(r => r.json()),
+      fetch('/api/analytics?' + params).then(r => r.json()),
       fetch('/api/routes').then(r => r.json()),
     ]).then(([analyticsData, routesData]) => {
       if (analyticsData.kpi) setKpi(analyticsData.kpi);
@@ -25,7 +29,7 @@ export default function AnalyticsScreen({ onNav }) {
       }
       setRoutes(Array.isArray(routesData) ? routesData : []);
     }).catch(() => {});
-  }, [year]);
+  }, [year, routeFilter]);
 
   if (!kpi) {
     return (

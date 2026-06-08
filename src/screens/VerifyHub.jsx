@@ -96,10 +96,11 @@ export default function VerifyHubScreen({ onNav }) {
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4 }}>
                   <span className="mono" style={{ fontSize: 14, fontWeight: 800, color: 'var(--ink-900)' }}>{c.code}</span>
                   <RoutePill from={c.from} to={c.to} size="sm" />
-                  <span style={{
-                    fontSize: 11, fontWeight: 700, padding: '2px 8px', borderRadius: 999,
-                    background: 'var(--warn-100)', color: 'var(--warn-800)',
-                  }}>En transit</span>
+                  {c.status === 'arrived' ? (
+                    <span style={{ fontSize: 11, fontWeight: 700, padding: '2px 8px', borderRadius: 999, background: 'var(--ok-100)', color: 'var(--ok-800)' }}>Arrivée</span>
+                  ) : (
+                    <span style={{ fontSize: 11, fontWeight: 700, padding: '2px 8px', borderRadius: 999, background: 'var(--warn-100)', color: 'var(--warn-800)' }}>En transit</span>
+                  )}
                 </div>
                 <div style={{ fontSize: 12, color: 'var(--ink-500)', display: 'flex', gap: 14 }}>
                   <span><I.Box style={{ width: 12, height: 12, display: 'inline', verticalAlign: -2, marginRight: 4 }} />{c.parcels} colis</span>
