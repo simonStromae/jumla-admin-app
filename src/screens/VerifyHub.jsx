@@ -111,7 +111,7 @@ export default function VerifyHubScreen({ onNav }) {
               {/* Action */}
               <button
                 className="btn btn--primary btn--sm"
-                onClick={() => onNav('/campaign/' + c.id + '/verify')}
+                onClick={() => onNav('/admin/campaigns/' + c.id + '/verify')}
               >
                 <I.Check />Lancer la vérification
               </button>

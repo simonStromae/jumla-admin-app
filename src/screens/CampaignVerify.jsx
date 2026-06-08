@@ -8,7 +8,7 @@ const ITEM_STATUS = {
   missing: { label: 'Manquant',   color: 'var(--bad-700)',  border: 'var(--bad-200)',  bg: 'var(--bad-50)' },
 };
 
-export default function CampaignVerifyPanel({ parcels, campaign, onExit }) {
+export default function CampaignVerifyPanel({ parcels, campaign, onExit, onValidate, saving }) {
   const [expanded, setExpanded] = useState({});
   const [itemVerifs, setItemVerifs] = useState(() =>
     Object.fromEntries(parcels.map(p => [
@@ -102,11 +102,11 @@ export default function CampaignVerifyPanel({ parcels, campaign, onExit }) {
           <button className="btn btn--ghost btn--sm" onClick={onExit}>Quitter</button>
           <button
             className="btn btn--primary btn--sm"
-            disabled={!allDone}
-            onClick={onExit}
-            style={!allDone ? { opacity: 0.4, cursor: 'not-allowed' } : {}}
+            disabled={!allDone || saving}
+            onClick={() => onValidate ? onValidate({ itemVerifs, parcelObs, parcels }) : onExit()}
+            style={(!allDone || saving) ? { opacity: 0.4, cursor: 'not-allowed' } : {}}
           >
-            <I.Check />Valider la vérification
+            <I.Check />{saving ? 'Enregistrement…' : 'Valider la vérification'}
           </button>
         </div>
         <div style={{ height: 6, background: 'var(--ink-100)', borderRadius: 999, overflow: 'hidden' }}>
@@ -316,8 +316,12 @@ export default function CampaignVerifyPanel({ parcels, campaign, onExit }) {
               ? `Vérification terminée avec ${counts.issue} problème${counts.issue > 1 ? 's' : ''} signalé${counts.issue > 1 ? 's' : ''}.`
               : `Tous les colis sont conformes. La cargaison peut être distribuée.`}
           </div>
-          <button className="btn btn--primary btn--sm" onClick={onExit}>
-            <I.Check />Valider et fermer
+          <button
+            className="btn btn--primary btn--sm"
+            disabled={saving}
+            onClick={() => onValidate ? onValidate({ itemVerifs, parcelObs, parcels }) : onExit()}
+          >
+            <I.Check />{saving ? 'Enregistrement…' : 'Valider et fermer'}
           </button>
         </div>
       )}
