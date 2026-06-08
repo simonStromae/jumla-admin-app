@@ -275,7 +275,7 @@ export default function CostsScreen({ onNav }) {
                     {renseigné ? (
                       <>
                         <span className="mono" style={{ fontWeight: 700, color: 'var(--ink-800)' }}>{tc.toLocaleString('fr')}</span>
-                        <span style={{ fontSize: 10.5, color: 'var(--ink-400)', marginLeft: 3 }}>{CAD}</span>
+                        <span style={{ fontSize: 10.5, color: 'var(--ink-400)', marginLeft: 3 }}>CAD</span>
                       </>
                     ) : (
                       <span style={{ fontSize: 12, color: 'var(--ink-300)', fontStyle: 'italic' }}>Non renseigné</span>
@@ -286,7 +286,7 @@ export default function CostsScreen({ onNav }) {
                     {renseigné ? (
                       <>
                         <span className="mono" style={{ fontWeight: 700, color: mg >= 0 ? 'var(--ok-600)' : 'var(--bad-500)' }}>{mg.toLocaleString('fr')}</span>
-                        <span style={{ fontSize: 10.5, color: 'var(--ink-400)', marginLeft: 3 }}>{CAD}</span>
+                        <span style={{ fontSize: 10.5, color: 'var(--ink-400)', marginLeft: 3 }}>CAD</span>
                       </>
                     ) : (
                       <span style={{ fontSize: 12, color: 'var(--ink-300)', fontStyle: 'italic' }}>—</span>
