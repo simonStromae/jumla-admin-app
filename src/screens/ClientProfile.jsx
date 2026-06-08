@@ -142,6 +142,7 @@ export default function ClientProfile() {
       .then(r => r.json())
       .then(d => {
         setProfile({ name: d.name ?? '', email: d.email ?? '', phone: d.phone ?? '', city: d.city ?? '' });
+        setAddresses(Array.isArray(d.addresses) ? d.addresses : []);
         setProfileLoading(false);
       })
       .catch(() => setProfileLoading(false));
@@ -170,29 +171,35 @@ export default function ClientProfile() {
     setProfileSaving(false);
   };
 
-  // --- Addresses ---
+  // --- Addresses (stored in DB) ---
   const [addresses, setAddresses] = useState([]);
   const [showAddrForm, setShowAddrForm] = useState(false);
   const [newAddr, setNewAddr] = useState({ label: '', address: '', apt: '', city: '', province: '', postal: '' });
 
-  useEffect(() => {
-    setAddresses(loadAddresses());
-  }, []);
+  const saveAddressesToDB = async (list) => {
+    try {
+      await fetch('/api/me/profile', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ addresses: list }),
+      });
+    } catch {}
+  };
 
-  const handleAddAddress = () => {
+  const handleAddAddress = async () => {
     if (!newAddr.address.trim()) return;
     const entry = { ...newAddr, id: Date.now().toString() };
     const updated = [...addresses, entry];
     setAddresses(updated);
-    saveAddresses(updated);
+    await saveAddressesToDB(updated);
     setNewAddr({ label: '', address: '', apt: '', city: '', province: '', postal: '' });
     setShowAddrForm(false);
   };
 
-  const handleDeleteAddress = (id) => {
+  const handleDeleteAddress = async (id) => {
     const updated = addresses.filter(a => a.id !== id);
     setAddresses(updated);
-    saveAddresses(updated);
+    await saveAddressesToDB(updated);
   };
 
   // --- Password ---

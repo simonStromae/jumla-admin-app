@@ -96,6 +96,8 @@ const ROLE_PRESETS = {
 
 export default function AgentFormModal({ mode = 'create', agent, onClose, onSave }) {
   const isEdit = mode === 'edit';
+  const [saving, setSaving] = useState(false);
+  const [saveErr, setSaveErr] = useState('');
   const [data, setData] = useState(() => ({
     name: agent?.name || '',
     initials: agent?.initials || '',
@@ -131,6 +133,33 @@ export default function AgentFormModal({ mode = 'create', agent, onClose, onSave
 
   const totalPerms = Object.values(data.perms).reduce((a, p) => a + p.length, 0);
 
+  const handleSave = async () => {
+    if (!data.name.trim() || !data.email.trim()) { setSaveErr('Nom et email requis'); return; }
+    setSaving(true); setSaveErr('');
+    try {
+      const url    = isEdit ? `/api/users/${agent.id}` : '/api/users';
+      const method = isEdit ? 'PUT' : 'POST';
+      const res = await fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name:        data.name.trim(),
+          email:       data.email.trim(),
+          phone:       data.phone?.trim() || null,
+          city:        data.city  || null,
+          role:        data.role,
+          permissions: data.perms,
+        }),
+      });
+      const json = await res.json();
+      if (!res.ok) { setSaveErr(json.error || 'Erreur'); setSaving(false); return; }
+      onSave();
+    } catch {
+      setSaveErr('Erreur réseau');
+      setSaving(false);
+    }
+  };
+
   return (
     <Modal width={920} onClose={onClose}
       title={
@@ -143,11 +172,21 @@ export default function AgentFormModal({ mode = 'create', agent, onClose, onSave
       sub={isEdit ? `${data.name} · ${data.city}` : "Définissez les informations et le niveau d'accès"}
       footer={
         <>
-          {isEdit && <button className="btn btn--ghost" style={{ color: 'var(--bad-600)' }}><I.Trash />Désactiver</button>}
+          {isEdit && (
+            <button className="btn btn--ghost" style={{ color: 'var(--bad-600)' }}
+              onClick={async () => {
+                if (!confirm('Supprimer cet agent ?')) return;
+                await fetch(`/api/users/${agent.id}`, { method: 'DELETE' });
+                onSave();
+              }}>
+              <I.Trash />Supprimer
+            </button>
+          )}
           <div style={{ flex: 1 }} />
+          {saveErr && <span style={{ fontSize: 12, color: 'var(--bad-600)' }}>{saveErr}</span>}
           <button className="btn btn--ghost" onClick={onClose}>Annuler</button>
-          <button className="btn btn--brand" onClick={onSave}>
-            <I.Check />{isEdit ? 'Enregistrer' : "Envoyer l'invitation"}
+          <button className="btn btn--brand" onClick={handleSave} disabled={saving}>
+            <I.Check />{saving ? 'Enregistrement…' : isEdit ? 'Enregistrer' : "Créer l'agent"}
           </button>
         </>
       }>

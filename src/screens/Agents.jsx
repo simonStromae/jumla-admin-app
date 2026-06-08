@@ -177,12 +177,14 @@ export default function AgentsScreen({ onNav }) {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
 
-  useEffect(() => {
+  const loadAgents = () => {
     fetch('/api/users')
       .then(r => r.json())
       .then(data => { setAgents(Array.isArray(data) ? data : []); setLoading(false); })
       .catch(() => setLoading(false));
-  }, []);
+  };
+
+  useEffect(() => { loadAgents(); }, []);
 
   const filtered = tab === 'all' ? agents : agents.filter(a => a.role === tab);
 
@@ -249,7 +251,7 @@ export default function AgentsScreen({ onNav }) {
           mode={editing === 'new' ? 'create' : 'edit'}
           agent={editing === 'new' ? null : editing}
           onClose={() => setEditing(null)}
-          onSave={() => setEditing(null)}
+          onSave={() => { setEditing(null); loadAgents(); }}
         />
       )}
     </div>

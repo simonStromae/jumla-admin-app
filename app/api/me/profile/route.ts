@@ -9,7 +9,7 @@ export async function GET() {
   const userId = (session.user as any).id;
   const user = await prisma.user.findUnique({
     where: { id: userId },
-    select: { id: true, name: true, email: true, phone: true, city: true, country: true },
+    select: { id: true, name: true, email: true, phone: true, city: true, country: true, addresses: true },
   });
   return NextResponse.json(user);
 }
@@ -18,11 +18,16 @@ export async function PUT(req: NextRequest) {
   const { session, error } = await requireAuth();
   if (error) return error;
   const userId = (session.user as any).id;
-  const { name, phone, city } = await req.json();
+  const { name, phone, city, addresses } = await req.json();
   const user = await prisma.user.update({
     where: { id: userId },
-    data: { name: name?.trim(), phone: phone?.trim() || null, city: city?.trim() || null },
-    select: { id: true, name: true, email: true, phone: true, city: true },
+    data: {
+      ...(name      !== undefined && { name: name?.trim() }),
+      ...(phone     !== undefined && { phone: phone?.trim() || null }),
+      ...(city      !== undefined && { city: city?.trim() || null }),
+      ...(addresses !== undefined && { addresses }),
+    },
+    select: { id: true, name: true, email: true, phone: true, city: true, addresses: true },
   });
   return NextResponse.json(user);
 }

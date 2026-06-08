@@ -47,6 +47,7 @@ model User {
   permissions      Json      @default("{}")
   city             String?
   country          String    @default("CM")
+  addresses        Json?
   createdAt        DateTime  @default(now())
 
   parcels          Parcel[]
