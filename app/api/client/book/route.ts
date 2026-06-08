@@ -48,6 +48,13 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Cargaison requise' }, { status: 400 });
   }
 
+  // Block booking on campaigns that are no longer open
+  const campaign = await prisma.campaign.findUnique({ where: { id: campaignId }, select: { status: true } });
+  if (!campaign) return NextResponse.json({ error: 'Cargaison introuvable' }, { status: 404 });
+  if (campaign.status !== 'open') {
+    return NextResponse.json({ error: 'Cette cargaison n\'est plus ouverte aux réservations' }, { status: 409 });
+  }
+
   // Map items to admin format
   const mappedItems = Array.isArray(items) ? items
     .filter((i: any) => parseFloat(i.kg) > 0)

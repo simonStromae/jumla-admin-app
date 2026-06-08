@@ -72,6 +72,13 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Champs obligatoires manquants' }, { status: 400 });
   }
 
+  // Block adding parcels to campaigns that are no longer open
+  const campaign = await prisma.campaign.findUnique({ where: { id: campaignId }, select: { status: true } });
+  if (!campaign) return NextResponse.json({ error: 'Cargaison introuvable' }, { status: 404 });
+  if (campaign.status !== 'open') {
+    return NextResponse.json({ error: 'Cette cargaison n\'est plus ouverte — impossible d\'ajouter un colis' }, { status: 409 });
+  }
+
   const finalWeightKg = weightKg ? Number(weightKg) : (Array.isArray(items) ? items.reduce((s: number, i: any) => s + (Number(i.weightKg) || 0), 0) : 0);
 
   const parcel = await prisma.parcel.create({

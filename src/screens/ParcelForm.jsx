@@ -235,12 +235,18 @@ export default function ParcelFormPage({ mode = 'create', parcel, campaign, onNa
               </div>
               <div className="field" style={{ marginBottom: 0 }}>
                 <label className="label">Cargaison <span className="opt">/ Shipment</span></label>
-                <select className="select" value={data.campaignId} onChange={e => upd('campaignId', e.target.value)}>
-                  <option value="">— Choisir une cargaison</option>
-                  {campaigns.map(c => (
-                    <option key={c.id} value={c.id}>{c.code} · {c.from} → {c.to}</option>
-                  ))}
-                </select>
+                {campaigns.length === 0 ? (
+                  <div style={{ padding: '10px 12px', background: 'var(--warn-50)', color: 'var(--warn-700)', borderRadius: 6, fontSize: 13, fontWeight: 500, border: '1px solid var(--warn-200)' }}>
+                    Aucune cargaison ouverte — les colis ne peuvent être ajoutés qu'aux cargaisons en statut "Ouverte".
+                  </div>
+                ) : (
+                  <select className="select" value={data.campaignId} onChange={e => upd('campaignId', e.target.value)}>
+                    <option value="">— Choisir une cargaison</option>
+                    {campaigns.map(c => (
+                      <option key={c.id} value={c.id}>{c.code} · {c.from} → {c.to}</option>
+                    ))}
+                  </select>
+                )}
               </div>
             </div>
           )}
