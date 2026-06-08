@@ -416,7 +416,7 @@ export default function BookingScreen({ onNav, embedded = false }) {
   // When embedded in client layout, fall back to NextAuth session data
   const effectiveUser = user ?? (embedded && sessionData?.user ? { name: sessionData.user.name ?? '', email: sessionData.user.email ?? '' } : null);
 
-  // Pre-fill sender from session when embedded
+  // Pre-fill sender name + email from session when embedded
   useEffect(() => {
     if (!embedded || !effectiveUser) return;
     setForm(f => ({
@@ -426,6 +426,19 @@ export default function BookingScreen({ onNav, embedded = false }) {
     }));
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [embedded, effectiveUser?.name, effectiveUser?.email]);
+
+  // Pre-fill sender phone from profile API when embedded
+  useEffect(() => {
+    if (!embedded) return;
+    fetch('/api/me/profile')
+      .then(r => r.ok ? r.json() : null)
+      .then(profile => {
+        if (profile?.phone) {
+          setForm(f => ({ ...f, senderPhone: f.senderPhone || profile.phone }));
+        }
+      })
+      .catch(() => {});
+  }, [embedded]);
 
   useEffect(() => {
     fetch('/api/public/routes').then(r => r.json()).then(data => {

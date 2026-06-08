@@ -11,94 +11,81 @@ const PAY_STATUS = {
 
 function PaymentModal({ payment, onClose, onSave, campaigns = [] }) {
   const isNew = !payment;
-  const [data, setData] = useState({
-    parcel:    payment?.parcel    || '',
-    campaign:  payment?.campaign  || '',
-    recipName: payment?.recipName || '',
-    due:       payment?.due       || '',
-    received:  payment?.received  || '',
-    method:    payment?.method    || 'Virement',
-    note:      payment?.note      || '',
-  });
-  const upd = (k, v) => setData(d => ({ ...d, [k]: v }));
-  const remaining = (parseFloat(data.due) || 0) - (parseFloat(data.received) || 0);
+  const [interacRef, setInteracRef] = useState(payment?.interacRef || '');
+  const [method, setMethod]         = useState('Virement Interac');
+  const [saving, setSaving]         = useState(false);
+  const [err, setErr]               = useState('');
+
+  const handleSave = async () => {
+    if (isNew) { onSave(); return; }
+    setSaving(true);
+    setErr('');
+    try {
+      const res = await fetch(`/api/payments/${payment.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: 'completed', interacRef: interacRef || undefined }),
+      });
+      const json = await res.json();
+      if (!res.ok) { setErr(json.error || 'Erreur'); setSaving(false); return; }
+      onSave();
+    } catch {
+      setErr('Erreur réseau');
+      setSaving(false);
+    }
+  };
 
   return (
-    <Modal width={580} onClose={onClose}
-      title={<span>{isNew ? 'Enregistrer un paiement' : 'Modifier le paiement'} <span style={{ color: 'var(--ink-400)', fontWeight: 400, fontSize: '.85em', marginLeft: 6 }}>/ Record payment</span></span>}
-      sub={isNew ? 'Associez un règlement à un colis' : `Colis ${payment.parcel} · ${payment.recipName}`}
+    <Modal width={480} onClose={onClose}
+      title={<span>{isNew ? 'Enregistrer un paiement' : 'Régler le paiement'} <span style={{ color: 'var(--ink-400)', fontWeight: 400, fontSize: '.85em', marginLeft: 6 }}>/ Record payment</span></span>}
+      sub={isNew ? 'Associez un règlement à un colis' : `${payment.recipName} · ${payment.parcel}`}
       footer={
         <>
           <button className="btn btn--ghost" onClick={onClose}>Annuler</button>
-          <button className="btn btn--brand" onClick={onSave}><I.Check />{isNew ? 'Enregistrer' : 'Mettre à jour'}</button>
+          {err && <span style={{ fontSize: 12, color: 'var(--bad-600)' }}>{err}</span>}
+          <button className="btn btn--brand" onClick={handleSave} disabled={saving}>
+            <I.Check />{saving ? 'Enregistrement…' : isNew ? 'Enregistrer' : 'Marquer comme payé'}
+          </button>
         </>
       }>
 
-      <div className="field-row field-row--2">
-        <div className="field">
-          <label className="label">Cargaison</label>
-          <select className="select" value={data.campaign} onChange={e => upd('campaign', e.target.value)}>
-            <option value="">— Sélectionner</option>
-            {campaigns.map(c => <option key={c.id} value={c.code}>{c.code}</option>)}
-          </select>
-        </div>
-        <div className="field">
-          <label className="label">Code colis</label>
-          <input className="input mono" value={data.parcel} onChange={e => upd('parcel', e.target.value)} placeholder="#01" />
-        </div>
-      </div>
-
-      <div className="field">
-        <label className="label">Destinataire</label>
-        <input className="input" value={data.recipName} onChange={e => upd('recipName', e.target.value)} placeholder="Nom du destinataire" />
-      </div>
-
-      <div className="field-row field-row--2">
-        <div className="field">
-          <label className="label">Montant dû <span className="opt">CAD</span></label>
-          <input className="input mono" type="number" value={data.due} onChange={e => upd('due', e.target.value)} placeholder="0" />
-        </div>
-        <div className="field">
-          <label className="label">Montant reçu <span className="opt">CAD</span></label>
-          <input className="input mono" type="number" value={data.received} onChange={e => upd('received', e.target.value)} placeholder="0" />
-        </div>
-      </div>
-
-      {data.due && data.received && (
-        <div style={{
-          display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', borderRadius: 8, marginBottom: 14,
-          background: remaining <= 0 ? 'var(--ok-50)' : 'var(--warn-50)',
-          border: '1px solid ' + (remaining <= 0 ? 'var(--ok-100)' : 'var(--warn-100)'),
-          fontSize: 13,
-        }}>
-          {remaining <= 0
-            ? <><I.Check style={{ color: 'var(--ok-600)', width: 14, height: 14 }} /><span style={{ color: 'var(--ok-700)', fontWeight: 600 }}>Solde réglé intégralement</span></>
-            : <><I.Alert style={{ color: 'var(--warn-700)', width: 14, height: 14 }} /><span style={{ color: 'var(--warn-700)', fontWeight: 600 }}>Reste à percevoir : <span className="mono">{remaining.toLocaleString('fr')} CAD</span></span></>}
+      {!isNew && (
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, padding: 14, background: 'var(--bg-soft)', borderRadius: 8, marginBottom: 16, fontSize: 13 }}>
+          <div>
+            <div style={{ fontSize: 10.5, color: 'var(--ink-400)', textTransform: 'uppercase', letterSpacing: '.04em', fontWeight: 600, marginBottom: 3 }}>Client</div>
+            <div style={{ fontWeight: 600, color: 'var(--ink-800)' }}>{payment.recipName}</div>
+            <div style={{ color: 'var(--ink-400)', fontSize: 11.5 }}>{payment.recipPhone}</div>
+          </div>
+          <div>
+            <div style={{ fontSize: 10.5, color: 'var(--ink-400)', textTransform: 'uppercase', letterSpacing: '.04em', fontWeight: 600, marginBottom: 3 }}>Montant</div>
+            <div style={{ fontWeight: 700, fontSize: 18, color: 'var(--ok-700)' }}>{(payment.due || 0).toLocaleString('fr')} <span style={{ fontSize: 12, fontWeight: 400 }}>CAD</span></div>
+          </div>
+          <div>
+            <div style={{ fontSize: 10.5, color: 'var(--ink-400)', textTransform: 'uppercase', letterSpacing: '.04em', fontWeight: 600, marginBottom: 3 }}>Colis</div>
+            <div className="mono" style={{ fontWeight: 600 }}>{payment.parcel}</div>
+          </div>
+          <div>
+            <div style={{ fontSize: 10.5, color: 'var(--ink-400)', textTransform: 'uppercase', letterSpacing: '.04em', fontWeight: 600, marginBottom: 3 }}>Cargaison</div>
+            <div className="mono" style={{ fontWeight: 600 }}>{payment.campaign}</div>
+          </div>
         </div>
       )}
 
-      <div className="field-row field-row--2">
-        <div className="field">
-          <label className="label">Méthode de paiement</label>
-          <select className="select" value={data.method} onChange={e => upd('method', e.target.value)}>
-            <option>Virement</option>
-            <option>Interac</option>
-            <option>Espèces</option>
-            <option>Mobile Money</option>
-            <option>Chèque</option>
-          </select>
-        </div>
-        <div className="field">
-          <label className="label">Agent</label>
-          <select className="select">
-            <option>AM</option><option>ML</option>
-          </select>
-        </div>
+      <div className="field">
+        <label className="label">Méthode de paiement</label>
+        <select className="select" value={method} onChange={e => setMethod(e.target.value)}>
+          <option>Virement Interac</option>
+          <option>Espèces</option>
+          <option>Mobile Money</option>
+          <option>Chèque</option>
+          <option>Virement bancaire</option>
+        </select>
       </div>
 
       <div className="field" style={{ marginBottom: 0 }}>
-        <label className="label">Note <span className="opt">/ Optionnel</span></label>
-        <input className="input" value={data.note} onChange={e => upd('note', e.target.value)} placeholder="Référence virement, remarque..." />
+        <label className="label">Référence Interac <span className="opt">/ Optionnel</span></label>
+        <input className="input mono" value={interacRef} onChange={e => setInteracRef(e.target.value)}
+          placeholder="ex: XK7F2A" />
       </div>
     </Modal>
   );
@@ -111,7 +98,7 @@ export default function PaymentsScreen({ onNav }) {
   const [campaigns, setCampaigns] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
+  const loadPayments = () => {
     Promise.all([
       fetch('/api/payments').then(r => r.json()),
       fetch('/api/campaigns').then(r => r.json()),
@@ -120,7 +107,9 @@ export default function PaymentsScreen({ onNav }) {
       setCampaigns(Array.isArray(cData) ? cData : []);
       setLoading(false);
     });
-  }, []);
+  };
+
+  useEffect(() => { loadPayments(); }, []);
   const tabs = [
     { id: 'all',     l: 'Tous',     n: payments.length },
     { id: 'paid',    l: 'Payés',    n: payments.filter(p => p.status === 'paid').length,    cls: 'ok' },
@@ -257,7 +246,7 @@ export default function PaymentsScreen({ onNav }) {
           payment={modal?.new ? null : modal}
           campaigns={campaigns}
           onClose={() => setModal(null)}
-          onSave={() => setModal(null)}
+          onSave={() => { setModal(null); loadPayments(); }}
         />
       )}
     </div>
