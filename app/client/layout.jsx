@@ -9,6 +9,7 @@ const NAV = [
   { label: 'Mes colis',      icon: I.Box,    href: '/client/dashboard' },
   { label: 'Réserver',       icon: I.Plus,   href: '/client/booking'   },
   { label: 'Suivi de colis', icon: I.Search, href: '/client/suivi'     },
+  { label: 'Mon profil',     icon: I.Users,  href: '/client/profile'   },
 ];
 
 export default function ClientLayout({ children }) {

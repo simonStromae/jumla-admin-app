@@ -412,6 +412,17 @@ export default function BookingScreen({ onNav, embedded = false }) {
   // When embedded in client layout, fall back to NextAuth session data
   const effectiveUser = user ?? (embedded && sessionData?.user ? { name: sessionData.user.name ?? '', email: sessionData.user.email ?? '' } : null);
 
+  // Pre-fill sender from session when embedded
+  useEffect(() => {
+    if (!embedded || !effectiveUser) return;
+    setForm(f => ({
+      ...f,
+      senderName:  f.senderName  || effectiveUser.name  || '',
+      senderEmail: f.senderEmail || effectiveUser.email || '',
+    }));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [embedded, effectiveUser?.name, effectiveUser?.email]);
+
   useEffect(() => {
     fetch('/api/public/routes').then(r => r.json()).then(data => {
       const routes = Array.isArray(data) ? data : [];
@@ -488,10 +499,12 @@ export default function BookingScreen({ onNav, embedded = false }) {
               {effectiveUser?.name?.charAt(0).toUpperCase()}
             </span>
             {effectiveUser?.name} · {effectiveUser?.email}
-            <button onClick={() => { localStorage.removeItem('jumla_user'); setUser(null); }}
-              style={{ background: 'none', border: 'none', color: 'var(--ink-300)', fontSize: 11, cursor: 'pointer', marginLeft: 4 }}>
-              Déconnexion
-            </button>
+            {!embedded && (
+              <button onClick={() => { localStorage.removeItem('jumla_user'); setUser(null); }}
+                style={{ background: 'none', border: 'none', color: 'var(--ink-300)', fontSize: 11, cursor: 'pointer', marginLeft: 4 }}>
+                Déconnexion
+              </button>
+            )}
           </span>
           <nav className="co-crumbs">
             {STEPS.map((s, i) => (
@@ -901,13 +914,15 @@ export default function BookingScreen({ onNav, embedded = false }) {
                     </div>
                   )}
 
-                  <label className="co-account" style={{ marginTop: 16 }}>
-                    <input type="checkbox" checked={createAccount} onChange={e => setCreateAccount(e.target.checked)} />
-                    <div>
-                      <div className="co-account__title">Créer un compte Jumla</div>
-                      <div className="co-account__sub">Suivez vos envois en ligne et accédez à votre historique.</div>
-                    </div>
-                  </label>
+                  {!embedded && (
+                    <label className="co-account" style={{ marginTop: 16 }}>
+                      <input type="checkbox" checked={createAccount} onChange={e => setCreateAccount(e.target.checked)} />
+                      <div>
+                        <div className="co-account__title">Créer un compte Jumla</div>
+                        <div className="co-account__sub">Suivez vos envois en ligne et accédez à votre historique.</div>
+                      </div>
+                    </label>
+                  )}
                 </div>
               )}
 
