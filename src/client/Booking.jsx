@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { TopBar, SiteNav, SiteFooter } from './SiteLayout.jsx';
 import '@/src/styles/client-omega.css';
@@ -15,49 +15,14 @@ const ITEM_CATEGORIES = [
   { id: 'documents',    label: 'Documents',                  icon: '📄', extraPerKg: -2, hint: 'Papiers administratifs, courrier officiel…' },
 ];
 
-// ── Routes ──
-const ROUTES_DATA = [
-  {
-    id: 'dla-yul', label: 'Douala → Montréal', code: 'DLA → YUL',
-    currency: 'CAD', transit: 14,
-    fees: {
-      base: 50, customs: 5, carton: 1, formality: 4, service: 5,
-      flatUpTo3kg: 65, perHalfKgRate: 9,
-      cartonBase: 1, cartonPerUnit: 1.5,
-      addons: { smallBag: 3, mediumBag: 5, largeBag: 10 },
-      montrealIleDelivery: 25,
-      montrealGrandDelivery: 30,
-    },
-  },
-  {
-    id: 'los-yul', label: 'Lagos → Montréal', code: 'LOS → YUL',
-    currency: 'CAD', transit: 16,
-    fees: {
-      base: 55, customs: 6, carton: 1, formality: 4, service: 4,
-      flatUpTo3kg: 70, perHalfKgRate: 10,
-      cartonBase: 1, cartonPerUnit: 1.5,
-      addons: { smallBag: 3, mediumBag: 5, largeBag: 10 },
-      montrealIleDelivery: 25,
-      montrealGrandDelivery: 30,
-    },
-  },
-];
-
-const DEPARTURES = {
-  'dla-yul': [
-    { id: 'd1', label: 'Mar 9 Juin',  spots: 12 },
-    { id: 'd2', label: 'Mar 16 Juin', spots: 8  },
-    { id: 'd3', label: 'Mar 23 Juin', spots: 15 },
-    { id: 'd4', label: 'Mar 30 Juin', spots: 3  },
-    { id: 'd5', label: 'Mar 7 Juil',  spots: 18 },
-    { id: 'd6', label: 'Mar 14 Juil', spots: 20 },
-  ],
-  'los-yul': [
-    { id: 'd1', label: 'Jeu 11 Juin', spots: 10 },
-    { id: 'd2', label: 'Jeu 18 Juin', spots: 5  },
-    { id: 'd3', label: 'Jeu 25 Juin', spots: 14 },
-    { id: 'd4', label: 'Jeu 2 Juil',  spots: 20 },
-  ],
+// ── Tarifs par défaut (règles d'affaires) ──
+const DEFAULT_FEES = {
+  base: 50, customs: 5, carton: 1, formality: 4, service: 5,
+  flatUpTo3kg: 65, perHalfKgRate: 9,
+  cartonBase: 1, cartonPerUnit: 1.5,
+  addons: { smallBag: 3, mediumBag: 5, largeBag: 10 },
+  montrealIleDelivery: 25,
+  montrealGrandDelivery: 30,
 };
 
 // ── Villes avec 3 zones ──
@@ -184,7 +149,6 @@ function itemIcon(desc, cat) {
 
 // ── Summary panel ──
 function Summary({ route, departure, items, price, form, step, isDone }) {
-  const [promoCode, setPromoCode] = useState('');
   const city     = CITIES.find(c => c.label === form.recipCity);
   const cityZone = city?.zone || 'montreal-ile';
   const filledItems = items.filter(i => i.desc || parseFloat(i.kg) > 0);
@@ -214,19 +178,13 @@ function Summary({ route, departure, items, price, form, step, isDone }) {
         </div>
       )}
 
-      <div className="co-summary__promo">
-        <input className="co-summary__promo-input" placeholder="Code promo ou bon de réduction"
-          value={promoCode} onChange={e => setPromoCode(e.target.value)} />
-        <button className="co-summary__promo-btn">Appliquer</button>
-      </div>
-
       <div className="co-summary__section">
         <div className="co-summary__label">Itinéraire</div>
         <div className={`co-summary__row${route ? '' : ' co-summary__row--muted'}`}>
           <span>Route</span><span>{route?.label ?? '—'}</span>
         </div>
         <div className={`co-summary__row${departure ? '' : ' co-summary__row--muted'}`}>
-          <span>Départ</span><span>{departure?.label ?? 'Non sélectionné'}</span>
+          <span>Départ</span><span>{departure?.departureDate ? new Date(departure.departureDate).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' }) : departure?.code ?? 'Non sélectionné'}</span>
         </div>
         {route && <div className="co-summary__row co-summary__row--muted"><span>Transit estimé</span><span>~{route.transit} jours</span></div>}
       </div>
@@ -428,8 +386,12 @@ function AuthGate({ onAuth, onNav }) {
 export default function BookingScreen({ onNav, embedded = false }) {
   const { data: sessionData } = useSession();
   const [step, setStep] = useState(0);
+  const [dbRoutes, setDbRoutes]         = useState([]);
+  const [campaigns, setCampaigns]       = useState([]);
+  const [routesLoading, setRoutesLoading] = useState(true);
+
   const [form, setForm] = useState({
-    route: 'dla-yul', departure: '',
+    route: '', departure: '',
     addons: { smallBag: 0, mediumBag: 0, largeBag: 0, cartons: 0 },
     senderName: '', senderPhone: '', senderEmail: '',
     recipName: '', recipPhone: '', recipCity: 'Montréal', recipCityCustom: '',
@@ -450,14 +412,32 @@ export default function BookingScreen({ onNav, embedded = false }) {
   // When embedded in client layout, fall back to NextAuth session data
   const effectiveUser = user ?? (embedded && sessionData?.user ? { name: sessionData.user.name ?? '', email: sessionData.user.email ?? '' } : null);
 
+  useEffect(() => {
+    fetch('/api/public/routes').then(r => r.json()).then(data => {
+      const routes = Array.isArray(data) ? data : [];
+      setDbRoutes(routes);
+      if (routes.length > 0) setForm(f => ({ ...f, route: routes[0].id }));
+      setRoutesLoading(false);
+    }).catch(() => setRoutesLoading(false));
+  }, []);
+
+  useEffect(() => {
+    if (!form.route) return;
+    fetch('/api/public/campaigns?routeId=' + form.route).then(r => r.json()).then(data => {
+      setCampaigns(Array.isArray(data) ? data : []);
+      setForm(f => ({ ...f, departure: '' }));
+    }).catch(() => {});
+  }, [form.route]);
+
   const upd      = (k, v) => setForm(f => ({ ...f, [k]: v }));
   const updAddon = (k, v) => setForm(f => ({ ...f, addons: { ...f.addons, [k]: v } }));
   const addItem    = () => setItems(is => [...is, { id: Date.now(), cat: 'standard', desc: '', pieces: 1, kg: '' }]);
   const removeItem = id => setItems(is => is.filter(i => i.id !== id));
   const updItem    = (id, k, v) => setItems(is => is.map(i => i.id === id ? { ...i, [k]: v } : i));
 
-  const route     = ROUTES_DATA.find(r => r.id === form.route);
-  const departure = DEPARTURES[form.route]?.find(d => d.id === form.departure);
+  const routeData  = dbRoutes.find(r => r.id === form.route);
+  const route      = routeData ? { ...routeData, currency: 'CAD', transit: 14, fees: DEFAULT_FEES } : null;
+  const departure  = campaigns.find(c => c.id === form.departure);
   const isDone    = payStatus === 'pending';
 
   const city     = CITIES.find(c => c.label === form.recipCity);
@@ -556,39 +536,59 @@ export default function BookingScreen({ onNav, embedded = false }) {
               {step === 0 && (
                 <div className="co-section">
                   <div className="co-section__title">Route & Date de départ</div>
-                  <div style={{ marginBottom: 24 }}>
-                    <div className="co-label" style={{ marginBottom: 10 }}>Direction</div>
-                    <div className="co-opts">
-                      {ROUTES_DATA.map(r => (
-                        <button key={r.id} className={`co-opt${form.route === r.id ? ' is-sel' : ''}`}
-                          onClick={() => { upd('route', r.id); upd('departure', ''); }}>
-                          <div className="co-opt__radio" />
-                          <div className="co-opt__body">
-                            <div className="co-opt__label">✈️ {r.label}</div>
-                            <div className="co-opt__sub">{r.code} · Transit ~{r.transit} jours</div>
+                  {routesLoading ? (
+                    <div style={{ padding: 32, textAlign: 'center', color: 'var(--ink-400)' }}>Chargement des routes…</div>
+                  ) : dbRoutes.length === 0 ? (
+                    <div style={{ padding: 32, textAlign: 'center', color: 'var(--ink-400)' }}>Aucune route disponible pour le moment.</div>
+                  ) : (
+                    <>
+                      <div style={{ marginBottom: 24 }}>
+                        <div className="co-label" style={{ marginBottom: 10 }}>Direction</div>
+                        <div className="co-opts">
+                          {dbRoutes.map(r => (
+                            <button key={r.id} className={`co-opt${form.route === r.id ? ' is-sel' : ''}`}
+                              onClick={() => upd('route', r.id)}>
+                              <div className="co-opt__radio" />
+                              <div className="co-opt__body">
+                                <div className="co-opt__label">✈️ {r.label}</div>
+                                <div className="co-opt__sub">{r.code} · Transit ~14 jours</div>
+                              </div>
+                              <span className="co-opt__badge">dès 65 CAD</span>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                      <div>
+                        <div className="co-label" style={{ marginBottom: 10 }}>Date de départ</div>
+                        {campaigns.length === 0 ? (
+                          <p style={{ fontSize: 13, color: 'var(--ink-400)', padding: '12px 0' }}>
+                            Aucune cargaison ouverte sur cette route pour le moment.
+                          </p>
+                        ) : (
+                          <div className="co-dates">
+                            {campaigns.map(c => {
+                              const dep = c.departureDate ? new Date(c.departureDate).toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' }) : c.code;
+                              const low = c.spotsKg !== null && c.spotsKg < 50;
+                              return (
+                                <button key={c.id} className={`co-date${form.departure === c.id ? ' is-sel' : ''}`}
+                                  onClick={() => upd('departure', c.id)}>
+                                  <div className="co-date__day">{dep}</div>
+                                  <div className={`co-date__spots${low ? ' co-date__spots--low' : ''}`}>
+                                    {c.spotsKg !== null
+                                      ? low ? `⚠ ${c.spotsKg} kg restants` : `${c.spotsKg} kg dispo`
+                                      : c.code}
+                                  </div>
+                                </button>
+                              );
+                            })}
                           </div>
-                          <span className="co-opt__badge">dès {r.fees.flatUpTo3kg} {r.currency}</span>
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                  <div>
-                    <div className="co-label" style={{ marginBottom: 10 }}>Date de départ</div>
-                    <div className="co-dates">
-                      {(DEPARTURES[form.route] || []).map(d => (
-                        <button key={d.id} className={`co-date${form.departure === d.id ? ' is-sel' : ''}`}
-                          onClick={() => upd('departure', d.id)}>
-                          <div className="co-date__day">{d.label}</div>
-                          <div className={`co-date__spots${d.spots <= 5 ? ' co-date__spots--low' : ''}`}>
-                            {d.spots <= 5 ? `⚠ ${d.spots} places` : `${d.spots} places`}
-                          </div>
-                        </button>
-                      ))}
-                    </div>
-                    {!form.departure && (
-                      <p style={{ fontSize: 12, color: 'var(--ink-400)', marginTop: 10 }}>Sélectionnez une date pour continuer.</p>
-                    )}
-                  </div>
+                        )}
+                        {!form.departure && campaigns.length > 0 && (
+                          <p style={{ fontSize: 12, color: 'var(--ink-400)', marginTop: 10 }}>Sélectionnez une date pour continuer.</p>
+                        )}
+                      </div>
+                    </>
+                  )}
                 </div>
               )}
 
