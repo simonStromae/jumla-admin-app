@@ -1,4 +1,5 @@
 'use client';
+import { useSession } from 'next-auth/react';
 import I from '../components/Icons.jsx';
 
 /* ─── Top info bar ─── */
@@ -34,6 +35,15 @@ export function TopBar() {
 
 /* ─── Nav ─── */
 export function SiteNav({ onNav, onBook, mode = 'landing' }) {
+  const { data: session, status } = useSession();
+  const user = session?.user;
+  const role = user?.role;
+
+  const dashHref = role === 'admin' || role === 'agent' ? '/admin/dashboard' : '/client/dashboard';
+  const initials = user?.name
+    ? user.name.split(' ').map(x => x[0]).join('').slice(0, 2).toUpperCase()
+    : '?';
+
   return (
     <div className="jnav">
       <div className="jc">
@@ -44,10 +54,30 @@ export function SiteNav({ onNav, onBook, mode = 'landing' }) {
             Jumla Shipping
           </button>
           <div className="jnav__right" style={{ marginLeft: 'auto' }}>
-            <button className="jnav__signin" onClick={() => onNav?.('/login')}>Se connecter</button>
-            <button className="jbtn-nav" onClick={() => onNav?.('/login?tab=register')}>
-              Créer un compte <I.ArrowRight style={{ width: 15, height: 15 }} />
-            </button>
+            {status === 'loading' ? null : user ? (
+              <>
+                <button className="jnav__signin" onClick={() => onNav?.(dashHref)}>
+                  Mon espace
+                </button>
+                <button className="jbtn-nav" onClick={() => onNav?.(dashHref)}
+                  style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <div style={{
+                    width: 28, height: 28, borderRadius: '50%',
+                    background: 'var(--brand-500)', color: '#fff',
+                    fontSize: 11, fontWeight: 700,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  }}>{initials}</div>
+                  {user.name?.split(' ')[0]}
+                </button>
+              </>
+            ) : (
+              <>
+                <button className="jnav__signin" onClick={() => onNav?.('/login')}>Se connecter</button>
+                <button className="jbtn-nav" onClick={() => onNav?.('/login?tab=register')}>
+                  Créer un compte <I.ArrowRight style={{ width: 15, height: 15 }} />
+                </button>
+              </>
+            )}
           </div>
         </div>
       </div>
