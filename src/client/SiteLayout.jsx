@@ -39,7 +39,7 @@ export function SiteNav({ onNav, onBook, mode = 'landing' }) {
   const user = session?.user;
   const role = user?.role;
 
-  const dashHref = role === 'admin' || role === 'agent' ? '/admin/dashboard' : '/client/dashboard';
+  const dashHref = role === 'admin' || role === 'agent' ? '/admin' : '/client/dashboard';
   const initials = user?.name
     ? user.name.split(' ').map(x => x[0]).join('').slice(0, 2).toUpperCase()
     : '?';
