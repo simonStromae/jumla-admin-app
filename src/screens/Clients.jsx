@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 
 import I from '../components/Icons.jsx';
-import { Bi, Avatar, Drawer } from '../components/Shell.jsx';
+import { Bi, Avatar, Drawer, Skel } from '../components/Shell.jsx';
 import { Pagination, ViewToggle } from '../components/Pagination.jsx';
 import ClientFormModal from './ClientForm.jsx';
 
@@ -60,8 +60,22 @@ export default function ClientsScreen({ onNav }) {
       </div>
 
       {loading ? (
-        <div style={{ padding: 40, textAlign: 'center', color: 'var(--ink-400)', fontSize: 14 }}>
-          Chargement…
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 12, padding: 14, background: 'white', border: '1px solid var(--border)', borderRadius: 12 }}>
+          {[1,2,3,4,5,6].map(i => (
+            <div key={i} className="card" style={{ padding: 16 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
+                <Skel w={40} h={40} r={999} />
+                <div style={{ flex: 1 }}>
+                  <Skel w="60%" h={14} style={{ marginBottom: 6 }} />
+                  <Skel w="80%" h={11} />
+                </div>
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, paddingTop: 12, borderTop: '1px solid var(--border-soft)' }}>
+                <div><Skel w="50%" h={10} style={{ marginBottom: 5 }} /><Skel w="70%" h={14} /></div>
+                <div><Skel w="50%" h={10} style={{ marginBottom: 5 }} /><Skel w="70%" h={14} /></div>
+              </div>
+            </div>
+          ))}
         </div>
       ) : fetchError ? (
         <div style={{ padding: 40, textAlign: 'center', color: 'var(--err-600)', fontSize: 14 }}>

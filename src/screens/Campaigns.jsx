@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import I from '../components/Icons.jsx';
-import { Bi, RoutePill, StatusDot, Progress } from '../components/Shell.jsx';
+import { Bi, RoutePill, StatusDot, Progress, Skel } from '../components/Shell.jsx';
 
 const CAMPAIGN_STATUS = {
   open:         { label: 'Ouverte',    dot: 'brand' },
@@ -181,7 +181,29 @@ export default function CampaignsScreen({ onNav, onNewCampaign }) {
         </div>
       </div>
 
-      {loading && <div style={{ padding: 40, textAlign: 'center', color: 'var(--ink-400)' }}>Chargement…</div>}
+      {loading && (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(360px, 1fr))', gap: 14 }}>
+          {[1, 2, 3].map(i => (
+            <div key={i} className="card" style={{ padding: 16 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+                <Skel w={72} h={22} r={6} />
+                <Skel w={80} h={18} r={999} />
+              </div>
+              <Skel w={120} h={18} style={{ marginBottom: 8 }} />
+              <Skel w={100} h={13} />
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 12, margin: '14px 0 12px', paddingTop: 12, borderTop: '1px solid var(--border-soft)' }}>
+                {[1,2,3].map(j => (
+                  <div key={j}>
+                    <Skel w={40} h={10} style={{ marginBottom: 6 }} />
+                    <Skel w={56} h={18} />
+                  </div>
+                ))}
+              </div>
+              <Skel w="100%" h={6} r={999} />
+            </div>
+          ))}
+        </div>
+      )}
 
       {!loading && filtered.length === 0 && (
         <div style={{ padding: 60, textAlign: 'center', color: 'var(--ink-400)' }}>

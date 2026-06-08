@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import I from '../components/Icons.jsx';
-import { Bi, Avatar } from '../components/Shell.jsx';
+import { Bi, Avatar, Skel } from '../components/Shell.jsx';
 import { Pagination, ViewToggle } from '../components/Pagination.jsx';
 import AgentFormModal from './AgentForm.jsx';
 
@@ -198,11 +198,29 @@ export default function AgentsScreen({ onNav }) {
         <div className="page__head">
           <div>
             <div className="page__title"><Bi fr="Agents & permissions" en="Agents & permissions" /></div>
-            <div className="page__sub">Chargement…</div>
+            <div className="page__sub"><Skel w={220} h={13} /></div>
           </div>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '60px 0', color: 'var(--ink-400)', fontSize: 14 }}>
-          Chargement en cours…
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(360px, 1fr))', gap: 12, padding: 14, background: 'white', border: '1px solid var(--border)', borderRadius: '0 0 12px 12px', marginTop: 40 }}>
+          {[1,2,3].map(i => (
+            <div key={i} className="card" style={{ padding: 0, overflow: 'hidden' }}>
+              <div style={{ padding: 14, borderBottom: '1px solid var(--border-soft)', display: 'flex', alignItems: 'flex-start', gap: 12 }}>
+                <Skel w={44} h={44} r={999} />
+                <div style={{ flex: 1 }}>
+                  <Skel w="55%" h={15} style={{ marginBottom: 8 }} />
+                  <Skel w="70%" h={12} />
+                </div>
+              </div>
+              <div style={{ padding: '10px 14px', display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 6, background: 'var(--bg-soft)', borderBottom: '1px solid var(--border-soft)' }}>
+                {[1,2,3].map(j => <div key={j}><Skel w="60%" h={16} style={{ marginBottom: 4 }} /><Skel w="80%" h={10} /></div>)}
+              </div>
+              <div style={{ padding: 14 }}>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5 }}>
+                  {[80,100,90,70,85,60].map((w,j) => <Skel key={j} w={w} h={22} r={4} />)}
+                </div>
+              </div>
+            </div>
+          ))}
         </div>
       </div>
     );

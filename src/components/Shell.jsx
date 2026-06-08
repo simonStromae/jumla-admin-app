@@ -2,6 +2,10 @@ import { useState, useEffect, useRef } from 'react';
 import { useSession, signOut } from 'next-auth/react';
 import I from './Icons.jsx';
 
+export function Skel({ w = '100%', h = 14, r = 5, style = {} }) {
+  return <span className="skel" style={{ width: w, height: h, borderRadius: r, ...style }} />;
+}
+
 export function Bi({ fr, en, sep = '/' }) {
   return (
     <span className="bi">

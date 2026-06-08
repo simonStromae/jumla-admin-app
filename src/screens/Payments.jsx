@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import I from '../components/Icons.jsx';
-import { Bi, Avatar, Modal, Progress } from '../components/Shell.jsx';
+import { Bi, Avatar, Modal, Progress, Skel } from '../components/Shell.jsx';
 
 const PAY_STATUS = {
   completed: { label: 'Payé',       cls: 'ok' },
@@ -200,7 +200,22 @@ export default function PaymentsScreen({ onNav }) {
           </tr>
         </thead>
         <tbody>
-          {filtered.map(p => (
+          {loading && [1,2,3,4,5].map(i => (
+            <tr key={i}>
+              <td><Skel w={72} h={12} /></td>
+              <td><Skel w={100} h={13} style={{ marginBottom: 4 }} /><Skel w={80} h={10} /></td>
+              <td><Skel w={64} h={13} /></td>
+              <td><Skel w={80} h={13} /></td>
+              <td><Skel w={50} h={13} style={{ marginLeft: 'auto' }} /></td>
+              <td><Skel w={50} h={13} style={{ marginLeft: 'auto' }} /></td>
+              <td><Skel w={70} h={20} r={999} /></td>
+              <td><Skel w={60} h={12} /></td>
+              <td><Skel w={28} h={28} r={999} /></td>
+              <td><Skel w={80} h={12} /></td>
+              <td><Skel w={60} h={26} r={6} /></td>
+            </tr>
+          ))}
+          {!loading && filtered.map(p => (
             <tr key={p.id}>
               <td className="mono" style={{ fontSize: 12, color: 'var(--ink-500)' }}>{p.date}</td>
               <td>

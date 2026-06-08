@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import I from '../components/Icons.jsx';
-import { Bi, RoutePill, Avatar, Progress } from '../components/Shell.jsx';
+import { Bi, RoutePill, Avatar, Progress, Skel } from '../components/Shell.jsx';
 
 export default function AnalyticsScreen({ onNav }) {
   const [year, setYear] = useState(2026);
@@ -37,11 +37,43 @@ export default function AnalyticsScreen({ onNav }) {
         <div className="page__head">
           <div>
             <div className="page__title"><Bi fr="Analyses" en="Analytics" /></div>
-            <div className="page__sub">Chargement des données…</div>
+            <div className="page__sub"><Skel w={240} h={13} /></div>
           </div>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '60px 0', color: 'var(--ink-400)', fontSize: 14 }}>
-          Chargement en cours…
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 12, marginBottom: 18 }}>
+          {[1,2,3,4,5].map(i => (
+            <div key={i} className="card" style={{ padding: 14 }}>
+              <Skel w="70%" h={11} style={{ marginBottom: 10 }} />
+              <Skel w="55%" h={26} style={{ marginBottom: 8 }} />
+              <Skel w="80%" h={11} />
+            </div>
+          ))}
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 18 }}>
+          {[1,2,3,4].map(i => (
+            <div key={i} className="card" style={{ padding: 14 }}>
+              <Skel w="70%" h={11} style={{ marginBottom: 10 }} />
+              <Skel w="55%" h={26} style={{ marginBottom: 8 }} />
+              <Skel w="80%" h={11} />
+            </div>
+          ))}
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 14, marginBottom: 14 }}>
+          <div className="card" style={{ padding: 16 }}>
+            <Skel w={200} h={14} style={{ marginBottom: 6 }} />
+            <Skel w={140} h={11} style={{ marginBottom: 16 }} />
+            <Skel w="100%" h={180} r={8} />
+          </div>
+          <div className="card" style={{ padding: 16 }}>
+            <Skel w={160} h={14} style={{ marginBottom: 6 }} />
+            <Skel w={120} h={11} style={{ marginBottom: 16 }} />
+            <Skel w="100%" h={120} r={8} />
+          </div>
+        </div>
+        <div className="card" style={{ padding: 16, marginBottom: 14 }}>
+          <Skel w={200} h={14} style={{ marginBottom: 6 }} />
+          <Skel w={160} h={11} style={{ marginBottom: 16 }} />
+          <Skel w="100%" h={160} r={8} />
         </div>
       </div>
     );

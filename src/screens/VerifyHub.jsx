@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import I from '../components/Icons.jsx';
-import { RoutePill } from '../components/Shell.jsx';
+import { RoutePill, Skel } from '../components/Shell.jsx';
 
 export default function VerifyHubScreen({ onNav }) {
   const [campaigns, setCampaigns] = useState([]);
@@ -28,8 +28,32 @@ export default function VerifyHubScreen({ onNav }) {
             <div className="page__sub">Contrôle article par article des colis à la réception de la cargaison</div>
           </div>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '60px 0', color: 'var(--ink-400)', fontSize: 14 }}>
-          Chargement en cours…
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 14, marginBottom: 24 }}>
+          {[1,2,3].map(i => (
+            <div key={i} className="kpi">
+              <Skel w={80} h={11} style={{ marginBottom: 10 }} />
+              <Skel w={50} h={28} style={{ marginBottom: 8 }} />
+              <Skel w={120} h={11} />
+            </div>
+          ))}
+        </div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          {[1,2].map(i => (
+            <div key={i} style={{ background: 'white', border: '1px solid var(--border)', borderRadius: 12, padding: '16px 20px', display: 'flex', alignItems: 'center', gap: 16 }}>
+              <Skel w={10} h={10} r={999} />
+              <div style={{ flex: 1 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
+                  <Skel w={72} h={22} r={6} />
+                  <Skel w={120} h={18} r={999} />
+                  <Skel w={70} h={18} r={999} />
+                </div>
+                <div style={{ display: 'flex', gap: 14 }}>
+                  <Skel w={60} h={12} /><Skel w={60} h={12} /><Skel w={80} h={12} />
+                </div>
+              </div>
+              <Skel w={140} h={32} r={8} />
+            </div>
+          ))}
         </div>
       </div>
     );
