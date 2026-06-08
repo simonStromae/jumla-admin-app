@@ -1,5 +1,6 @@
 'use client';
 import { useState } from 'react';
+import { useSession } from 'next-auth/react';
 import I from '../components/Icons.jsx';
 import { ROUTES, PARCEL_CATEGORIES, getRoute } from '../data.js';
 import { TopBar, SiteNav, SiteFooter } from './SiteLayout.jsx';
@@ -55,36 +56,6 @@ function JHero({ onBook }) {
         </div>
       </div>
     </section>
-  );
-}
-
-/* ─── Tracking CTA band ─── */
-function JTrackBand({ onNav }) {
-  const [val, setVal] = useState('');
-  const goTrack = () => onNav?.('/suivi' + (val.trim() ? '?code=' + encodeURIComponent(val.trim()) : ''));
-  return (
-    <div className="jtrack-band">
-      <div className="jc" style={{ padding: 0 }}>
-        <div className="jtrack-band__inner">
-          <div className="jtrack-band__label">
-            <I.Box style={{ width: 28, height: 28 }} />
-            <span>Suivre votre<br />colis en temps réel</span>
-          </div>
-          <div className="jtrack-band__input-wrap">
-            <input
-              className="jtrack-band__input"
-              placeholder="Entrez votre numéro de suivi (ex : JL-26042-DLA0418)"
-              value={val}
-              onChange={e => setVal(e.target.value)}
-              onKeyDown={e => e.key === 'Enter' && goTrack()}
-            />
-          </div>
-          <button className="jtrack-band__btn" onClick={goTrack}>
-            Suivre &amp; tracer
-          </button>
-        </div>
-      </div>
-    </div>
   );
 }
 
@@ -418,9 +389,6 @@ function JCTA({ onBook }) {
           <button className="jcta-btn-1" onClick={onBook}>
             Réserver un envoi <I.ArrowRight style={{ width: 17, height: 17 }} />
           </button>
-          <button className="jcta-btn-2" onClick={() => onNav?.('/suivi')}>
-            <I.Search style={{ width: 16, height: 16 }} /> Suivre un colis
-          </button>
         </div>
       </div>
     </section>
@@ -430,14 +398,25 @@ function JCTA({ onBook }) {
 
 /* ─── Root ─── */
 export default function LandingPage({ onNav }) {
-  const onBook = () => onNav ? onNav('/booking') : null;
+  const { data: session } = useSession();
+  const role = session?.user?.role;
+
+  const onBook = () => {
+    if (!onNav) return;
+    if (session && (role === 'client' || !role)) {
+      onNav('/client/booking');
+    } else if (session && (role === 'admin' || role === 'agent')) {
+      onNav('/admin');
+    } else {
+      onNav('/login');
+    }
+  };
 
   return (
     <div className="jpage">
       <TopBar />
       <SiteNav onNav={onNav} onBook={onBook} mode="landing" />
       <JHero onBook={onBook} />
-      <JTrackBand onNav={onNav} />
       <JAbout />
       <JCommit onBook={onBook} />
       <JFeats />
