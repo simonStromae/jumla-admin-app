@@ -55,21 +55,12 @@ export function SiteNav({ onNav, onBook, mode = 'landing' }) {
           </button>
           <div className="jnav__right" style={{ marginLeft: 'auto' }}>
             {status === 'loading' ? null : user ? (
-              <>
-                <button className="jnav__signin" onClick={() => onNav?.(dashHref)}>
-                  Mon espace
-                </button>
-                <button className="jbtn-nav" onClick={() => onNav?.(dashHref)}
-                  style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <div style={{
-                    width: 28, height: 28, borderRadius: '50%',
-                    background: 'var(--brand-500)', color: '#fff',
-                    fontSize: 11, fontWeight: 700,
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  }}>{initials}</div>
-                  {user.name?.split(' ')[0]}
-                </button>
-              </>
+              <button onClick={() => onNav?.(dashHref)} style={{
+                width: 36, height: 36, borderRadius: '50%',
+                background: 'var(--brand-500)', color: '#fff',
+                fontSize: 13, fontWeight: 700, border: 'none', cursor: 'pointer',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+              }}>{initials}</button>
             ) : (
               <>
                 <button className="jnav__signin" onClick={() => onNav?.('/login')}>Se connecter</button>
