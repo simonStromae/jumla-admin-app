@@ -239,7 +239,7 @@ export default function ParcelFormPage({ mode = 'create', parcel, campaign, onNa
           {/* Client */}
           <div className="card" style={{ padding: 16, marginBottom: 14 }}>
             <div className="section-title" style={{ marginBottom: 12 }}>
-              <I.User style={{ width: 14, height: 14, color: 'var(--brand-600)' }} /> Client / Expéditeur
+              <I.Users style={{ width: 14, height: 14, color: 'var(--brand-600)' }} /> Client / Expéditeur
             </div>
             <div className="field" style={{ marginBottom: 8 }}>
               <label className="label">Rechercher un client</label>
