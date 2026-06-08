@@ -14,6 +14,7 @@ export async function GET(_: NextRequest, { params }: { params: { id: string } }
       campaign: { include: { route: true } },
       payment:  true,
       trackingEvents: { orderBy: { createdAt: 'desc' } },
+      bordereaux: { orderBy: { createdAt: 'asc' } },
     },
   });
 

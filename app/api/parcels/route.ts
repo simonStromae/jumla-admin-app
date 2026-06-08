@@ -65,12 +65,14 @@ export async function POST(req: NextRequest) {
     clientId, campaignId, description, weightKg, priceXaf, declaredValue, notes,
     productType, nbCartons, nbPetitsSacs, nbSacsMoyens, nbGrandsSacs,
     nbPlastiques, nbPlastiquesBiere, nbCasiers24x65, nbCasiers24x33, nbCasiers12x50,
-    marginPct, pricingDetails,
+    marginPct, pricingDetails, items,
   } = body;
 
-  if (!clientId || !campaignId || !weightKg) {
+  if (!clientId || !campaignId) {
     return NextResponse.json({ error: 'Champs obligatoires manquants' }, { status: 400 });
   }
+
+  const finalWeightKg = weightKg ? Number(weightKg) : (Array.isArray(items) ? items.reduce((s: number, i: any) => s + (Number(i.weightKg) || 0), 0) : 0);
 
   const parcel = await prisma.parcel.create({
     data: {
@@ -78,7 +80,7 @@ export async function POST(req: NextRequest) {
       campaignId,
       trackingCode:     genTrackingCode(),
       description,
-      weightKg:         Number(weightKg),
+      weightKg:         finalWeightKg,
       priceXaf:         priceXaf ? Number(priceXaf) : null,
       declaredValue:    declaredValue ? Number(declaredValue) : null,
       notes,
@@ -94,6 +96,7 @@ export async function POST(req: NextRequest) {
       nbCasiers12x50:   nbCasiers12x50   ? Number(nbCasiers12x50)   : 0,
       marginPct:        marginPct        ? Number(marginPct)        : 30,
       pricingDetails:   pricingDetails   ?? undefined,
+      items:            items            ?? undefined,
     },
     include: { client: true, campaign: true },
   });

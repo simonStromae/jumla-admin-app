@@ -48,12 +48,21 @@ export default function ParcelFormPage({ mode = 'create', parcel, campaign, onNa
   const [pricing, setPricing]       = useState(null);
   const [calcLoading, setCalcLoading] = useState(false);
 
+  const [items, setItems] = useState([
+    { id: 1, description: '', productType: 'standard', weightKg: '', nbPieces: '' },
+  ]);
+  const addItem    = () => setItems(p => [...p, { id: Date.now(), description: '', productType: 'standard', weightKg: '', nbPieces: '' }]);
+  const removeItem = id  => setItems(p => p.filter(i => i.id !== id));
+  const updItem    = (id, k, v) => setItems(p => p.map(i => i.id === id ? { ...i, [k]: v } : i));
+  const totalKg    = items.reduce((s, i) => s + (parseFloat(i.weightKg) || 0), 0);
+  const dominantType = items.reduce((best, item) => {
+    const w = parseFloat(item.weightKg) || 0;
+    return w > best.w ? { type: item.productType, w } : best;
+  }, { type: 'standard', w: 0 }).type;
+
   const [data, setData] = useState({
     campaignId:       campaign?.id || '',
     clientId:         '',
-    description:      parcel?.description || '',
-    weightKg:         parcel?.weightKg    || '',
-    productType:      parcel?.productType || 'standard',
     nbCartons:        parcel?.nbCartons   || 0,
     nbPetitsSacs:     parcel?.nbPetitsSacs    || 0,
     nbSacsMoyens:     parcel?.nbSacsMoyens    || 0,
@@ -112,13 +121,9 @@ export default function ParcelFormPage({ mode = 'create', parcel, campaign, onNa
 
   // Recalculate whenever pricing-relevant fields change
   useEffect(() => {
-    const timer = setTimeout(() => calcPrice(data), 300);
+    const timer = setTimeout(() => calcPrice({ ...data, weightKg: totalKg, productType: dominantType }), 300);
     return () => clearTimeout(timer);
-  }, [
-    data.weightKg, data.productType, data.nbCartons, data.nbPetitsSacs, data.nbSacsMoyens,
-    data.nbGrandsSacs, data.nbPlastiques, data.nbPlastiquesBiere,
-    data.nbCasiers24x65, data.nbCasiers24x33, data.nbCasiers12x50, data.marginPct,
-  ]);
+  }, [items, data.nbCartons, data.nbPetitsSacs, data.nbSacsMoyens, data.nbGrandsSacs, data.nbPlastiques, data.nbPlastiquesBiere, data.nbCasiers24x65, data.nbCasiers24x33, data.nbCasiers12x50, data.marginPct]);
 
   const activeCampaign = campaigns.find(c => c.id === data.campaignId) || campaign || null;
   const filteredClients = clients.filter(c =>
@@ -128,7 +133,7 @@ export default function ParcelFormPage({ mode = 'create', parcel, campaign, onNa
   async function handleSubmit() {
     if (!data.campaignId) { setErr('Veuillez sélectionner une cargaison'); return; }
     if (!data.clientId)   { setErr('Veuillez sélectionner un client'); return; }
-    if (!data.weightKg || Number(data.weightKg) <= 0) { setErr('Le poids est obligatoire'); return; }
+    if (totalKg <= 0) { setErr('Le poids total des articles est obligatoire'); return; }
 
     setSaving(true); setErr('');
     const deliveryFee = data.delivery === 'home' ? 25 : 0;
@@ -141,11 +146,12 @@ export default function ParcelFormPage({ mode = 'create', parcel, campaign, onNa
         body: JSON.stringify({
           clientId:          data.clientId,
           campaignId:        data.campaignId,
-          description:       data.description || null,
-          weightKg:          Number(data.weightKg),
+          items:             items.map(({ id, ...r }) => ({ ...r, weightKg: Number(r.weightKg) || 0, nbPieces: r.nbPieces ? Number(r.nbPieces) : null })),
+          description:       items.map(i => i.description).filter(Boolean).join(' · ') || null,
+          weightKg:          totalKg,
+          productType:       dominantType,
           priceXaf:          finalPrice,
           notes:             data.notes || null,
-          productType:       data.productType,
           nbCartons:         data.nbCartons,
           nbPetitsSacs:      data.nbPetitsSacs,
           nbSacsMoyens:      data.nbSacsMoyens,
@@ -281,48 +287,43 @@ export default function ParcelFormPage({ mode = 'create', parcel, campaign, onNa
             )}
           </div>
 
-          {/* Product & Weight */}
+          {/* Product & Weight - multi-line */}
           <div className="card" style={{ padding: 16, marginBottom: 14 }}>
-            <div className="section-title" style={{ marginBottom: 14 }}>
+            <div className="section-title" style={{ marginBottom: 12 }}>
               <I.Box style={{ width: 14, height: 14, color: 'var(--brand-600)' }} /> Contenu & Poids
             </div>
-            <div className="field">
-              <label className="label">Description du contenu</label>
-              <input className="input" value={data.description} onChange={e => upd('description', e.target.value)} placeholder="Ex: Vêtements, cosmétiques, alimentaire…" />
-            </div>
-            <div className="field-row field-row--2">
-              <div className="field" style={{ marginBottom: 0 }}>
-                <label className="label">Poids réel (kg)</label>
-                <input className="input mono" type="number" min="0.1" step="0.1"
-                  value={data.weightKg} onChange={e => upd('weightKg', e.target.value)}
-                  placeholder="ex: 15.5" />
-              </div>
-              <div className="field" style={{ marginBottom: 0 }}>
-                <label className="label">Marge commerciale (%)</label>
-                <input className="input mono" type="number" min="0" step="1"
-                  value={data.marginPct} onChange={e => upd('marginPct', e.target.value)} />
-              </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 160px 90px 70px 32px', gap: 6, marginBottom: 8, padding: '0 2px' }}>
+              {['Description', 'Type produit', 'Poids kg', 'Pièces', ''].map((h, i) => (
+                <div key={i} style={{ fontSize: 10.5, fontWeight: 700, color: 'var(--ink-400)', textTransform: 'uppercase', letterSpacing: '.04em' }}>{h}</div>
+              ))}
             </div>
 
-            <div style={{ marginTop: 14 }}>
-              <label className="label">Type de produit</label>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
-                {PRODUCT_TYPES.map(pt => (
-                  <label key={pt.id} style={{
-                    display: 'flex', alignItems: 'center', gap: 8, padding: '10px 12px',
-                    border: '1px solid ' + (data.productType === pt.id ? 'var(--brand-500)' : 'var(--border)'),
-                    borderRadius: 8, cursor: 'pointer',
-                    background: data.productType === pt.id ? 'var(--brand-50)' : 'white',
-                  }}>
-                    <input type="radio" name="productType" checked={data.productType === pt.id}
-                      onChange={() => upd('productType', pt.id)} style={{ accentColor: 'var(--brand-500)' }} />
-                    <div>
-                      <div style={{ fontSize: 12.5, fontWeight: 600 }}>{pt.label}</div>
-                      <div style={{ fontSize: 11, color: 'var(--ink-400)' }}>{pt.desc}</div>
-                    </div>
-                  </label>
-                ))}
+            {items.map(item => (
+              <div key={item.id} style={{ display: 'grid', gridTemplateColumns: '1fr 160px 90px 70px 32px', gap: 6, marginBottom: 6 }}>
+                <input className="input input--sm" value={item.description}
+                  onChange={e => updItem(item.id, 'description', e.target.value)}
+                  placeholder="Ex: Vêtements, cosmétiques…" />
+                <select className="select" style={{ height: 32, padding: '0 8px', fontSize: 12 }}
+                  value={item.productType} onChange={e => updItem(item.id, 'productType', e.target.value)}>
+                  {PRODUCT_TYPES.map(pt => <option key={pt.id} value={pt.id}>{pt.label}</option>)}
+                </select>
+                <input className="input input--sm mono" type="number" min="0.1" step="0.1"
+                  value={item.weightKg} onChange={e => updItem(item.id, 'weightKg', e.target.value)} placeholder="0" />
+                <input className="input input--sm mono" type="number" min="1"
+                  value={item.nbPieces} onChange={e => updItem(item.id, 'nbPieces', e.target.value)} placeholder="—" />
+                <button onClick={() => removeItem(item.id)} disabled={items.length === 1}
+                  style={{ width: 32, height: 32, display: 'grid', placeItems: 'center', border: '1px solid var(--border)', background: items.length === 1 ? 'var(--bg-soft)' : 'white', borderRadius: 6, cursor: items.length === 1 ? 'not-allowed' : 'pointer', opacity: items.length === 1 ? .35 : 1, fontSize: 16, color: 'var(--ink-500)' }}>×</button>
               </div>
+            ))}
+
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 10, paddingTop: 10, borderTop: '1px solid var(--border-soft)' }}>
+              <button className="btn btn--ghost btn--sm" onClick={addItem}><I.Plus />Ajouter une ligne</button>
+              {totalKg > 0 && (
+                <span style={{ fontSize: 13, color: 'var(--ink-500)' }}>
+                  Total : <strong style={{ color: 'var(--ink-900)' }}>{totalKg.toFixed(1)} kg</strong>
+                </span>
+              )}
             </div>
           </div>
 
@@ -337,12 +338,12 @@ export default function ParcelFormPage({ mode = 'create', parcel, campaign, onNa
               <NumField label="Sacs moyens" value={data.nbSacsMoyens} onChange={v => upd('nbSacsMoyens', v)} />
               <NumField label="Grands sacs" value={data.nbGrandsSacs} onChange={v => upd('nbGrandsSacs', v)} />
               <NumField label="Plastiques std" value={data.nbPlastiques} onChange={v => upd('nbPlastiques', v)} />
-              {data.productType === 'biere' && (
+              {dominantType === 'biere' && (
                 <NumField label="Plastiques bière" value={data.nbPlastiquesBiere} onChange={v => upd('nbPlastiquesBiere', v)} />
               )}
             </div>
 
-            {data.productType === 'biere' && (
+            {dominantType === 'biere' && (
               <>
                 <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.06em', color: 'var(--ink-400)', marginBottom: 10 }}>Frais SAQ — Casiers de bière</div>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10 }}>
@@ -384,6 +385,18 @@ export default function ParcelFormPage({ mode = 'create', parcel, campaign, onNa
               <textarea className="textarea" rows={2} value={data.notes} onChange={e => upd('notes', e.target.value)} placeholder="Instructions, précautions…" />
             </div>
           </div>
+
+          {/* Margin */}
+          <div className="card" style={{ padding: 16, marginBottom: 14 }}>
+            <div className="section-title" style={{ marginBottom: 12 }}>
+              <I.Tag style={{ width: 14, height: 14, color: 'var(--brand-600)' }} /> Marge commerciale
+            </div>
+            <div className="field" style={{ marginBottom: 0 }}>
+              <label className="label">Marge commerciale (%)</label>
+              <input className="input mono" type="number" min="0" step="1"
+                value={data.marginPct} onChange={e => upd('marginPct', e.target.value)} />
+            </div>
+          </div>
         </div>
 
         {/* Right: price summary */}
@@ -397,10 +410,10 @@ export default function ParcelFormPage({ mode = 'create', parcel, campaign, onNa
               <div style={{ fontSize: 26, fontWeight: 800 }}>
                 {calcLoading ? '…' : pricing
                   ? `${(pricing.prixClient + (data.delivery === 'home' ? 25 : 0)).toFixed(2)} $`
-                  : data.weightKg > 0 ? '—' : '— $'}
+                  : totalKg > 0 ? '—' : '— $'}
               </div>
               <div style={{ fontSize: 11, opacity: .55, marginTop: 2 }}>
-                CAD · Marge {data.marginPct}% · {data.weightKg || 0} kg
+                CAD · Marge {data.marginPct}% · {totalKg.toFixed(1)} kg
               </div>
             </div>
 

@@ -129,6 +129,8 @@ model Parcel {
   nbCasiers12x50    Int?     @default(0)
   marginPct         Float?   @default(30)
   pricingDetails    Json?
+  items             Json?
+  bordereaux        Bordereau[]
   status        ParcelStatus @default(en_attente)
   confirmed     Boolean      @default(false)
   notes         String?
@@ -181,4 +183,19 @@ model Message {
   createdAt   DateTime  @default(now())
 
   @@map("messages")
+}
+
+model Bordereau {
+  id          String   @id @default(cuid())
+  parcelId    String
+  parcel      Parcel   @relation(fields: [parcelId], references: [id], onDelete: Cascade)
+  code        String
+  description String?
+  weightKg    Float?
+  nbPieces    Int      @default(1)
+  status      String   @default("en_attente")
+  notes       String?
+  createdAt   DateTime @default(now())
+
+  @@map("bordereaux")
 }

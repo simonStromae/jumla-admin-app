@@ -1,37 +1,104 @@
 'use client';
-import { useState } from 'react';
-import { DATA, STATUS, PARCEL_CATEGORIES } from '../data.js';
+import { useState, useEffect } from 'react';
 import I from '../components/Icons.jsx';
 import { Avatar, Modal } from '../components/Shell.jsx';
 
+const PARCEL_STATUS = {
+  en_attente: { label: 'En attente',  cls: 'neutral' },
+  recu:       { label: 'Reçu',        cls: 'ok' },
+  en_transit: { label: 'En transit',  cls: 'info' },
+  en_douane:  { label: 'En douane',   cls: 'warn' },
+  arrive:     { label: 'Arrivé',      cls: 'ok' },
+  livre:      { label: 'Livré',       cls: 'ok' },
+};
+const PAYMENT_STATUS = {
+  pending:   { label: 'En attente', cls: 'warn' },
+  completed: { label: 'Payé',       cls: 'ok' },
+  failed:    { label: 'Échoué',     cls: 'bad' },
+  refunded:  { label: 'Remboursé',  cls: 'neutral' },
+};
+const BORDEREAU_STATUS = {
+  en_attente:  { label: 'En attente',  cls: 'neutral' },
+  recu:        { label: 'Reçu',        cls: 'info' },
+  verifie:     { label: 'Vérifié',     cls: 'ok' },
+  discordance: { label: 'Discordance', cls: 'bad' },
+};
+
 export default function ParcelDetailScreen({ id, onNav }) {
-  const parcel = DATA.PARCELS.find(p => p.id === id) || DATA.PARCELS[0];
-  const campaign = DATA.CAMPAIGNS.find(c => c.code === parcel.campaign) || DATA.CAMPAIGNS[0];
-  const paymentStatus = STATUS.payment[parcel.paid];
+  const [parcel,     setParcel]     = useState(null);
+  const [bordereaux, setBordereaux] = useState([]);
+  const [loading,    setLoading]    = useState(true);
+  const [showPayModal,  setShowPayModal]  = useState(false);
+  const [showAddBl,     setShowAddBl]     = useState(false);
+  const [newBl, setNewBl] = useState({ description: '', weightKg: '', nbPieces: '1' });
+  const [addingBl, setAddingBl] = useState(false);
 
-  const [items, setItems] = useState(() =>
-    (parcel.items || []).map(it => ({
-      id: it.id,
-      name: it.desc,
-      cat: it.cat || 'standard',
-      packs: it.qty,
-      pieces: it.qty,
-      kg: it.kg,
-      status: 'ok',
-      discr: 0,
-      note: '',
-    }))
+  useEffect(() => {
+    fetch('/api/parcels/' + id)
+      .then(r => r.json())
+      .then(data => { setParcel(data); setLoading(false); })
+      .catch(() => setLoading(false));
+  }, [id]);
+
+  useEffect(() => {
+    if (!id) return;
+    fetch('/api/bordereaux?parcelId=' + id)
+      .then(r => r.json())
+      .then(data => setBordereaux(Array.isArray(data) ? data : []))
+      .catch(() => {});
+  }, [id]);
+
+  const updateBlStatus = async (blId, status) => {
+    await fetch('/api/bordereaux/' + blId, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status }),
+    });
+    setBordereaux(bs => bs.map(b => b.id === blId ? { ...b, status } : b));
+  };
+
+  const deleteBl = async (blId) => {
+    if (!confirm('Supprimer ce bordereau ?')) return;
+    await fetch('/api/bordereaux/' + blId, { method: 'DELETE' });
+    setBordereaux(bs => bs.filter(b => b.id !== blId));
+  };
+
+  const createBl = async () => {
+    setAddingBl(true);
+    const res = await fetch('/api/bordereaux', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ parcelId: id, ...newBl }),
+    });
+    const json = await res.json();
+    if (json.ok) {
+      setBordereaux(bs => [...bs, json.bordereau]);
+      setNewBl({ description: '', weightKg: '', nbPieces: '1' });
+      setShowAddBl(false);
+    }
+    setAddingBl(false);
+  };
+
+  if (loading) return (
+    <div className="page">
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 300, color: 'var(--ink-400)', fontSize: 14 }}>Chargement…</div>
+    </div>
   );
-  const [showSlip, setShowSlip] = useState(!!parcel.slip);
-  const [linkSent, setLinkSent] = useState(false);
-  const [showPayModal, setShowPayModal] = useState(false);
 
-  const updItem = (itemId, k, v) => setItems(items.map(i => i.id === itemId ? { ...i, [k]: v } : i));
-  const totalDiscr = items.reduce((a, i) => a + i.discr, 0);
-  const totalPieces = items.reduce((a, i) => a + i.pieces, 0);
+  if (!parcel || parcel.error) return (
+    <div className="page">
+      <div style={{ padding: 32, color: 'var(--bad-700)' }}>Colis introuvable.</div>
+    </div>
+  );
 
-  const deliveryFee = parcel.delivery === 'home' ? 25 : 0;
-  const overrunFee = parcel.overrun ? (parcel.actualKg - parcel.reservedKg) * 22 : 0;
+  const client     = parcel.client     || {};
+  const campaign   = parcel.campaign   || {};
+  const payment    = parcel.payment;
+  const events     = parcel.trackingEvents || [];
+  const items      = Array.isArray(parcel.items) ? parcel.items : [];
+  const pStatus    = PARCEL_STATUS[parcel.status]  || { label: parcel.status,  cls: 'neutral' };
+  const payStatus  = payment ? (PAYMENT_STATUS[payment.status] || { label: payment.status, cls: 'neutral' }) : { label: 'Non créé', cls: 'neutral' };
+  const totalVerif = bordereaux.filter(b => b.status === 'verifie').length;
 
   return (
     <div className="page">
@@ -39,244 +106,213 @@ export default function ParcelDetailScreen({ id, onNav }) {
       <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12.5, color: 'var(--ink-400)', marginBottom: 8 }}>
         <a style={{ cursor: 'pointer' }} onClick={() => onNav('/')}>Cargaisons</a>
         <I.ChevronRight style={{ width: 12, height: 12 }} />
-        <a style={{ cursor: 'pointer' }} onClick={() => onNav('/campaign/' + campaign.id)}>{campaign.code}</a>
-        <I.ChevronRight style={{ width: 12, height: 12 }} />
-        <span style={{ color: 'var(--ink-600)', fontWeight: 600 }}>Colis {parcel.code}</span>
+        {campaign.id && <a style={{ cursor: 'pointer' }} onClick={() => onNav('/campaign/' + campaign.id)}>{campaign.code}</a>}
+        {campaign.id && <I.ChevronRight style={{ width: 12, height: 12 }} />}
+        <span style={{ color: 'var(--ink-600)', fontWeight: 600 }}>Colis {parcel.trackingCode}</span>
       </div>
 
       {/* Header */}
       <div className="page__head" style={{ marginBottom: 16 }}>
         <div style={{ flex: 1 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 6 }}>
-            <h1 className="page__title" style={{ margin: 0 }}>Colis {parcel.code}</h1>
-            <span className={'badge badge--dot badge--' + paymentStatus.cls}>{paymentStatus.label}</span>
-            {parcel.overrun && <span className="badge badge--warn badge--dot">Dépassement poids</span>}
+            <h1 className="page__title" style={{ margin: 0 }}>{parcel.trackingCode}</h1>
+            <span className={'badge badge--dot badge--' + pStatus.cls}>{pStatus.label}</span>
+            <span className={'badge badge--dot badge--' + payStatus.cls}>{payStatus.label}</span>
           </div>
           <div className="page__sub">
-            Cargaison <a style={{ color: 'var(--brand-700)', fontWeight: 600, cursor: 'pointer' }} onClick={() => onNav('/campaign/' + campaign.id)}>{campaign.code}</a> ·
-            Agent <strong style={{ color: 'var(--ink-700)' }}>{parcel.agent === 'AM' ? 'Aïcha M.' : 'Marc L.'}</strong>
+            {campaign.code && <>Cargaison <a style={{ color: 'var(--brand-700)', fontWeight: 600, cursor: 'pointer' }} onClick={() => onNav('/campaign/' + campaign.id)}>{campaign.code}</a> · </>}
+            Client <strong style={{ color: 'var(--ink-700)' }}>{client.name}</strong>
           </div>
         </div>
         <div className="page__actions">
-          <button className="btn btn--ghost"><I.Whatsapp style={{ color: 'var(--ok-600)' }} />WhatsApp</button>
-          <button className="btn btn--ghost"><I.Print />Imprimer</button>
-          {!linkSent ? (
-            <button className="btn btn--brand" onClick={() => setShowPayModal(true)}>
-              <I.Send />Envoyer lien Interac
-            </button>
-          ) : (
-            <button className="btn btn--ghost btn--ok" disabled style={{ opacity: 1, color: 'var(--ok-700)', borderColor: 'var(--ok-300)', background: 'var(--ok-50)' }}>
-              <I.Check />Lien envoyé
-            </button>
-          )}
+          <button className="btn btn--ghost" onClick={() => setShowPayModal(true)}><I.Send />Lien Interac</button>
         </div>
       </div>
 
       <div className="layout-2col">
-        {/* Left column */}
+        {/* Left */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-          {/* Sender / Recipient */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
-            <PartyCard
-              kind="Expéditeur" en="Sender"
-              name={parcel.senderName} phone={parcel.senderPhone}
-              city="Douala" color={1}
-              icon={<I.Pin style={{ color: 'var(--brand-500)', width: 16, height: 16, flexShrink: 0 }} />}
-            />
-            <PartyCard
-              kind="Destinataire" en="Recipient"
-              name={parcel.recipName} phone={parcel.recipPhone}
-              city={parcel.recipCity} color={2}
-              icon={<I.Pin style={{ color: 'var(--info-600)', width: 16, height: 16, flexShrink: 0 }} />}
-            />
+          {/* Sender */}
+          <div className="card" style={{ padding: 14 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+              <I.Pin style={{ color: 'var(--brand-500)', width: 16, height: 16 }} />
+              <span style={{ fontSize: 10.5, textTransform: 'uppercase', letterSpacing: '.06em', fontWeight: 700, color: 'var(--ink-400)' }}>Expéditeur / Client</span>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <Avatar initials={(client.name || '?').split(' ').map(x => x[0]).slice(0,2).join('')} color={1} size="lg" />
+              <div>
+                <div style={{ fontSize: 15, fontWeight: 700 }}>{client.name}</div>
+                <div style={{ fontSize: 12, color: 'var(--ink-500)' }}>{client.city || '—'}</div>
+                <div className="mono" style={{ fontSize: 12, color: 'var(--ink-400)', marginTop: 2 }}>{client.phone || '—'}</div>
+              </div>
+            </div>
           </div>
 
-          {/* Weight & contents */}
+          {/* Items declared */}
           <div className="card" style={{ padding: 16 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
               <I.Box style={{ width: 14, height: 14, color: 'var(--brand-600)' }} />
-              <span style={{ fontSize: 13, fontWeight: 700 }}>Contenu & poids</span>
+              <span style={{ fontSize: 13, fontWeight: 700 }}>Contenu déclaré</span>
+              {parcel.weightKg && <span className="mono" style={{ marginLeft: 'auto', fontSize: 12, fontWeight: 700, color: 'var(--ink-600)' }}>{parcel.weightKg} kg total</span>}
             </div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10, marginBottom: 14 }}>
-              <Kv label="Poids réservé" value={parcel.reservedKg + ' kg'} />
-              <Kv label="Poids réel" value={parcel.actualKg + ' kg'} color={parcel.overrun ? 'var(--warn-700)' : undefined} />
-              <Kv label="Livraison" value={parcel.delivery === 'home' ? 'Domicile' : 'Retrait entrepôt'} />
-            </div>
-            <div style={{ fontSize: 12.5, color: 'var(--ink-600)', padding: '10px 12px', background: 'var(--bg-soft)', border: '1px solid var(--border)' }}>
-              {parcel.contents}
-            </div>
-            {parcel.note && parcel.note !== '—' && (
-              <div style={{ marginTop: 8, fontSize: 12, color: 'var(--ink-500)', fontStyle: 'italic' }}>
-                Note : {parcel.note}
+
+            {items.length > 0 ? (
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12.5 }}>
+                <thead>
+                  <tr style={{ background: 'var(--bg-soft)' }}>
+                    {['Description', 'Type', 'Poids', 'Pièces'].map(h => (
+                      <th key={h} style={{ padding: '6px 10px', textAlign: 'left', fontSize: 10.5, fontWeight: 700, color: 'var(--ink-400)', textTransform: 'uppercase', letterSpacing: '.04em', border: '1px solid var(--border)' }}>{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {items.map((item, i) => (
+                    <tr key={i} style={{ borderBottom: '1px solid var(--border-soft)' }}>
+                      <td style={{ padding: '7px 10px', border: '1px solid var(--border)' }}>{item.description || '—'}</td>
+                      <td style={{ padding: '7px 10px', border: '1px solid var(--border)', color: 'var(--ink-600)' }}>{item.productType || 'standard'}</td>
+                      <td style={{ padding: '7px 10px', border: '1px solid var(--border)', fontFamily: 'monospace', fontWeight: 600 }}>{item.weightKg ? item.weightKg + ' kg' : '—'}</td>
+                      <td style={{ padding: '7px 10px', border: '1px solid var(--border)', fontFamily: 'monospace' }}>{item.nbPieces || '—'}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            ) : (
+              <div style={{ fontSize: 13, color: 'var(--ink-600)', padding: '8px 12px', background: 'var(--bg-soft)', border: '1px solid var(--border)', borderRadius: 6 }}>
+                {parcel.description || 'Aucun détail de contenu'}
               </div>
+            )}
+            {parcel.notes && (
+              <div style={{ marginTop: 10, fontSize: 12, color: 'var(--ink-500)', fontStyle: 'italic' }}>Note : {parcel.notes}</div>
             )}
           </div>
 
-          {/* Bordereau section */}
+          {/* Bordereaux */}
           <div className="card" style={{ overflow: 'hidden' }}>
             <div style={{ padding: '14px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid var(--border)' }}>
               <div>
-                <div style={{ fontSize: 14, fontWeight: 700 }}>
-                  Bordereau {parcel.slip ? <span className="mono badge badge--neutral badge--lg" style={{ fontSize: 12 }}>{parcel.slip}</span> : ''}
+                <div style={{ fontSize: 14, fontWeight: 700 }}>Bordereaux de livraison</div>
+                <div style={{ fontSize: 12, color: 'var(--ink-400)', marginTop: 2 }}>
+                  {bordereaux.length === 0 ? 'Aucun bordereau' : `${totalVerif}/${bordereaux.length} vérifiés`}
                 </div>
-                {!parcel.slip && <div style={{ fontSize: 12, color: 'var(--ink-400)', marginTop: 2 }}>Aucun bordereau créé</div>}
               </div>
-              {!parcel.slip && !showSlip && (
-                <button className="btn btn--brand btn--sm" onClick={() => setShowSlip(true)}>
-                  <I.Plus />Créer le bordereau
-                </button>
-              )}
-              {parcel.slip && (
-                <div style={{ display: 'flex', gap: 8 }}>
-                  <button className="btn btn--ghost btn--sm" onClick={() => onNav('/parcels/' + parcel.id + '/labels')}><I.Tag />Étiquettes</button>
-                  <button className="btn btn--ghost btn--sm"><I.Print />Imprimer</button>
-                  <button className="btn btn--ghost btn--sm"><I.Download />PDF</button>
-                  <button className="btn btn--ghost btn--sm"><I.Whatsapp style={{ color: 'var(--ok-600)' }} />Envoyer</button>
-                </div>
-              )}
+              <button className="btn btn--brand btn--sm" onClick={() => setShowAddBl(v => !v)}>
+                <I.Plus />{showAddBl ? 'Annuler' : 'Ajouter'}
+              </button>
             </div>
 
-            {showSlip && (
-              <>
-                <div style={{ padding: '12px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <div style={{ fontSize: 13, fontWeight: 600 }}>Vérification du contenu</div>
-                  <div style={{ display: 'flex', gap: 16, fontSize: 12 }}>
-                    <Stat label="Articles" value={items.length} />
-                    <Stat label="Pièces" value={totalPieces} />
-                    <Stat label="Écarts" value={totalDiscr} color={totalDiscr > 0 ? 'var(--bad-600)' : null} />
-                  </div>
+            {showAddBl && (
+              <div style={{ padding: '12px 16px', background: 'var(--brand-50)', borderBottom: '1px solid var(--border)', display: 'grid', gridTemplateColumns: '1fr 90px 70px auto', gap: 8, alignItems: 'end' }}>
+                <div>
+                  <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--ink-500)', marginBottom: 4 }}>Description</div>
+                  <input className="input input--sm" value={newBl.description}
+                    onChange={e => setNewBl(b => ({ ...b, description: e.target.value }))} placeholder="Contenu du paquet…" />
                 </div>
-
-                <table className="tbl tbl--compact" style={{ borderRadius: 0 }}>
-                  <thead>
-                    <tr>
-                      <th style={{ borderRadius: 0, width: 32 }}>#</th>
-                      <th>Article / Description</th>
-                      <th style={{ width: 140 }}>Catégorie</th>
-                      <th style={{ width: 60 }}>Qté</th>
-                      <th style={{ width: 155 }}>Vérification</th>
-                      <th style={{ width: 55, textAlign: 'center' }}>Écart</th>
-                      <th style={{ borderRadius: 0 }}>Note</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {items.map((it, i) => {
-                      const catDef = PARCEL_CATEGORIES.find(c => c.id === it.cat) || PARCEL_CATEGORIES[0];
-                      return (
-                        <tr key={it.id}>
-                          <td className="mono" style={{ color: 'var(--ink-400)', fontSize: 12 }}>{i + 1}</td>
-                          <td>
-                            <input className="input input--sm" value={it.name}
-                              onChange={e => updItem(it.id, 'name', e.target.value)}
-                              placeholder="Libellé article..." style={{ fontSize: 12, fontWeight: 500 }} />
-                          </td>
-                          <td>
-                            <select className="select input--sm" style={{ height: 28, padding: '0 8px', fontSize: 12 }}
-                              value={it.cat} onChange={e => updItem(it.id, 'cat', e.target.value)}>
-                              {PARCEL_CATEGORIES.map(c => (
-                                <option key={c.id} value={c.id}>{c.icon} {c.label}</option>
-                              ))}
-                            </select>
-                          </td>
-                          <td className="mono">{it.packs}</td>
-                          <td>
-                            <select className="select input--sm" style={{ height: 28, padding: '0 8px', fontSize: 12 }}
-                              value={it.status} onChange={e => updItem(it.id, 'status', e.target.value)}>
-                              <option value="ok">Conforme</option>
-                              <option value="missing">Manquant</option>
-                              <option value="extra">En plus</option>
-                              <option value="verify">A vérifier</option>
-                            </select>
-                          </td>
-                          <td style={{ textAlign: 'center' }}>
-                            <span className="mono" style={{ fontWeight: 700, color: it.discr > 0 ? 'var(--bad-600)' : 'var(--ink-300)' }}>
-                              {it.discr > 0 ? '-' + it.discr : '—'}
-                            </span>
-                          </td>
-                          <td>
-                            <input className="input input--sm" value={it.note}
-                              onChange={e => updItem(it.id, 'note', e.target.value)}
-                              placeholder="—" style={{ fontSize: 12 }} />
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-
-                <div style={{ padding: '10px 16px', borderTop: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <button className="btn btn--ghost btn--sm" onClick={() => setItems([...items, { id: Date.now(), name: '', cat: 'standard', packs: 1, pieces: 1, kg: 0, status: 'ok', discr: 0, note: '' }])}>
-                    <I.Plus />Ajouter article
-                  </button>
-                  <div style={{ display: 'flex', gap: 8 }}>
-                    <button className="btn btn--ghost btn--sm" onClick={() => onNav('/parcels/' + parcel.id + '/labels')}>
-                      <I.Tag />Imprimer étiquettes
-                    </button>
-                    <button className="btn btn--primary btn--sm"><I.Check />Valider le bordereau</button>
-                  </div>
+                <div>
+                  <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--ink-500)', marginBottom: 4 }}>Poids kg</div>
+                  <input className="input input--sm mono" type="number" min="0" step="0.1"
+                    value={newBl.weightKg} onChange={e => setNewBl(b => ({ ...b, weightKg: e.target.value }))} placeholder="0" />
                 </div>
-              </>
+                <div>
+                  <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--ink-500)', marginBottom: 4 }}>Pièces</div>
+                  <input className="input input--sm mono" type="number" min="1"
+                    value={newBl.nbPieces} onChange={e => setNewBl(b => ({ ...b, nbPieces: e.target.value }))} placeholder="1" />
+                </div>
+                <button className="btn btn--brand btn--sm" onClick={createBl} disabled={addingBl}>
+                  {addingBl ? '…' : 'Créer'}
+                </button>
+              </div>
+            )}
+
+            {bordereaux.length === 0 && !showAddBl ? (
+              <div style={{ padding: '24px 16px', textAlign: 'center', color: 'var(--ink-400)', fontSize: 13 }}>
+                Aucun bordereau. Cliquez sur "Ajouter" pour créer le premier paquet.
+              </div>
+            ) : (
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12.5 }}>
+                <thead>
+                  <tr style={{ background: 'var(--bg-soft)' }}>
+                    {['Code', 'Description', 'Poids', 'Pièces', 'Statut', ''].map(h => (
+                      <th key={h} style={{ padding: '7px 12px', textAlign: 'left', fontSize: 10.5, fontWeight: 700, color: 'var(--ink-400)', textTransform: 'uppercase', letterSpacing: '.04em', borderBottom: '1px solid var(--border)' }}>{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {bordereaux.map(bl => {
+                    const bs = BORDEREAU_STATUS[bl.status] || { label: bl.status, cls: 'neutral' };
+                    return (
+                      <tr key={bl.id} style={{ borderBottom: '1px solid var(--border-soft)' }}>
+                        <td style={{ padding: '8px 12px', fontFamily: 'monospace', fontWeight: 700, fontSize: 12 }}>{bl.code}</td>
+                        <td style={{ padding: '8px 12px', color: 'var(--ink-700)' }}>{bl.description || '—'}</td>
+                        <td style={{ padding: '8px 12px', fontFamily: 'monospace' }}>{bl.weightKg ? bl.weightKg + ' kg' : '—'}</td>
+                        <td style={{ padding: '8px 12px', fontFamily: 'monospace' }}>{bl.nbPieces}</td>
+                        <td style={{ padding: '8px 12px' }}>
+                          <select className="select" style={{ height: 26, padding: '0 6px', fontSize: 11.5, border: '1px solid var(--border)', borderRadius: 4 }}
+                            value={bl.status} onChange={e => updateBlStatus(bl.id, e.target.value)}>
+                            {Object.entries(BORDEREAU_STATUS).map(([v, { label }]) => (
+                              <option key={v} value={v}>{label}</option>
+                            ))}
+                          </select>
+                        </td>
+                        <td style={{ padding: '8px 12px' }}>
+                          <button onClick={() => deleteBl(bl.id)}
+                            style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--ink-400)', fontSize: 16, lineHeight: 1, padding: '2px 4px' }}>×</button>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
             )}
           </div>
         </div>
 
-        {/* Right column */}
+        {/* Right */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-          {/* Payment panel */}
+          {/* Payment */}
           <div className="card" style={{ padding: 16 }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
               <div className="section-title" style={{ margin: 0 }}>
                 <I.Wallet style={{ width: 14, height: 14, color: 'var(--brand-600)' }} /> Paiement
               </div>
-              <span className={'badge badge--dot badge--' + paymentStatus.cls}>{paymentStatus.label}</span>
-            </div>
-
-            <div style={{ display: 'grid', gap: 6, marginBottom: 14, fontSize: 13 }}>
-              <SlipLine l={`Poids ${parcel.actualKg} kg × 18 CAD`} v={Math.round(parcel.actualKg * 18)} />
-              {overrunFee > 0 && <SlipLine l={`Dépassement +${parcel.actualKg - parcel.reservedKg} kg × 22 CAD`} v={overrunFee} />}
-              {deliveryFee > 0 && <SlipLine l="Livraison à domicile" v={deliveryFee} />}
+              <span className={'badge badge--dot badge--' + payStatus.cls}>{payStatus.label}</span>
             </div>
 
             <div style={{ padding: '12px 0', borderTop: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 14 }}>
               <span style={{ fontWeight: 700 }}>Total dû</span>
               <span className="mono" style={{ fontSize: 22, fontWeight: 700 }}>
-                {parcel.amount} <span style={{ fontSize: 12, color: 'var(--ink-400)' }}>CAD</span>
+                {parcel.priceXaf ?? '—'} <span style={{ fontSize: 12, color: 'var(--ink-400)' }}>CAD</span>
               </span>
             </div>
 
-            {parcel.paid === 'unpaid' || parcel.paid === 'pending' ? (
-              <div style={{ display: 'grid', gap: 8 }}>
-                <button className="btn btn--brand" style={{ justifyContent: 'center' }} onClick={() => setShowPayModal(true)}>
-                  <I.Send />Envoyer lien Interac
-                </button>
-                <button className="btn btn--ghost" style={{ justifyContent: 'center' }}>
-                  <I.Check />Marquer comme payé
-                </button>
-              </div>
+            {(!payment || payment.status !== 'completed') ? (
+              <button className="btn btn--brand" style={{ justifyContent: 'center', width: '100%' }} onClick={() => setShowPayModal(true)}>
+                <I.Send />Envoyer lien Interac
+              </button>
             ) : (
-              <div style={{ padding: 10, background: 'var(--ok-50)', border: '1px solid var(--ok-100)', fontSize: 11.5, color: 'var(--ok-700)' }}>
-                <strong>Réglé</strong> · Virement Interac
+              <div style={{ padding: 10, background: 'var(--ok-50)', border: '1px solid var(--ok-100)', fontSize: 11.5, color: 'var(--ok-700)', borderRadius: 6 }}>
+                <strong>Réglé</strong> · {payment.interacRef ? 'Réf. ' + payment.interacRef : 'Virement Interac'}
               </div>
             )}
           </div>
 
-          {/* Delivery */}
+          {/* Delivery info */}
           <div className="card" style={{ padding: 16 }}>
             <div className="section-title" style={{ marginBottom: 12 }}>
-              <I.Truck style={{ width: 14, height: 14, color: 'var(--brand-600)' }} /> Mode de livraison
+              <I.Truck style={{ width: 14, height: 14, color: 'var(--brand-600)' }} /> Campagne & Route
             </div>
-            <div style={{ padding: 12, background: 'var(--bg-soft)', border: '1px solid var(--border)' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-                {parcel.delivery === 'home'
-                  ? <><I.Truck style={{ color: 'var(--brand-600)' }} /><span style={{ fontSize: 13, fontWeight: 700 }}>Livraison à domicile</span><span className="mono" style={{ marginLeft: 'auto', fontSize: 12, fontWeight: 600 }}>+25 CAD</span></>
-                  : <><I.Warehouse style={{ color: 'var(--ink-500)' }} /><span style={{ fontSize: 13, fontWeight: 700 }}>Retrait entrepôt</span><span className="mono" style={{ marginLeft: 'auto', fontSize: 12, fontWeight: 600, color: 'var(--ok-600)' }}>Gratuit</span></>
-                }
+            <div style={{ fontSize: 13, color: 'var(--ink-700)', marginBottom: 6 }}>
+              <strong>{campaign.code}</strong>
+            </div>
+            {campaign.route && (
+              <div style={{ fontSize: 12, color: 'var(--ink-500)' }}>
+                {campaign.route.origin} → {campaign.route.destination}
               </div>
-              <div style={{ fontSize: 11, color: 'var(--ink-400)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '.04em', marginBottom: 4 }}>Destinataire</div>
-              <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 2 }}>{parcel.recipName}</div>
-              <div className="mono" style={{ fontSize: 12, color: 'var(--ink-500)', marginTop: 2 }}>{parcel.recipPhone}</div>
-              <div style={{ fontSize: 12, color: 'var(--ink-500)', marginTop: 1 }}>{parcel.recipCity}, Canada</div>
-            </div>
+            )}
+            {campaign.departureDate && (
+              <div style={{ fontSize: 12, color: 'var(--ink-400)', marginTop: 4 }}>
+                Départ : {new Date(campaign.departureDate).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}
+              </div>
+            )}
           </div>
 
           {/* History */}
@@ -284,122 +320,60 @@ export default function ParcelDetailScreen({ id, onNav }) {
             <div className="section-title" style={{ marginBottom: 12 }}>
               <I.History style={{ width: 14, height: 14, color: 'var(--brand-600)' }} /> Historique
             </div>
-            <div style={{ display: 'grid', gap: 10 }}>
-              {[
-                { who: 'Aïcha M.', what: 'Colis enregistré dans la cargaison', when: '14 avr. 08:30', c: 1 },
-                { who: 'Aïcha M.', what: 'Lien paiement Interac envoyé', when: '14 avr. 09:00', c: 1 },
-                { who: 'Marc L.',  what: 'Poids réel confirmé à l\'entrepôt', when: '28 avr. 07:55', c: 2 },
-              ].map((h, i, arr) => (
-                <div key={i} style={{ display: 'flex', gap: 10, position: 'relative' }}>
-                  {i < arr.length - 1 && <div style={{ position: 'absolute', left: 10, top: 22, bottom: -6, width: 1, background: 'var(--border)' }} />}
-                  <Avatar initials={h.who.split(' ').map(x => x[0]).join('')} color={h.c} size="sm" />
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: 12.5 }}><strong>{h.who}</strong> — {h.what}</div>
-                    <div style={{ fontSize: 11, color: 'var(--ink-400)', marginTop: 1 }}>{h.when}</div>
-                  </div>
-                </div>
-              ))}
-            </div>
+            {events.length === 0 ? (
+              <div style={{ fontSize: 12.5, color: 'var(--ink-400)' }}>Aucun événement enregistré.</div>
+            ) : (
+              <div style={{ display: 'grid', gap: 10 }}>
+                {events.map((ev, i) => {
+                  const st = PARCEL_STATUS[ev.status] || { label: ev.status };
+                  return (
+                    <div key={ev.id} style={{ display: 'flex', gap: 10, position: 'relative' }}>
+                      {i < events.length - 1 && <div style={{ position: 'absolute', left: 10, top: 22, bottom: -6, width: 1, background: 'var(--border)' }} />}
+                      <div style={{ width: 20, height: 20, borderRadius: '50%', background: 'var(--brand-100)', display: 'grid', placeItems: 'center', flexShrink: 0 }}>
+                        <I.Check style={{ width: 10, height: 10, color: 'var(--brand-600)' }} />
+                      </div>
+                      <div style={{ flex: 1 }}>
+                        <div style={{ fontSize: 12.5, fontWeight: 600 }}>{st.label}</div>
+                        {ev.note && <div style={{ fontSize: 12, color: 'var(--ink-500)' }}>{ev.note}</div>}
+                        {ev.location && <div style={{ fontSize: 11.5, color: 'var(--ink-400)' }}>{ev.location}</div>}
+                        <div style={{ fontSize: 11, color: 'var(--ink-400)', marginTop: 1 }}>
+                          {ev.createdBy?.name ?? 'Système'} · {new Date(ev.createdAt).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
         </div>
       </div>
 
-      {showPayModal && (
-        <InteracModal
-          parcel={parcel}
-          onClose={() => setShowPayModal(false)}
-          onSend={() => { setLinkSent(true); setShowPayModal(false); }}
-        />
+      {showPayModal && parcel && (
+        <InteracModal parcel={parcel} onClose={() => setShowPayModal(false)} />
       )}
     </div>
   );
 }
 
-function InteracModal({ parcel, onClose, onSend }) {
-  const token = 'pay-' + parcel.id + '-' + Math.random().toString(36).slice(2, 8);
-  const payUrl = typeof window !== 'undefined' ? window.location.origin + '/payer/' + token : '/payer/' + token;
-
+function InteracModal({ parcel, onClose }) {
+  const token  = 'pay-' + parcel.id + '-' + Math.random().toString(36).slice(2, 8);
+  const payUrl = (typeof window !== 'undefined' ? window.location.origin : '') + '/payer/' + token;
   return (
-    <Modal width={700} onClose={onClose}
-      title="Envoyer le lien de paiement Interac"
-      sub={'Colis ' + parcel.code + ' · ' + parcel.amount + ' CAD dû'}
-      footer={
-        <>
-          <button className="btn btn--ghost" onClick={onClose}>Annuler</button>
-          <button className="btn btn--brand" onClick={onSend}><I.Send />Envoyer par WhatsApp</button>
-        </>
-      }>
-      <div style={{ display: 'grid', gap: 16 }}>
-        <div style={{ padding: 14, background: 'var(--bg-soft)', border: '1px solid var(--border)', fontSize: 12.5, color: 'var(--ink-700)', lineHeight: 1.6 }}>
-          <strong>{parcel.recipName}</strong> ({parcel.recipPhone}) recevra un lien unique pour payer <span className="mono" style={{ fontWeight: 700 }}>{parcel.amount} CAD</span> par virement Interac.
+    <Modal width={680} onClose={onClose}
+      title="Lien de paiement Interac"
+      sub={parcel.trackingCode + ' · ' + (parcel.priceXaf ?? '—') + ' CAD dû'}
+      footer={<><button className="btn btn--ghost" onClick={onClose}>Fermer</button></>}>
+      <div style={{ display: 'grid', gap: 14 }}>
+        <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.06em', color: 'var(--ink-400)', marginBottom: 4 }}>Lien de paiement</div>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <div className="mono" style={{ flex: 1, padding: '8px 12px', background: 'var(--bg-soft)', border: '1px solid var(--border)', fontSize: 11.5, color: 'var(--ink-600)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', borderRadius: 6 }}>{payUrl}</div>
+          <button className="btn btn--ghost btn--sm" onClick={() => navigator.clipboard?.writeText(payUrl)}>Copier</button>
         </div>
-
-        <div>
-          <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.06em', color: 'var(--ink-400)', marginBottom: 6 }}>Lien de paiement</div>
-          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-            <div className="mono" style={{ flex: 1, padding: '8px 12px', background: 'var(--bg-soft)', border: '1px solid var(--border)', fontSize: 11.5, color: 'var(--ink-600)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-              {payUrl}
-            </div>
-            <button className="btn btn--ghost btn--sm" onClick={() => navigator.clipboard?.writeText(payUrl)}>Copier</button>
-          </div>
-        </div>
-
-        <div style={{ padding: 12, background: 'var(--warn-50)', border: '1px solid var(--warn-100)' }}>
-          <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--warn-800)', marginBottom: 6 }}>Instructions Interac</div>
-          <div style={{ fontSize: 12, color: 'var(--ink-700)', lineHeight: 1.65 }}>
-            Le destinataire devra effectuer le virement depuis un compte dont l'<strong>adresse e-mail ou le numéro de téléphone correspond exactement</strong> à celui enregistré dans notre système :
-            <div className="mono" style={{ marginTop: 6, fontWeight: 700, color: 'var(--ink-900)' }}>{parcel.recipPhone}</div>
-          </div>
+        <div style={{ padding: 12, background: 'var(--warn-50)', border: '1px solid var(--warn-100)', borderRadius: 6, fontSize: 12, color: 'var(--ink-700)', lineHeight: 1.6 }}>
+          Client : <strong>{parcel.client?.name}</strong> · {parcel.client?.phone || parcel.client?.email}
         </div>
       </div>
     </Modal>
-  );
-}
-
-function PartyCard({ kind, en, name, phone, city, color, icon }) {
-  return (
-    <div className="card" style={{ padding: 14 }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
-        {icon}
-        <span style={{ fontSize: 10.5, textTransform: 'uppercase', letterSpacing: '.06em', fontWeight: 700, color: 'var(--ink-400)' }}>
-          {kind} <span style={{ color: 'var(--ink-300)', fontWeight: 500 }}>/ {en}</span>
-        </span>
-      </div>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-        <Avatar initials={name.split(' ').map(x => x[0]).slice(0, 2).join('')} color={color} size="lg" />
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontSize: 15, fontWeight: 700 }}>{name}</div>
-          <div style={{ fontSize: 12, color: 'var(--ink-500)' }}>{city}, {color === 1 ? 'Cameroun' : 'Canada'}</div>
-        </div>
-      </div>
-      <div className="mono" style={{ marginTop: 10, fontSize: 12, color: 'var(--ink-400)' }}>{phone}</div>
-    </div>
-  );
-}
-
-function Kv({ label, value, color }) {
-  return (
-    <div>
-      <div style={{ fontSize: 10.5, textTransform: 'uppercase', letterSpacing: '.04em', fontWeight: 600, color: 'var(--ink-400)', marginBottom: 3 }}>{label}</div>
-      <div style={{ fontSize: 14, fontWeight: 700, color: color || 'var(--ink-900)' }}>{value}</div>
-    </div>
-  );
-}
-
-function Stat({ label, value, color }) {
-  return (
-    <div style={{ textAlign: 'center' }}>
-      <div className="mono" style={{ fontSize: 16, fontWeight: 700, color: color || 'var(--ink-900)' }}>{value}</div>
-      <div style={{ fontSize: 10.5, color: 'var(--ink-400)', textTransform: 'uppercase', letterSpacing: '.04em', fontWeight: 600 }}>{label}</div>
-    </div>
-  );
-}
-
-function SlipLine({ l, v }) {
-  return (
-    <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--ink-600)' }}>
-      <span>{l}</span>
-      <span className="mono" style={{ color: 'var(--ink-800)', fontWeight: 600 }}>{v} CAD</span>
-    </div>
   );
 }
