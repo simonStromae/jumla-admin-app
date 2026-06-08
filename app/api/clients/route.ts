@@ -1,5 +1,6 @@
 export const dynamic = 'force-dynamic';
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
+import bcrypt from 'bcryptjs';
 import { prisma } from '@/src/lib/prisma';
 import { requireAdmin } from '@/src/lib/api-auth';
 
@@ -53,4 +54,36 @@ export async function GET() {
   });
 
   return NextResponse.json(result);
+}
+
+export async function POST(req: NextRequest) {
+  const { error } = await requireAdmin();
+  if (error) return error;
+
+  const { name, email, phone, city, notes } = await req.json();
+  if (!name || !email) {
+    return NextResponse.json({ error: 'Nom et email requis' }, { status: 400 });
+  }
+
+  const existing = await prisma.user.findUnique({ where: { email } });
+  if (existing) {
+    return NextResponse.json({ error: 'Email déjà utilisé' }, { status: 409 });
+  }
+
+  // Generate a temporary password — client will reset via forgot-password
+  const tempHash = await bcrypt.hash(Math.random().toString(36).slice(2, 10), 10);
+
+  const user = await prisma.user.create({
+    data: {
+      name,
+      email,
+      phone:         phone || null,
+      city:          city  || null,
+      passwordHash:  tempHash,
+      role:          'client',
+      emailVerified: true,
+    },
+  });
+
+  return NextResponse.json({ ok: true, id: user.id });
 }

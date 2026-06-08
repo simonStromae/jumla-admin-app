@@ -15,7 +15,9 @@ export default function ClientsScreen({ onNav }) {
   const [loading, setLoading] = useState(true);
   const [fetchError, setFetchError] = useState('');
 
-  useEffect(() => {
+  const loadClients = () => {
+    setLoading(true);
+    setFetchError('');
     fetch('/api/clients')
       .then(r => r.json())
       .then(d => {
@@ -30,7 +32,9 @@ export default function ClientsScreen({ onNav }) {
         setFetchError('Erreur réseau');
         setLoading(false);
       });
-  }, []);
+  };
+
+  useEffect(() => { loadClients(); }, []);
 
   return (
     <div className="page">
@@ -86,7 +90,11 @@ export default function ClientsScreen({ onNav }) {
           mode={editing === 'new' ? 'create' : 'edit'}
           client={editing === 'new' ? null : editing}
           onClose={() => setEditing(null)}
-          onSave={() => setEditing(null)}
+          onSave={(andNew) => {
+            loadClients();
+            if (andNew) setEditing('new');
+            else setEditing(null);
+          }}
         />
       )}
     </div>

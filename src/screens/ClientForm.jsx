@@ -5,19 +5,50 @@ import { Modal, Avatar } from '../components/Shell.jsx';
 export default function ClientFormModal({ mode = 'create', client, onClose, onSave }) {
   const isEdit = mode === 'edit';
   const [data, setData] = useState(() => ({
-    name: client?.name || '',
-    code: client?.code || 'CL-' + String(700 + Math.floor(Math.random() * 99)).padStart(4, '0'),
-    color: client?.color || ((Math.floor(Math.random() * 8)) + 1),
-    phone: client?.phone || '',
-    whatsapp: client?.whatsapp || client?.phone || '',
-    city: client?.city || 'Douala',
-    address: client?.address || '',
-    email: client?.email || '',
-    loyal: client?.loyal || false,
-    notes: client?.notes || '',
+    name:     client?.name  || '',
+    code:     client?.code  || 'CL-' + String(700 + Math.floor(Math.random() * 99)).padStart(4, '0'),
+    color:    client?.color || ((Math.floor(Math.random() * 8)) + 1),
+    phone:    client?.phone !== '—' ? (client?.phone || '') : '',
+    whatsapp: client?.whatsapp || (client?.phone !== '—' ? client?.phone : '') || '',
+    city:     client?.city  !== '—' ? (client?.city  || 'Douala') : 'Douala',
+    address:  client?.address || '',
+    email:    client?.email || '',
+    loyal:    client?.loyal || false,
+    notes:    client?.notes || '',
   }));
+  const [saving, setSaving] = useState(false);
+  const [saveErr, setSaveErr] = useState('');
 
   const upd = (k, v) => setData(d => ({ ...d, [k]: v }));
+
+  const handleSave = async (andNew = false) => {
+    if (!data.name.trim() || !data.email.trim()) {
+      setSaveErr('Nom et email requis');
+      return;
+    }
+    setSaving(true);
+    setSaveErr('');
+    try {
+      const url    = isEdit ? `/api/clients/${client.id}` : '/api/clients';
+      const method = isEdit ? 'PUT' : 'POST';
+      const res = await fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name:  data.name.trim(),
+          email: data.email.trim(),
+          phone: data.phone.trim() || null,
+          city:  data.city  || null,
+        }),
+      });
+      const json = await res.json();
+      if (!res.ok) { setSaveErr(json.error || 'Erreur'); setSaving(false); return; }
+      onSave(andNew);
+    } catch {
+      setSaveErr('Erreur réseau');
+      setSaving(false);
+    }
+  };
 
   const COLORS = ['', '#6366F1', '#10B981', '#F59E0B', '#EF4444', '#06B6D4', '#8B5CF6', '#EC4899', '#14B8A6'];
 
@@ -43,11 +74,27 @@ export default function ClientFormModal({ mode = 'create', client, onClose, onSa
         : "Expéditeur enregistré dans le système — basé en pays d'origine"}
       footer={
         <>
-          {isEdit && <button className="btn btn--ghost" style={{ color: 'var(--bad-600)' }}><I.Trash />Supprimer</button>}
+          {isEdit && (
+            <button className="btn btn--ghost" style={{ color: 'var(--bad-600)' }}
+              onClick={async () => {
+                if (!confirm('Supprimer ce client ?')) return;
+                await fetch(`/api/clients/${client.id}`, { method: 'DELETE' });
+                onSave();
+              }}>
+              <I.Trash />Supprimer
+            </button>
+          )}
           <div style={{ flex: 1 }} />
+          {saveErr && <span style={{ fontSize: 12, color: 'var(--bad-600)' }}>{saveErr}</span>}
           <button className="btn btn--ghost" onClick={onClose}>Annuler</button>
-          {!isEdit && <button className="btn btn--soft" onClick={onSave}>Enregistrer &amp; nouveau</button>}
-          <button className="btn btn--brand" onClick={onSave}><I.Check />{isEdit ? 'Enregistrer' : "Créer l'expéditeur"}</button>
+          {!isEdit && (
+            <button className="btn btn--soft" onClick={() => handleSave(true)} disabled={saving}>
+              Enregistrer &amp; nouveau
+            </button>
+          )}
+          <button className="btn btn--brand" onClick={() => handleSave(false)} disabled={saving}>
+            <I.Check />{saving ? 'Enregistrement…' : isEdit ? 'Enregistrer' : "Créer l'expéditeur"}
+          </button>
         </>
       }>
 
