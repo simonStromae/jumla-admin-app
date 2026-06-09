@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
 import { prisma } from '@/src/lib/prisma';
-import { requireAdmin } from '@/src/lib/api-auth';
+import { requirePermission } from '@/src/lib/api-auth';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET(req: Request) {
-  const { error } = await requireAdmin();
+  const { error } = await requirePermission('agents');
   if (error) return error;
 
   const { searchParams } = new URL(req.url);
@@ -43,7 +43,7 @@ export async function GET(req: Request) {
 }
 
 export async function POST(req: NextRequest) {
-  const { error } = await requireAdmin();
+  const { error } = await requirePermission('agents');
   if (error) return error;
 
   const { name, email, phone, city, role, permissions } = await req.json();

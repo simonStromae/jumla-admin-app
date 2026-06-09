@@ -1,7 +1,7 @@
 export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/src/lib/prisma';
-import { requireAdmin } from '@/src/lib/api-auth';
+import { requireAdmin, requirePermission } from '@/src/lib/api-auth';
 import { auth } from '@/auth';
 
 export async function GET(_: NextRequest, { params }: { params: { campaignId: string } }) {
@@ -13,7 +13,7 @@ export async function GET(_: NextRequest, { params }: { params: { campaignId: st
 }
 
 export async function PUT(req: NextRequest, { params }: { params: { campaignId: string } }) {
-  const { error } = await requireAdmin();
+  const { error } = await requirePermission('campaigns');
   if (error) return error;
 
   const session = await auth();

@@ -23,26 +23,32 @@ export function Sidebar({ route, onNav }) {
     fetch('/api/stats/sidebar').then(r => r.json()).then(setStats).catch(() => {});
   }, []);
 
-  const user     = session?.user;
-  const name     = user?.name ?? '…';
-  const role     = (user)?.role ?? '';
-  const initials = name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
+  const user        = session?.user;
+  const name        = user?.name ?? '…';
+  const role        = user?.role ?? '';
+  const perms       = user?.permissions ?? {};
+  const isAdmin     = role === 'admin';
+  const can         = (key) => isAdmin || perms[key] === true;
+  const initials    = name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
 
-  const items = [
-    { id: 'home',      label: 'Cargaisons',   en: 'Shipments',    icon: I.Plane,    route: '/admin/campaigns', count: stats.campaigns || null },
-    { id: 'analytics', label: 'Analyses',     en: 'Analytics',    icon: I.Activity, route: '/admin/analytics' },
-    { id: 'parcels',   label: 'Colis',        en: 'Parcels',      icon: I.Box,      route: '/admin/parcels' },
-    { id: 'verify',    label: 'Vérification', en: 'Arrival check',icon: I.Check,    route: '/admin/verify',    badge: stats.verifyPending || null },
-    { id: 'clients',   label: 'Clients',      en: 'Clients',      icon: I.Users,    route: '/admin/clients',   count: stats.clients || null },
-    { id: 'payments',  label: 'Paiements',    en: 'Payments',     icon: I.Wallet,   route: '/admin/payments',  badge: stats.unpaidPayments || null },
-    { id: 'costs',     label: 'Coûts',        en: 'Cost tracking',icon: I.Coins,    route: '/admin/costs' },
-    { id: 'messaging', label: 'Messagerie',   en: 'Messaging',    icon: I.Chat,     route: '/admin/messaging' },
+  const allItems = [
+    { id: 'home',      label: 'Cargaisons',   icon: I.Plane,    route: '/admin/campaigns', count: stats.campaigns || null,      perm: 'campaigns' },
+    { id: 'analytics', label: 'Analyses',     icon: I.Activity, route: '/admin/analytics',                                      perm: 'analytics' },
+    { id: 'parcels',   label: 'Colis',        icon: I.Box,      route: '/admin/parcels',                                        perm: 'parcels' },
+    { id: 'verify',    label: 'Vérification', icon: I.Check,    route: '/admin/verify',    badge: stats.verifyPending || null,  perm: 'campaigns' },
+    { id: 'clients',   label: 'Clients',      icon: I.Users,    route: '/admin/clients',   count: stats.clients || null,        perm: null },
+    { id: 'payments',  label: 'Paiements',    icon: I.Wallet,   route: '/admin/payments',  badge: stats.unpaidPayments || null, perm: 'payments' },
+    { id: 'costs',     label: 'Coûts',        icon: I.Coins,    route: '/admin/costs',                                          perm: 'campaigns' },
+    { id: 'messaging', label: 'Messagerie',   icon: I.Chat,     route: '/admin/messaging',                                      perm: 'whatsapp' },
   ];
+  const items = allItems.filter(it => it.perm === null || can(it.perm));
+
   const admin = [
-    { id: 'agents',   label: 'Agents',      en: 'Agents',    icon: I.Users,    route: '/admin/agents' },
-    { id: 'logs',     label: 'Journal',     en: 'Activity',  icon: I.Activity, route: '/admin/logs' },
-    { id: 'settings', label: 'Paramètres',  en: 'Settings',  icon: I.Settings, route: '/admin/settings' },
+    { id: 'agents',   label: 'Agents',      icon: I.Users,    route: '/admin/agents' },
+    { id: 'logs',     label: 'Journal',     icon: I.Activity, route: '/admin/logs' },
+    { id: 'settings', label: 'Paramètres',  icon: I.Settings, route: '/admin/settings' },
   ];
+
   const isActive = (r) => route === r || route.startsWith(r + '/');
   return (
     <aside className="sidebar">
@@ -69,15 +75,17 @@ export function Sidebar({ route, onNav }) {
             </a>
           );
         })}
-        <div className="sidebar__section">Administration</div>
-        {admin.map(it => {
-          const Ic = it.icon;
-          return (
-            <a key={it.id} className={'sidebar__link' + (isActive(it.route) ? ' is-active' : '')} onClick={() => onNav(it.route)}>
-              <Ic /> <span>{it.label}</span>
-            </a>
-          );
-        })}
+        {isAdmin && <>
+          <div className="sidebar__section">Administration</div>
+          {admin.map(it => {
+            const Ic = it.icon;
+            return (
+              <a key={it.id} className={'sidebar__link' + (isActive(it.route) ? ' is-active' : '')} onClick={() => onNav(it.route)}>
+                <Ic /> <span>{it.label}</span>
+              </a>
+            );
+          })}
+        </>}
       </nav>
       <div className="sidebar__footer">
         <div className="sidebar__avatar" onClick={() => onNav('/admin/profile')} style={{ cursor: 'pointer' }}>{initials}</div>

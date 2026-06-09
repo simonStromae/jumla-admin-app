@@ -21,6 +21,18 @@ export async function requireAuth() {
   return { session };
 }
 
+export async function requirePermission(permKey: string) {
+  const { error, session } = await requireAdmin();
+  if (error) return { error };
+  const role = (session!.user as any).role;
+  if (role === 'admin') return { session };
+  const perms = (session!.user as any).permissions ?? {};
+  if (!perms[permKey]) {
+    return { error: NextResponse.json({ error: 'Permission insuffisante' }, { status: 403 }) };
+  }
+  return { session };
+}
+
 export function mapCampaignStatus(s: string): string {
   return s === 'in_transit' ? 'in-transit' : s;
 }

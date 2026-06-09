@@ -1,7 +1,7 @@
 export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/src/lib/prisma';
-import { requireAdmin } from '@/src/lib/api-auth';
+import { requireAdmin, requirePermission } from '@/src/lib/api-auth';
 
 function genTrackingCode() {
   return 'JMS-' + String(Math.floor(10000 + Math.random() * 90000));
@@ -57,7 +57,7 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  const { error } = await requireAdmin();
+  const { error } = await requirePermission('parcels');
   if (error) return error;
 
   const body = await req.json();
