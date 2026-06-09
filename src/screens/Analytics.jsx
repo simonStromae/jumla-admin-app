@@ -9,6 +9,10 @@ export default function AnalyticsScreen({ onNav }) {
   const [kpi, setKpi] = useState(null);
   const [monthData, setMonthData] = useState({ labels: [], revenue: [], costs: [] });
   const [routes, setRoutes] = useState([]);
+  const [topClients, setTopClients]         = useState([]);
+  const [topDestinations, setTopDestinations] = useState([]);
+  const [topAgents, setTopAgents]           = useState([]);
+  const [unpaid, setUnpaid]                 = useState([]);
 
   useEffect(() => {
     const params = new URLSearchParams({ year: String(year) });
@@ -22,11 +26,15 @@ export default function AnalyticsScreen({ onNav }) {
       if (analyticsData.kpi) setKpi(analyticsData.kpi);
       if (analyticsData.months) {
         setMonthData({
-          labels: analyticsData.months.labels || [],
+          labels:  analyticsData.months.labels  || [],
           revenue: analyticsData.months.revenue || [],
-          costs: analyticsData.months.costs || [],
+          costs:   analyticsData.months.costs   || [],
         });
       }
+      setTopClients(analyticsData.topClients       || []);
+      setTopDestinations(analyticsData.topDestinations || []);
+      setTopAgents(analyticsData.topAgents         || []);
+      setUnpaid(analyticsData.unpaid               || []);
       setRoutes(Array.isArray(routesData) ? routesData : []);
     }).catch(() => {});
   }, [year, routeFilter]);
@@ -82,7 +90,7 @@ export default function AnalyticsScreen({ onNav }) {
   const {
     totalCollected, totalInvoiced, totalWeight, totalParcels,
     recoveryRate, totalCosts, grossMargin, grossMarginPct,
-    avgCostPerKg, marginPerParcel,
+    avgCostPerKg, marginPerParcel, unpaidTotal, unpaidCount,
   } = kpi;
 
   return (
@@ -166,36 +174,85 @@ export default function AnalyticsScreen({ onNav }) {
         <ChartCard title="Performance par route" sub="Volume et chiffre d'affaires">
           <RoutesBar routes={routes} />
         </ChartCard>
-        <ChartCard title="Modes de livraison" sub="Répartition des colis">
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 120, color: 'var(--ink-400)', fontSize: 13 }}>
-            Données en cours de chargement
+        <ChartCard title="Impayés" sub={`${unpaidCount} paiement${unpaidCount !== 1 ? 's' : ''} en attente`}>
+          <div style={{ textAlign: 'center', padding: '12px 0 8px' }}>
+            <div style={{ fontSize: 28, fontWeight: 800, color: unpaidTotal > 0 ? 'var(--bad-600)' : 'var(--ok-600)', fontFamily: 'var(--ff-mono)' }}>
+              {unpaidTotal > 0 ? unpaidTotal.toLocaleString('fr') : '0'}
+            </div>
+            <div style={{ fontSize: 11, color: 'var(--ink-400)', marginBottom: 12 }}>CAD en attente</div>
           </div>
+          {unpaid.slice(0, 4).map((p, i) => (
+            <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '6px 0', borderTop: '1px solid var(--border-soft)', fontSize: 12 }}>
+              <div>
+                <div style={{ fontWeight: 600, color: 'var(--ink-800)' }}>{p.clientName}</div>
+                <div style={{ color: 'var(--ink-400)', fontFamily: 'var(--ff-mono)', fontSize: 11 }}>{p.trackingCode}</div>
+              </div>
+              <span style={{ fontWeight: 700, color: 'var(--bad-600)', fontFamily: 'var(--ff-mono)' }}>{p.amount.toLocaleString('fr')}</span>
+            </div>
+          ))}
+          {unpaid.length === 0 && <div style={{ textAlign: 'center', color: 'var(--ok-600)', fontSize: 13, fontWeight: 600, paddingTop: 8 }}>✓ Tout est à jour</div>}
         </ChartCard>
         <ChartCard title="Méthodes de paiement" sub="Volume reçu par canal">
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 120, color: 'var(--ink-400)', fontSize: 13 }}>
-            Données en cours de chargement
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10, paddingTop: 8 }}>
+            {[{ label: 'Virement Interac', pct: 100, color: 'var(--brand-500)' }].map(m => (
+              <div key={m.label}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, marginBottom: 5 }}>
+                  <span style={{ color: 'var(--ink-700)', fontWeight: 600 }}>{m.label}</span>
+                  <span style={{ fontWeight: 700, color: m.color, fontFamily: 'var(--ff-mono)' }}>{m.pct}%</span>
+                </div>
+                <div style={{ height: 7, background: 'var(--ink-100)', borderRadius: 999, overflow: 'hidden' }}>
+                  <div style={{ height: '100%', width: m.pct + '%', background: m.color, borderRadius: 999 }} />
+                </div>
+              </div>
+            ))}
           </div>
         </ChartCard>
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 14, marginBottom: 14 }}>
-        <RankingCard title="Top clients" sub="Par chiffre d'affaires YTD" icon={<I.Star style={{ color: 'var(--brand-500)' }} />} items={[]} empty />
-        <RankingCard title="Top destinations" sub="Villes au Canada" icon={<I.Pin style={{ color: 'var(--info-500)' }} />} items={[]} empty />
-        <RankingCard title="Top agents" sub="Par colis traités YTD" icon={<I.Users style={{ color: 'var(--ok-500)' }} />} items={[]} empty />
+        <RankingCard title="Top clients" sub="Par chiffre d'affaires" icon={<I.Star style={{ color: 'var(--brand-500)' }} />} items={topClients} />
+        <RankingCard title="Top destinations" sub="Par volume expédié" icon={<I.Pin style={{ color: 'var(--info-500)' }} />} items={topDestinations} />
+        <RankingCard title="Top agents" sub="Par cargaisons gérées" icon={<I.Users style={{ color: 'var(--ok-500)' }} />} items={topAgents} />
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr', gap: 14 }}>
-        <ChartCard title="Impayés à relancer" sub="Données en cours de chargement" actions={
+        <ChartCard title="Impayés à relancer" sub={unpaidCount + ' paiement' + (unpaidCount !== 1 ? 's' : '') + ' en attente'} actions={
           <a style={{ fontSize: 12, color: 'var(--brand-700)', fontWeight: 600, cursor: 'pointer' }} onClick={() => onNav('/payments')}>Voir tout →</a>
         }>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '32px 0', color: 'var(--ink-400)', fontSize: 13 }}>
-            Données en cours de chargement
-          </div>
+          {unpaid.length === 0 ? (
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '32px 0', color: 'var(--ok-600)', fontSize: 13, fontWeight: 600 }}>
+              ✓ Aucun impayé
+            </div>
+          ) : (
+            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <thead>
+                <tr style={{ borderBottom: '1px solid var(--border-soft)' }}>
+                  {['Client', 'Colis', 'Montant', 'Statut'].map(h => (
+                    <th key={h} style={{ textAlign: 'left', fontSize: 10.5, fontWeight: 700, color: 'var(--ink-400)', textTransform: 'uppercase', letterSpacing: '.04em', padding: '0 0 8px' }}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {unpaid.map((p, i) => (
+                  <tr key={i} style={{ borderBottom: '1px solid var(--border-soft)' }}>
+                    <td style={{ padding: '8px 0', fontSize: 12.5, fontWeight: 600 }}>{p.clientName}</td>
+                    <td style={{ padding: '8px 0', fontSize: 11.5, color: 'var(--ink-400)', fontFamily: 'var(--ff-mono)' }}>{p.trackingCode}</td>
+                    <td style={{ padding: '8px 0', fontSize: 13, fontWeight: 700, color: 'var(--bad-600)', fontFamily: 'var(--ff-mono)' }}>{p.amount.toLocaleString('fr')}</td>
+                    <td style={{ padding: '8px 0' }}>
+                      <span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 999, background: p.status === 'pending' ? 'var(--warn-50)' : 'var(--bad-50)', color: p.status === 'pending' ? 'var(--warn-700)' : 'var(--bad-700)', fontWeight: 600 }}>
+                        {p.status === 'pending' ? 'En attente' : 'Échoué'}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
         </ChartCard>
 
-        <ChartCard title="Activité récente" sub="Dernières actions de l'équipe">
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '32px 0', color: 'var(--ink-400)', fontSize: 13 }}>
-            Données en cours de chargement
+        <ChartCard title="Activité récente" sub="Prochainement disponible">
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '32px 0', color: 'var(--ink-300)', fontSize: 13 }}>
+            Journaux d'activité à venir
           </div>
         </ChartCard>
       </div>
@@ -376,12 +433,12 @@ function RoutesBar({ routes }) {
   );
 }
 
-function RankingCard({ title, sub, icon, items, empty }) {
+function RankingCard({ title, sub, icon, items }) {
   return (
     <ChartCard title={<span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>{icon}{title}</span>} sub={sub}>
-      {empty || items.length === 0 ? (
+      {items.length === 0 ? (
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px 0', color: 'var(--ink-300)', fontSize: 13 }}>
-          Données en cours de chargement
+          Aucune donnée pour cette période
         </div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
