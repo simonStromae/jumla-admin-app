@@ -28,9 +28,10 @@ export default function ParcelDetailScreen({ id, onNav }) {
   const [parcel,     setParcel]     = useState(null);
   const [bordereaux, setBordereaux] = useState([]);
   const [loading,    setLoading]    = useState(true);
-  const [showPayModal,  setShowPayModal]  = useState(false);
-  const [showAddBl,     setShowAddBl]     = useState(false);
-  const [newBl, setNewBl] = useState({ description: '', weightKg: '', nbPieces: '1' });
+  const [showPayModal,    setShowPayModal]    = useState(false);
+  const [showStatusModal, setShowStatusModal] = useState(false);
+  const [showAddBl,       setShowAddBl]       = useState(false);
+  const [newBl,    setNewBl]    = useState({ description: '', weightKg: '', nbPieces: '1' });
   const [addingBl, setAddingBl] = useState(false);
 
   useEffect(() => {
@@ -125,6 +126,7 @@ export default function ParcelDetailScreen({ id, onNav }) {
           </div>
         </div>
         <div className="page__actions">
+          <button className="btn btn--ghost" onClick={() => setShowStatusModal(true)}><I.Edit />Statut</button>
           <button className="btn btn--ghost" onClick={() => setShowPayModal(true)}><I.Send />Lien Interac</button>
         </div>
       </div>
@@ -352,13 +354,27 @@ export default function ParcelDetailScreen({ id, onNav }) {
       {showPayModal && parcel && (
         <InteracModal parcel={parcel} onClose={() => setShowPayModal(false)} />
       )}
+      {showStatusModal && parcel && (
+        <StatusModal
+          parcel={parcel}
+          onClose={() => setShowStatusModal(false)}
+          onSaved={(updated, event) => {
+            setParcel(p => ({ ...p, status: updated.status }));
+            setShowStatusModal(false);
+            // prepend new event to history
+            if (event) {
+              // refetch to get full event with createdBy
+              fetch('/api/parcels/' + id).then(r => r.json()).then(d => setParcel(d));
+            }
+          }}
+        />
+      )}
     </div>
   );
 }
 
 function InteracModal({ parcel, onClose }) {
-  const token  = 'pay-' + parcel.id + '-' + Math.random().toString(36).slice(2, 8);
-  const payUrl = (typeof window !== 'undefined' ? window.location.origin : '') + '/payer/' + token;
+  const payUrl = (typeof window !== 'undefined' ? window.location.origin : '') + '/payer/' + parcel.id;
   return (
     <Modal width={680} onClose={onClose}
       title="Lien de paiement Interac"
@@ -373,6 +389,71 @@ function InteracModal({ parcel, onClose }) {
         <div style={{ padding: 12, background: 'var(--warn-50)', border: '1px solid var(--warn-100)', borderRadius: 6, fontSize: 12, color: 'var(--ink-700)', lineHeight: 1.6 }}>
           Client : <strong>{parcel.client?.name}</strong> · {parcel.client?.phone || parcel.client?.email}
         </div>
+      </div>
+    </Modal>
+  );
+}
+
+function StatusModal({ parcel, onClose, onSaved }) {
+  const [status,   setStatus]   = useState(parcel.status);
+  const [note,     setNote]     = useState('');
+  const [location, setLocation] = useState('');
+  const [saving,   setSaving]   = useState(false);
+
+  const handleSave = async () => {
+    setSaving(true);
+    const res = await fetch('/api/parcels/' + parcel.id, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status, eventNote: note || undefined, eventLocation: location || undefined }),
+    });
+    const json = await res.json();
+    setSaving(false);
+    if (json.ok) onSaved(json.parcel, true);
+  };
+
+  return (
+    <Modal width={480} onClose={onClose}
+      title="Mettre à jour le statut"
+      sub={parcel.trackingCode}
+      footer={
+        <>
+          <button className="btn btn--ghost" onClick={onClose}>Annuler</button>
+          <button className="btn btn--brand" onClick={handleSave} disabled={saving || status === parcel.status}>
+            {saving ? 'Enregistrement…' : 'Mettre à jour'}
+          </button>
+        </>
+      }>
+      <div style={{ display: 'grid', gap: 14 }}>
+        <div>
+          <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--ink-600)', display: 'block', marginBottom: 6 }}>
+            Nouveau statut
+          </label>
+          <select className="input" value={status} onChange={e => setStatus(e.target.value)}>
+            {Object.entries(PARCEL_STATUS).map(([v, { label }]) => (
+              <option key={v} value={v}>{label}</option>
+            ))}
+          </select>
+        </div>
+        <div>
+          <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--ink-600)', display: 'block', marginBottom: 6 }}>
+            Localisation <span style={{ fontWeight: 400, color: 'var(--ink-400)' }}>(optionnel)</span>
+          </label>
+          <input className="input" placeholder="ex. Douala – Aéroport international" value={location} onChange={e => setLocation(e.target.value)} />
+        </div>
+        <div>
+          <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--ink-600)', display: 'block', marginBottom: 6 }}>
+            Note <span style={{ fontWeight: 400, color: 'var(--ink-400)' }}>(optionnel)</span>
+          </label>
+          <textarea className="input" rows={3} placeholder="Information supplémentaire pour le client…"
+            value={note} onChange={e => setNote(e.target.value)}
+            style={{ resize: 'vertical', fontFamily: 'inherit' }} />
+        </div>
+        {status !== parcel.status && (
+          <div style={{ padding: '10px 14px', background: 'var(--brand-50)', border: '1px solid var(--brand-100)', borderRadius: 8, fontSize: 12.5, color: 'var(--brand-700)' }}>
+            {PARCEL_STATUS[parcel.status]?.label} → <strong>{PARCEL_STATUS[status]?.label}</strong>
+          </div>
+        )}
       </div>
     </Modal>
   );

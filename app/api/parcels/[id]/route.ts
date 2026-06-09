@@ -13,7 +13,7 @@ export async function GET(_: NextRequest, { params }: { params: { id: string } }
       client:   { select: { id: true, name: true, email: true, phone: true, city: true } },
       campaign: { include: { route: true } },
       payment:  true,
-      trackingEvents: { orderBy: { createdAt: 'desc' } },
+      trackingEvents: { orderBy: { createdAt: 'desc' }, include: { createdBy: { select: { name: true } } } },
       bordereaux: { orderBy: { createdAt: 'asc' } },
     },
   });
@@ -27,7 +27,7 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
   if (error) return error;
 
   const body = await req.json();
-  const { status, confirmed, notes, weightKg, priceXaf } = body;
+  const { status, confirmed, notes, weightKg, priceXaf, eventNote, eventLocation } = body;
 
   const parcel = await prisma.parcel.update({
     where: { id: params.id },
@@ -40,13 +40,14 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
     },
   });
 
-  // Add tracking event when status changes
   if (status) {
     const sess = await import('@/auth').then(m => m.auth());
     await prisma.trackingEvent.create({
       data: {
         parcelId:    params.id,
         status:      status as any,
+        note:        eventNote     || null,
+        location:    eventLocation || null,
         createdById: (sess?.user as any)?.id ?? null,
       },
     });

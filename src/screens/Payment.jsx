@@ -1,31 +1,33 @@
 'use client';
-import { useState } from 'react';
-import { DATA } from '../data.js';
+import { useState, useEffect } from 'react';
 import '@/src/styles/tokens.css';
 import '@/src/styles/payment.css';
 
-/* Token format (mock): pay-<parcelId>-<random> */
-function resolveParcel(token) {
-  if (!token) return DATA.PARCELS[0];
-  const parts = token.split('-');
-  if (parts.length >= 2) {
-    const parcelId = parts[1];
-    const found = DATA.PARCELS.find(p => p.id === parcelId);
-    if (found) return found;
-  }
-  return DATA.PARCELS[0];
-}
-
-const ARTICLES = [
-  { name: '2 valises — vêtements adulte', packs: 2, pieces: 2 },
-  { name: 'Carton — ndolè, épices, café', packs: 1, pieces: 8 },
-];
-
 export default function PaymentScreen({ token }) {
-  const parcel = resolveParcel(token);
-  const deliveryFee = parcel.delivery === 'home' ? 25 : 0;
-  const overrunFee = parcel.overrun ? (parcel.actualKg - parcel.reservedKg) * 22 : 0;
+  const [data, setData]       = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError]     = useState('');
   const [confirmed, setConfirmed] = useState(false);
+
+  useEffect(() => {
+    if (!token) { setError('Lien invalide.'); setLoading(false); return; }
+    fetch('/api/public/payment/' + token)
+      .then(r => r.json())
+      .then(json => {
+        if (json.error) { setError(json.error); }
+        else {
+          setData(json);
+          if (json.paymentStatus === 'completed') setConfirmed(true);
+        }
+        setLoading(false);
+      })
+      .catch(() => { setError('Erreur réseau — réessayez.'); setLoading(false); });
+  }, [token]);
+
+  const handleConfirm = async () => {
+    await fetch('/api/public/payment/' + token, { method: 'POST' });
+    setConfirmed(true);
+  };
 
   return (
     <div className="pay-wrap">
@@ -40,10 +42,22 @@ export default function PaymentScreen({ token }) {
       </header>
 
       <main className="pay-main">
-        {confirmed ? (
-          <ConfirmationView parcel={parcel} />
-        ) : (
-          <PaymentView parcel={parcel} deliveryFee={deliveryFee} overrunFee={overrunFee} onConfirm={() => setConfirmed(true)} />
+        {loading && (
+          <div style={{ textAlign: 'center', padding: 60, color: 'var(--ink-400)', fontSize: 14 }}>
+            Chargement…
+          </div>
+        )}
+        {!loading && error && (
+          <div style={{ maxWidth: 480, margin: '60px auto', padding: '24px 28px', background: 'var(--bad-50)', border: '1px solid var(--bad-100)', borderRadius: 14, textAlign: 'center' }}>
+            <div style={{ fontSize: 32, marginBottom: 12 }}>⚠️</div>
+            <div style={{ fontWeight: 700, fontSize: 16, color: 'var(--bad-700)', marginBottom: 8 }}>Lien invalide</div>
+            <div style={{ fontSize: 13, color: 'var(--bad-600)' }}>{error}</div>
+          </div>
+        )}
+        {!loading && data && (
+          confirmed
+            ? <ConfirmationView data={data} />
+            : <PaymentView data={data} onConfirm={handleConfirm} />
         )}
       </main>
 
@@ -55,7 +69,7 @@ export default function PaymentScreen({ token }) {
   );
 }
 
-function PaymentView({ parcel, deliveryFee, overrunFee, onConfirm }) {
+function PaymentView({ data, onConfirm }) {
   const [acknowledged, setAcknowledged] = useState(false);
 
   return (
@@ -101,14 +115,14 @@ function PaymentView({ parcel, deliveryFee, overrunFee, onConfirm }) {
               <div className="pay-warn-box__title">Important — correspondance obligatoire</div>
               <div className="pay-warn-box__text">
                 Le numéro de téléphone ou l'adresse e-mail associé à votre compte Interac doit correspondre exactement à celui enregistré dans notre système :
-                <span className="pay-warn-box__phone">{parcel.recipPhone}</span>
+                <span className="pay-warn-box__phone">{data.clientPhone ?? data.clientEmail}</span>
                 Si ce n'est pas le cas, votre paiement ne pourra pas être automatiquement attribué à votre dossier. Contactez-nous.
               </div>
             </div>
           </div>
 
           <div className="pay-message-hint">
-            <strong>Message de transfert :</strong> Indiquez le code colis <span className="mono" style={{ fontWeight: 700 }}>{parcel.code}</span> dans le message Interac pour faciliter le traitement.
+            <strong>Message de transfert :</strong> Indiquez le code colis <span className="mono" style={{ fontWeight: 700 }}>{data.trackingCode}</span> dans le message Interac pour faciliter le traitement.
           </div>
         </div>
       </div>
@@ -119,44 +133,43 @@ function PaymentView({ parcel, deliveryFee, overrunFee, onConfirm }) {
           <div className="pay-summary__head">Récapitulatif du colis</div>
 
           <div className="pay-summary__section">
-            <div className="pay-summary__label">Expéditeur</div>
-            <div className="pay-summary__value">{parcel.senderName}</div>
-            <div className="pay-summary__sub">{parcel.senderPhone} · Douala, Cameroun</div>
+            <div className="pay-summary__label">Client</div>
+            <div className="pay-summary__value">{data.clientName}</div>
+            <div className="pay-summary__sub">{data.clientPhone}{data.clientCity ? ' · ' + data.clientCity : ''}</div>
           </div>
 
           <div className="pay-summary__section">
-            <div className="pay-summary__label">Destinataire</div>
-            <div className="pay-summary__value">{parcel.recipName}</div>
-            <div className="pay-summary__sub">{parcel.recipPhone} · {parcel.recipCity}, Canada</div>
+            <div className="pay-summary__label">Cargaison</div>
+            <div className="pay-summary__value">{data.campaign.code}</div>
+            <div className="pay-summary__sub">{data.campaign.from} → {data.campaign.to}</div>
           </div>
 
-          <div className="pay-summary__section">
-            <div className="pay-summary__label">Contenu</div>
-            <div style={{ fontSize: 12.5, color: 'var(--ink-700)', lineHeight: 1.5 }}>{parcel.contents}</div>
-            <div style={{ marginTop: 6, fontSize: 12, color: 'var(--ink-500)' }}>
-              Poids : <strong>{parcel.actualKg} kg</strong> ·
-              Livraison : <strong>{parcel.delivery === 'home' ? 'Domicile' : 'Retrait entrepôt'}</strong>
+          {data.description && (
+            <div className="pay-summary__section">
+              <div className="pay-summary__label">Contenu</div>
+              <div style={{ fontSize: 12.5, color: 'var(--ink-700)', lineHeight: 1.5 }}>{data.description}</div>
+              {data.weightKg && (
+                <div style={{ marginTop: 6, fontSize: 12, color: 'var(--ink-500)' }}>
+                  Poids : <strong>{data.weightKg} kg</strong>
+                </div>
+              )}
             </div>
-          </div>
-
-          <div className="pay-summary__section">
-            <div className="pay-summary__label">Détail des frais</div>
-            <div className="pay-lines">
-              <PayLine l={'Fret ' + parcel.actualKg + ' kg × 18 CAD'} v={Math.round(parcel.actualKg * 18)} />
-              {overrunFee > 0 && <PayLine l={'Dépassement ×22 CAD'} v={overrunFee} />}
-              {deliveryFee > 0 && <PayLine l="Livraison à domicile" v={deliveryFee} />}
-            </div>
-          </div>
+          )}
 
           <div className="pay-summary__total">
             <span className="pay-summary__total-label">Total à payer</span>
-            <span className="pay-summary__total-amount">{parcel.amount} <span style={{ fontSize: 14, color: 'var(--ink-400)', fontWeight: 500 }}>CAD</span></span>
+            <span className="pay-summary__total-amount">
+              {data.amount.toLocaleString('fr')} <span style={{ fontSize: 14, color: 'var(--ink-400)', fontWeight: 500 }}>CAD</span>
+            </span>
           </div>
         </div>
 
         <label className="pay-acknowledge">
           <input type="checkbox" checked={acknowledged} onChange={e => setAcknowledged(e.target.checked)} />
-          <span>J'ai lu les instructions et je confirme que mon compte Interac est bien associé au numéro <strong>{parcel.recipPhone}</strong></span>
+          <span>
+            J'ai lu les instructions et je confirme que mon compte Interac est bien associé à{' '}
+            <strong>{data.clientPhone ?? data.clientEmail}</strong>
+          </span>
         </label>
 
         <button
@@ -176,27 +189,19 @@ function PaymentView({ parcel, deliveryFee, overrunFee, onConfirm }) {
   );
 }
 
-function ConfirmationView({ parcel }) {
+function ConfirmationView({ data }) {
   return (
     <div className="pay-confirm">
       <div className="pay-confirm__icon">✓</div>
       <div className="pay-confirm__title">Notification reçue</div>
       <div className="pay-confirm__sub">
-        Merci ! Nous avons bien enregistré votre confirmation de virement pour le colis <strong>{parcel.code}</strong>.
+        Merci ! Nous avons bien enregistré votre confirmation de virement pour le colis{' '}
+        <strong>{data?.trackingCode}</strong>.
         Notre équipe vérifiera la réception du paiement et mettra à jour votre dossier sous <strong>24h ouvrées</strong>.
       </div>
       <div className="pay-confirm__sub" style={{ marginTop: 8 }}>
         En cas de question : <strong>contact@jumla.cargo</strong> ou WhatsApp <strong>+1 514 000 0000</strong>
       </div>
-    </div>
-  );
-}
-
-function PayLine({ l, v }) {
-  return (
-    <div className="pay-line">
-      <span>{l}</span>
-      <span className="mono" style={{ fontWeight: 600 }}>{v} CAD</span>
     </div>
   );
 }

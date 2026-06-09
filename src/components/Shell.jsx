@@ -255,7 +255,7 @@ export function ParcelActionsMenu({ parcel, onNav, isLocked }) {
     return () => document.removeEventListener('mousedown', close);
   }, [open]);
 
-  const payLink = `/payer/pay-${parcel.id}-demo`;
+  const payLink = `/payer/${parcel.id}`;
 
   const sections = [
     [
