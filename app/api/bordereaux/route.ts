@@ -7,13 +7,47 @@ export async function GET(req: NextRequest) {
   const { error } = await requireAdmin();
   if (error) return error;
 
-  const parcelId = new URL(req.url).searchParams.get('parcelId');
+  const { searchParams } = new URL(req.url);
+  const parcelId   = searchParams.get('parcelId');
+  const campaignId = searchParams.get('campaignId');
+
   const bordereaux = await prisma.bordereau.findMany({
-    where: parcelId ? { parcelId } : {},
-    include: { parcel: { select: { trackingCode: true, client: { select: { name: true } } } } },
-    orderBy: { createdAt: 'asc' },
+    where: {
+      ...(parcelId   ? { parcelId } : {}),
+      ...(campaignId ? { parcel: { campaignId } } : {}),
+    },
+    include: {
+      parcel: {
+        select: {
+          trackingCode: true,
+          weightKg:     true,
+          priceXaf:     true,
+          payment:      { select: { status: true } },
+          client:       { select: { name: true, city: true } },
+          campaign:     { select: { id: true, code: true } },
+        },
+      },
+    },
+    orderBy: { createdAt: 'desc' },
   });
-  return NextResponse.json(bordereaux);
+  return NextResponse.json(bordereaux.map(b => ({
+    id:            b.id,
+    code:          b.code,
+    status:        b.status,
+    description:   b.description,
+    weightKg:      b.weightKg,
+    nbPieces:      b.nbPieces,
+    notes:         b.notes,
+    createdAt:     b.createdAt,
+    parcelId:      b.parcelId,
+    trackingCode:  b.parcel.trackingCode,
+    clientName:    b.parcel.client.name,
+    clientCity:    b.parcel.client.city,
+    amount:        b.parcel.priceXaf,
+    paid:          b.parcel.payment?.status === 'completed' ? 'paid' : b.parcel.payment ? 'pending' : 'unpaid',
+    campaign:      b.parcel.campaign.code,
+    campaignId:    b.parcel.campaign.id,
+  })));
 }
 
 export async function POST(req: NextRequest) {
