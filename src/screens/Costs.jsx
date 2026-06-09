@@ -24,6 +24,7 @@ function hasCosts(cd) {
 // ── Modal de saisie des coûts ──────────────────────────────────────
 function CostModal({ campaign, currentCosts, onSave, onClose }) {
   const route = { fromIATA: campaign.from, toIATA: campaign.to };
+  const currency = 'CAD';
   const [draft, setDraft] = useState(
     Object.fromEntries(COST_FIELDS.map(f => [f.key, currentCosts?.[f.key] || '']))
   );
@@ -65,7 +66,7 @@ function CostModal({ campaign, currentCosts, onSave, onClose }) {
           <span style={{ fontSize: 12.5, color: 'var(--brand-700)', fontWeight: 600 }}>CA encaissé (référence)</span>
           <span className="mono" style={{ fontSize: 18, fontWeight: 800, color: 'var(--brand-700)' }}>
             {col.toLocaleString('fr')}
-            <span style={{ fontSize: 11, fontWeight: 500, marginLeft: 4 }}>{route?.currency}</span>
+            <span style={{ fontSize: 11, fontWeight: 500, marginLeft: 4 }}>{currency}</span>
           </span>
         </div>
 
@@ -95,7 +96,7 @@ function CostModal({ campaign, currentCosts, onSave, onClose }) {
                       onBlur={e => e.currentTarget.style.borderColor = 'var(--border)'}
                     />
                     <span style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', fontSize: 11, color: 'var(--ink-400)', fontWeight: 600, pointerEvents: 'none' }}>
-                      {route?.currency}
+                      {currency}
                     </span>
                   </div>
                   <span style={{ fontSize: 11, color: 'var(--ink-300)', width: 28, textAlign: 'right', fontFamily: 'var(--ff-mono)', flexShrink: 0 }}>
@@ -119,7 +120,7 @@ function CostModal({ campaign, currentCosts, onSave, onClose }) {
             <div key={row.l} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
               <span style={{ fontSize: 12.5, color: 'var(--ink-500)' }}>{row.l}</span>
               <span className="mono" style={{ fontSize: 14, fontWeight: 700, color: row.color }}>
-                {row.v.toLocaleString('fr')} {route?.currency}
+                {row.v.toLocaleString('fr')} {currency}
               </span>
             </div>
           ))}
