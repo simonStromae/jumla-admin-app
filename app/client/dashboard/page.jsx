@@ -186,10 +186,36 @@ export default function ClientDashboard() {
               <div style={{ fontSize: 16, fontWeight: 700 }}>{detail.trackingCode}</div>
               <div style={{ fontSize: 12, color: 'var(--ink-400)' }}>{detail.description ?? '—'}</div>
             </div>
-            <button onClick={() => setSelected(null)} style={{
-              background: 'none', border: 'none', cursor: 'pointer', color: 'var(--ink-400)', fontSize: 20,
-            }}>✕</button>
+            <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+              <a href={'/client/invoice/' + detail.id} target="_blank" rel="noreferrer" style={{
+                display: 'inline-flex', alignItems: 'center', gap: 6,
+                padding: '6px 12px', borderRadius: 7,
+                border: '1px solid var(--border)', background: 'white',
+                fontSize: 12.5, fontWeight: 600, color: 'var(--ink-700)', textDecoration: 'none', cursor: 'pointer',
+              }}>
+                📄 Facture
+              </a>
+              <button onClick={() => setSelected(null)} style={{
+                background: 'none', border: 'none', cursor: 'pointer', color: 'var(--ink-400)', fontSize: 20,
+              }}>✕</button>
+            </div>
           </div>
+
+          {/* Bordereaux links */}
+          {detail.bordereaux?.length > 0 && (
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 14 }}>
+              {detail.bordereaux.map(bl => (
+                <a key={bl.id} href={'/client/bordereau/' + bl.id} target="_blank" rel="noreferrer" style={{
+                  display: 'inline-flex', alignItems: 'center', gap: 5,
+                  padding: '5px 11px', borderRadius: 7,
+                  border: '1px solid var(--border)', background: 'white',
+                  fontSize: 12, fontWeight: 600, color: 'var(--ink-700)', textDecoration: 'none',
+                }}>
+                  📋 {bl.code} · {bl.nbPieces} pièce{bl.nbPieces > 1 ? 's' : ''}
+                </a>
+              ))}
+            </div>
+          )}
 
           {/* Payment banner if unpaid */}
           {(!detail.payment || detail.payment.status !== 'completed') && (

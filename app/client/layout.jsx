@@ -27,6 +27,11 @@ export default function ClientLayout({ children }) {
     </div>
   );
 
+  // Print pages get no chrome
+  if (pathname.startsWith('/client/invoice') || pathname.startsWith('/client/bordereau')) {
+    return <>{children}</>;
+  }
+
   const user     = session?.user;
   const initials = (user?.name ?? '?').split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
 

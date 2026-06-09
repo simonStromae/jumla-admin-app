@@ -16,6 +16,7 @@ export async function GET() {
       campaign: { include: { route: true } },
       payment:  true,
       trackingEvents: { orderBy: { createdAt: 'desc' } },
+      bordereaux: { orderBy: { createdAt: 'asc' } },
     },
   });
 
@@ -48,6 +49,11 @@ export async function GET() {
       location:  e.location,
       note:      e.note,
       createdAt: e.createdAt,
+    })),
+    bordereaux: p.bordereaux.map(b => ({
+      id:       b.id,
+      code:     b.code,
+      nbPieces: b.nbPieces,
     })),
   }));
 
