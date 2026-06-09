@@ -97,7 +97,7 @@ export default function ClientsScreen({ onNav }) {
         onPageSizeChange={(s) => { setPageSize(s); setPage(1); }}
         sizes={view === 'grid' ? [12, 24, 48] : [10, 25, 50, 100]} />
 
-      {open && <ClientDrawer cl={open} onClose={() => setOpen(null)} onEdit={() => { setEditing(open); setOpen(null); }} />}
+      {open && <ClientDrawer cl={open} onClose={() => setOpen(null)} onEdit={() => { setEditing(open); setOpen(null); }} onNav={onNav} />}
 
       {editing && (
         <ClientFormModal
@@ -224,12 +224,42 @@ function Mini({ label, v, unit }) {
   );
 }
 
-function ClientDrawer({ cl, onClose, onEdit }) {
+const CAMP_STATUS_CLS = {
+  open:       'ok',
+  in_transit: 'info',
+  arrived:    'ok',
+  closed:     'neutral',
+};
+const CAMP_STATUS_LBL = {
+  open:       'Ouverte',
+  in_transit: 'En transit',
+  arrived:    'Arrivée',
+  closed:     'Clôturée',
+};
+
+function ClientDrawer({ cl, onClose, onEdit, onNav }) {
+  const [detail,  setDetail]  = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetch('/api/clients/' + cl.id)
+      .then(r => r.json())
+      .then(d => { setDetail(d); setLoading(false); })
+      .catch(() => setLoading(false));
+  }, [cl.id]);
+
+  const parcels   = detail?.parcels ?? [];
+  const unpaidAmt = parcels.filter(p => !p.paid).reduce((s, p) => s + (p.amount ?? 0), 0);
+  const totalAmt  = parcels.reduce((s, p) => s + (p.amount ?? 0), 0);
+  const since     = detail?.createdAt
+    ? new Date(detail.createdAt).toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' })
+    : '—';
+
   return (
     <Drawer width={560} onClose={onClose}>
       <div className="drawer__head">
         <div style={{ flex: 1 }}>
-          <div style={{ fontSize: 11, color: 'var(--ink-400)', textTransform: 'uppercase', letterSpacing: '.04em', fontWeight: 600 }}>Profil expéditeur / Sender profile</div>
+          <div style={{ fontSize: 11, color: 'var(--ink-400)', textTransform: 'uppercase', letterSpacing: '.04em', fontWeight: 600 }}>Profil client</div>
         </div>
         <button className="icon-btn" onClick={onClose}><I.Cross /></button>
       </div>
@@ -242,22 +272,26 @@ function ClientDrawer({ cl, onClose, onEdit }) {
               {cl.name}
               {cl.loyal && <I.Star style={{ width: 14, height: 14, color: 'var(--brand-500)', marginLeft: 6, verticalAlign: -1 }} />}
             </div>
-            <div className="mono" style={{ fontSize: 12, color: 'var(--ink-400)', marginTop: 2 }}>{cl.code} · Expéditeur depuis fév. 2024</div>
-            <div style={{ marginTop: 8, fontSize: 12.5, color: 'var(--ink-600)', fontWeight: 500 }}>
-              {cl.city}, Cameroun
+            <div style={{ fontSize: 12, color: 'var(--ink-400)', marginTop: 2 }}>
+              Client depuis {since}
             </div>
+            {cl.city && cl.city !== '—' && (
+              <div style={{ marginTop: 6, fontSize: 12.5, color: 'var(--ink-600)', fontWeight: 500 }}>{cl.city}</div>
+            )}
           </div>
         </div>
 
         <div style={{ padding: '16px 22px', display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, borderBottom: '1px solid var(--border-soft)' }}>
-          {[
-            { label: 'Cargaisons', value: cl.campaigns, color: null },
-            { label: 'CA total',   value: cl.amount.toLocaleString('fr') + ' CAD', color: 'var(--ok-600)' },
-            { label: 'Impayés',    value: '0 CAD', color: 'var(--ink-400)' },
+          {loading ? [1,2,3].map(i => (
+            <div key={i}><Skel w="50%" h={10} style={{ marginBottom: 6 }} /><Skel w="70%" h={20} /></div>
+          )) : [
+            { label: 'Colis',      value: parcels.length },
+            { label: 'CA total',   value: totalAmt.toLocaleString('fr') + ' CAD', color: 'var(--ok-600)' },
+            { label: 'Impayés',    value: unpaidAmt > 0 ? unpaidAmt.toLocaleString('fr') + ' CAD' : '0 CAD', color: unpaidAmt > 0 ? 'var(--bad-600)' : 'var(--ink-400)' },
           ].map(({ label, value, color }) => (
             <div key={label}>
               <div style={{ fontSize: 11, color: 'var(--ink-400)', textTransform: 'uppercase', letterSpacing: '.04em', fontWeight: 600 }}>{label}</div>
-              <div className="mono" style={{ fontSize: 20, fontWeight: 700, color: color || 'var(--ink-900)', marginTop: 4 }}>{value}</div>
+              <div className="mono" style={{ fontSize: 18, fontWeight: 700, color: color || 'var(--ink-900)', marginTop: 4 }}>{value}</div>
             </div>
           ))}
         </div>
@@ -265,50 +299,68 @@ function ClientDrawer({ cl, onClose, onEdit }) {
         <div style={{ padding: '16px 22px', borderBottom: '1px solid var(--border-soft)' }}>
           <div className="section-title" style={{ marginBottom: 10 }}>Contact</div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-            <DrawerRow icon={<I.Phone />} label="Téléphone" value={cl.phone} mono />
-            <DrawerRow icon={<I.Pin />} label="Ville" value={cl.city + ', Cameroun'} />
-            <DrawerRow icon={<I.Whatsapp />} label="WhatsApp" value={cl.phone} mono ok />
+            <DrawerRow icon={<I.Phone />}    label="Téléphone" value={cl.phone !== '—' ? cl.phone : '—'} mono />
+            <DrawerRow icon={<I.Pin />}      label="Ville"     value={cl.city  !== '—' ? cl.city  : '—'} />
+            <DrawerRow icon={<I.Whatsapp />} label="Email"     value={detail?.email ?? '—'} />
           </div>
         </div>
 
         <div style={{ padding: '16px 22px' }}>
-          <div className="section-title">Historique d'envois <span className="section-title__count">{cl.campaigns}</span></div>
-          <table className="tbl tbl--compact">
-            <thead>
-              <tr>
-                <th style={{ borderRadius: 0 }}>Cargaison</th>
-                <th>Poids</th>
-                <th>Montant</th>
-                <th style={{ borderRadius: 0 }}>Statut</th>
-              </tr>
-            </thead>
-            <tbody>
-              {[
-                { c: 'DLA-YUL-APR-02', w: 14, a: 329, s: 'in-transit' },
-                { c: 'DLA-YUL-MAR-02', w: 18, a: 384, s: 'closed' },
-                { c: 'DLA-YUL-MAR-01', w: 12, a: 248, s: 'closed' },
-                { c: 'DLA-YUL-FEB-02', w: 9,  a: 198, s: 'closed' },
-              ].map((row, i) => (
-                <tr key={i}>
-                  <td className="mono" style={{ fontWeight: 600 }}>{row.c}</td>
-                  <td className="mono">{row.w} kg</td>
-                  <td className="mono" style={{ fontWeight: 600 }}>{row.a} CAD</td>
-                  <td>
-                    <span className={'badge badge--dot badge--' + (row.s === 'in-transit' ? 'info' : 'ok')}>
-                      {row.s === 'in-transit' ? 'En transit' : 'Clôturée'}
-                    </span>
-                  </td>
+          <div className="section-title">
+            Historique de colis <span className="section-title__count">{parcels.length}</span>
+          </div>
+          {loading ? (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+              {[1,2,3].map(i => <Skel key={i} w="100%" h={36} />)}
+            </div>
+          ) : parcels.length === 0 ? (
+            <div style={{ fontSize: 13, color: 'var(--ink-400)', padding: '12px 0' }}>
+              Aucun colis enregistré.
+            </div>
+          ) : (
+            <table className="tbl tbl--compact">
+              <thead>
+                <tr>
+                  <th style={{ borderRadius: 0 }}>Code</th>
+                  <th>Cargaison</th>
+                  <th style={{ textAlign: 'right' }}>Poids</th>
+                  <th style={{ textAlign: 'right' }}>Montant</th>
+                  <th style={{ borderRadius: 0 }}>Paiement</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {parcels.map(p => (
+                  <tr key={p.id} style={{ cursor: onNav ? 'pointer' : 'default' }}
+                    onClick={() => onNav?.('/admin/parcels/' + p.id)}>
+                    <td className="mono" style={{ fontWeight: 700, fontSize: 12, color: 'var(--brand-700)' }}>{p.trackingCode}</td>
+                    <td>
+                      <div style={{ fontSize: 12, fontWeight: 600 }}>{p.campaign.code}</div>
+                      <span className={'badge badge--dot badge--' + (CAMP_STATUS_CLS[p.campaign.status] ?? 'neutral')} style={{ fontSize: 10.5 }}>
+                        {CAMP_STATUS_LBL[p.campaign.status] ?? p.campaign.status}
+                      </span>
+                    </td>
+                    <td className="mono" style={{ textAlign: 'right', fontSize: 12 }}>
+                      {p.weightKg ? p.weightKg + ' kg' : '—'}
+                    </td>
+                    <td className="mono" style={{ textAlign: 'right', fontSize: 12, fontWeight: 600 }}>
+                      {p.amount ? p.amount.toLocaleString('fr') + ' CAD' : '—'}
+                    </td>
+                    <td>
+                      <span className={'badge badge--dot badge--' + (p.paid ? 'ok' : 'warn')}>
+                        {p.paid ? 'Payé' : 'En attente'}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
         </div>
       </div>
 
       <div className="drawer__foot">
         <button className="btn btn--ghost" style={{ flex: 1, justifyContent: 'center' }} onClick={onEdit}><I.Edit />Modifier</button>
         <button className="btn btn--soft" style={{ flex: 1, justifyContent: 'center' }}><I.Whatsapp style={{ color: 'var(--ok-600)' }} />WhatsApp</button>
-        <button className="btn btn--brand" style={{ flex: 1, justifyContent: 'center' }}><I.Send />Envoyer facture</button>
       </div>
     </Drawer>
   );
