@@ -50,6 +50,24 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
     include: { route: true },
   });
 
+  // Cascade parcel statuses when campaign advances
+  if (status) {
+    const prismaStatus = toPrismaStatus(status);
+    if (prismaStatus === 'in_transit') {
+      // All received parcels move to in_transit
+      await prisma.parcel.updateMany({
+        where: { campaignId: params.id, status: 'recu' },
+        data:  { status: 'en_transit' },
+      });
+    } else if (prismaStatus === 'arrived') {
+      // All in-transit parcels move to arrive
+      await prisma.parcel.updateMany({
+        where: { campaignId: params.id, status: 'en_transit' },
+        data:  { status: 'arrive' },
+      });
+    }
+  }
+
   return NextResponse.json({ ok: true, campaign: { ...updated, status: mapCampaignStatus(updated.status) } });
 }
 

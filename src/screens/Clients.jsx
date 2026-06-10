@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 
 import I from '../components/Icons.jsx';
-import { Bi, Avatar, Drawer, Skel } from '../components/Shell.jsx';
+import { Bi, Avatar, Drawer, Skel, Modal } from '../components/Shell.jsx';
 import { Pagination, ViewToggle } from '../components/Pagination.jsx';
 import ClientFormModal from './ClientForm.jsx';
 
@@ -277,6 +277,7 @@ function ClientDrawer({ cl, onClose, onEdit, onNav, onStatusChange }) {
   const [detail,  setDetail]  = useState(null);
   const [loading, setLoading] = useState(true);
   const [togglingStatus, setTogglingStatus] = useState(false);
+  const [showWa, setShowWa] = useState(false);
 
   const handleToggleStatus = async () => {
     const newStatus = cl.status === 'suspended' ? 'active' : 'suspended';
@@ -360,9 +361,24 @@ function ClientDrawer({ cl, onClose, onEdit, onNav, onStatusChange }) {
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
             <DrawerRow icon={<I.Phone />}    label="Téléphone" value={cl.phone !== '—' ? cl.phone : '—'} mono />
             <DrawerRow icon={<I.Pin />}      label="Ville"     value={cl.city  !== '—' ? cl.city  : '—'} />
-            <DrawerRow icon={<I.Whatsapp />} label="Email"     value={detail?.email ?? '—'} />
+            <DrawerRow icon={<I.Whatsapp />} label="WhatsApp"  value={detail?.whatsapp ?? cl.phone ?? '—'} mono />
+            <DrawerRow icon={<I.Mail />}     label="Email"     value={detail?.email    ?? '—'} />
           </div>
         </div>
+
+        {(detail?.deliveryAddress || detail?.deliveryPhone) && (
+          <div style={{ padding: '16px 22px', borderBottom: '1px solid var(--border-soft)' }}>
+            <div className="section-title" style={{ marginBottom: 10 }}>
+              <I.Truck style={{ width: 13, height: 13, color: 'var(--brand-600)', marginRight: 4 }} />
+              Livraison
+            </div>
+            <div style={{ fontSize: 13, color: 'var(--ink-700)', lineHeight: 1.6 }}>
+              {detail.deliveryName && <div style={{ fontWeight: 600 }}>{detail.deliveryName}</div>}
+              {detail.deliveryAddress && <div>{detail.deliveryAddress}</div>}
+              {detail.deliveryPhone  && <div className="mono" style={{ fontSize: 12, color: 'var(--ink-500)' }}>{detail.deliveryPhone}</div>}
+            </div>
+          </div>
+        )}
 
         <div style={{ padding: '16px 22px' }}>
           <div className="section-title">
@@ -419,7 +435,9 @@ function ClientDrawer({ cl, onClose, onEdit, onNav, onStatusChange }) {
 
       <div className="drawer__foot">
         <button className="btn btn--ghost" style={{ flex: 1, justifyContent: 'center' }} onClick={onEdit}><I.Edit />Modifier</button>
-        <button className="btn btn--soft" style={{ flex: 1, justifyContent: 'center' }}><I.Whatsapp style={{ color: 'var(--ok-600)' }} />WhatsApp</button>
+        <button className="btn btn--soft" style={{ flex: 1, justifyContent: 'center' }} onClick={() => setShowWa(true)}>
+          <I.Whatsapp style={{ color: 'var(--ok-600)' }} />WhatsApp
+        </button>
         <button
           className="btn btn--ghost"
           style={{ flex: 1, justifyContent: 'center', color: cl.status === 'suspended' ? 'var(--ok-700)' : 'var(--bad-600)' }}
@@ -428,6 +446,14 @@ function ClientDrawer({ cl, onClose, onEdit, onNav, onStatusChange }) {
           {cl.status === 'suspended' ? 'Réactiver' : 'Suspendre'}
         </button>
       </div>
+
+      {showWa && detail && (
+        <WhatsappModal
+          client={cl}
+          parcels={detail.parcels ?? []}
+          onClose={() => setShowWa(false)}
+        />
+      )}
     </Drawer>
   );
 }
@@ -441,5 +467,114 @@ function DrawerRow({ icon, label, value, mono, ok }) {
         <span className={mono ? 'mono' : ''}>{value}</span>
       </div>
     </div>
+  );
+}
+
+const WA_TEMPLATES = [
+  { id: 'arrival',  label: 'Arrivée cargaison', body: 'Bonjour {first_name} 👋\n\nVotre colis *{parcel_code}* est arrivé à Montréal ! 🎉\n\nPoids : {weight} kg\nMontant dû : *{amount} CAD*\n\nAdresse de retrait : {warehouse_address}\n\nMerci de nous contacter pour organiser la livraison.\n— Jumla Shipping' },
+  { id: 'payment',  label: 'Rappel paiement',   body: 'Bonjour {first_name},\n\nNous vous rappelons que le paiement de *{amount} CAD* pour votre colis {parcel_code} est en attente.\n\nMerci de procéder au virement Interac à notre adresse dès que possible.\n— Jumla Shipping' },
+  { id: 'delivery', label: 'Livraison prévue',  body: 'Bonjour {first_name} 😊\n\nVotre colis *{parcel_code}* sera livré bientôt.\n\nDate estimée : {arrival_date}\nAdresse : {warehouse_address}\n\n— Jumla Shipping' },
+];
+
+function WhatsappModal({ client, parcels, onClose }) {
+  const activeParcels = parcels.filter(p => p.status !== 'livre');
+  const [selectedParcelIds, setSelectedParcelIds] = useState(
+    activeParcels.length > 0 ? [activeParcels[0].id] : parcels.slice(0, 1).map(p => p.id)
+  );
+  const [templateId, setTemplateId] = useState('arrival');
+  const [body, setBody] = useState(WA_TEMPLATES[0].body);
+  const [sending, setSending] = useState(false);
+  const [result, setResult] = useState(null);
+
+  const onTemplateChange = (id) => {
+    setTemplateId(id);
+    const found = WA_TEMPLATES.find(t => t.id === id);
+    if (found) setBody(found.body);
+  };
+
+  const toggleParcel = (id) => {
+    setSelectedParcelIds(ids => ids.includes(id) ? ids.filter(i => i !== id) : [...ids, id]);
+  };
+
+  const handleSend = async () => {
+    if (!selectedParcelIds.length) return;
+    setSending(true);
+    try {
+      const res = await fetch('/api/messaging/send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ parcelIds: selectedParcelIds, body }),
+      });
+      const json = await res.json();
+      setResult(json);
+    } catch {
+      setResult({ ok: false, error: 'Erreur réseau' });
+    }
+    setSending(false);
+  };
+
+  return (
+    <Modal width={540} onClose={onClose}
+      title={<span>WhatsApp — {client.name}</span>}
+      sub={`Envoyer un message au ${client.phone ?? '—'}`}
+      footer={result ? (
+        <>
+          <div style={{ flex: 1, fontSize: 13, color: result.sentCount > 0 ? 'var(--ok-700)' : 'var(--bad-700)' }}>
+            {result.sentCount > 0 ? `✓ ${result.sentCount} message(s) envoyé(s)` : `Échec : ${result.error || 'Erreur'}`}
+          </div>
+          <button className="btn btn--ghost" onClick={onClose}>Fermer</button>
+        </>
+      ) : (
+        <>
+          <div style={{ flex: 1 }} />
+          <button className="btn btn--ghost" onClick={onClose}>Annuler</button>
+          <button className="btn btn--brand" onClick={handleSend} disabled={sending || !selectedParcelIds.length}>
+            <I.Whatsapp style={{ width: 14, height: 14 }} />
+            {sending ? 'Envoi…' : 'Envoyer'}
+          </button>
+        </>
+      )}>
+
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+        {parcels.length === 0 ? (
+          <div style={{ padding: 16, background: 'var(--bg-soft)', borderRadius: 8, fontSize: 13, color: 'var(--ink-500)', textAlign: 'center' }}>
+            Ce client n'a pas de colis enregistré.
+          </div>
+        ) : (
+          <div>
+            <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--ink-500)', textTransform: 'uppercase', letterSpacing: '.04em', marginBottom: 8 }}>Colis concerné(s)</div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+              {parcels.map(p => (
+                <label key={p.id} style={{
+                  display: 'flex', alignItems: 'center', gap: 10, padding: '8px 12px',
+                  borderRadius: 7, cursor: 'pointer',
+                  border: '1px solid ' + (selectedParcelIds.includes(p.id) ? 'var(--brand-300)' : 'var(--border)'),
+                  background: selectedParcelIds.includes(p.id) ? 'var(--brand-50)' : 'white',
+                }}>
+                  <input type="checkbox" checked={selectedParcelIds.includes(p.id)} onChange={() => toggleParcel(p.id)} style={{ accentColor: 'var(--brand-500)' }} />
+                  <span className="mono" style={{ fontSize: 12, fontWeight: 700, color: 'var(--brand-700)' }}>{p.trackingCode}</span>
+                  <span style={{ fontSize: 12, color: 'var(--ink-500)', flex: 1 }}>{p.campaign.code}</span>
+                  <span className={'badge badge--dot badge--' + (p.paid ? 'ok' : 'warn')} style={{ fontSize: 10.5 }}>
+                    {p.paid ? 'Payé' : 'Impayé'}
+                  </span>
+                </label>
+              ))}
+            </div>
+          </div>
+        )}
+
+        <div>
+          <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--ink-500)', textTransform: 'uppercase', letterSpacing: '.04em', marginBottom: 8 }}>Modèle</div>
+          <select className="select" value={templateId} onChange={e => onTemplateChange(e.target.value)} style={{ marginBottom: 10 }}>
+            {WA_TEMPLATES.map(t => <option key={t.id} value={t.id}>{t.label}</option>)}
+          </select>
+          <textarea className="textarea" rows={8} value={body} onChange={e => setBody(e.target.value)}
+            style={{ fontSize: 12.5, fontFamily: 'var(--ff-mono)', lineHeight: 1.6 }} />
+          <div style={{ fontSize: 11, color: 'var(--ink-400)', marginTop: 6 }}>
+            Variables disponibles : {'{first_name}'} {'{parcel_code}'} {'{amount}'} {'{weight}'} {'{arrival_date}'}
+          </div>
+        </div>
+      </div>
+    </Modal>
   );
 }

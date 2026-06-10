@@ -196,6 +196,7 @@ model Bordereau {
   description String?
   weightKg    Float?
   nbPieces    Int      @default(1)
+  items       Json?
   status      String   @default("en_attente")
   notes       String?
   createdAt   DateTime @default(now())

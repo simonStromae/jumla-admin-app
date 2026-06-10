@@ -7,7 +7,6 @@ const PARCEL_STATUS = {
   en_attente: { label: 'En attente',  cls: 'neutral' },
   recu:       { label: 'Reçu',        cls: 'ok' },
   en_transit: { label: 'En transit',  cls: 'info' },
-  en_douane:  { label: 'En douane',   cls: 'warn' },
   arrive:     { label: 'Arrivé',      cls: 'ok' },
   livre:      { label: 'Livré',       cls: 'ok' },
 };
@@ -18,10 +17,10 @@ const PAYMENT_STATUS = {
   refunded:  { label: 'Remboursé',  cls: 'neutral' },
 };
 const BORDEREAU_STATUS = {
-  en_attente:  { label: 'En attente',  cls: 'neutral' },
-  recu:        { label: 'Reçu',        cls: 'info' },
-  verifie:     { label: 'Vérifié',     cls: 'ok' },
-  discordance: { label: 'Discordance', cls: 'bad' },
+  en_attente: { label: 'À vérifier', cls: 'neutral' },
+  en_cours:   { label: 'En cours',   cls: 'warn' },
+  valide:     { label: 'Validé',     cls: 'ok' },
+  libere:     { label: 'Libéré',     cls: 'ok' },
 };
 
 export default function ParcelDetailScreen({ id, onNav }) {
@@ -31,7 +30,7 @@ export default function ParcelDetailScreen({ id, onNav }) {
   const [showPayModal,    setShowPayModal]    = useState(false);
   const [showStatusModal, setShowStatusModal] = useState(false);
   const [showAddBl,       setShowAddBl]       = useState(false);
-  const [newBl,    setNewBl]    = useState({ description: '', weightKg: '', nbPieces: '1' });
+  const [newBl,    setNewBl]    = useState({ description: '', weightKg: '', items: [] });
   const [addingBl, setAddingBl] = useState(false);
 
   useEffect(() => {
@@ -66,18 +65,37 @@ export default function ParcelDetailScreen({ id, onNav }) {
 
   const createBl = async () => {
     setAddingBl(true);
+    const totalPieces = newBl.items.reduce((s, it) => s + (Number(it.count) || 0), 0);
     const res = await fetch('/api/bordereaux', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ parcelId: id, ...newBl }),
+      body: JSON.stringify({
+        parcelId: id,
+        description: newBl.description,
+        weightKg: newBl.weightKg,
+        nbPieces: totalPieces || 1,
+        items: newBl.items,
+      }),
     });
     const json = await res.json();
     if (json.ok) {
       setBordereaux(bs => [...bs, json.bordereau]);
-      setNewBl({ description: '', weightKg: '', nbPieces: '1' });
+      setNewBl({ description: '', weightKg: '', items: [] });
       setShowAddBl(false);
     }
     setAddingBl(false);
+  };
+
+  const addBlItem = () => {
+    setNewBl(b => ({ ...b, items: [...b.items, { designation: '', type: 'carton', count: 1, nbPieces: '' }] }));
+  };
+
+  const updBlItem = (idx, k, v) => {
+    setNewBl(b => ({ ...b, items: b.items.map((it, i) => i === idx ? { ...it, [k]: v } : it) }));
+  };
+
+  const removeBlItem = (idx) => {
+    setNewBl(b => ({ ...b, items: b.items.filter((_, i) => i !== idx) }));
   };
 
   if (loading) return (
@@ -203,25 +221,74 @@ export default function ParcelDetailScreen({ id, onNav }) {
             </div>
 
             {showAddBl && (
-              <div style={{ padding: '12px 16px', background: 'var(--brand-50)', borderBottom: '1px solid var(--border)', display: 'grid', gridTemplateColumns: '1fr 90px 70px auto', gap: 8, alignItems: 'end' }}>
-                <div>
-                  <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--ink-500)', marginBottom: 4 }}>Description</div>
-                  <input className="input input--sm" value={newBl.description}
-                    onChange={e => setNewBl(b => ({ ...b, description: e.target.value }))} placeholder="Contenu du paquet…" />
+              <div style={{ padding: '14px 16px', background: 'var(--brand-50)', borderBottom: '1px solid var(--border)' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 100px', gap: 8, marginBottom: 12 }}>
+                  <div>
+                    <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--ink-500)', marginBottom: 4 }}>Description générale <span style={{ fontWeight: 400 }}>(optionnel)</span></div>
+                    <input className="input input--sm" value={newBl.description}
+                      onChange={e => setNewBl(b => ({ ...b, description: e.target.value }))} placeholder="Contenu du bordereau…" />
+                  </div>
+                  <div>
+                    <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--ink-500)', marginBottom: 4 }}>Poids total kg</div>
+                    <input className="input input--sm mono" type="number" min="0" step="0.1"
+                      value={newBl.weightKg} onChange={e => setNewBl(b => ({ ...b, weightKg: e.target.value }))} placeholder="0" />
+                  </div>
                 </div>
-                <div>
-                  <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--ink-500)', marginBottom: 4 }}>Poids kg</div>
-                  <input className="input input--sm mono" type="number" min="0" step="0.1"
-                    value={newBl.weightKg} onChange={e => setNewBl(b => ({ ...b, weightKg: e.target.value }))} placeholder="0" />
+
+                <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--ink-600)', textTransform: 'uppercase', letterSpacing: '.04em', marginBottom: 8 }}>
+                  Contenu ({newBl.items.length} ligne{newBl.items.length !== 1 ? 's' : ''})
                 </div>
-                <div>
-                  <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--ink-500)', marginBottom: 4 }}>Pièces</div>
-                  <input className="input input--sm mono" type="number" min="1"
-                    value={newBl.nbPieces} onChange={e => setNewBl(b => ({ ...b, nbPieces: e.target.value }))} placeholder="1" />
+
+                {newBl.items.length > 0 && (
+                  <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: 8, fontSize: 12 }}>
+                    <thead>
+                      <tr style={{ background: 'var(--brand-100)' }}>
+                        {['Désignation', 'Type', 'Nb', 'Pièces (alt)', ''].map(h => (
+                          <th key={h} style={{ padding: '5px 8px', textAlign: 'left', fontSize: 10.5, fontWeight: 700, color: 'var(--brand-800)', borderBottom: '1px solid var(--brand-200)' }}>{h}</th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {newBl.items.map((it, idx) => (
+                        <tr key={idx}>
+                          <td style={{ padding: '4px 4px' }}>
+                            <input className="input input--sm" value={it.designation}
+                              onChange={e => updBlItem(idx, 'designation', e.target.value)} placeholder="Ex: Vêtements adulte" />
+                          </td>
+                          <td style={{ padding: '4px 4px', width: 110 }}>
+                            <select className="select input--sm" value={it.type} onChange={e => updBlItem(idx, 'type', e.target.value)}>
+                              <option value="carton">Carton</option>
+                              <option value="paquet">Paquet</option>
+                              <option value="sachet">Sachet</option>
+                              <option value="bouteille">Bouteille</option>
+                            </select>
+                          </td>
+                          <td style={{ padding: '4px 4px', width: 60 }}>
+                            <input className="input input--sm mono" type="number" min="1" value={it.count}
+                              onChange={e => updBlItem(idx, 'count', e.target.value)} />
+                          </td>
+                          <td style={{ padding: '4px 4px', width: 90 }}>
+                            <input className="input input--sm mono" type="number" min="1" value={it.nbPieces}
+                              onChange={e => updBlItem(idx, 'nbPieces', e.target.value)} placeholder="—" />
+                          </td>
+                          <td style={{ padding: '4px 4px', width: 28 }}>
+                            <button onClick={() => removeBlItem(idx)}
+                              style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--bad-500)', fontSize: 16, padding: '0 4px' }}>×</button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                )}
+
+                <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
+                  <button className="btn btn--ghost btn--sm" onClick={addBlItem} style={{ flex: 1 }}>
+                    + Ajouter une ligne
+                  </button>
+                  <button className="btn btn--brand btn--sm" onClick={createBl} disabled={addingBl} style={{ flex: 0 }}>
+                    {addingBl ? 'Création…' : 'Créer le bordereau'}
+                  </button>
                 </div>
-                <button className="btn btn--brand btn--sm" onClick={createBl} disabled={addingBl}>
-                  {addingBl ? '…' : 'Créer'}
-                </button>
               </div>
             )}
 
@@ -233,7 +300,7 @@ export default function ParcelDetailScreen({ id, onNav }) {
               <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12.5 }}>
                 <thead>
                   <tr style={{ background: 'var(--bg-soft)' }}>
-                    {['Code', 'Description', 'Poids', 'Pièces', 'Statut', ''].map(h => (
+                    {['Code', 'Description', 'Poids', 'Lignes', 'Statut', ''].map(h => (
                       <th key={h} style={{ padding: '7px 12px', textAlign: 'left', fontSize: 10.5, fontWeight: 700, color: 'var(--ink-400)', textTransform: 'uppercase', letterSpacing: '.04em', borderBottom: '1px solid var(--border)' }}>{h}</th>
                     ))}
                   </tr>
@@ -241,12 +308,20 @@ export default function ParcelDetailScreen({ id, onNav }) {
                 <tbody>
                   {bordereaux.map(bl => {
                     const bs = BORDEREAU_STATUS[bl.status] || { label: bl.status, cls: 'neutral' };
+                    const itemCount = Array.isArray(bl.items) ? bl.items.length : 0;
                     return (
                       <tr key={bl.id} style={{ borderBottom: '1px solid var(--border-soft)' }}>
-                        <td style={{ padding: '8px 12px', fontFamily: 'monospace', fontWeight: 700, fontSize: 12 }}>{bl.code}</td>
-                        <td style={{ padding: '8px 12px', color: 'var(--ink-700)' }}>{bl.description || '—'}</td>
+                        <td style={{ padding: '8px 12px' }}>
+                          <a className="mono" style={{ fontWeight: 700, fontSize: 12, color: 'var(--brand-700)', cursor: 'pointer' }}
+                            onClick={() => onNav?.('/admin/slips/' + bl.code)}>
+                            {bl.code}
+                          </a>
+                        </td>
+                        <td style={{ padding: '8px 12px', color: 'var(--ink-700)', fontSize: 12 }}>
+                          {bl.description || (itemCount > 0 ? `${itemCount} ligne${itemCount > 1 ? 's' : ''}` : '—')}
+                        </td>
                         <td style={{ padding: '8px 12px', fontFamily: 'monospace' }}>{bl.weightKg ? bl.weightKg + ' kg' : '—'}</td>
-                        <td style={{ padding: '8px 12px', fontFamily: 'monospace' }}>{bl.nbPieces}</td>
+                        <td style={{ padding: '8px 12px', fontFamily: 'monospace', color: 'var(--ink-500)' }}>{itemCount || bl.nbPieces}</td>
                         <td style={{ padding: '8px 12px' }}>
                           <select className="select" style={{ height: 26, padding: '0 6px', fontSize: 11.5, border: '1px solid var(--border)', borderRadius: 4 }}
                             value={bl.status} onChange={e => updateBlStatus(bl.id, e.target.value)}>

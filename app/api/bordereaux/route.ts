@@ -37,6 +37,7 @@ export async function GET(req: NextRequest) {
     description:   b.description,
     weightKg:      b.weightKg,
     nbPieces:      b.nbPieces,
+    items:         (b as any).items ?? [],
     notes:         b.notes,
     createdAt:     b.createdAt,
     parcelId:      b.parcelId,
@@ -54,7 +55,7 @@ export async function POST(req: NextRequest) {
   const { error } = await requireAdmin();
   if (error) return error;
 
-  const { parcelId, description, weightKg, nbPieces, notes } = await req.json();
+  const { parcelId, description, weightKg, nbPieces, notes, items } = await req.json();
   if (!parcelId) return NextResponse.json({ error: 'parcelId requis' }, { status: 400 });
 
   const parcel = await prisma.parcel.findUnique({ where: { id: parcelId }, select: { trackingCode: true } });
@@ -71,7 +72,8 @@ export async function POST(req: NextRequest) {
       weightKg:    weightKg ? Number(weightKg) : null,
       nbPieces:    nbPieces ? Number(nbPieces) : 1,
       notes:       notes    || null,
-    },
+      items:       Array.isArray(items) ? items : [],
+    } as any,
   });
-  return NextResponse.json({ ok: true, bordereau });
+  return NextResponse.json({ ok: true, bordereau: { ...bordereau, items: (bordereau as any).items ?? [] } });
 }

@@ -22,13 +22,20 @@ export async function GET(_: NextRequest, { params }: { params: { id: string } }
 
   if (!client) return NextResponse.json({ error: 'Client introuvable' }, { status: 404 });
 
+  const addresses = (client.addresses as any) ?? {};
+  const delivery  = addresses.delivery ?? {};
+
   return NextResponse.json({
-    id:    client.id,
-    name:  client.name,
-    email: client.email,
-    phone: client.phone,
-    city:  client.city,
-    createdAt: client.createdAt,
+    id:               client.id,
+    name:             client.name,
+    email:            client.email,
+    phone:            client.phone,
+    city:             client.city,
+    whatsapp:         addresses.whatsapp ?? client.phone,
+    deliveryName:     delivery.name    ?? '',
+    deliveryAddress:  delivery.address ?? '',
+    deliveryPhone:    delivery.phone   ?? '',
+    createdAt:        client.createdAt,
     parcels: client.parcels.map(p => ({
       id:           p.id,
       trackingCode: p.trackingCode,
@@ -52,7 +59,21 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
   const { error } = await requireAdmin();
   if (error) return error;
 
-  const { name, email, phone, city } = await req.json();
+  const { name, email, phone, city, whatsapp, deliveryName, deliveryAddress, deliveryPhone } = await req.json();
+
+  // Merge into existing addresses JSON
+  const existing = await prisma.user.findUnique({ where: { id: params.id }, select: { addresses: true } });
+  const prev = (existing?.addresses as any) ?? {};
+  const addresses = {
+    ...prev,
+    ...(whatsapp !== undefined && { whatsapp: whatsapp || null }),
+    delivery: {
+      ...(prev.delivery ?? {}),
+      ...(deliveryName    !== undefined && { name:    deliveryName    || null }),
+      ...(deliveryAddress !== undefined && { address: deliveryAddress || null }),
+      ...(deliveryPhone   !== undefined && { phone:   deliveryPhone   || null }),
+    },
+  };
 
   const user = await prisma.user.update({
     where: { id: params.id },
@@ -61,6 +82,7 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
       ...(email !== undefined && { email }),
       ...(phone !== undefined && { phone: phone || null }),
       ...(city  !== undefined && { city:  city  || null }),
+      addresses,
     },
   });
 

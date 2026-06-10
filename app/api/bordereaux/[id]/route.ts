@@ -2,18 +2,18 @@ export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/src/lib/prisma';
 import { requireAdmin } from '@/src/lib/api-auth';
+import { auth } from '@/auth';
 
 export async function GET(_: NextRequest, { params }: { params: { id: string } }) {
   const { error } = await requireAdmin();
   if (error) return error;
 
-  // id param may be the bordereau UUID or the human-readable code
   const bl = await prisma.bordereau.findFirst({
     where: { OR: [{ id: params.id }, { code: params.id }] },
     include: {
       parcel: {
         include: {
-          client:   { select: { name: true, phone: true, city: true, email: true } },
+          client:   { select: { name: true, phone: true, city: true, email: true, addresses: true } },
           campaign: { include: { route: true } },
           payment:  { select: { status: true, amount: true, paidAt: true, interacRef: true } },
         },
@@ -26,8 +26,8 @@ export async function GET(_: NextRequest, { params }: { params: { id: string } }
   const parcel   = bl.parcel;
   const campaign = parcel.campaign;
   const route    = campaign.route;
-
-  const items = Array.isArray(parcel.items) ? parcel.items : [];
+  const addresses = parcel.client.addresses as any;
+  const delivery = addresses?.delivery ?? {};
 
   return NextResponse.json({
     id:          bl.id,
@@ -36,13 +36,19 @@ export async function GET(_: NextRequest, { params }: { params: { id: string } }
     description: bl.description,
     weightKg:    bl.weightKg,
     nbPieces:    bl.nbPieces,
+    items:       (bl as any).items ?? [],
     notes:       bl.notes,
     createdAt:   bl.createdAt,
     client: {
-      name:  parcel.client.name,
-      phone: parcel.client.phone,
-      city:  parcel.client.city,
-      email: parcel.client.email,
+      name:    parcel.client.name,
+      phone:   parcel.client.phone,
+      city:    parcel.client.city,
+      email:   parcel.client.email,
+    },
+    recipient: {
+      name:    delivery.name    || parcel.client.name,
+      phone:   delivery.phone   || parcel.client.phone,
+      address: delivery.address || '',
     },
     campaign: {
       code:          campaign.code,
@@ -57,6 +63,7 @@ export async function GET(_: NextRequest, { params }: { params: { id: string } }
       description:  parcel.description,
       weightKg:     parcel.weightKg,
       priceXaf:     parcel.priceXaf,
+      status:       parcel.status,
     },
     payment: parcel.payment ? {
       status:     parcel.payment.status,
@@ -64,7 +71,6 @@ export async function GET(_: NextRequest, { params }: { params: { id: string } }
       paidAt:     parcel.payment.paidAt,
       interacRef: parcel.payment.interacRef,
     } : null,
-    items,
   });
 }
 
@@ -73,7 +79,7 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
   if (error) return error;
 
   const body = await req.json();
-  const { description, weightKg, nbPieces, status, notes } = body;
+  const { description, weightKg, nbPieces, status, notes, items } = body;
 
   const bordereau = await prisma.bordereau.update({
     where: { id: params.id },
@@ -83,9 +89,31 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
       ...(nbPieces    !== undefined && { nbPieces: Number(nbPieces) }),
       ...(status      !== undefined && { status }),
       ...(notes       !== undefined && { notes }),
-    },
+      ...(items       !== undefined && { items } as any),
+    } as any,
   });
-  return NextResponse.json({ ok: true, bordereau });
+
+  // Validating a bordereau moves the parcel to "recu"
+  if (status === 'valide') {
+    const sess = await auth();
+    const bl = await prisma.bordereau.findUnique({ where: { id: params.id }, select: { parcelId: true } });
+    if (bl) {
+      const parcel = await prisma.parcel.findUnique({ where: { id: bl.parcelId }, select: { status: true } });
+      if (parcel?.status === 'en_attente') {
+        await prisma.parcel.update({ where: { id: bl.parcelId }, data: { status: 'recu' } });
+        await prisma.trackingEvent.create({
+          data: {
+            parcelId:    bl.parcelId,
+            status:      'recu',
+            note:        'Bordereau validé',
+            createdById: (sess?.user as any)?.id ?? null,
+          },
+        });
+      }
+    }
+  }
+
+  return NextResponse.json({ ok: true, bordereau: { ...bordereau, items: (bordereau as any).items ?? [] } });
 }
 
 export async function DELETE(_: NextRequest, { params }: { params: { id: string } }) {

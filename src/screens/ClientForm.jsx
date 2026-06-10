@@ -5,16 +5,18 @@ import { Modal, Avatar } from '../components/Shell.jsx';
 export default function ClientFormModal({ mode = 'create', client, onClose, onSave }) {
   const isEdit = mode === 'edit';
   const [data, setData] = useState(() => ({
-    name:     client?.name  || '',
-    code:     client?.code  || 'CL-' + String(700 + Math.floor(Math.random() * 99)).padStart(4, '0'),
-    color:    client?.color || ((Math.floor(Math.random() * 8)) + 1),
-    phone:    client?.phone !== '—' ? (client?.phone || '') : '',
-    whatsapp: client?.whatsapp || (client?.phone !== '—' ? client?.phone : '') || '',
-    city:     client?.city  !== '—' ? (client?.city  || 'Douala') : 'Douala',
-    address:  client?.address || '',
-    email:    client?.email || '',
-    loyal:    client?.loyal || false,
-    notes:    client?.notes || '',
+    name:            client?.name  || '',
+    code:            client?.code  || 'CL-' + String(700 + Math.floor(Math.random() * 99)).padStart(4, '0'),
+    color:           client?.color || ((Math.floor(Math.random() * 8)) + 1),
+    phone:           client?.phone !== '—' ? (client?.phone || '') : '',
+    whatsapp:        client?.whatsapp || (client?.phone !== '—' ? client?.phone : '') || '',
+    city:            client?.city  !== '—' ? (client?.city  || 'Douala') : 'Douala',
+    email:           client?.email || '',
+    loyal:           client?.loyal || false,
+    notes:           client?.notes || '',
+    deliveryName:    client?.deliveryName    || '',
+    deliveryAddress: client?.deliveryAddress || '',
+    deliveryPhone:   client?.deliveryPhone   || '',
   }));
   const [saving, setSaving] = useState(false);
   const [saveErr, setSaveErr] = useState('');
@@ -35,10 +37,14 @@ export default function ClientFormModal({ mode = 'create', client, onClose, onSa
         method,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          name:  data.name.trim(),
-          email: data.email.trim(),
-          phone: data.phone.trim() || null,
-          city:  data.city  || null,
+          name:            data.name.trim(),
+          email:           data.email.trim(),
+          phone:           data.phone.trim()           || null,
+          city:            data.city                   || null,
+          whatsapp:        data.whatsapp.trim()        || null,
+          deliveryName:    data.deliveryName.trim()    || null,
+          deliveryAddress: data.deliveryAddress.trim() || null,
+          deliveryPhone:   data.deliveryPhone.trim()   || null,
         }),
       });
       const json = await res.json();
@@ -157,19 +163,33 @@ export default function ClientFormModal({ mode = 'create', client, onClose, onSa
           {/* Location block */}
           <div className="card" style={{ padding: 16, marginBottom: 14 }}>
             <div className="section-title" style={{ marginBottom: 12 }}>
-              <I.Pin style={{ width: 14, height: 14, color: 'var(--brand-600)' }} /> Localisation
+              <I.Pin style={{ width: 14, height: 14, color: 'var(--brand-600)' }} /> Localisation (origine)
             </div>
-            <div className="field-row field-row--2">
-              <div className="field">
-                <label className="label">Ville</label>
-                <select className="select" value={data.city} onChange={e => upd('city', e.target.value)}>
-                  {CITIES.map(c => <option key={c}>{c}</option>)}
-                </select>
-              </div>
-              <div className="field">
-                <label className="label">Adresse <span className="opt">/ Optionnel</span></label>
-                <input className="input" value={data.address} onChange={e => upd('address', e.target.value)} placeholder="BP 1842, Akwa, Douala..." />
-              </div>
+            <div className="field" style={{ marginBottom: 0 }}>
+              <label className="label">Ville d'origine</label>
+              <select className="select" value={data.city} onChange={e => upd('city', e.target.value)}>
+                {CITIES.map(c => <option key={c}>{c}</option>)}
+              </select>
+            </div>
+          </div>
+
+          {/* Delivery block */}
+          <div className="card" style={{ padding: 16, marginBottom: 14 }}>
+            <div className="section-title" style={{ marginBottom: 12 }}>
+              <I.Truck style={{ width: 14, height: 14, color: 'var(--brand-600)' }} /> Livraison (destination)
+              <span style={{ fontSize: 11, color: 'var(--ink-400)', fontWeight: 400, marginLeft: 6 }}>/ Delivery info</span>
+            </div>
+            <div className="field">
+              <label className="label">Nom du destinataire <span className="opt">/ Si différent de l'expéditeur</span></label>
+              <input className="input" value={data.deliveryName} onChange={e => upd('deliveryName', e.target.value)} placeholder="Nom complet" />
+            </div>
+            <div className="field">
+              <label className="label">Adresse de livraison</label>
+              <input className="input" value={data.deliveryAddress} onChange={e => upd('deliveryAddress', e.target.value)} placeholder="1234 Rue Saint-Denis, Montréal H2X 3K2" />
+            </div>
+            <div className="field" style={{ marginBottom: 0 }}>
+              <label className="label">Téléphone de livraison <span className="opt">/ À Montréal</span></label>
+              <input className="input mono" value={data.deliveryPhone} onChange={e => upd('deliveryPhone', e.target.value)} placeholder="+1 514 *** ****" />
             </div>
           </div>
 
