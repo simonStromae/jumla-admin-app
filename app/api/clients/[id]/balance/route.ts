@@ -11,7 +11,7 @@ export async function GET(_: NextRequest, { params }: { params: { id: string } }
   return getBalance(params.id);
 }
 
-export async function getBalance(clientId: string) {
+async function getBalance(clientId: string) {
   const payments = await prisma.payment.findMany({
     where: { clientId },
     include: {
