@@ -613,8 +613,8 @@ export default function PaymentsScreen({ onNav }) {
   }, []);
 
   const facture     = payments.reduce((s, p) => s + (p.amount || 0), 0);
-  const percu       = payments.filter(p => p.status === 'completed').reduce((s, p) => s + (p.amount || 0), 0);
-  const impayes     = payments.filter(p => p.status !== 'completed' && p.status !== 'refunded').reduce((s, p) => s + (p.amount || 0), 0);
+  const percu       = payments.filter(p => p.status === 'paid').reduce((s, p) => s + (p.amount || 0), 0);
+  const impayes     = payments.filter(p => p.status !== 'paid' && p.status !== 'refunded').reduce((s, p) => s + (p.amount || 0), 0);
   const taux        = Math.round(percu / (facture || 1) * 100);
 
   const openSettle = (info) => {
@@ -661,7 +661,7 @@ export default function PaymentsScreen({ onNav }) {
           <div className="kpi__label" style={{ color: 'var(--bad-700)' }}>Impayés <span style={{ textTransform: 'none', opacity: .6 }}>/ Outstanding</span></div>
           <div className="kpi__value" style={{ color: 'var(--bad-700)' }}>{impayes.toLocaleString('fr')} <span style={{ fontSize: 14, opacity: .6 }}>CAD</span></div>
           <div className="kpi__delta" style={{ color: 'var(--bad-600)' }}>
-            {payments.filter(p => p.status !== 'completed').length} en attente
+            {payments.filter(p => p.status !== 'paid').length} en attente
           </div>
         </div>
         <div className="kpi">
@@ -672,7 +672,7 @@ export default function PaymentsScreen({ onNav }) {
       </div>
 
       {/* Main tabs */}
-      <div style={{ display: 'flex', gap: 0, borderBottom: '1px solid var(--border)', marginBottom: 0 }}>
+      <div style={{ display: 'flex', gap: 0, borderBottom: '1px solid var(--border)', marginBottom: 16 }}>
         {[
           { id: 'transactions', label: 'Paiements reçus', icon: '💳' },
           { id: 'invoices',     label: 'Factures',         icon: '📄' },
