@@ -7,42 +7,48 @@ export async function GET() {
   const { error } = await requireAdmin();
   if (error) return error;
 
-  const rows = await prisma.$queryRawUnsafe(`
-    SELECT
-      t.id,
-      t."clientId",
-      t.amount,
-      t.type,
-      t.method,
-      t.reference,
-      t.note,
-      t."createdAt",
-      u.name  AS "clientName",
-      u.phone AS "clientPhone",
-      rb.name AS "recordedByName",
-      COALESCE(
-        json_agg(
-          json_build_object(
-            'paymentId',    ta."paymentId",
-            'amount',       ta.amount,
-            'trackingCode', par."trackingCode",
-            'campaignCode', c.code
-          ) ORDER BY ta.id
-        ) FILTER (WHERE ta.id IS NOT NULL),
-        '[]'::json
-      ) AS allocations,
-      COALESCE(SUM(ta.amount), 0)::int AS "totalAllocated"
-    FROM transactions t
-    JOIN users u ON u.id = t."clientId"
-    LEFT JOIN users rb ON rb.id = t."recordedById"
-    LEFT JOIN transaction_allocations ta ON ta."transactionId" = t.id
-    LEFT JOIN payments py  ON py.id  = ta."paymentId"
-    LEFT JOIN parcels par  ON par.id = py."parcelId"
-    LEFT JOIN campaigns c  ON c.id   = par."campaignId"
-    GROUP BY t.id, t."clientId", t.amount, t.type, t.method, t.reference, t.note, t."createdAt",
-             u.name, u.phone, rb.name
-    ORDER BY t."createdAt" DESC
-  `) as any[];
+  let rows: any[];
+  try {
+    rows = await prisma.$queryRawUnsafe(`
+      SELECT
+        t.id,
+        t."clientId",
+        t.amount,
+        t.type,
+        t.method,
+        t.reference,
+        t.note,
+        t."createdAt",
+        u.name  AS "clientName",
+        u.phone AS "clientPhone",
+        rb.name AS "recordedByName",
+        COALESCE(
+          json_agg(
+            json_build_object(
+              'paymentId',    ta."paymentId",
+              'amount',       ta.amount,
+              'trackingCode', par."trackingCode",
+              'campaignCode', c.code
+            ) ORDER BY ta.id
+          ) FILTER (WHERE ta.id IS NOT NULL),
+          '[]'::json
+        ) AS allocations,
+        COALESCE(SUM(ta.amount), 0)::int AS "totalAllocated"
+      FROM transactions t
+      JOIN users u ON u.id = t."clientId"
+      LEFT JOIN users rb ON rb.id = t."recordedById"
+      LEFT JOIN transaction_allocations ta ON ta."transactionId" = t.id
+      LEFT JOIN payments py  ON py.id  = ta."paymentId"
+      LEFT JOIN parcels par  ON par.id = py."parcelId"
+      LEFT JOIN campaigns c  ON c.id   = par."campaignId"
+      GROUP BY t.id, t."clientId", t.amount, t.type, t.method, t.reference, t.note, t."createdAt",
+               u.name, u.phone, rb.name
+      ORDER BY t."createdAt" DESC
+    `) as any[];
+  } catch {
+    // transactions table not yet created — run /api/_migrate
+    rows = [];
+  }
 
   return NextResponse.json(
     rows.map(r => ({

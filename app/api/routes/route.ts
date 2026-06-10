@@ -7,9 +7,16 @@ export async function GET() {
   const { error } = await requireAdmin();
   if (error) return error;
 
-  const routes = await prisma.$queryRawUnsafe<any[]>(
-    `SELECT id, origin, destination, label, active, "transitDays", currency, fees FROM routes ORDER BY origin`
-  );
+  let routes: any[];
+  try {
+    routes = await prisma.$queryRawUnsafe<any[]>(
+      `SELECT id, origin, destination, label, active, "transitDays", currency, fees FROM routes ORDER BY origin`
+    );
+  } catch {
+    // columns not yet migrated — fall back to basic fields
+    routes = await prisma.route.findMany({ orderBy: { origin: 'asc' } });
+  }
+
   return NextResponse.json(routes.map(r => ({
     id:          r.id,
     code:        `${r.origin} → ${r.destination}`,
@@ -36,16 +43,22 @@ export async function POST(req: Request) {
   const dest = destination.toUpperCase().trim();
   const lbl  = label?.trim() || `${org} → ${dest}`;
 
-  const rows = await prisma.$queryRawUnsafe<any[]>(
-    `INSERT INTO routes (id, origin, destination, label, active, "transitDays", currency, fees)
-     VALUES (gen_random_uuid()::text, $1, $2, $3, true, $4, $5, $6::jsonb)
-     RETURNING id, origin, destination, label, active, "transitDays", currency, fees`,
-    org, dest, lbl,
-    transitDays ?? 14,
-    currency    ?? 'CAD',
-    fees        ? JSON.stringify(fees) : null,
-  );
-  const r = rows[0];
+  let r: any;
+  try {
+    const rows = await prisma.$queryRawUnsafe<any[]>(
+      `INSERT INTO routes (id, origin, destination, label, active, "transitDays", currency, fees)
+       VALUES (gen_random_uuid()::text, $1, $2, $3, true, $4, $5, $6::jsonb)
+       RETURNING id, origin, destination, label, active, "transitDays", currency, fees`,
+      org, dest, lbl,
+      transitDays ?? 14,
+      currency    ?? 'CAD',
+      fees        ? JSON.stringify(fees) : null,
+    );
+    r = rows[0];
+  } catch {
+    // columns not yet migrated — create with basic fields
+    r = await prisma.route.create({ data: { origin: org, destination: dest, label: lbl, active: true } });
+  }
 
   return NextResponse.json({
     id:          r.id,
@@ -54,8 +67,8 @@ export async function POST(req: Request) {
     toIATA:      r.destination,
     label:       r.label ?? `${r.origin} → ${r.destination}`,
     active:      r.active,
-    transitDays: r.transitDays,
-    currency:    r.currency,
-    fees:        r.fees,
+    transitDays: r.transitDays ?? 14,
+    currency:    r.currency ?? 'CAD',
+    fees:        r.fees ?? null,
   });
 }

@@ -26,16 +26,22 @@ async function getBalance(clientId: string) {
   });
 
   // Per-payment allocated amounts from transactions
-  const allocRows = payments.length
-    ? await prisma.$queryRawUnsafe(
+  let allocRows: { paymentId: string; allocated: number }[] = [];
+  if (payments.length) {
+    try {
+      allocRows = await prisma.$queryRawUnsafe(
         `SELECT ta."paymentId", COALESCE(SUM(ta.amount), 0)::int AS allocated
          FROM transaction_allocations ta
          JOIN transactions t ON t.id = ta."transactionId"
          WHERE ta."paymentId" = ANY($1::text[])
          GROUP BY ta."paymentId"`,
         payments.map(p => p.id)
-      ) as { paymentId: string; allocated: number }[]
-    : [];
+      ) as { paymentId: string; allocated: number }[];
+    } catch {
+      // tables not yet migrated — treat all as unallocated
+      allocRows = [];
+    }
+  }
 
   const allocMap: Record<string, number> = {};
   for (const r of allocRows) allocMap[r.paymentId] = Number(r.allocated);
