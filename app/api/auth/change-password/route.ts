@@ -17,9 +17,11 @@ export async function POST(req: NextRequest) {
   const user = await prisma.user.findUnique({ where: { id: userId } });
   if (!user) return NextResponse.json({ error: 'Utilisateur introuvable' }, { status: 404 });
 
-  const mustChange = (user as any).mustChangePassword ?? false;
+  // Trust either the DB value or the session token — whichever says true
+  const dbMustChange      = (user as any).mustChangePassword ?? false;
+  const sessionMustChange = (session.user as any).mustChangePassword ?? false;
+  const mustChange        = dbMustChange || sessionMustChange;
 
-  // Skip current password check if this is a forced first-login change
   if (!mustChange) {
     if (!currentPassword) return NextResponse.json({ error: 'Mot de passe actuel requis' }, { status: 400 });
     const valid = await bcrypt.compare(currentPassword, user.passwordHash);

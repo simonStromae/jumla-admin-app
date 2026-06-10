@@ -16,6 +16,15 @@ export default function AdminLayout({ children }) {
     }
   }, [session, status, pathname, router]);
 
+  // Change-password page renders standalone, no sidebar
+  if (pathname === '/admin/change-password') {
+    return (
+      <div style={{ minHeight: '100vh', background: 'var(--bg-soft)' }}>
+        {children}
+      </div>
+    );
+  }
+
   return (
     <Shell route={pathname} onNav={(path) => router.push(path)}>
       {children}
