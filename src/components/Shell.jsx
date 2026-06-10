@@ -28,7 +28,16 @@ export function Sidebar({ route, onNav }) {
   const role        = user?.role ?? '';
   const perms       = user?.permissions ?? {};
   const isAdmin     = role === 'admin';
-  const can         = (key) => isAdmin || perms[key] === true;
+  // Support legacy flat { payments: true } and new nested { cargaisons: ['view',...] }
+  const PERM_ALIAS  = { campaigns: 'cargaisons' };
+  const can = (key) => {
+    if (isAdmin) return true;
+    if (perms[key] === true) return true;
+    const nk = PERM_ALIAS[key] || key;
+    if (Array.isArray(perms[nk]) && perms[nk].length > 0) return true;
+    if (Array.isArray(perms.admin) && perms.admin.includes(key)) return true;
+    return false;
+  };
   const initials    = name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
 
   const allItems = [

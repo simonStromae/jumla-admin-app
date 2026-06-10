@@ -27,7 +27,13 @@ export async function requirePermission(permKey: string) {
   const role = (session!.user as any).role;
   if (role === 'admin') return { session };
   const perms = (session!.user as any).permissions ?? {};
-  if (!perms[permKey]) {
+  const PERM_ALIAS: Record<string, string> = { campaigns: 'cargaisons' };
+  const nk = PERM_ALIAS[permKey] || permKey;
+  const hasPerm =
+    perms[permKey] === true ||
+    (Array.isArray(perms[nk]) && perms[nk].length > 0) ||
+    (Array.isArray(perms.admin) && (perms.admin as string[]).includes(permKey));
+  if (!hasPerm) {
     return { error: NextResponse.json({ error: 'Permission insuffisante' }, { status: 403 }) };
   }
   return { session };
