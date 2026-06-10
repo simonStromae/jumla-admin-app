@@ -335,6 +335,14 @@ function SectionWhatsapp() {
                   {' '}<strong>Twilio Console → Account → Account Info</strong>.
                   <br />L'Auth Token est différent d'une API Key — c'est le token principal visible sur le dashboard.
                 </div>
+                {testResult.rawTwilio && (
+                  <details style={{ marginTop: 8 }}>
+                    <summary style={{ fontSize: 11, color: 'var(--ink-400)', cursor: 'pointer' }}>Réponse brute Twilio</summary>
+                    <pre style={{ fontSize: 10.5, color: 'var(--ink-600)', marginTop: 4, whiteSpace: 'pre-wrap', wordBreak: 'break-all' }}>
+                      {JSON.stringify(testResult.rawTwilio, null, 2)}
+                    </pre>
+                  </details>
+                )}
               </>
             )}
           </div>

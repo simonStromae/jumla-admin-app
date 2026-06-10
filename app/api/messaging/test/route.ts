@@ -18,18 +18,14 @@ export async function GET() {
 
   try {
     const account = await twilioVerify(accountSid, authToken);
-    return NextResponse.json({
-      ok:          true,
-      accountName: account.friendly_name,
-      status:      account.status,
-      sidPreview,
-      tokenPreview,
-    });
+    return NextResponse.json({ ok: true, accountName: account.friendly_name, status: account.status, sidPreview, tokenPreview });
   } catch (e: any) {
     return NextResponse.json({
       ok:           false,
-      error:        e?.message ?? 'Erreur inconnue',
-      code:         e?.code    ?? '',
+      error:        e?.message  ?? 'Erreur inconnue',
+      code:         e?.code     ?? '',
+      httpStatus:   e?.httpStatus ?? '',
+      rawTwilio:    e?.raw       ?? null,
       sidPreview,
       tokenPreview,
     });
