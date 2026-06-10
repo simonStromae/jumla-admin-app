@@ -29,7 +29,7 @@ export default function ClientLayout({ children }) {
   );
 
   // Print pages get no chrome
-  if (pathname.startsWith('/client/invoice') || pathname.startsWith('/client/bordereau')) {
+  if (pathname.startsWith('/client/invoice/') || pathname.startsWith('/client/bordereau/')) {
     return <>{children}</>;
   }
 
