@@ -194,6 +194,8 @@ function SectionWhatsapp() {
   const [showToken,   setShowToken]   = useState(false);
   const [saving,      setSaving]      = useState(false);
   const [saved,       setSaved]       = useState(false);
+  const [testing,     setTesting]     = useState(false);
+  const [testResult,  setTestResult]  = useState(null);
   const [autoToggles, setAutoToggles] = useState({ arrival: true, reminder: true, confirm: false, pickup: false });
   const toggle = (k) => setAutoToggles(t => ({ ...t, [k]: !t[k] }));
 
@@ -206,9 +208,23 @@ function SectionWhatsapp() {
     }).catch(() => {});
   }, []);
 
+  async function handleTest() {
+    setTesting(true);
+    setTestResult(null);
+    const res = await fetch('/api/messaging/test').catch(() => null);
+    const data = res ? await res.json() : { ok: false, error: 'Erreur réseau' };
+    setTestResult(data);
+    setTesting(false);
+    if (data.ok) {
+      const s = await fetch('/api/settings/whatsapp').then(r => r.json()).catch(() => null);
+      if (s) setStatus(s);
+    }
+  }
+
   async function handleSave() {
     setSaving(true);
     setSaved(false);
+    setTestResult(null);
     await fetch('/api/settings/whatsapp', {
       method:  'PUT',
       headers: { 'Content-Type': 'application/json' },
@@ -284,12 +300,39 @@ function SectionWhatsapp() {
           <label className="label">Numéro WhatsApp (ex: +14155238886)</label>
           <input className="input mono" placeholder="+14155238886" value={fromNumber} onChange={e => setFromNumber(e.target.value)} />
         </div>
-        <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+        <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
           <button className="btn btn--brand btn--sm" disabled={saving} onClick={handleSave}>
             {saving ? 'Enregistrement…' : 'Enregistrer'}
           </button>
+          <button className="btn btn--ghost btn--sm" disabled={testing} onClick={handleTest}>
+            {testing ? 'Test en cours…' : '⚡ Tester la connexion'}
+          </button>
           {saved && <span style={{ fontSize: 12, color: 'var(--ok-700)', fontWeight: 600 }}>✓ Sauvegardé</span>}
         </div>
+        {testResult && (
+          <div style={{
+            marginTop: 12, padding: '10px 14px', borderRadius: 8,
+            background: testResult.ok ? 'var(--ok-50)' : 'var(--bad-50)',
+            border: '1px solid ' + (testResult.ok ? 'var(--ok-200)' : 'var(--bad-200)'),
+          }}>
+            {testResult.ok ? (
+              <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--ok-700)' }}>
+                ✓ Connexion réussie — compte : <span style={{ fontFamily: 'monospace' }}>{testResult.accountName}</span> ({testResult.status})
+              </div>
+            ) : (
+              <>
+                <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--bad-700)', marginBottom: 4 }}>
+                  ✕ Échec d'authentification
+                </div>
+                <div style={{ fontSize: 12, color: 'var(--bad-600)', fontFamily: 'monospace' }}>{testResult.error}</div>
+                {testResult.code && <div style={{ fontSize: 11, color: 'var(--bad-500)', marginTop: 4 }}>Code Twilio : {testResult.code}</div>}
+                <div style={{ fontSize: 12, color: 'var(--ink-500)', marginTop: 8 }}>
+                  Vérifiez votre <strong>Account SID</strong> (commence par AC…) et votre <strong>Auth Token</strong> dans la console Twilio.
+                </div>
+              </>
+            )}
+          </div>
+        )}
       </SettingsCard>
       <SettingsCard title="Automatisations WhatsApp" sub="Déclencheurs automatiques pour les notifications clients.">
         <ToggleRow label="Avis d'arrivée automatique"    sub="Envoyé dès que la cargaison passe au statut Arrivé"   checked={autoToggles.arrival}  onChange={() => toggle('arrival')} />
