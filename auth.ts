@@ -20,7 +20,8 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         });
 
         if (!user) return null;
-        if ((user as any).status === 'suspended') return null;
+        // Clients can still log in when suspended; only block admin/agent
+        if ((user as any).status === 'suspended' && user.role !== 'client') return null;
         const skipVerify = process.env.DISABLE_EMAIL_VERIFICATION === 'true';
         if (!skipVerify && !user.emailVerified) return null;
 
@@ -37,6 +38,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           role:              user.role,
           permissions:       user.permissions,
           mustChangePassword: (user as any).mustChangePassword ?? false,
+          status:            (user as any).status ?? 'active',
         };
       },
     }),

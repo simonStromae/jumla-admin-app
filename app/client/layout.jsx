@@ -5,11 +5,12 @@ import { useEffect } from 'react';
 import '@/src/styles/tokens.css';
 import I from '@/src/components/Icons.jsx';
 
-const NAV = [
-  { label: 'Mes colis',      icon: I.Box,    href: '/client/dashboard' },
-  { label: 'Réserver',       icon: I.Plus,   href: '/client/booking'   },
-  { label: 'Suivi de colis', icon: I.Search, href: '/client/suivi'     },
-  { label: 'Mon profil',     icon: I.Users,  href: '/client/profile'   },
+const NAV_ALL = [
+  { label: 'Mes colis',      icon: I.Box,    href: '/client/dashboard', suspendedOk: true  },
+  { label: 'Réserver',       icon: I.Plus,   href: '/client/booking',   suspendedOk: false },
+  { label: 'Suivi de colis', icon: I.Search, href: '/client/suivi',     suspendedOk: true  },
+  { label: 'Paiements',      icon: I.CreditCard, href: '/client/invoices', suspendedOk: true },
+  { label: 'Mon profil',     icon: I.Users,  href: '/client/profile',   suspendedOk: true  },
 ];
 
 export default function ClientLayout({ children }) {
@@ -32,8 +33,10 @@ export default function ClientLayout({ children }) {
     return <>{children}</>;
   }
 
-  const user     = session?.user;
-  const initials = (user?.name ?? '?').split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
+  const user       = session?.user;
+  const suspended  = user?.status === 'suspended';
+  const NAV        = NAV_ALL.filter(n => !suspended || n.suspendedOk);
+  const initials   = (user?.name ?? '?').split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
 
   return (
     <div style={{ display: 'flex', minHeight: '100vh', background: 'var(--bg-soft)' }}>
@@ -133,6 +136,17 @@ export default function ClientLayout({ children }) {
           </span>
         </header>
 
+        {suspended && (
+          <div style={{
+            background: 'var(--warn-50)', borderBottom: '1px solid var(--warn-200)',
+            padding: '12px 28px', display: 'flex', alignItems: 'center', gap: 10,
+            fontSize: 13,
+          }}>
+            <span style={{ fontSize: 16 }}>⚠️</span>
+            <span style={{ color: 'var(--warn-700)', fontWeight: 600 }}>Compte suspendu</span>
+            <span style={{ color: 'var(--warn-600)' }}>— Vous ne pouvez plus créer de nouveaux envois. Contactez-nous pour régulariser votre situation.</span>
+          </div>
+        )}
         <div style={{ flex: 1, padding: '28px 32px' }}>
           {children}
         </div>

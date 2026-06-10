@@ -112,7 +112,8 @@ function TrackingTimeline({ events }) {
 
 export default function ClientDashboard() {
   const { data: session } = useSession();
-  const router = useRouter();
+  const router    = useRouter();
+  const suspended = session?.user?.status === 'suspended';
   const [parcels, setParcels]   = useState([]);
   const [loading, setLoading]   = useState(true);
   const [selected, setSelected] = useState(null);
@@ -142,17 +143,19 @@ export default function ClientDashboard() {
             Suivez vos colis et gérez vos paiements.
           </p>
         </div>
-        <button
-          onClick={() => router.push('/client/booking')}
-          style={{
-            display: 'inline-flex', alignItems: 'center', gap: 8,
-            padding: '10px 18px', borderRadius: 10, border: 'none', cursor: 'pointer',
-            background: 'linear-gradient(135deg, #F5A524, #D97706)',
-            color: 'white', fontWeight: 700, fontSize: 14, whiteSpace: 'nowrap',
-            boxShadow: '0 4px 12px rgba(217,119,6,.3)',
-          }}>
-          <span style={{ fontSize: 16 }}>📦</span> Réserver un envoi
-        </button>
+        {!suspended && (
+          <button
+            onClick={() => router.push('/client/booking')}
+            style={{
+              display: 'inline-flex', alignItems: 'center', gap: 8,
+              padding: '10px 18px', borderRadius: 10, border: 'none', cursor: 'pointer',
+              background: 'linear-gradient(135deg, #F5A524, #D97706)',
+              color: 'white', fontWeight: 700, fontSize: 14, whiteSpace: 'nowrap',
+              boxShadow: '0 4px 12px rgba(217,119,6,.3)',
+            }}>
+            <span style={{ fontSize: 16 }}>📦</span> Réserver un envoi
+          </button>
+        )}
       </div>
 
       {/* KPI */}
@@ -244,16 +247,22 @@ export default function ClientDashboard() {
         <div style={{ textAlign: 'center', padding: 60, color: 'var(--ink-400)' }}>
           <div style={{ fontSize: 48, marginBottom: 12 }}>📦</div>
           <div style={{ fontSize: 15, fontWeight: 600, marginBottom: 6, color: 'var(--ink-700)' }}>Aucun colis enregistré</div>
-          <div style={{ fontSize: 13, marginBottom: 20 }}>Commencez par réserver votre premier envoi.</div>
-          <button onClick={() => router.push('/client/booking')} style={{
-            display: 'inline-flex', alignItems: 'center', gap: 8,
-            padding: '10px 20px', borderRadius: 10, border: 'none', cursor: 'pointer',
-            background: 'linear-gradient(135deg, #F5A524, #D97706)',
-            color: 'white', fontWeight: 700, fontSize: 14,
-            boxShadow: '0 4px 12px rgba(217,119,6,.25)',
-          }}>
-            📦 Réserver mon premier envoi
-          </button>
+          {suspended ? (
+            <div style={{ fontSize: 13, color: 'var(--warn-600)' }}>Votre compte est suspendu. Contactez-nous pour régulariser.</div>
+          ) : (
+            <>
+              <div style={{ fontSize: 13, marginBottom: 20 }}>Commencez par réserver votre premier envoi.</div>
+              <button onClick={() => router.push('/client/booking')} style={{
+                display: 'inline-flex', alignItems: 'center', gap: 8,
+                padding: '10px 20px', borderRadius: 10, border: 'none', cursor: 'pointer',
+                background: 'linear-gradient(135deg, #F5A524, #D97706)',
+                color: 'white', fontWeight: 700, fontSize: 14,
+                boxShadow: '0 4px 12px rgba(217,119,6,.25)',
+              }}>
+                📦 Réserver mon premier envoi
+              </button>
+            </>
+          )}
         </div>
       ) : (
         <>
