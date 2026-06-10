@@ -198,5 +198,9 @@ function SuiviContent() {
 }
 
 export default function ClientSuiviPage() {
-  return <Suspense><SuiviContent /></Suspense>;
+  return (
+    <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100%' }}>
+      <Suspense><SuiviContent /></Suspense>
+    </div>
+  );
 }
