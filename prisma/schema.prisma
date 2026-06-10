@@ -36,19 +36,21 @@ enum PaymentStatus {
 }
 
 model User {
-  id               String    @id @default(cuid())
-  email            String    @unique
-  passwordHash     String
-  name             String
-  phone            String?
-  role             UserRole  @default(client)
-  emailVerified    Boolean   @default(false)
-  verifyToken      String?
-  permissions      Json      @default("{}")
-  city             String?
-  country          String    @default("CM")
-  addresses        Json?
-  createdAt        DateTime  @default(now())
+  id                 String    @id @default(cuid())
+  email              String    @unique
+  passwordHash       String
+  name               String
+  phone              String?
+  role               UserRole  @default(client)
+  status             String    @default("active")
+  emailVerified      Boolean   @default(false)
+  verifyToken        String?
+  mustChangePassword Boolean   @default(false)
+  permissions        Json      @default("{}")
+  city               String?
+  country            String    @default("CM")
+  addresses          Json?
+  createdAt          DateTime  @default(now())
 
   parcels          Parcel[]
   payments         Payment[]

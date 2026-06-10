@@ -9,10 +9,7 @@ export async function POST(req: NextRequest) {
   if (error) return error;
 
   const { currentPassword, newPassword } = await req.json();
-  if (!currentPassword || !newPassword) {
-    return NextResponse.json({ error: 'Champs obligatoires manquants' }, { status: 400 });
-  }
-  if (newPassword.length < 8) {
+  if (!newPassword || newPassword.length < 8) {
     return NextResponse.json({ error: 'Le nouveau mot de passe doit faire au moins 8 caractères' }, { status: 400 });
   }
 
@@ -20,11 +17,20 @@ export async function POST(req: NextRequest) {
   const user = await prisma.user.findUnique({ where: { id: userId } });
   if (!user) return NextResponse.json({ error: 'Utilisateur introuvable' }, { status: 404 });
 
-  const valid = await bcrypt.compare(currentPassword, user.passwordHash);
-  if (!valid) return NextResponse.json({ error: 'Mot de passe actuel incorrect' }, { status: 400 });
+  const mustChange = (user as any).mustChangePassword ?? false;
+
+  // Skip current password check if this is a forced first-login change
+  if (!mustChange) {
+    if (!currentPassword) return NextResponse.json({ error: 'Mot de passe actuel requis' }, { status: 400 });
+    const valid = await bcrypt.compare(currentPassword, user.passwordHash);
+    if (!valid) return NextResponse.json({ error: 'Mot de passe actuel incorrect' }, { status: 400 });
+  }
 
   const hash = await bcrypt.hash(newPassword, 12);
-  await prisma.user.update({ where: { id: userId }, data: { passwordHash: hash } });
+  await prisma.user.update({
+    where: { id: userId },
+    data: { passwordHash: hash, mustChangePassword: false } as any,
+  });
 
   return NextResponse.json({ ok: true });
 }

@@ -7,18 +7,20 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
   const { error } = await requirePermission('agents');
   if (error) return error;
 
-  const { name, email, phone, city, role, permissions } = await req.json();
+  const { name, email, phone, city, role, permissions, status, mustChangePassword } = await req.json();
 
   const user = await prisma.user.update({
     where: { id: params.id },
     data: {
-      ...(name        !== undefined && { name }),
-      ...(email       !== undefined && { email }),
-      ...(phone       !== undefined && { phone: phone || null }),
-      ...(city        !== undefined && { city: city || null }),
-      ...(role        !== undefined && { role: role as any }),
-      ...(permissions !== undefined && { permissions }),
-    },
+      ...(name               !== undefined && { name }),
+      ...(email              !== undefined && { email }),
+      ...(phone              !== undefined && { phone: phone || null }),
+      ...(city               !== undefined && { city: city || null }),
+      ...(role               !== undefined && { role: role as any }),
+      ...(permissions        !== undefined && { permissions }),
+      ...(status             !== undefined && { status } as any),
+      ...(mustChangePassword !== undefined && { mustChangePassword } as any),
+    } as any,
   });
 
   return NextResponse.json({ ok: true, id: user.id });

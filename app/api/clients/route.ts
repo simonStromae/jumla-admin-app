@@ -38,6 +38,7 @@ export async function GET() {
       id:           u.id,
       name:         u.name,
       email:        u.email,
+      status:       (u as any).status ?? 'active',
       code:         'CL-' + String(i + 1).padStart(4, '0'),
       phone:        u.phone ?? '—',
       city:         u.city  ?? '—',

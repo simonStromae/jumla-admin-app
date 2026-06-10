@@ -13,6 +13,13 @@ const permLabels = {
   analytics: 'Voir analyses',
 };
 
+function StatusBadge({ status }) {
+  if (status === 'suspended') {
+    return <span className="badge" style={{ background: 'var(--bad-50)', color: 'var(--bad-700)', border: '1px solid var(--bad-200)' }}>Suspendu</span>;
+  }
+  return <span className="badge" style={{ background: 'var(--ok-50)', color: 'var(--ok-700)', border: '1px solid var(--ok-100)' }}>Actif</span>;
+}
+
 function Mini({ label, v, unit }) {
   return (
     <div style={{ textAlign: 'center' }}>
@@ -24,7 +31,7 @@ function Mini({ label, v, unit }) {
   );
 }
 
-function AgentsGridView({ agents, setEditing }) {
+function AgentsGridView({ agents, setEditing, onToggleStatus }) {
   return (
     <div style={{
       display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(360px, 1fr))', gap: 12,
@@ -33,16 +40,18 @@ function AgentsGridView({ agents, setEditing }) {
     }}>
       {agents.map(a => {
         const perms = a.permissions || a.perms || {};
+        const suspended = a.status === 'suspended';
         return (
-          <div key={a.id} className="card" style={{ padding: 0, overflow: 'hidden' }}>
+          <div key={a.id} className="card" style={{ padding: 0, overflow: 'hidden', opacity: suspended ? .7 : 1 }}>
             <div style={{ padding: 14, borderBottom: '1px solid var(--border-soft)', display: 'flex', alignItems: 'flex-start', gap: 12 }}>
               <Avatar initials={a.initials} color={a.color} size="lg" />
               <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 3 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 3, flexWrap: 'wrap' }}>
                   <span style={{ fontSize: 15, fontWeight: 700 }}>{a.name}</span>
                   {a.role === 'admin'    && <span className="badge badge--brand">Admin</span>}
                   {a.role === 'agent'    && <span className="badge badge--info">Agent</span>}
                   {a.role === 'readonly' && <span className="badge badge--neutral">Lecture seule</span>}
+                  <StatusBadge status={a.status} />
                 </div>
                 <div style={{ fontSize: 12, color: 'var(--ink-500)', display: 'flex', alignItems: 'center', gap: 4 }}>
                   <I.Pin style={{ width: 11, height: 11 }} />
@@ -51,7 +60,9 @@ function AgentsGridView({ agents, setEditing }) {
                   <span style={{ color: 'var(--ink-400)' }}>{a.lastLogin}</span>
                 </div>
               </div>
-              <button className="icon-btn" onClick={() => setEditing(a)}><I.Edit /></button>
+              <div style={{ display: 'flex', gap: 2 }}>
+                <button className="icon-btn" onClick={() => setEditing(a)}><I.Edit /></button>
+              </div>
             </div>
 
             <div style={{ padding: '10px 14px', display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 6, background: 'var(--bg-soft)', borderBottom: '1px solid var(--border-soft)' }}>
@@ -75,6 +86,14 @@ function AgentsGridView({ agents, setEditing }) {
                   </span>
                 ))}
               </div>
+              <div style={{ marginTop: 10, display: 'flex', justifyContent: 'flex-end' }}>
+                <button
+                  className="btn btn--ghost btn--xs"
+                  style={suspended ? { color: 'var(--ok-700)' } : { color: 'var(--bad-600)' }}
+                  onClick={() => onToggleStatus(a)}>
+                  {suspended ? 'Réactiver' : 'Suspendre'}
+                </button>
+              </div>
             </div>
           </div>
         );
@@ -89,13 +108,13 @@ function AgentsGridView({ agents, setEditing }) {
           <I.UserPlus />
         </div>
         <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--ink-700)' }}>Inviter un agent</div>
-        <div style={{ fontSize: 11.5, marginTop: 4, textAlign: 'center' }}>Envoyez un lien par email — l'agent crée son mot de passe.</div>
+        <div style={{ fontSize: 11.5, marginTop: 4, textAlign: 'center' }}>Un mot de passe temporaire sera envoyé par WhatsApp.</div>
       </div>
     </div>
   );
 }
 
-function AgentsListView({ agents, setEditing, page, pageSize }) {
+function AgentsListView({ agents, setEditing, onToggleStatus, page, pageSize }) {
   const paged = agents.slice((page - 1) * pageSize, page * pageSize);
   return (
     <table className="tbl" style={{ borderTopLeftRadius: 0, borderTopRightRadius: 0 }}>
@@ -104,13 +123,13 @@ function AgentsListView({ agents, setEditing, page, pageSize }) {
           <th style={{ width: 32, borderRadius: 0 }}><input type="checkbox" style={{ accentColor: 'var(--brand-500)' }} /></th>
           <th>Agent</th>
           <th>Rôle</th>
+          <th>Statut</th>
           <th>Site</th>
           <th style={{ textAlign: 'center' }}>Cargaisons</th>
           <th style={{ textAlign: 'center' }}>Colis gérés</th>
-          <th style={{ textAlign: 'right' }}>Encaissé</th>
           <th>Permissions</th>
-          <th>Dernière activité</th>
-          <th style={{ borderRadius: 0, width: 60 }}></th>
+          <th>Créé le</th>
+          <th style={{ borderRadius: 0, width: 100 }}></th>
         </tr>
       </thead>
       <tbody>
@@ -118,15 +137,16 @@ function AgentsListView({ agents, setEditing, page, pageSize }) {
           const perms = a.permissions || a.perms || {};
           const enabledPerms = Object.values(perms).filter(Boolean).length;
           const totalPerms = Object.keys(perms).length;
+          const suspended = a.status === 'suspended';
           return (
-            <tr key={a.id}>
+            <tr key={a.id} style={{ opacity: suspended ? .7 : 1 }}>
               <td><input type="checkbox" style={{ accentColor: 'var(--brand-500)' }} /></td>
               <td>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                   <Avatar initials={a.initials} color={a.color} size="sm" />
                   <div>
                     <div style={{ fontSize: 13, fontWeight: 600 }}>{a.name}</div>
-                    <div className="mono" style={{ fontSize: 10.5, color: 'var(--ink-400)' }}>{a.email || (a.initials?.toLowerCase() + '@jumla.cargo')}</div>
+                    <div className="mono" style={{ fontSize: 10.5, color: 'var(--ink-400)' }}>{a.email}</div>
                   </div>
                 </div>
               </td>
@@ -135,16 +155,13 @@ function AgentsListView({ agents, setEditing, page, pageSize }) {
                 {a.role === 'agent'    && <span className="badge badge--info">Agent</span>}
                 {a.role === 'readonly' && <span className="badge badge--neutral">Lecture seule</span>}
               </td>
+              <td><StatusBadge status={a.status} /></td>
               <td style={{ fontSize: 12.5 }}>
                 <I.Pin style={{ width: 11, height: 11, color: 'var(--ink-400)', verticalAlign: -1, marginRight: 3 }} />
                 {a.city}
               </td>
               <td className="mono" style={{ textAlign: 'center', fontWeight: 600 }}>{a.campaigns}</td>
               <td className="mono" style={{ textAlign: 'center', fontWeight: 600 }}>{a.parcels}</td>
-              <td style={{ textAlign: 'right' }}>
-                <span className="mono" style={{ fontWeight: 700 }}>{(a.collected / 1000).toFixed(0)}k</span>
-                <span style={{ fontSize: 11, color: 'var(--ink-400)', marginLeft: 3 }}>CAD</span>
-              </td>
               <td>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                   <div style={{ width: 60, height: 4, background: 'var(--ink-100)', borderRadius: 999, overflow: 'hidden' }}>
@@ -156,8 +173,13 @@ function AgentsListView({ agents, setEditing, page, pageSize }) {
               <td style={{ fontSize: 12, color: 'var(--ink-500)' }}>{a.lastLogin}</td>
               <td>
                 <div style={{ display: 'flex', gap: 2, justifyContent: 'flex-end' }}>
-                  <button className="icon-btn" onClick={() => setEditing(a)}><I.Edit /></button>
-                  <button className="icon-btn"><I.More /></button>
+                  <button className="icon-btn" onClick={() => setEditing(a)} title="Modifier"><I.Edit /></button>
+                  <button
+                    className="btn btn--ghost btn--xs"
+                    style={suspended ? { color: 'var(--ok-700)', fontSize: 11 } : { color: 'var(--bad-600)', fontSize: 11 }}
+                    onClick={() => onToggleStatus(a)}>
+                    {suspended ? 'Réactiver' : 'Suspendre'}
+                  </button>
                 </div>
               </td>
             </tr>
@@ -173,7 +195,7 @@ export default function AgentsScreen({ onNav }) {
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState('all');
   const [editing, setEditing] = useState(null);
-  const [view, setView] = useState('grid');
+  const [view, setView] = useState('list');
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
 
@@ -186,11 +208,24 @@ export default function AgentsScreen({ onNav }) {
 
   useEffect(() => { loadAgents(); }, []);
 
+  const handleToggleStatus = async (agent) => {
+    const newStatus = agent.status === 'suspended' ? 'active' : 'suspended';
+    const label = newStatus === 'suspended' ? 'Suspendre' : 'Réactiver';
+    if (!confirm(`${label} ${agent.name} ?`)) return;
+    await fetch(`/api/users/${agent.id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status: newStatus }),
+    });
+    loadAgents();
+  };
+
   const filtered = tab === 'all' ? agents : agents.filter(a => a.role === tab);
 
   const adminCount    = agents.filter(a => a.role === 'admin').length;
   const agentCount    = agents.filter(a => a.role === 'agent').length;
   const readonlyCount = agents.filter(a => a.role === 'readonly').length;
+  const suspendedCount = agents.filter(a => a.status === 'suspended').length;
 
   if (loading) {
     return (
@@ -231,7 +266,11 @@ export default function AgentsScreen({ onNav }) {
       <div className="page__head">
         <div>
           <div className="page__title"><Bi fr="Agents & permissions" en="Agents & permissions" /></div>
-          <div className="page__sub">{agents.length} membres · {adminCount} admins · {agentCount} agents{readonlyCount > 0 ? ` · ${readonlyCount} lecture seule` : ''}</div>
+          <div className="page__sub">
+            {agents.length} membres · {adminCount} admins · {agentCount} agents
+            {readonlyCount > 0 ? ` · ${readonlyCount} lecture seule` : ''}
+            {suspendedCount > 0 ? ` · ${suspendedCount} suspendu${suspendedCount > 1 ? 's' : ''}` : ''}
+          </div>
         </div>
         <div className="page__actions">
           <button className="btn btn--ghost"><I.Download />Export liste</button>
@@ -255,8 +294,8 @@ export default function AgentsScreen({ onNav }) {
       </div>
 
       {view === 'grid'
-        ? <AgentsGridView agents={filtered} setEditing={setEditing} />
-        : <AgentsListView agents={filtered} setEditing={setEditing} page={page} pageSize={pageSize} />}
+        ? <AgentsGridView agents={filtered} setEditing={setEditing} onToggleStatus={handleToggleStatus} />
+        : <AgentsListView agents={filtered} setEditing={setEditing} onToggleStatus={handleToggleStatus} page={page} pageSize={pageSize} />}
 
       {view === 'list' && (
         <Pagination total={filtered.length} page={page} pageSize={pageSize}

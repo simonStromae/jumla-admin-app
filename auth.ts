@@ -20,6 +20,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         });
 
         if (!user) return null;
+        if ((user as any).status === 'suspended') return null;
         const skipVerify = process.env.DISABLE_EMAIL_VERIFICATION === 'true';
         if (!skipVerify && !user.emailVerified) return null;
 
@@ -30,11 +31,12 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         if (!valid) return null;
 
         return {
-          id:          user.id,
-          email:       user.email,
-          name:        user.name,
-          role:        user.role,
-          permissions: user.permissions,
+          id:                user.id,
+          email:             user.email,
+          name:              user.name,
+          role:              user.role,
+          permissions:       user.permissions,
+          mustChangePassword: (user as any).mustChangePassword ?? false,
         };
       },
     }),

@@ -36,6 +36,18 @@ export default function ClientsScreen({ onNav }) {
 
   useEffect(() => { loadClients(); }, []);
 
+  const handleToggleStatus = async (cl) => {
+    const newStatus = cl.status === 'suspended' ? 'active' : 'suspended';
+    const label = newStatus === 'suspended' ? 'Suspendre' : 'Réactiver';
+    if (!confirm(`${label} ${cl.name} ?`)) return;
+    await fetch(`/api/users/${cl.id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status: newStatus }),
+    });
+    setClients(cs => cs.map(c => c.id === cl.id ? { ...c, status: newStatus } : c));
+  };
+
   return (
     <div className="page">
       <div className="page__head">
@@ -89,7 +101,7 @@ export default function ClientsScreen({ onNav }) {
         </div>
       ) : view === 'grid'
         ? <ClientsGridView clients={clients} setOpen={setOpen} />
-        : <ClientsListView clients={clients} setOpen={setOpen} page={page} pageSize={pageSize} />
+        : <ClientsListView clients={clients} setOpen={setOpen} onToggleStatus={handleToggleStatus} page={page} pageSize={pageSize} />
       }
 
       <Pagination total={clients.length} page={page} pageSize={pageSize}
@@ -97,7 +109,18 @@ export default function ClientsScreen({ onNav }) {
         onPageSizeChange={(s) => { setPageSize(s); setPage(1); }}
         sizes={view === 'grid' ? [12, 24, 48] : [10, 25, 50, 100]} />
 
-      {open && <ClientDrawer cl={open} onClose={() => setOpen(null)} onEdit={() => { setEditing(open); setOpen(null); }} onNav={onNav} />}
+      {open && (
+        <ClientDrawer
+          cl={open}
+          onClose={() => setOpen(null)}
+          onEdit={() => { setEditing(open); setOpen(null); }}
+          onNav={onNav}
+          onStatusChange={(id, newStatus) => {
+            setClients(cs => cs.map(c => c.id === id ? { ...c, status: newStatus } : c));
+            setOpen(cl => cl?.id === id ? { ...cl, status: newStatus } : cl);
+          }}
+        />
+      )}
 
       {editing && (
         <ClientFormModal
@@ -119,12 +142,11 @@ function ClientsGridView({ clients, setOpen }) {
   return (
     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 12, background: 'white', border: '1px solid var(--border)', borderTop: 0, padding: 14 }}>
       {clients.map(cl => (
-        <div key={cl.id} className="card" style={{ padding: 14, position: 'relative', cursor: 'pointer' }} onClick={() => setOpen(cl)}>
-          {cl.loyal && (
-            <div style={{ position: 'absolute', top: 12, right: 12, color: 'var(--brand-500)' }}>
-              <I.Star style={{ width: 14, height: 14 }} />
-            </div>
-          )}
+        <div key={cl.id} className="card" style={{ padding: 14, position: 'relative', cursor: 'pointer', opacity: cl.status === 'suspended' ? .7 : 1 }} onClick={() => setOpen(cl)}>
+          <div style={{ position: 'absolute', top: 12, right: 12, display: 'flex', gap: 4 }}>
+            {cl.status === 'suspended' && <span className="badge" style={{ background: 'var(--bad-50)', color: 'var(--bad-700)', border: '1px solid var(--bad-200)', fontSize: 10 }}>Suspendu</span>}
+            {cl.loyal && <I.Star style={{ width: 14, height: 14, color: 'var(--brand-500)' }} />}
+          </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
             <Avatar initials={cl.name.split(' ').map(x => x[0]).join('').slice(0, 2)} color={cl.color} size="lg" />
             <div style={{ minWidth: 0 }}>
@@ -158,7 +180,7 @@ function ClientsGridView({ clients, setOpen }) {
   );
 }
 
-function ClientsListView({ clients, setOpen, page, pageSize }) {
+function ClientsListView({ clients, setOpen, onToggleStatus, page, pageSize }) {
   const paged = clients.slice((page - 1) * pageSize, page * pageSize);
   return (
     <table className="tbl" style={{ borderTopLeftRadius: 0, borderTopRightRadius: 0 }}>
@@ -166,48 +188,62 @@ function ClientsListView({ clients, setOpen, page, pageSize }) {
         <tr>
           <th style={{ width: 32, borderRadius: 0 }}><input type="checkbox" style={{ accentColor: 'var(--brand-500)' }} /></th>
           <th>Expéditeur</th>
+          <th>Statut</th>
           <th>Ville</th>
           <th>Téléphone</th>
           <th style={{ textAlign: 'center' }}>Nb d'envois</th>
           <th style={{ textAlign: 'right' }}>Poids</th>
           <th style={{ textAlign: 'right' }}>CA total</th>
           <th>Dernière</th>
-          <th style={{ borderRadius: 0, width: 60 }}></th>
+          <th style={{ borderRadius: 0, width: 110 }}></th>
         </tr>
       </thead>
       <tbody>
-        {paged.map(cl => (
-          <tr key={cl.id} style={{ cursor: 'pointer' }} onClick={() => setOpen(cl)}>
-            <td onClick={e => e.stopPropagation()}><input type="checkbox" style={{ accentColor: 'var(--brand-500)' }} /></td>
-            <td>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                <Avatar initials={cl.name.split(' ').map(x => x[0]).join('').slice(0, 2)} color={cl.color} size="sm" />
-                <div>
-                  <div style={{ fontSize: 13, fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-                    {cl.name}
-                    {cl.loyal && <I.Star style={{ width: 11, height: 11, color: 'var(--brand-500)' }} />}
+        {paged.map(cl => {
+          const suspended = cl.status === 'suspended';
+          return (
+            <tr key={cl.id} style={{ cursor: 'pointer', opacity: suspended ? .7 : 1 }} onClick={() => setOpen(cl)}>
+              <td onClick={e => e.stopPropagation()}><input type="checkbox" style={{ accentColor: 'var(--brand-500)' }} /></td>
+              <td>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <Avatar initials={cl.name.split(' ').map(x => x[0]).join('').slice(0, 2)} color={cl.color} size="sm" />
+                  <div>
+                    <div style={{ fontSize: 13, fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                      {cl.name}
+                      {cl.loyal && <I.Star style={{ width: 11, height: 11, color: 'var(--brand-500)' }} />}
+                    </div>
+                    <div className="mono" style={{ fontSize: 10.5, color: 'var(--ink-400)' }}>{cl.code}</div>
                   </div>
-                  <div className="mono" style={{ fontSize: 10.5, color: 'var(--ink-400)' }}>{cl.code}</div>
                 </div>
-              </div>
-            </td>
-            <td style={{ fontSize: 12.5 }}>{cl.city}, Cameroun</td>
-            <td className="mono" style={{ fontSize: 12 }}>{cl.phone}</td>
-            <td className="mono" style={{ textAlign: 'center', fontWeight: 600 }}>{cl.campaigns}</td>
-            <td className="mono" style={{ textAlign: 'right' }}>{cl.weight}<span style={{ fontSize: 10.5, color: 'var(--ink-400)', marginLeft: 2 }}>kg</span></td>
-            <td style={{ textAlign: 'right' }}>
-              <span className="mono" style={{ fontWeight: 700 }}>{(cl.amount / 1000).toFixed(1)}k</span>
-              <span style={{ fontSize: 10.5, color: 'var(--ink-400)', marginLeft: 2 }}>CAD</span>
-            </td>
-            <td className="mono" style={{ fontSize: 11.5, color: 'var(--ink-500)' }}>{cl.lastCampaign}</td>
-            <td onClick={e => e.stopPropagation()}>
-              <div style={{ display: 'flex', gap: 2, justifyContent: 'flex-end' }}>
-                <button className="icon-btn"><I.Whatsapp style={{ color: 'var(--ok-600)', width: 14, height: 14 }} /></button>
-                <button className="icon-btn" onClick={() => setOpen(cl)}><I.ChevronRight /></button>
-              </div>
-            </td>
-          </tr>
-        ))}
+              </td>
+              <td>
+                {suspended
+                  ? <span className="badge" style={{ background: 'var(--bad-50)', color: 'var(--bad-700)', border: '1px solid var(--bad-200)' }}>Suspendu</span>
+                  : <span className="badge" style={{ background: 'var(--ok-50)', color: 'var(--ok-700)', border: '1px solid var(--ok-100)' }}>Actif</span>}
+              </td>
+              <td style={{ fontSize: 12.5 }}>{cl.city}, Cameroun</td>
+              <td className="mono" style={{ fontSize: 12 }}>{cl.phone}</td>
+              <td className="mono" style={{ textAlign: 'center', fontWeight: 600 }}>{cl.campaigns}</td>
+              <td className="mono" style={{ textAlign: 'right' }}>{cl.weight}<span style={{ fontSize: 10.5, color: 'var(--ink-400)', marginLeft: 2 }}>kg</span></td>
+              <td style={{ textAlign: 'right' }}>
+                <span className="mono" style={{ fontWeight: 700 }}>{(cl.amount / 1000).toFixed(1)}k</span>
+                <span style={{ fontSize: 10.5, color: 'var(--ink-400)', marginLeft: 2 }}>CAD</span>
+              </td>
+              <td className="mono" style={{ fontSize: 11.5, color: 'var(--ink-500)' }}>{cl.lastCampaign}</td>
+              <td onClick={e => e.stopPropagation()}>
+                <div style={{ display: 'flex', gap: 2, justifyContent: 'flex-end' }}>
+                  <button
+                    className="btn btn--ghost btn--xs"
+                    style={{ fontSize: 11, color: suspended ? 'var(--ok-700)' : 'var(--bad-600)' }}
+                    onClick={() => onToggleStatus(cl)}>
+                    {suspended ? 'Réactiver' : 'Suspendre'}
+                  </button>
+                  <button className="icon-btn" onClick={() => setOpen(cl)}><I.ChevronRight /></button>
+                </div>
+              </td>
+            </tr>
+          );
+        })}
       </tbody>
     </table>
   );
@@ -237,9 +273,27 @@ const CAMP_STATUS_LBL = {
   closed:     'Clôturée',
 };
 
-function ClientDrawer({ cl, onClose, onEdit, onNav }) {
+function ClientDrawer({ cl, onClose, onEdit, onNav, onStatusChange }) {
   const [detail,  setDetail]  = useState(null);
   const [loading, setLoading] = useState(true);
+  const [togglingStatus, setTogglingStatus] = useState(false);
+
+  const handleToggleStatus = async () => {
+    const newStatus = cl.status === 'suspended' ? 'active' : 'suspended';
+    const label = newStatus === 'suspended' ? 'Suspendre' : 'Réactiver';
+    if (!confirm(`${label} ce client ?`)) return;
+    setTogglingStatus(true);
+    try {
+      await fetch(`/api/users/${cl.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: newStatus }),
+      });
+      onStatusChange?.(cl.id, newStatus);
+    } finally {
+      setTogglingStatus(false);
+    }
+  };
 
   useEffect(() => {
     fetch('/api/clients/' + cl.id)
@@ -268,9 +322,14 @@ function ClientDrawer({ cl, onClose, onEdit, onNav }) {
         <div style={{ padding: '20px 22px', display: 'flex', alignItems: 'center', gap: 14, borderBottom: '1px solid var(--border-soft)' }}>
           <Avatar initials={cl.name.split(' ').map(x => x[0]).join('').slice(0, 2)} color={cl.color} size="xl" />
           <div style={{ flex: 1 }}>
-            <div style={{ fontSize: 19, fontWeight: 700, letterSpacing: '-.01em' }}>
-              {cl.name}
-              {cl.loyal && <I.Star style={{ width: 14, height: 14, color: 'var(--brand-500)', marginLeft: 6, verticalAlign: -1 }} />}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+              <div style={{ fontSize: 19, fontWeight: 700, letterSpacing: '-.01em' }}>
+                {cl.name}
+                {cl.loyal && <I.Star style={{ width: 14, height: 14, color: 'var(--brand-500)', marginLeft: 6, verticalAlign: -1 }} />}
+              </div>
+              {cl.status === 'suspended' && (
+                <span className="badge" style={{ background: 'var(--bad-50)', color: 'var(--bad-700)', border: '1px solid var(--bad-200)' }}>Suspendu</span>
+              )}
             </div>
             <div style={{ fontSize: 12, color: 'var(--ink-400)', marginTop: 2 }}>
               Client depuis {since}
@@ -361,6 +420,13 @@ function ClientDrawer({ cl, onClose, onEdit, onNav }) {
       <div className="drawer__foot">
         <button className="btn btn--ghost" style={{ flex: 1, justifyContent: 'center' }} onClick={onEdit}><I.Edit />Modifier</button>
         <button className="btn btn--soft" style={{ flex: 1, justifyContent: 'center' }}><I.Whatsapp style={{ color: 'var(--ok-600)' }} />WhatsApp</button>
+        <button
+          className="btn btn--ghost"
+          style={{ flex: 1, justifyContent: 'center', color: cl.status === 'suspended' ? 'var(--ok-700)' : 'var(--bad-600)' }}
+          onClick={handleToggleStatus}
+          disabled={togglingStatus}>
+          {cl.status === 'suspended' ? 'Réactiver' : 'Suspendre'}
+        </button>
       </div>
     </Drawer>
   );

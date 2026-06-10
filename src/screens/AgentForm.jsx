@@ -98,6 +98,8 @@ export default function AgentFormModal({ mode = 'create', agent, onClose, onSave
   const isEdit = mode === 'edit';
   const [saving, setSaving] = useState(false);
   const [saveErr, setSaveErr] = useState('');
+  const [tempPassword, setTempPassword] = useState('');
+  const [whatsappSent, setWhatsappSent] = useState(false);
   const [data, setData] = useState(() => ({
     name: agent?.name || '',
     initials: agent?.initials || '',
@@ -106,7 +108,7 @@ export default function AgentFormModal({ mode = 'create', agent, onClose, onSave
     city: agent?.city || 'Douala',
     role: agent?.role || 'agent',
     color: agent?.color || 1,
-    active: agent?.active !== false,
+    status: agent?.status || 'active',
     perms: agent?.permsDetailed || JSON.parse(JSON.stringify(ROLE_PRESETS[agent?.role || 'agent'])),
     sendInvite: !isEdit,
   }));
@@ -149,10 +151,18 @@ export default function AgentFormModal({ mode = 'create', agent, onClose, onSave
           city:        data.city  || null,
           role:        data.role,
           permissions: data.perms,
+          status:      data.status,
+          sendInvite:  data.sendInvite,
         }),
       });
       const json = await res.json();
       if (!res.ok) { setSaveErr(json.error || 'Erreur'); setSaving(false); return; }
+      if (!isEdit && json.tempPassword) {
+        setTempPassword(json.tempPassword);
+        setWhatsappSent(json.whatsappSent ?? false);
+        setSaving(false);
+        return; // Stay open to show temp password
+      }
       onSave();
     } catch {
       setSaveErr('Erreur réseau');
@@ -245,12 +255,14 @@ export default function AgentFormModal({ mode = 'create', agent, onClose, onSave
             </div>
             <div className="field">
               <label className="label">Statut du compte</label>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 12px', background: data.active ? 'var(--ok-50)' : 'var(--bg-soft)', borderRadius: 7, border: '1px solid ' + (data.active ? 'var(--ok-100)' : 'var(--border)'), height: 36 }}>
-                <span style={{ width: 8, height: 8, borderRadius: 999, background: data.active ? 'var(--ok-500)' : 'var(--ink-300)', flexShrink: 0 }} />
-                <span style={{ flex: 1, fontSize: 13, fontWeight: 600, color: data.active ? 'var(--ok-700)' : 'var(--ink-500)' }}>
-                  {data.active ? 'Actif' : 'Suspendu'}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 12px', background: data.status !== 'suspended' ? 'var(--ok-50)' : 'var(--bg-soft)', borderRadius: 7, border: '1px solid ' + (data.status !== 'suspended' ? 'var(--ok-100)' : 'var(--border)'), height: 36 }}>
+                <span style={{ width: 8, height: 8, borderRadius: 999, background: data.status !== 'suspended' ? 'var(--ok-500)' : 'var(--ink-300)', flexShrink: 0 }} />
+                <span style={{ flex: 1, fontSize: 13, fontWeight: 600, color: data.status !== 'suspended' ? 'var(--ok-700)' : 'var(--ink-500)' }}>
+                  {data.status !== 'suspended' ? 'Actif' : 'Suspendu'}
                 </span>
-                <button className="btn btn--ghost btn--xs" onClick={() => upd('active', !data.active)}>{data.active ? 'Suspendre' : 'Réactiver'}</button>
+                <button className="btn btn--ghost btn--xs" onClick={() => upd('status', data.status !== 'suspended' ? 'suspended' : 'active')}>
+                  {data.status !== 'suspended' ? 'Suspendre' : 'Réactiver'}
+                </button>
               </div>
             </div>
           </div>
@@ -323,26 +335,53 @@ export default function AgentFormModal({ mode = 'create', agent, onClose, onSave
         {/* Right: summary */}
         <div>
           <div style={{ position: 'sticky', top: 0 }}>
-            {!isEdit && (
+            {!isEdit && !tempPassword && (
               <div className="card" style={{ overflow: 'hidden', marginBottom: 14 }}>
                 <div style={{ padding: '14px 16px', borderBottom: '1px solid var(--border-soft)' }}>
-                  <div style={{ fontSize: 13, fontWeight: 700 }}>Invitation par email</div>
-                  <div style={{ fontSize: 11.5, color: 'var(--ink-400)', marginTop: 2 }}>L'agent recevra un lien sécurisé pour créer son mot de passe</div>
+                  <div style={{ fontSize: 13, fontWeight: 700 }}>Invitation par WhatsApp</div>
+                  <div style={{ fontSize: 11.5, color: 'var(--ink-400)', marginTop: 2 }}>Un mot de passe temporaire sera généré et envoyé au numéro de l'agent</div>
                 </div>
                 <div style={{ padding: 14 }}>
                   <div style={{ background: 'white', border: '1px solid var(--border)', borderRadius: 8, padding: 12 }}>
-                    <div style={{ fontSize: 11, color: 'var(--ink-400)', marginBottom: 8 }}>À : {data.email || '—'}</div>
-                    <div style={{ fontSize: 12, color: 'var(--ink-700)', lineHeight: 1.5 }}>
-                      Bonjour {data.name?.split(' ')[0] || '...'},<br /><br />
-                      Vous avez été invité(e) à rejoindre <strong>Jumla Shipping</strong> en tant que <strong>{data.role === 'admin' ? 'Administrateur' : data.role === 'agent' ? 'Agent' : 'Lecteur'}</strong> ({data.city}).<br /><br />
-                      <a style={{ color: 'var(--brand-700)', fontWeight: 600 }}>👉 Créer mon mot de passe</a>
-                      <div style={{ fontSize: 10.5, color: 'var(--ink-400)', marginTop: 8 }}>Lien valide 7 jours.</div>
+                    <div style={{ fontSize: 11, color: 'var(--ink-400)', marginBottom: 6 }}>WhatsApp → {data.phone || '(numéro non renseigné)'}</div>
+                    <div style={{ fontSize: 12, color: 'var(--ink-700)', lineHeight: 1.6 }}>
+                      Bonjour <strong>{data.name?.split(' ')[0] || '...'}</strong> 👋<br />
+                      Vous êtes invité(e) à rejoindre <strong>Jumla Shipping</strong> en tant qu'<strong>{data.role === 'admin' ? 'Administrateur' : 'Agent'}</strong>.<br />
+                      🔑 Mot de passe temporaire : <strong>Jumla#XXXX</strong><br />
+                      <span style={{ fontSize: 10.5, color: 'var(--ink-400)' }}>À changer à la première connexion.</span>
                     </div>
                   </div>
                   <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12.5, marginTop: 10, cursor: 'pointer' }}>
                     <input type="checkbox" checked={data.sendInvite} onChange={() => upd('sendInvite', !data.sendInvite)} style={{ accentColor: 'var(--brand-500)' }} />
-                    Envoyer l'email d'invitation maintenant
+                    Envoyer l'invitation par WhatsApp
+                    {!data.phone && <span style={{ fontSize: 11, color: 'var(--bad-600)' }}>(numéro requis)</span>}
                   </label>
+                </div>
+              </div>
+            )}
+
+            {tempPassword && (
+              <div className="card" style={{ overflow: 'hidden', marginBottom: 14, border: '1.5px solid var(--ok-200)' }}>
+                <div style={{ padding: '14px 16px', borderBottom: '1px solid var(--ok-100)', background: 'var(--ok-50)' }}>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--ok-800)' }}>Agent créé avec succès ✓</div>
+                  <div style={{ fontSize: 11.5, color: 'var(--ok-700)', marginTop: 2 }}>
+                    {whatsappSent ? 'Mot de passe envoyé par WhatsApp' : 'WhatsApp indisponible — copiez le mot de passe ci-dessous'}
+                  </div>
+                </div>
+                <div style={{ padding: 14 }}>
+                  {!whatsappSent && (
+                    <>
+                      <div style={{ fontSize: 12, color: 'var(--ink-600)', marginBottom: 8 }}>Communiquez ce mot de passe temporaire à l'agent :</div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', background: 'var(--bg-soft)', borderRadius: 8, border: '1px solid var(--border)', fontFamily: 'var(--ff-mono)', fontSize: 18, fontWeight: 700, letterSpacing: 2 }}>
+                        <span style={{ flex: 1 }}>{tempPassword}</span>
+                        <button className="btn btn--ghost btn--xs" onClick={() => navigator.clipboard?.writeText(tempPassword)}>Copier</button>
+                      </div>
+                      <div style={{ fontSize: 11, color: 'var(--ink-400)', marginTop: 8 }}>L'agent devra le changer à la première connexion.</div>
+                    </>
+                  )}
+                  <button className="btn btn--brand" style={{ width: '100%', justifyContent: 'center', marginTop: 12 }} onClick={onSave}>
+                    Terminer
+                  </button>
                 </div>
               </div>
             )}
