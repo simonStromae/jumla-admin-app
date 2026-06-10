@@ -4,9 +4,31 @@ import bcrypt from 'bcryptjs';
 import { prisma } from '@/src/lib/prisma';
 import { requireAdmin } from '@/src/lib/api-auth';
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   const { error } = await requireAdmin();
   if (error) return error;
+
+  const { searchParams } = new URL(req.url);
+  const search = searchParams.get('search');
+  const limit  = Number(searchParams.get('limit') ?? 0);
+
+  // Lightweight search mode for autocomplete
+  if (search) {
+    const results = await prisma.user.findMany({
+      where: {
+        role: 'client',
+        OR: [
+          { name:  { contains: search, mode: 'insensitive' } },
+          { email: { contains: search, mode: 'insensitive' } },
+          { phone: { contains: search } },
+        ],
+      },
+      orderBy: { name: 'asc' },
+      take: limit || 10,
+      select: { id: true, name: true, email: true, phone: true },
+    });
+    return NextResponse.json(results);
+  }
 
   let clients;
   try {
