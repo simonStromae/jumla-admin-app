@@ -17,8 +17,10 @@ const TYPE_LABELS = {
 
 const PAY_STATUS = {
   completed: { label: 'Payé',       cls: 'ok'      },
+  paid:      { label: 'Payé',       cls: 'ok'      },
   pending:   { label: 'En attente', cls: 'warn'    },
   partial:   { label: 'Partiel',    cls: 'warn'    },
+  unpaid:    { label: 'Impayé',     cls: 'bad'     },
   failed:    { label: 'Échoué',     cls: 'bad'     },
   refunded:  { label: 'Remboursé',  cls: 'neutral' },
 };
@@ -481,14 +483,177 @@ function TransactionsTab({ onRecord }) {
   );
 }
 
+/* ─── Invoice preview modal ──────────────────────────────── */
+
+function fmt(date) {
+  if (!date) return '—';
+  return new Date(date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
+}
+
+function InvoicePreviewModal({ parcelId, onClose }) {
+  const [data, setData]       = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError]     = useState('');
+
+  useEffect(() => {
+    fetch('/api/admin/invoice/' + parcelId)
+      .then(r => r.json())
+      .then(json => { if (json.error) setError(json.error); else setData(json); setLoading(false); })
+      .catch(() => { setError('Erreur réseau'); setLoading(false); });
+  }, [parcelId]);
+
+  function printInvoice() {
+    const el = document.getElementById('invoice-print-area');
+    if (!el) return;
+    const win = window.open('', '_blank', 'width=860,height=900');
+    win.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>Facture</title>
+      <style>
+        body { font-family: system-ui, sans-serif; margin: 0; background: white; }
+        * { box-sizing: border-box; }
+      </style>
+    </head><body>${el.innerHTML}</body></html>`);
+    win.document.close();
+    win.focus();
+    win.print();
+  }
+
+  const paid = data?.payment?.status === 'completed' || data?.payment?.status === 'paid';
+
+  return (
+    <Modal title="Facture" onClose={onClose} width={780}>
+      {loading && (
+        <div style={{ padding: 40, textAlign: 'center', color: 'var(--ink-400)' }}>Chargement…</div>
+      )}
+      {error && (
+        <div style={{ padding: 40, textAlign: 'center', color: 'var(--bad-600)' }}>{error}</div>
+      )}
+      {data && (
+        <>
+          <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 16, gap: 8 }}>
+            <button className="btn btn--ghost btn--sm" onClick={onClose}>Fermer</button>
+            <button className="btn btn--brand btn--sm" onClick={printInvoice}>
+              <I.Print style={{ width: 14, height: 14 }} />
+              Imprimer / PDF
+            </button>
+          </div>
+
+          <div id="invoice-print-area" style={{ background: 'white', borderRadius: 10, overflow: 'hidden', border: '1px solid #e5e7eb' }}>
+            {/* Header */}
+            <div style={{ background: '#1e3a5f', color: 'white', padding: '28px 36px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+              <div>
+                <div style={{ fontSize: 22, fontWeight: 800, letterSpacing: '-.02em' }}>Jumla Shipping</div>
+                <div style={{ fontSize: 12, opacity: .7, marginTop: 3 }}>Fret international · Douala · Montréal</div>
+              </div>
+              <div style={{ textAlign: 'right' }}>
+                <div style={{ fontSize: 20, fontWeight: 700, fontFamily: 'monospace' }}>{data.invoiceNumber}</div>
+                <div style={{ fontSize: 12, opacity: .7, marginTop: 3 }}>Émis le {fmt(data.issueDate)}</div>
+                <div style={{
+                  display: 'inline-block', marginTop: 8, padding: '3px 10px', borderRadius: 999,
+                  background: paid ? '#16a34a' : '#f59e0b', fontSize: 11, fontWeight: 700,
+                }}>
+                  {paid ? '✓ PAYÉ' : '⏳ EN ATTENTE'}
+                </div>
+              </div>
+            </div>
+
+            <div style={{ padding: '28px 36px' }}>
+              {/* Bill to / Campaign */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 32, marginBottom: 28 }}>
+                <div>
+                  <div style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.08em', color: '#6b7280', marginBottom: 6 }}>Facturé à</div>
+                  <div style={{ fontSize: 15, fontWeight: 700, color: '#111827' }}>{data.client.name}</div>
+                  {data.client.city  && <div style={{ fontSize: 13, color: '#4b5563', marginTop: 2 }}>{data.client.city}</div>}
+                  {data.client.phone && <div style={{ fontSize: 13, color: '#4b5563', fontFamily: 'monospace' }}>{data.client.phone}</div>}
+                  {data.client.email && <div style={{ fontSize: 13, color: '#4b5563' }}>{data.client.email}</div>}
+                </div>
+                <div>
+                  <div style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.08em', color: '#6b7280', marginBottom: 6 }}>Cargaison</div>
+                  <div style={{ fontSize: 14, fontWeight: 700, color: '#111827', fontFamily: 'monospace' }}>{data.campaign.code}</div>
+                  <div style={{ fontSize: 13, color: '#4b5563', marginTop: 2 }}>{data.campaign.from} → {data.campaign.to}</div>
+                  <div style={{ fontSize: 12, color: '#6b7280', marginTop: 2 }}>Départ : {fmt(data.campaign.departureDate)}</div>
+                  <div style={{ fontSize: 12, color: '#6b7280' }}>Arrivée : {fmt(data.campaign.arrivalDate)}</div>
+                </div>
+              </div>
+
+              {/* Items table */}
+              <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: 20 }}>
+                <thead>
+                  <tr style={{ background: '#f9fafb' }}>
+                    {['Description', 'Poids', 'Montant'].map(h => (
+                      <th key={h} style={{ padding: '9px 12px', textAlign: h === 'Montant' ? 'right' : 'left', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.06em', color: '#6b7280', borderBottom: '1px solid #e5e7eb' }}>{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td style={{ padding: '12px', borderBottom: '1px solid #f3f4f6', color: '#111827', fontSize: 13 }}>
+                      <div style={{ fontFamily: 'monospace', fontWeight: 700, color: '#1e3a5f', marginBottom: 2 }}>{data.trackingCode}</div>
+                      <div style={{ fontSize: 12, color: '#6b7280' }}>{data.description || 'Fret international'}</div>
+                      {data.bordereaux.length > 0 && (
+                        <div style={{ fontSize: 11, color: '#9ca3af', marginTop: 3 }}>
+                          {data.bordereaux.length} bordereau{data.bordereaux.length > 1 ? 'x' : ''} · {data.bordereaux.reduce((s, b) => s + (b.nbPieces || 0), 0)} pièce{data.bordereaux.reduce((s, b) => s + (b.nbPieces || 0), 0) > 1 ? 's' : ''}
+                        </div>
+                      )}
+                    </td>
+                    <td style={{ padding: '12px', borderBottom: '1px solid #f3f4f6', color: '#374151', fontFamily: 'monospace', fontSize: 13 }}>
+                      {data.weightKg ? data.weightKg + ' kg' : '—'}
+                    </td>
+                    <td style={{ padding: '12px', borderBottom: '1px solid #f3f4f6', textAlign: 'right', fontFamily: 'monospace', fontSize: 14, fontWeight: 700, color: '#111827' }}>
+                      {data.amount.toLocaleString('fr')} CAD
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+
+              {/* Total */}
+              <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 24 }}>
+                <div style={{ minWidth: 240 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 14px', background: '#1e3a5f', borderRadius: 8, color: 'white' }}>
+                    <span style={{ fontWeight: 700 }}>Total</span>
+                    <span style={{ fontFamily: 'monospace', fontWeight: 800, fontSize: 16 }}>{data.amount.toLocaleString('fr')} CAD</span>
+                  </div>
+                  {paid && data.payment?.paidAt && (
+                    <div style={{ textAlign: 'right', fontSize: 11, color: '#16a34a', marginTop: 5, fontWeight: 600 }}>
+                      Payé le {fmt(data.payment.paidAt)}
+                      {data.payment.interacRef && <span> · Réf. {data.payment.interacRef}</span>}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Payment instructions if unpaid */}
+              {!paid && (
+                <div style={{ background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 8, padding: '14px 18px', marginBottom: 20 }}>
+                  <div style={{ fontWeight: 700, color: '#92400e', marginBottom: 5, fontSize: 13 }}>Modalités de paiement</div>
+                  <div style={{ fontSize: 12, color: '#78350f', lineHeight: 1.6 }}>
+                    Effectuez un virement Interac e-Transfert à <strong>paiement@jumla.cargo</strong> pour le montant exact de <strong>{data.amount.toLocaleString('fr')} CAD</strong>.
+                    Indiquez le code <strong style={{ fontFamily: 'monospace' }}>{data.trackingCode}</strong> en message.
+                  </div>
+                </div>
+              )}
+
+              {/* Footer */}
+              <div style={{ borderTop: '1px solid #e5e7eb', paddingTop: 16, display: 'flex', justifyContent: 'space-between', fontSize: 11, color: '#9ca3af' }}>
+                <span>Jumla Shipping SARL · contact@jumla.cargo</span>
+                <span>Douala · Montréal · Lagos · Bruxelles</span>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
+    </Modal>
+  );
+}
+
 /* ─── Invoices list tab (existing payments) ──────────────── */
 
 function InvoicesTab({ onSettle }) {
   const can = useCan();
-  const [payments, setPayments] = useState([]);
-  const [loading, setLoading]   = useState(true);
-  const [tab, setTab]           = useState('all');
-  const [search, setSearch]     = useState('');
+  const [payments, setPayments]         = useState([]);
+  const [loading, setLoading]           = useState(true);
+  const [tab, setTab]                   = useState('all');
+  const [search, setSearch]             = useState('');
+  const [invoiceParcelId, setInvoiceParcelId] = useState(null);
 
   useEffect(() => {
     setLoading(true);
@@ -531,6 +696,10 @@ function InvoicesTab({ onSettle }) {
         </div>
       </div>
 
+      {invoiceParcelId && (
+        <InvoicePreviewModal parcelId={invoiceParcelId} onClose={() => setInvoiceParcelId(null)} />
+      )}
+
       <table className="tbl" style={{ borderTopLeftRadius: 0, borderTopRightRadius: 0 }}>
         <thead>
           <tr>
@@ -541,7 +710,7 @@ function InvoicesTab({ onSettle }) {
             <th style={{ textAlign: 'right' }}>Facturé</th>
             <th>Statut</th>
             <th>Référence</th>
-            <th style={{ borderRadius: 0, width: 100 }}></th>
+            <th style={{ borderRadius: 0, width: 140 }}></th>
           </tr>
         </thead>
         <tbody>
@@ -578,14 +747,24 @@ function InvoicesTab({ onSettle }) {
                 <td><span className={'badge badge--dot badge--' + s.cls}>{s.label}</span></td>
                 <td className="mono" style={{ fontSize: 12, color: 'var(--ink-500)' }}>{p.interacRef ?? '—'}</td>
                 <td>
-                  {p.status === 'paid'
-                    ? <span style={{ fontSize: 12, color: 'var(--ok-600)' }}>✓ Réglé</span>
-                    : can('payments', 'validate')
-                      ? <button className="btn btn--brand btn--xs" style={{ width: '100%', justifyContent: 'center' }}
-                          onClick={() => onSettle({ clientId: p.clientId, paymentId: p.id, clientName: p.recipName, clientPhone: p.recipPhone })}>
-                          <I.Wallet />Régler
-                        </button>
-                      : <span style={{ fontSize: 12, color: 'var(--ink-400)' }}>En attente</span>}
+                  <div style={{ display: 'flex', gap: 6, alignItems: 'center', justifyContent: 'flex-end' }}>
+                    <button
+                      className="btn btn--ghost btn--xs"
+                      title="Voir la facture"
+                      onClick={() => setInvoiceParcelId(p.parcelId)}
+                      style={{ padding: '4px 8px' }}
+                    >
+                      <I.FileText style={{ width: 13, height: 13 }} />
+                    </button>
+                    {p.status === 'paid'
+                      ? <span style={{ fontSize: 12, color: 'var(--ok-600)' }}>✓ Réglé</span>
+                      : can('payments', 'validate')
+                        ? <button className="btn btn--brand btn--xs"
+                            onClick={() => onSettle({ clientId: p.clientId, paymentId: p.id, clientName: p.recipName, clientPhone: p.recipPhone })}>
+                            <I.Wallet />Régler
+                          </button>
+                        : <span style={{ fontSize: 12, color: 'var(--ink-400)' }}>En attente</span>}
+                  </div>
                 </td>
               </tr>
             );

@@ -23,6 +23,7 @@ export async function GET() {
   const result = payments.map(p => ({
     id:         p.id,
     clientId:   p.clientId,
+    parcelId:   p.parcelId,
     date:       new Intl.DateTimeFormat('fr-FR', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }).format(p.createdAt),
     recipName:  p.client.name,
     recipPhone: p.client.phone ?? p.client.email,
