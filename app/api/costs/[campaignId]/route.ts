@@ -9,7 +9,7 @@ export async function GET(_: NextRequest, { params }: { params: { campaignId: st
   if (error) return error;
 
   const costs = await prisma.campaignCost.findUnique({ where: { campaignId: params.campaignId } });
-  return NextResponse.json(costs ?? { fret: 0, manutention: 0, douane: 0, transport: 0, divers: 0 });
+  return NextResponse.json(costs ?? { fret: 0, manutention: 0, douane: 0, entrepot: 0, transport: 0, divers: 0 });
 }
 
 export async function PUT(req: NextRequest, { params }: { params: { campaignId: string } }) {
@@ -17,7 +17,7 @@ export async function PUT(req: NextRequest, { params }: { params: { campaignId: 
   if (error) return error;
 
   const session = await auth();
-  const { fret, manutention, douane, transport, divers } = await req.json();
+  const { fret, manutention, douane, entrepot, transport, divers } = await req.json();
 
   const costs = await prisma.campaignCost.upsert({
     where:  { campaignId: params.campaignId },
@@ -25,6 +25,7 @@ export async function PUT(req: NextRequest, { params }: { params: { campaignId: 
       fret:        Number(fret)        || 0,
       manutention: Number(manutention) || 0,
       douane:      Number(douane)      || 0,
+      entrepot:    Number(entrepot)    || 0,
       transport:   Number(transport)   || 0,
       divers:      Number(divers)      || 0,
       enteredById: (session?.user as any)?.id ?? null,
@@ -34,6 +35,7 @@ export async function PUT(req: NextRequest, { params }: { params: { campaignId: 
       fret:        Number(fret)        || 0,
       manutention: Number(manutention) || 0,
       douane:      Number(douane)      || 0,
+      entrepot:    Number(entrepot)    || 0,
       transport:   Number(transport)   || 0,
       divers:      Number(divers)      || 0,
       enteredById: (session?.user as any)?.id ?? null,

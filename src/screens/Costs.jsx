@@ -3,11 +3,12 @@ import I from '../components/Icons.jsx';
 import { Bi, RoutePill, useCan } from '../components/Shell.jsx';
 
 const COST_FIELDS = [
-  { key: 'fret',        label: 'Fret aérien',   hint: 'Coût du transport aérien facturé par la compagnie', color: 'var(--brand-500)' },
-  { key: 'manutention', label: 'Manutention',    hint: 'Chargement, déchargement, entreposage des deux côtés', color: 'var(--info-500)'  },
-  { key: 'douane',      label: 'Douanes & taxes',hint: "Frais de dédouanement, taxes à l'import", color: 'var(--warn-500)'  },
-  { key: 'transport',   label: 'Transport terr.',hint: 'Acheminement terrestre (Douala → aéroport, aéroport → entrepôt)', color: 'var(--ok-500)'    },
-  { key: 'divers',      label: 'Divers',         hint: 'Assurance, emballage, frais bancaires, imprévus', color: 'var(--ink-400)'   },
+  { key: 'fret',        label: 'Transport aérien',       hint: 'Coût du fret aérien facturé par la compagnie', color: 'var(--brand-500)' },
+  { key: 'douane',      label: 'Douane & dédouanement',  hint: "Frais de dédouanement, taxes à l'import", color: 'var(--warn-500)'  },
+  { key: 'entrepot',    label: 'Entrepôt & logistique',  hint: 'Stockage, manutention, entreposage des deux côtés', color: 'var(--info-500)'  },
+  { key: 'transport',   label: 'Transport terrestre',    hint: 'Acheminement vers/depuis aéroport, dernier kilomètre', color: 'var(--ok-500)'    },
+  { key: 'manutention', label: 'Frais de manutention',   hint: 'Main-d\'œuvre de chargement et déchargement', color: 'var(--ok-700)'    },
+  { key: 'divers',      label: 'Divers & imprévus',      hint: 'Assurance, emballage, frais bancaires, imprévus', color: 'var(--ink-400)'   },
 ];
 
 function marginKind(pct) {

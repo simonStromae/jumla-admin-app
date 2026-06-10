@@ -99,6 +99,7 @@ model CampaignCost {
   fret        Int      @default(0)
   manutention Int      @default(0)
   douane      Int      @default(0)
+  entrepot    Int      @default(0)
   transport   Int      @default(0)
   divers      Int      @default(0)
   enteredById String?

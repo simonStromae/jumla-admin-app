@@ -45,6 +45,7 @@ export async function GET() {
         fret:        c.costs.fret,
         manutention: c.costs.manutention,
         douane:      c.costs.douane,
+        entrepot:    (c.costs as any).entrepot ?? 0,
         transport:   c.costs.transport,
         divers:      c.costs.divers,
       } : null,
