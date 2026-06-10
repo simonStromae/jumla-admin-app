@@ -186,10 +186,12 @@ function SectionPricing({ routes }) {
 }
 
 function SectionWhatsapp() {
-  const [status,      setStatus]      = useState(null); // {configured, fromNumber}
+  const [status,      setStatus]      = useState(null);
   const [accountSid,  setAccountSid]  = useState('');
   const [authToken,   setAuthToken]   = useState('');
   const [fromNumber,  setFromNumber]  = useState('');
+  const [showSid,     setShowSid]     = useState(false);
+  const [showToken,   setShowToken]   = useState(false);
   const [saving,      setSaving]      = useState(false);
   const [saved,       setSaved]       = useState(false);
   const [autoToggles, setAutoToggles] = useState({ arrival: true, reminder: true, confirm: false, pickup: false });
@@ -237,11 +239,45 @@ function SectionWhatsapp() {
         <div className="field-row field-row--2">
           <div className="field">
             <label className="label">Account SID</label>
-            <input className="input mono" type="password" placeholder="ACxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" value={accountSid} onChange={e => setAccountSid(e.target.value)} />
+            <div style={{ position: 'relative' }}>
+              <input
+                className="input mono"
+                type={showSid ? 'text' : 'password'}
+                placeholder="ACxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+                value={accountSid}
+                onChange={e => setAccountSid(e.target.value)}
+                style={{ paddingRight: 36 }}
+              />
+              <button
+                type="button"
+                onClick={() => setShowSid(v => !v)}
+                style={{ position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--ink-400)', display: 'flex', alignItems: 'center', padding: 2 }}
+                title={showSid ? 'Masquer' : 'Afficher'}
+              >
+                {showSid ? <I.EyeOff style={{ width: 16, height: 16 }} /> : <I.Eye style={{ width: 16, height: 16 }} />}
+              </button>
+            </div>
           </div>
           <div className="field">
             <label className="label">Auth Token</label>
-            <input className="input mono" type="password" placeholder="Auth token Twilio" value={authToken} onChange={e => setAuthToken(e.target.value)} />
+            <div style={{ position: 'relative' }}>
+              <input
+                className="input mono"
+                type={showToken ? 'text' : 'password'}
+                placeholder="Auth token Twilio"
+                value={authToken}
+                onChange={e => setAuthToken(e.target.value)}
+                style={{ paddingRight: 36 }}
+              />
+              <button
+                type="button"
+                onClick={() => setShowToken(v => !v)}
+                style={{ position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--ink-400)', display: 'flex', alignItems: 'center', padding: 2 }}
+                title={showToken ? 'Masquer' : 'Afficher'}
+              >
+                {showToken ? <I.EyeOff style={{ width: 16, height: 16 }} /> : <I.Eye style={{ width: 16, height: 16 }} />}
+              </button>
+            </div>
           </div>
         </div>
         <div className="field" style={{ marginBottom: 16 }}>
