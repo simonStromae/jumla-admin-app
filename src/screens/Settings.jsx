@@ -254,7 +254,10 @@ function SectionWhatsapp() {
         </div>
         <div className="field-row field-row--2">
           <div className="field">
-            <label className="label">Account SID</label>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+              <label className="label" style={{ margin: 0 }}>Account SID</label>
+              {accountSid && <button type="button" className="btn btn--ghost btn--xs" onClick={() => setAccountSid('')}>Effacer</button>}
+            </div>
             <div style={{ position: 'relative' }}>
               <input
                 className="input mono"
@@ -264,18 +267,18 @@ function SectionWhatsapp() {
                 onChange={e => setAccountSid(e.target.value)}
                 style={{ paddingRight: 36 }}
               />
-              <button
-                type="button"
-                onClick={() => setShowSid(v => !v)}
+              <button type="button" onClick={() => setShowSid(v => !v)}
                 style={{ position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--ink-400)', display: 'flex', alignItems: 'center', padding: 2 }}
-                title={showSid ? 'Masquer' : 'Afficher'}
-              >
+                title={showSid ? 'Masquer' : 'Afficher'}>
                 {showSid ? <I.EyeOff style={{ width: 16, height: 16 }} /> : <I.Eye style={{ width: 16, height: 16 }} />}
               </button>
             </div>
           </div>
           <div className="field">
-            <label className="label">Auth Token</label>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+              <label className="label" style={{ margin: 0 }}>Auth Token</label>
+              {authToken && <button type="button" className="btn btn--ghost btn--xs" onClick={() => setAuthToken('')}>Effacer</button>}
+            </div>
             <div style={{ position: 'relative' }}>
               <input
                 className="input mono"
@@ -285,12 +288,9 @@ function SectionWhatsapp() {
                 onChange={e => setAuthToken(e.target.value)}
                 style={{ paddingRight: 36 }}
               />
-              <button
-                type="button"
-                onClick={() => setShowToken(v => !v)}
+              <button type="button" onClick={() => setShowToken(v => !v)}
                 style={{ position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--ink-400)', display: 'flex', alignItems: 'center', padding: 2 }}
-                title={showToken ? 'Masquer' : 'Afficher'}
-              >
+                title={showToken ? 'Masquer' : 'Afficher'}>
                 {showToken ? <I.EyeOff style={{ width: 16, height: 16 }} /> : <I.Eye style={{ width: 16, height: 16 }} />}
               </button>
             </div>
