@@ -155,25 +155,74 @@ function SectionPricing({ routes }) {
 }
 
 function SectionWhatsapp() {
-  const [connected, setConnected] = useState(true);
+  const [status,      setStatus]      = useState(null); // {configured, fromNumber}
+  const [accountSid,  setAccountSid]  = useState('');
+  const [authToken,   setAuthToken]   = useState('');
+  const [fromNumber,  setFromNumber]  = useState('');
+  const [saving,      setSaving]      = useState(false);
+  const [saved,       setSaved]       = useState(false);
   const [autoToggles, setAutoToggles] = useState({ arrival: true, reminder: true, confirm: false, pickup: false });
   const toggle = (k) => setAutoToggles(t => ({ ...t, [k]: !t[k] }));
+
+  useEffect(() => {
+    fetch('/api/settings/whatsapp').then(r => r.json()).then(d => {
+      setStatus(d);
+      setAccountSid(d.accountSid ?? '');
+      setAuthToken(d.authToken ?? '');
+      setFromNumber(d.fromNumber ?? '');
+    }).catch(() => {});
+  }, []);
+
+  async function handleSave() {
+    setSaving(true);
+    setSaved(false);
+    await fetch('/api/settings/whatsapp', {
+      method:  'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ accountSid, authToken, fromNumber }),
+    });
+    // Refresh status
+    const updated = await fetch('/api/settings/whatsapp').then(r => r.json()).catch(() => null);
+    if (updated) { setStatus(updated); setAccountSid(updated.accountSid); setAuthToken(updated.authToken); setFromNumber(updated.fromNumber); }
+    setSaving(false);
+    setSaved(true);
+    setTimeout(() => setSaved(false), 3000);
+  }
+
+  const configured = status?.configured;
+
   return (
     <>
       <SettingsCard title="Connexion API Twilio" sub="Connectez votre compte Twilio pour l'envoi de messages WhatsApp.">
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '14px 16px', background: connected ? 'var(--ok-50)' : 'var(--bg-soft)', border: '1px solid ' + (connected ? 'var(--ok-100)' : 'var(--border)'), borderRadius: 8, marginBottom: 16 }}>
-          <span style={{ width: 10, height: 10, borderRadius: 999, background: connected ? 'var(--ok-500)' : 'var(--ink-300)', flexShrink: 0 }} />
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '14px 16px', background: configured ? 'var(--ok-50)' : 'var(--bg-soft)', border: '1px solid ' + (configured ? 'var(--ok-100)' : 'var(--border)'), borderRadius: 8, marginBottom: 16 }}>
+          <span style={{ width: 10, height: 10, borderRadius: 999, background: configured ? 'var(--ok-500)' : 'var(--ink-300)', flexShrink: 0 }} />
           <div style={{ flex: 1 }}>
-            <div style={{ fontSize: 13, fontWeight: 700, color: connected ? 'var(--ok-700)' : 'var(--ink-600)' }}>{connected ? 'API connectée · opérationnelle' : 'Non connecté'}</div>
-            {connected && <div style={{ fontSize: 12, color: 'var(--ok-600)', marginTop: 2 }}>Twilio · +237 6** ** ** 00 · Quota : 842 / 1 000 messages/mois</div>}
+            <div style={{ fontSize: 13, fontWeight: 700, color: configured ? 'var(--ok-700)' : 'var(--ink-600)' }}>
+              {configured ? 'API connectée · opérationnelle' : 'Non configuré — renseignez vos identifiants Twilio ci-dessous'}
+            </div>
+            {configured && <div style={{ fontSize: 12, color: 'var(--ok-600)', marginTop: 2 }}>Twilio · {status.fromNumber}</div>}
           </div>
-          <button className="btn btn--ghost btn--sm" onClick={() => setConnected(!connected)}>{connected ? 'Déconnecter' : 'Connecter'}</button>
         </div>
         <div className="field-row field-row--2">
-          <div className="field"><label className="label">Account SID</label><input className="input mono" type="password" defaultValue="ACxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" /></div>
-          <div className="field"><label className="label">Auth Token</label><input className="input mono" type="password" defaultValue="••••••••••••••••••••••••••••••••" /></div>
+          <div className="field">
+            <label className="label">Account SID</label>
+            <input className="input mono" type="password" placeholder="ACxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" value={accountSid} onChange={e => setAccountSid(e.target.value)} />
+          </div>
+          <div className="field">
+            <label className="label">Auth Token</label>
+            <input className="input mono" type="password" placeholder="Auth token Twilio" value={authToken} onChange={e => setAuthToken(e.target.value)} />
+          </div>
         </div>
-        <div className="field"><label className="label">Numéro WhatsApp Business</label><input className="input mono" defaultValue="+237 6** ** ** 00" /></div>
+        <div className="field" style={{ marginBottom: 16 }}>
+          <label className="label">Numéro WhatsApp (ex: +14155238886)</label>
+          <input className="input mono" placeholder="+14155238886" value={fromNumber} onChange={e => setFromNumber(e.target.value)} />
+        </div>
+        <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+          <button className="btn btn--brand btn--sm" disabled={saving} onClick={handleSave}>
+            {saving ? 'Enregistrement…' : 'Enregistrer'}
+          </button>
+          {saved && <span style={{ fontSize: 12, color: 'var(--ok-700)', fontWeight: 600 }}>✓ Sauvegardé</span>}
+        </div>
       </SettingsCard>
       <SettingsCard title="Automatisations WhatsApp" sub="Déclencheurs automatiques pour les notifications clients.">
         <ToggleRow label="Avis d'arrivée automatique"    sub="Envoyé dès que la cargaison passe au statut Arrivé"   checked={autoToggles.arrival}  onChange={() => toggle('arrival')} />

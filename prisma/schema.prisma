@@ -200,3 +200,24 @@ model Bordereau {
 
   @@map("bordereaux")
 }
+
+model Setting {
+  key       String   @id
+  value     String
+  updatedAt DateTime @updatedAt
+
+  @@map("settings")
+}
+
+model WhatsappLog {
+  id        String   @id @default(cuid())
+  parcelId  String?
+  toPhone   String
+  body      String
+  status    String   @default("pending")
+  twilioSid String?
+  error     String?
+  sentAt    DateTime @default(now())
+
+  @@map("whatsapp_logs")
+}
