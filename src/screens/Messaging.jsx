@@ -50,8 +50,8 @@ export default function MessagingScreen({ onNav }) {
 
   const onTemplateChange = (id) => {
     setTemplate(id);
-    const t = TEMPLATES.find(t => t.id === id);
-    if (t) setBody(t.body);
+    const found = TEMPLATES.find(tmpl => tmpl.id === id);
+    if (found) setBody(found.body);
   };
 
   const insertVar = (v) => setBody(b => b + v);
@@ -205,14 +205,21 @@ export default function MessagingScreen({ onNav }) {
               onClick={() => setSelected(filtered.filter(p => p.paid !== 'paid').map(p => p.id))}>
               <I.Send />Sélectionner les impayés
             </button>
-            <button
-              className="btn btn--brand btn--sm"
-              style={{ flex: 1, justifyContent: 'center' }}
-              disabled={selected.length === 0 || sending || !apiStatus?.configured}
-              onClick={handleSend}
-            >
-              <I.Chat />{sending ? 'Envoi…' : `Envoyer (${selected.length})`}
-            </button>
+            {!apiStatus?.configured ? (
+              <button className="btn btn--sm" style={{ flex: 1, justifyContent: 'center', background: 'var(--warn-500)', color: 'white' }}
+                onClick={() => onNav('/admin/settings?tab=whatsapp')}>
+                ⚙️ Configurer WhatsApp
+              </button>
+            ) : (
+              <button
+                className="btn btn--brand btn--sm"
+                style={{ flex: 1, justifyContent: 'center' }}
+                disabled={selected.length === 0 || sending}
+                onClick={handleSend}
+              >
+                <I.Chat />{sending ? 'Envoi…' : `Envoyer (${selected.length})`}
+              </button>
+            )}
           </div>
         </div>
 
@@ -263,18 +270,21 @@ export default function MessagingScreen({ onNav }) {
 
             <div style={{ padding: '12px 16px', background: 'var(--bg-soft)', borderTop: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: 10 }}>
               <div style={{ flex: 1, fontSize: 12.5, color: 'var(--ink-600)' }}>
-                <strong>{selected.length}</strong> destinataire{selected.length !== 1 ? 's' : ''} recevront ce message
+                <strong>{selected.length}</strong> destinataire{selected.length !== 1 ? 's' : ''} sélectionné{selected.length !== 1 ? 's' : ''}
               </div>
-              {!apiStatus?.configured && (
-                <span style={{ fontSize: 12, color: 'var(--warn-600)' }}>⚠️ Configurez l'API d'abord</span>
+              {!apiStatus?.configured ? (
+                <button className="btn" style={{ background: 'var(--warn-500)', color: 'white' }} onClick={() => onNav('/admin/settings?tab=whatsapp')}>
+                  ⚙️ Configurer WhatsApp pour envoyer
+                </button>
+              ) : (
+                <button
+                  className="btn btn--brand"
+                  disabled={selected.length === 0 || sending}
+                  onClick={handleSend}
+                >
+                  <I.Send />{sending ? 'Envoi en cours…' : `Envoyer · ${selected.length}`}
+                </button>
               )}
-              <button
-                className="btn btn--brand"
-                disabled={selected.length === 0 || sending || !apiStatus?.configured}
-                onClick={handleSend}
-              >
-                <I.Send />{sending ? 'Envoi en cours…' : `Envoyer · ${selected.length}`}
-              </button>
             </div>
           </div>
 

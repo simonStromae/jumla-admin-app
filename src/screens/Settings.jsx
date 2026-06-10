@@ -44,23 +44,54 @@ function ToggleRow({ label, sub, checked, onChange }) {
 }
 
 function SectionCompany() {
+  const [fields, setFields] = useState({
+    company_name:    'Jumla Shipping',
+    company_legal:   'Jumla Shipping SARL',
+    phone_douala:    '',
+    phone_montreal:  '',
+    warehouse_addr:  '5500 Place de la Savane, Lachine, QC H4S 1V8, Canada',
+  });
+  const [saving, setSaving] = useState(false);
+  const [saved,  setSaved]  = useState(false);
+
+  useEffect(() => {
+    fetch('/api/settings').then(r => r.json()).then(d => {
+      setFields(f => ({
+        company_name:   d.company_name   ?? f.company_name,
+        company_legal:  d.company_legal  ?? f.company_legal,
+        phone_douala:   d.phone_douala   ?? f.phone_douala,
+        phone_montreal: d.phone_montreal ?? f.phone_montreal,
+        warehouse_addr: d.warehouse_addr ?? f.warehouse_addr,
+      }));
+    }).catch(() => {});
+  }, []);
+
+  const set = (k) => (e) => setFields(f => ({ ...f, [k]: e.target.value }));
+
+  async function handleSave() {
+    setSaving(true);
+    await fetch('/api/settings', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(fields) });
+    setSaving(false); setSaved(true); setTimeout(() => setSaved(false), 3000);
+  }
+
   return (
     <>
       <SettingsCard title="Identité de l'entreprise" sub="Ces informations apparaissent sur vos bordereaux et messages clients.">
         <div className="field-row field-row--2">
-          <div className="field"><label className="label">Nom commercial</label><input className="input" defaultValue="Jumla Shipping" /></div>
-          <div className="field"><label className="label">Raison sociale</label><input className="input" defaultValue="Jumla Shipping SARL" /></div>
+          <div className="field"><label className="label">Nom commercial</label><input className="input" value={fields.company_name} onChange={set('company_name')} /></div>
+          <div className="field"><label className="label">Raison sociale</label><input className="input" value={fields.company_legal} onChange={set('company_legal')} /></div>
         </div>
         <div className="field-row field-row--2">
-          <div className="field"><label className="label">Téléphone Douala</label><input className="input mono" defaultValue="+237 6** ** ** 00" /></div>
-          <div className="field"><label className="label">Téléphone Montréal</label><input className="input mono" defaultValue="+1 514 *** ****" /></div>
+          <div className="field"><label className="label">Téléphone Douala</label><input className="input mono" value={fields.phone_douala} onChange={set('phone_douala')} placeholder="+237 6** ** ** **" /></div>
+          <div className="field"><label className="label">Téléphone Montréal</label><input className="input mono" value={fields.phone_montreal} onChange={set('phone_montreal')} placeholder="+1 514 *** ****" /></div>
         </div>
         <div className="field">
           <label className="label">Adresse entrepôt arrivée</label>
-          <input className="input" defaultValue="5500 Place de la Savane, Lachine, QC H4S 1V8, Canada" />
+          <input className="input" value={fields.warehouse_addr} onChange={set('warehouse_addr')} />
         </div>
-        <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 4 }}>
-          <button className="btn btn--brand btn--sm"><I.Check />Enregistrer</button>
+        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, alignItems: 'center', marginTop: 4 }}>
+          {saved && <span style={{ fontSize: 12, color: 'var(--ok-700)', fontWeight: 600 }}>✓ Sauvegardé</span>}
+          <button className="btn btn--brand btn--sm" disabled={saving} onClick={handleSave}><I.Check />{saving ? 'Enregistrement…' : 'Enregistrer'}</button>
         </div>
       </SettingsCard>
       <SettingsCard title="Apparence & marque" sub="Logo, couleurs et pied de page des documents.">
@@ -292,28 +323,50 @@ function SectionCampaigns() {
 }
 
 function SectionAutoNotif() {
-  const [toggles, setToggles] = useState({ arrival: true, reminder: true, delivery: true, overrun: false, invoice: true, broadcast: false });
-  const toggle = k => setToggles(t => ({ ...t, [k]: !t[k] }));
+  const DEFAULTS = { notif_arrival: true, notif_reminder: true, notif_delivery: true, notif_overrun: false, notif_invoice: true, notif_broadcast: false };
+  const [toggles, setToggles] = useState(DEFAULTS);
+  const [saving,  setSaving]  = useState(false);
+  const [saved,   setSaved]   = useState(false);
+
+  useEffect(() => {
+    fetch('/api/settings').then(r => r.json()).then(d => {
+      const loaded = {};
+      for (const k of Object.keys(DEFAULTS)) {
+        if (d[k] !== undefined) loaded[k] = d[k] === 'true';
+      }
+      setToggles(t => ({ ...t, ...loaded }));
+    }).catch(() => {});
+  }, []);
+
+  const toggle = async (k) => {
+    const next = { ...toggles, [k]: !toggles[k] };
+    setToggles(next);
+    const payload = {};
+    for (const [key, val] of Object.entries(next)) payload[key] = String(val);
+    await fetch('/api/settings', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+  };
 
   const triggers = [
-    { id: 'arrival',   l: "Avis d'arrivée",            d: 'Envoyé automatiquement quand la cargaison passe à "Arrivée"' },
-    { id: 'reminder',  l: 'Relance paiement J+3',       d: "Envoyé 3 jours après l'arrivée si paiement non confirmé" },
-    { id: 'delivery',  l: 'Confirmation de livraison',  d: 'Envoyé à la validation du bordereau et libération du colis' },
-    { id: 'overrun',   l: 'Alerte dépassement de poids',d: "Envoyé à l'expéditeur si le poids réel > poids réservé" },
-    { id: 'invoice',   l: 'Facture automatique',        d: 'Envoyée au destinataire à la création du colis' },
-    { id: 'broadcast', l: 'Annonce nouvelle cargaison', d: "Notifie les clients fidèles à l'ouverture d'une cargaison" },
+    { id: 'notif_arrival',   l: "Avis d'arrivée",             d: 'Envoyé automatiquement quand la cargaison passe à "Arrivée"' },
+    { id: 'notif_reminder',  l: 'Relance paiement J+3',        d: "Envoyé 3 jours après l'arrivée si paiement non confirmé" },
+    { id: 'notif_delivery',  l: 'Confirmation de livraison',   d: 'Envoyé à la validation du bordereau et libération du colis' },
+    { id: 'notif_overrun',   l: 'Alerte dépassement de poids', d: "Envoyé à l'expéditeur si le poids réel > poids réservé" },
+    { id: 'notif_invoice',   l: 'Facture automatique',         d: 'Envoyée au destinataire à la création du colis' },
+    { id: 'notif_broadcast', l: 'Annonce nouvelle cargaison',  d: "Notifie les clients fidèles à l'ouverture d'une cargaison" },
   ];
 
   return (
-    <SettingsCard title="Notifications automatiques" sub="Activez ou désactivez chaque déclencheur. Les modèles correspondants sont gérés dans la messagerie.">
-      <div style={{ display: 'grid', gap: 8 }}>
+    <SettingsCard title="Notifications automatiques" sub="Activez ou désactivez chaque déclencheur. Les modèles sont gérés dans la Messagerie.">
+      <div style={{ display: 'grid', gap: 8, marginBottom: 16 }}>
         {triggers.map(t => (
           <div key={t.id} style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '12px 14px', border: '1px solid var(--border)', borderRadius: 8 }}>
             <div style={{ flex: 1 }}>
               <div style={{ fontSize: 13.5, fontWeight: 600 }}>{t.l}</div>
               <div style={{ fontSize: 12, color: 'var(--ink-500)', marginTop: 2 }}>{t.d}</div>
             </div>
-            <a style={{ fontSize: 11.5, color: 'var(--brand-700)', fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap' }}>Voir modèle →</a>
+            <span style={{ fontSize: 11, color: toggles[t.id] ? 'var(--ok-700)' : 'var(--ink-400)', fontWeight: 600, minWidth: 60, textAlign: 'right' }}>
+              {toggles[t.id] ? 'Activé' : 'Désactivé'}
+            </span>
             <button onClick={() => toggle(t.id)} style={{
               width: 36, height: 20, borderRadius: 999,
               background: toggles[t.id] ? 'var(--brand-500)' : 'var(--ink-200)',
@@ -323,12 +376,14 @@ function SectionAutoNotif() {
               <span style={{
                 position: 'absolute', left: toggles[t.id] ? 18 : 2, top: 2,
                 width: 16, height: 16, borderRadius: 999, background: 'white',
-                boxShadow: '0 1px 3px rgba(0,0,0,.2)',
-                transition: 'left .15s',
+                boxShadow: '0 1px 3px rgba(0,0,0,.2)', transition: 'left .15s',
               }} />
             </button>
           </div>
         ))}
+      </div>
+      <div style={{ fontSize: 12, color: 'var(--warn-700)', background: 'var(--warn-50)', border: '1px solid var(--warn-100)', borderRadius: 8, padding: '10px 14px' }}>
+        ⚠️ Les envois automatiques nécessitent que l'API WhatsApp soit configurée dans l'onglet <strong>WhatsApp</strong>.
       </div>
     </SettingsCard>
   );
@@ -566,7 +621,10 @@ function RouteEditModal({ editRoute, onClose, onSaved }) {
 }
 
 export default function SettingsScreen({ onNav }) {
-  const [section, setSection]       = useState('company');
+  const initialTab = typeof window !== 'undefined'
+    ? (new URLSearchParams(window.location.search).get('tab') ?? 'company')
+    : 'company';
+  const [section, setSection]       = useState(initialTab);
   const [editRoute, setEditRoute]   = useState(null);
   const [routeDetail, setRouteDetail] = useState(null);
   const [routes, setRoutes]         = useState([]);
