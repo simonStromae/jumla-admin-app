@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import I from '../components/Icons.jsx';
-import { Bi, RoutePill } from '../components/Shell.jsx';
+import { Bi, RoutePill, useCan } from '../components/Shell.jsx';
 
 const COST_FIELDS = [
   { key: 'fret',        label: 'Fret aérien',   hint: 'Coût du transport aérien facturé par la compagnie', color: 'var(--brand-500)' },
@@ -152,6 +152,7 @@ function CostModal({ campaign, currentCosts, onSave, onClose }) {
 
 // ── Main screen ────────────────────────────────────────────────────
 export default function CostsScreen({ onNav }) {
+  const can = useCan();
   const [campaigns, setCampaigns]     = useState([]);
   const [costsData, setCostsData]     = useState({});
   const [modal, setModal]             = useState(null);
@@ -302,15 +303,19 @@ export default function CostsScreen({ onNav }) {
                   </td>
 
                   <td style={{ textAlign: 'center' }}>
-                    <button
-                      className={'btn btn--xs ' + (renseigné ? 'btn--ghost' : 'btn--primary')}
-                      onClick={() => setModal(c)}
-                    >
-                      {renseigné
-                        ? <><I.Edit style={{ width: 12, height: 12 }} />Modifier</>
-                        : <><I.Plus style={{ width: 12, height: 12 }} />Saisir</>
-                      }
-                    </button>
+                    {can('costs', 'edit') ? (
+                      <button
+                        className={'btn btn--xs ' + (renseigné ? 'btn--ghost' : 'btn--primary')}
+                        onClick={() => setModal(c)}
+                      >
+                        {renseigné
+                          ? <><I.Edit style={{ width: 12, height: 12 }} />Modifier</>
+                          : <><I.Plus style={{ width: 12, height: 12 }} />Saisir</>
+                        }
+                      </button>
+                    ) : (
+                      <span style={{ fontSize: 12, color: 'var(--ink-300)' }}>Lecture seule</span>
+                    )}
                   </td>
                 </tr>
               );

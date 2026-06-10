@@ -20,6 +20,35 @@ export function useCan() {
   };
 }
 
+function ForbiddenView() {
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: 'calc(100vh - 56px)', gap: 14, padding: 40 }}>
+      <div style={{ width: 64, height: 64, borderRadius: 16, background: 'var(--bad-50)', border: '1px solid var(--bad-100)', display: 'grid', placeItems: 'center' }}>
+        <I.Lock style={{ width: 28, height: 28, color: 'var(--bad-500)' }} />
+      </div>
+      <div style={{ textAlign: 'center', maxWidth: 360 }}>
+        <div style={{ fontSize: 18, fontWeight: 700, color: 'var(--ink-900)', marginBottom: 8 }}>Accès restreint</div>
+        <div style={{ fontSize: 13.5, color: 'var(--ink-500)', lineHeight: 1.6 }}>
+          Vous ne disposez pas des permissions nécessaires pour accéder à cette section.
+          Contactez un administrateur pour obtenir l'accès.
+        </div>
+      </div>
+      <span style={{ fontSize: 11, fontFamily: 'var(--ff-mono)', color: 'var(--ink-300)', background: 'var(--bg-soft)', padding: '4px 10px', borderRadius: 6, border: '1px solid var(--border)' }}>
+        HTTP 403 — Forbidden
+      </span>
+    </div>
+  );
+}
+
+export function PermGuard({ perm, action, adminOnly, children }) {
+  const { data: session, status } = useSession();
+  const can = useCan();
+  if (status === 'loading') return null;
+  if (adminOnly && session?.user?.role !== 'admin') return <ForbiddenView />;
+  if (perm && !can(perm, action)) return <ForbiddenView />;
+  return children;
+}
+
 export function Skel({ w = '100%', h = 14, r = 5, style = {} }) {
   return <span className="skel" style={{ width: w, height: h, borderRadius: r, ...style }} />;
 }
@@ -63,7 +92,7 @@ export function Sidebar({ route, onNav }) {
     { id: 'verify',    label: 'Vérification', icon: I.Check,    route: '/admin/verify',    badge: stats.verifyPending || null,  perm: 'campaigns' },
     { id: 'clients',   label: 'Clients',      icon: I.Users,    route: '/admin/clients',   count: stats.clients || null,        perm: null },
     { id: 'payments',  label: 'Paiements',    icon: I.Wallet,   route: '/admin/payments',  badge: stats.unpaidPayments || null, perm: 'payments' },
-    { id: 'costs',     label: 'Coûts',        icon: I.Coins,    route: '/admin/costs',                                          perm: 'campaigns' },
+    { id: 'costs',     label: 'Coûts',        icon: I.Coins,    route: '/admin/costs',                                          perm: 'costs' },
     { id: 'messaging', label: 'Messagerie',   icon: I.Chat,     route: '/admin/messaging',                                      perm: 'whatsapp' },
   ];
   const items = allItems.filter(it => it.perm === null || can(it.perm));

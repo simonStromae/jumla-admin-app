@@ -47,6 +47,13 @@ const PERMISSION_MODULES = [
     ],
   },
   {
+    id: 'costs', label: 'Coûts', Icon: I.Coins,
+    perms: [
+      { id: 'view', label: 'Voir',            sub: 'Consulter les coûts et marges' },
+      { id: 'edit', label: 'Saisir / modifier', sub: 'Entrer les coûts opérationnels' },
+    ],
+  },
+  {
     id: 'whatsapp', label: 'WhatsApp', Icon: I.Chat,
     perms: [
       { id: 'send',      label: 'Envoyer' },
@@ -71,6 +78,7 @@ const ROLE_PRESETS = {
     payments: ['view', 'validate', 'refund'],
     slips: ['view', 'create', 'validate'],
     clients: ['view', 'create', 'edit'],
+    costs: ['view', 'edit'],
     whatsapp: ['send', 'templates'],
     admin: ['analytics', 'routes', 'agents', 'settings'],
   },
@@ -80,6 +88,7 @@ const ROLE_PRESETS = {
     payments: ['view', 'validate'],
     slips: ['view', 'create', 'validate'],
     clients: ['view', 'create', 'edit'],
+    costs: ['view'],
     whatsapp: ['send'],
     admin: [],
   },
@@ -89,6 +98,7 @@ const ROLE_PRESETS = {
     payments: ['view'],
     slips: ['view'],
     clients: ['view'],
+    costs: ['view'],
     whatsapp: [],
     admin: ['analytics'],
   },
@@ -274,9 +284,9 @@ export default function AgentFormModal({ mode = 'create', agent, onClose, onSave
           <div className="section-title">Rôle <span className="section-title__count">{totalPerms} permissions</span></div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8, marginBottom: 16 }}>
             {[
-              { id: 'admin',    label: 'Administrateur',    desc: 'Accès complet',      icon: '👑', count: 25 },
-              { id: 'agent',    label: 'Agent opérationnel', desc: 'Cargaisons & clients', icon: '🚚', count: 13 },
-              { id: 'readonly', label: 'Lecture seule',     desc: 'Consultation uniquement', icon: '👁', count: 6  },
+              { id: 'admin',    label: 'Administrateur',    desc: 'Accès complet',      icon: '👑', count: 27 },
+              { id: 'agent',    label: 'Agent opérationnel', desc: 'Cargaisons & clients', icon: '🚚', count: 14 },
+              { id: 'readonly', label: 'Lecture seule',     desc: 'Consultation uniquement', icon: '👁', count: 7  },
             ].map(r => {
               const sel = data.role === r.id;
               return (
