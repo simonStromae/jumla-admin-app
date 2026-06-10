@@ -109,7 +109,9 @@ export default function AgentFormModal({ mode = 'create', agent, onClose, onSave
     role: agent?.role || 'agent',
     color: agent?.color || 1,
     status: agent?.status || 'active',
-    perms: agent?.permsDetailed || JSON.parse(JSON.stringify(ROLE_PRESETS[agent?.role || 'agent'])),
+    perms: agent?.permissions && typeof agent.permissions === 'object' && !Array.isArray(agent.permissions) && Object.keys(agent.permissions).length > 0
+      ? JSON.parse(JSON.stringify(agent.permissions))
+      : JSON.parse(JSON.stringify(ROLE_PRESETS[agent?.role || 'agent'])),
     sendInvite: !isEdit,
   }));
 

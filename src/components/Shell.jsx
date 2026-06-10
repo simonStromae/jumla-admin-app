@@ -2,6 +2,24 @@ import { useState, useEffect, useRef } from 'react';
 import { useSession, signOut } from 'next-auth/react';
 import I from './Icons.jsx';
 
+const PERM_ALIAS = { campaigns: 'cargaisons' };
+
+export function useCan() {
+  const { data: session } = useSession();
+  const role  = session?.user?.role ?? '';
+  const perms = session?.user?.permissions ?? {};
+  const isAdmin = role === 'admin';
+  return (key, action) => {
+    if (isAdmin) return true;
+    if (perms[key] === true) return true;
+    const nk = PERM_ALIAS[key] || key;
+    const arr = perms[nk];
+    if (!Array.isArray(arr) || arr.length === 0) return false;
+    if (!action) return true;
+    return arr.includes(action);
+  };
+}
+
 export function Skel({ w = '100%', h = 14, r = 5, style = {} }) {
   return <span className="skel" style={{ width: w, height: h, borderRadius: r, ...style }} />;
 }
@@ -28,8 +46,6 @@ export function Sidebar({ route, onNav }) {
   const role        = user?.role ?? '';
   const perms       = user?.permissions ?? {};
   const isAdmin     = role === 'admin';
-  // Support legacy flat { payments: true } and new nested { cargaisons: ['view',...] }
-  const PERM_ALIAS  = { campaigns: 'cargaisons' };
   const can = (key) => {
     if (isAdmin) return true;
     if (perms[key] === true) return true;

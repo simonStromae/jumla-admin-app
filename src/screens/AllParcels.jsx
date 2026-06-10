@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
 import { STATUS } from '../data.js';
 import I from '../components/Icons.jsx';
-import { Bi, Avatar, ParcelActionsMenu } from '../components/Shell.jsx';
+import { Bi, Avatar, ParcelActionsMenu, useCan } from '../components/Shell.jsx';
 import { Pagination } from '../components/Pagination.jsx';
 
 export default function AllParcelsScreen({ onNav, initialSearch = '' }) {
+  const can = useCan();
   const [tab, setTab]                     = useState('all');
   const [campaignFilter, setCampaignFilter] = useState('all');
   const [search, setSearch]               = useState(initialSearch);
@@ -51,7 +52,7 @@ export default function AllParcelsScreen({ onNav, initialSearch = '' }) {
         </div>
         <div className="page__actions">
           <button className="btn btn--ghost"><I.Download />Export CSV</button>
-          <button className="btn btn--brand" onClick={() => onNav('/parcels/new')}><I.Plus />Nouveau colis</button>
+          {can('parcels', 'create') && <button className="btn btn--brand" onClick={() => onNav('/parcels/new')}><I.Plus />Nouveau colis</button>}
         </div>
       </div>
 

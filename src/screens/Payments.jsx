@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import I from '../components/Icons.jsx';
-import { Bi, Avatar, Modal, Progress, Skel } from '../components/Shell.jsx';
+import { Bi, Avatar, Modal, Progress, Skel, useCan } from '../components/Shell.jsx';
 
 const METHOD_LABELS = {
   interac:     'Virement Interac',
@@ -484,6 +484,7 @@ function TransactionsTab({ onRecord }) {
 /* ─── Invoices list tab (existing payments) ──────────────── */
 
 function InvoicesTab({ onSettle }) {
+  const can = useCan();
   const [payments, setPayments] = useState([]);
   const [loading, setLoading]   = useState(true);
   const [tab, setTab]           = useState('all');
@@ -579,10 +580,12 @@ function InvoicesTab({ onSettle }) {
                 <td>
                   {p.status === 'paid'
                     ? <span style={{ fontSize: 12, color: 'var(--ok-600)' }}>✓ Réglé</span>
-                    : <button className="btn btn--brand btn--xs" style={{ width: '100%', justifyContent: 'center' }}
-                        onClick={() => onSettle({ clientId: p.clientId, paymentId: p.id, clientName: p.recipName, clientPhone: p.recipPhone })}>
-                        <I.Wallet />Régler
-                      </button>}
+                    : can('payments', 'validate')
+                      ? <button className="btn btn--brand btn--xs" style={{ width: '100%', justifyContent: 'center' }}
+                          onClick={() => onSettle({ clientId: p.clientId, paymentId: p.id, clientName: p.recipName, clientPhone: p.recipPhone })}>
+                          <I.Wallet />Régler
+                        </button>
+                      : <span style={{ fontSize: 12, color: 'var(--ink-400)' }}>En attente</span>}
                 </td>
               </tr>
             );
@@ -596,6 +599,7 @@ function InvoicesTab({ onSettle }) {
 /* ─── Main Payments screen ───────────────────────────────── */
 
 export default function PaymentsScreen({ onNav }) {
+  const can = useCan();
   const [mainTab, setMainTab]   = useState('transactions');
   const [modal, setModal]       = useState(null);
   const [payments, setPayments] = useState([]);
@@ -633,9 +637,11 @@ export default function PaymentsScreen({ onNav }) {
         </div>
         <div className="page__actions">
           <button className="btn btn--ghost"><I.Download />Export comptable</button>
-          <button className="btn btn--brand" onClick={() => setModal({})}>
-            <I.Plus />Enregistrer paiement
-          </button>
+          {can('payments', 'validate') && (
+            <button className="btn btn--brand" onClick={() => setModal({})}>
+              <I.Plus />Enregistrer paiement
+            </button>
+          )}
         </div>
       </div>
 

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import I from '../components/Icons.jsx';
-import { Bi, RoutePill, StatusDot, Progress, Skel } from '../components/Shell.jsx';
+import { Bi, RoutePill, StatusDot, Progress, Skel, useCan } from '../components/Shell.jsx';
 
 const CAMPAIGN_STATUS = {
   open:         { label: 'Ouverte',    dot: 'brand' },
@@ -74,6 +74,7 @@ export function CampaignCard({ c, onClick }) {
 }
 
 export default function CampaignsScreen({ onNav, onNewCampaign }) {
+  const can = useCan();
   const [year, setYear]               = useState(2026);
   const [filter, setFilter]           = useState('all');
   const [routeFilter, setRouteFilter] = useState('all');
@@ -128,7 +129,7 @@ export default function CampaignsScreen({ onNav, onNewCampaign }) {
             </select>
           </div>
           <button className="btn btn--ghost"><I.Download />Exporter</button>
-          <button className="btn btn--brand" onClick={onNewCampaign}><I.Plus />Nouvelle cargaison</button>
+          {can('campaigns', 'create') && <button className="btn btn--brand" onClick={onNewCampaign}><I.Plus />Nouvelle cargaison</button>}
         </div>
       </div>
 
@@ -209,7 +210,7 @@ export default function CampaignsScreen({ onNav, onNewCampaign }) {
         <div style={{ padding: 60, textAlign: 'center', color: 'var(--ink-400)' }}>
           <I.Box style={{ width: 40, height: 40, opacity: .3, marginBottom: 12 }} />
           <div style={{ marginBottom: 12 }}>Aucune cargaison.</div>
-          <button className="btn btn--brand btn--sm" onClick={onNewCampaign}><I.Plus />Créer la première</button>
+          {can('campaigns', 'create') && <button className="btn btn--brand btn--sm" onClick={onNewCampaign}><I.Plus />Créer la première</button>}
         </div>
       )}
 

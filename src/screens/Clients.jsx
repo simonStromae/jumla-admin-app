@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
 
 import I from '../components/Icons.jsx';
-import { Bi, Avatar, Drawer, Skel, Modal } from '../components/Shell.jsx';
+import { Bi, Avatar, Drawer, Skel, Modal, useCan } from '../components/Shell.jsx';
 import { Pagination, ViewToggle } from '../components/Pagination.jsx';
 import ClientFormModal from './ClientForm.jsx';
 
 export default function ClientsScreen({ onNav }) {
+  const can = useCan();
   const [open, setOpen] = useState(null);
   const [editing, setEditing] = useState(null);
   const [view, setView] = useState('grid');
@@ -57,7 +58,7 @@ export default function ClientsScreen({ onNav }) {
         </div>
         <div className="page__actions">
           <button className="btn btn--ghost"><I.Download />Exporter CSV</button>
-          <button className="btn btn--brand" onClick={() => setEditing('new')}><I.UserPlus />Nouvel expéditeur</button>
+          {can('clients', 'create') && <button className="btn btn--brand" onClick={() => setEditing('new')}><I.UserPlus />Nouvel expéditeur</button>}
         </div>
       </div>
 
