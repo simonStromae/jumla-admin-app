@@ -25,7 +25,7 @@ export async function POST(req: NextRequest) {
 
   const userId = (session.user as any).id as string;
 
-  const dbUser = await prisma.user.findUnique({ where: { id: userId }, select: { status: true } });
+  const dbUser = await prisma.user.findUnique({ where: { id: userId }, select: { id: true } as any });
   if ((dbUser as any)?.status === 'suspended') {
     return NextResponse.json({ error: 'Compte suspendu — nouveaux envois désactivés' }, { status: 403 });
   }
