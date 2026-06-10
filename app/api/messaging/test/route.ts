@@ -1,7 +1,7 @@
 export const dynamic = 'force-dynamic';
 import { NextResponse } from 'next/server';
 import { requireAdmin } from '@/src/lib/api-auth';
-import { getTwilioClient, getTwilioSettings } from '@/src/lib/twilio';
+import { getTwilioSettings, twilioVerify } from '@/src/lib/twilio';
 
 export async function GET() {
   const { error } = await requireAdmin();
@@ -13,16 +13,14 @@ export async function GET() {
     return NextResponse.json({ ok: false, error: 'Credentials manquants (Account SID, Auth Token, numéro)' });
   }
 
-  // Show partial values in response to help user verify what's stored
-  const sidPreview   = accountSid.slice(0, 6)   + '…' + accountSid.slice(-4);
-  const tokenPreview = authToken.slice(0, 4)     + '…' + authToken.slice(-4);
+  const sidPreview   = accountSid.slice(0, 6) + '…' + accountSid.slice(-4) + ' (' + accountSid.length + ' car.)';
+  const tokenPreview = authToken.slice(0, 4)  + '…' + authToken.slice(-4)  + ' (' + authToken.length  + ' car.)';
 
   try {
-    const client = await getTwilioClient();
-    const account = await client!.api.accounts(accountSid).fetch();
+    const account = await twilioVerify(accountSid, authToken);
     return NextResponse.json({
-      ok: true,
-      accountName: account.friendlyName,
+      ok:          true,
+      accountName: account.friendly_name,
       status:      account.status,
       sidPreview,
       tokenPreview,

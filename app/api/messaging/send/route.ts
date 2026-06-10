@@ -2,7 +2,7 @@ export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/src/lib/prisma';
 import { requireAdmin } from '@/src/lib/api-auth';
-import { getTwilioClient, getTwilioSettings, formatWhatsappNumber } from '@/src/lib/twilio';
+import { getTwilioSettings, twilioSendWhatsapp, formatWhatsappNumber } from '@/src/lib/twilio';
 
 export async function POST(req: NextRequest) {
   const { error } = await requireAdmin();
@@ -13,9 +13,8 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'parcelIds et body sont requis' }, { status: 400 });
   }
 
-  const { fromNumber } = await getTwilioSettings();
-  const client = await getTwilioClient();
-  if (!client || !fromNumber) {
+  const { accountSid, authToken, fromNumber } = await getTwilioSettings();
+  if (!accountSid || !authToken || !fromNumber) {
     return NextResponse.json({ error: 'API Twilio non configurée' }, { status: 503 });
   }
 
@@ -53,11 +52,13 @@ export async function POST(req: NextRequest) {
       .replace(/\{agent_phone\}/g,       '+1 514 000 0000');
 
     try {
-      const msg = await client.messages.create({
-        from: 'whatsapp:' + fromNumber,
-        to:   formatWhatsappNumber(phone),
-        body: finalBody,
-      });
+      const msg = await twilioSendWhatsapp(
+        accountSid,
+        authToken,
+        fromNumber,
+        formatWhatsappNumber(phone),
+        finalBody,
+      );
 
       await prisma.whatsappLog.create({
         data: { parcelId: p.id, toPhone: phone, body: finalBody, status: 'sent', twilioSid: msg.sid },
