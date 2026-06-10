@@ -20,9 +20,10 @@ const PARCEL_STATUS = {
 };
 
 export default function CampaignDetailScreen({ id, onNav }) {
-  const [campaign, setCampaign] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [advancing, setAdvancing] = useState(false);
+  const [campaign,       setCampaign]       = useState(null);
+  const [loading,        setLoading]        = useState(true);
+  const [advancing,      setAdvancing]      = useState(false);
+  const [showCloseModal, setShowCloseModal] = useState(false);
 
   useEffect(() => {
     fetch('/api/campaigns/' + id)
@@ -64,24 +65,28 @@ export default function CampaignDetailScreen({ id, onNav }) {
   const currentStepIdx = STEPS.findIndex(s => s.id === campaign.status);
   const nextStep = currentStepIdx >= 0 && currentStepIdx < STEPS.length - 1 ? STEPS[currentStepIdx + 1] : null;
 
-  async function handleAdvance() {
-    if (!nextStep) return;
+  const unpaidCount = parcels.filter(p => p.payment?.status !== 'completed').length;
+
+  async function doAdvance(targetStep) {
     setAdvancing(true);
     try {
       const res = await fetch('/api/campaigns/' + id, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status: nextStep.id }),
+        body: JSON.stringify({ status: targetStep.id }),
       });
       if (res.ok) {
         const updated = await fetch('/api/campaigns/' + id).then(r => r.json());
         setCampaign(updated);
       }
-    } catch (e) {
-      // silent fail — user can retry
-    } finally {
-      setAdvancing(false);
-    }
+    } catch (e) {}
+    finally { setAdvancing(false); }
+  }
+
+  function handleAdvance() {
+    if (!nextStep) return;
+    if (nextStep.id === 'closed') { setShowCloseModal(true); return; }
+    doAdvance(nextStep);
   }
 
   const route = campaign.route || {};
@@ -122,12 +127,14 @@ export default function CampaignDetailScreen({ id, onNav }) {
           </div>
         </div>
         <div className="page__actions">
-          <button
-            className="btn btn--brand"
-            onClick={() => onNav('/parcels/new?campaign=' + id)}
-          >
-            <I.Plus />Ajouter un colis
-          </button>
+          {campaign.status === 'open' && (
+            <button
+              className="btn btn--brand"
+              onClick={() => onNav('/parcels/new?campaign=' + id)}
+            >
+              <I.Plus />Ajouter un colis
+            </button>
+          )}
         </div>
       </div>
 
@@ -187,27 +194,72 @@ export default function CampaignDetailScreen({ id, onNav }) {
         </div>
 
         {nextStep && (
-          <div style={{ marginTop: 16, display: 'flex', justifyContent: 'flex-end' }}>
+          <div style={{ marginTop: 16, display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: 12 }}>
+            {nextStep.id === 'closed' && unpaidCount > 0 && (
+              <span style={{ fontSize: 12, color: 'var(--warn-700)', fontWeight: 600 }}>
+                ⚠️ {unpaidCount} colis non payé{unpaidCount > 1 ? 's' : ''}
+              </span>
+            )}
             <button
-              className="btn btn--primary"
+              className={nextStep.id === 'closed' ? 'btn btn--danger' : 'btn btn--primary'}
               onClick={handleAdvance}
               disabled={advancing}
             >
-              {advancing ? 'Mise à jour…' : `Faire avancer → ${nextStep.label}`}
+              {advancing ? 'Mise à jour…' : nextStep.id === 'closed' ? 'Clôturer la cargaison' : `Faire avancer → ${nextStep.label}`}
             </button>
           </div>
         )}
       </div>
 
       {/* Parcel table */}
+      {showCloseModal && (
+        <Modal title="Clôturer la cargaison" onClose={() => setShowCloseModal(false)}>
+          <div style={{ padding: '4px 0 20px' }}>
+            <p style={{ fontSize: 14, color: 'var(--ink-700)', marginBottom: 16 }}>
+              Vous êtes sur le point de clôturer la cargaison <strong>{campaign.code}</strong>.
+              Cette action est irréversible.
+            </p>
+            {unpaidCount > 0 ? (
+              <div style={{ background: 'var(--warn-50)', border: '1px solid var(--warn-200)', borderRadius: 8, padding: '12px 16px', marginBottom: 16 }}>
+                <div style={{ fontWeight: 700, color: 'var(--warn-700)', marginBottom: 4 }}>
+                  ⚠️ {unpaidCount} colis non payé{unpaidCount > 1 ? 's' : ''}
+                </div>
+                <div style={{ fontSize: 12.5, color: 'var(--warn-600)' }}>
+                  Ces colis resteront en attente de paiement après la clôture.
+                  Vérifiez que tous les règlements ont bien été enregistrés avant de continuer.
+                </div>
+              </div>
+            ) : (
+              <div style={{ background: 'var(--ok-50)', border: '1px solid var(--ok-200)', borderRadius: 8, padding: '12px 16px', marginBottom: 16 }}>
+                <div style={{ fontWeight: 700, color: 'var(--ok-700)' }}>
+                  ✓ Tous les colis sont réglés
+                </div>
+              </div>
+            )}
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
+              <button className="btn btn--ghost" onClick={() => setShowCloseModal(false)}>Annuler</button>
+              <button
+                className="btn btn--danger"
+                disabled={advancing}
+                onClick={() => { setShowCloseModal(false); doAdvance(nextStep); }}
+              >
+                {advancing ? 'Clôture…' : 'Confirmer la clôture'}
+              </button>
+            </div>
+          </div>
+        </Modal>
+      )}
+
       {parcels.length === 0 ? (
         <div className="card" style={{ padding: '48px 24px', textAlign: 'center' }}>
           <div style={{ fontSize: 32, marginBottom: 12 }}>📦</div>
           <div style={{ fontSize: 16, fontWeight: 600, color: 'var(--ink-700)', marginBottom: 6 }}>Aucun colis dans cette cargaison</div>
           <div style={{ fontSize: 13, color: 'var(--ink-400)', marginBottom: 20 }}>Ajoutez le premier colis pour commencer.</div>
-          <button className="btn btn--brand" onClick={() => onNav('/parcels/new?campaign=' + id)}>
-            <I.Plus />Ajouter un colis
-          </button>
+          {campaign.status === 'open' && (
+            <button className="btn btn--brand" onClick={() => onNav('/parcels/new?campaign=' + id)}>
+              <I.Plus />Ajouter un colis
+            </button>
+          )}
         </div>
       ) : (
         <table className="tbl">
