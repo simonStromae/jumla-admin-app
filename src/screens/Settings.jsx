@@ -296,9 +296,15 @@ function SectionWhatsapp() {
             </div>
           </div>
         </div>
-        <div className="field" style={{ marginBottom: 16 }}>
-          <label className="label">Numéro WhatsApp (ex: +14155238886)</label>
+        <div className="field" style={{ marginBottom: 8 }}>
+          <label className="label">Numéro expéditeur WhatsApp</label>
           <input className="input mono" placeholder="+14155238886" value={fromNumber} onChange={e => setFromNumber(e.target.value)} />
+        </div>
+        <div style={{ fontSize: 12, color: 'var(--ink-500)', background: 'var(--info-50)', border: '1px solid var(--info-100)', borderRadius: 8, padding: '10px 14px', marginBottom: 16, lineHeight: 1.6 }}>
+          <strong>Sandbox Twilio (phase de test) :</strong> le numéro est toujours <span style={{ fontFamily: 'monospace', fontWeight: 700 }}>+14155238886</span>.<br />
+          Trouve-le dans <strong>Twilio Console → Messaging → Try it out → Send a WhatsApp message</strong>.<br />
+          ⚠️ Chaque destinataire doit d'abord envoyer le mot-clé du sandbox (ex : <em>join &lt;mot&gt;</em>) à ce numéro avant de recevoir tes messages.<br />
+          <strong>Production :</strong> enregistre un numéro WhatsApp Business dans <strong>Messaging → Senders → WhatsApp Senders</strong>.
         </div>
         <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
           <button className="btn btn--brand btn--sm" disabled={saving} onClick={handleSave}>
