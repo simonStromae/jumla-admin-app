@@ -321,13 +321,19 @@ function SectionWhatsapp() {
               </div>
             ) : (
               <>
-                <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--bad-700)', marginBottom: 4 }}>
-                  ✕ Échec d'authentification
+                <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--bad-700)', marginBottom: 6 }}>
+                  ✕ Échec — code {testResult.code} : {testResult.error}
                 </div>
-                <div style={{ fontSize: 12, color: 'var(--bad-600)', fontFamily: 'monospace' }}>{testResult.error}</div>
-                {testResult.code && <div style={{ fontSize: 11, color: 'var(--bad-500)', marginTop: 4 }}>Code Twilio : {testResult.code}</div>}
-                <div style={{ fontSize: 12, color: 'var(--ink-500)', marginTop: 8 }}>
-                  Vérifiez votre <strong>Account SID</strong> (commence par AC…) et votre <strong>Auth Token</strong> dans la console Twilio.
+                {(testResult.sidPreview || testResult.tokenPreview) && (
+                  <div style={{ fontSize: 11.5, fontFamily: 'monospace', color: 'var(--ink-600)', marginBottom: 8, background: 'white', padding: '6px 10px', borderRadius: 6, border: '1px solid var(--bad-100)' }}>
+                    <div>SID stocké&nbsp;&nbsp;: <strong>{testResult.sidPreview}</strong></div>
+                    <div>Token stocké : <strong>{testResult.tokenPreview}</strong></div>
+                  </div>
+                )}
+                <div style={{ fontSize: 12, color: 'var(--ink-600)', lineHeight: 1.6 }}>
+                  Vérifiez que ces valeurs correspondent exactement à ce qui est affiché dans
+                  {' '}<strong>Twilio Console → Account → Account Info</strong>.
+                  <br />L'Auth Token est différent d'une API Key — c'est le token principal visible sur le dashboard.
                 </div>
               </>
             )}

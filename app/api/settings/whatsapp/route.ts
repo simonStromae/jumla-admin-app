@@ -13,9 +13,13 @@ export async function GET() {
   const m: Record<string, string> = {};
   for (const r of rows) m[r.key] = r.value;
 
+  const sid   = m['TWILIO_ACCOUNT_SID'] ?? '';
+  const token = m['TWILIO_AUTH_TOKEN']  ?? '';
+
   return NextResponse.json({
-    accountSid:  m['TWILIO_ACCOUNT_SID']   ? '••••' + m['TWILIO_ACCOUNT_SID'].slice(-4)   : '',
-    authToken:   m['TWILIO_AUTH_TOKEN']    ? '••••' + m['TWILIO_AUTH_TOKEN'].slice(-4)    : '',
+    // Show first 6 + last 4 chars so user can verify what's stored without exposing the full value
+    accountSid:  sid   ? sid.slice(0, 6)   + '••••••••••••••••••••••' + sid.slice(-4)   : '',
+    authToken:   token ? token.slice(0, 4) + '••••••••••••••••••••••' + token.slice(-4) : '',
     fromNumber:  m['TWILIO_WHATSAPP_FROM'] ?? '',
     configured:  KEYS.every(k => !!m[k]),
   });
@@ -28,14 +32,26 @@ export async function PUT(req: NextRequest) {
   const body = await req.json() as { accountSid?: string; authToken?: string; fromNumber?: string };
 
   const ops: Promise<any>[] = [];
-  if (body.accountSid && !body.accountSid.startsWith('••••')) {
-    ops.push(prisma.setting.upsert({ where: { key: 'TWILIO_ACCOUNT_SID' }, create: { key: 'TWILIO_ACCOUNT_SID', value: body.accountSid }, update: { value: body.accountSid } }));
+  if (body.accountSid && !body.accountSid.includes('••••')) {
+    ops.push(prisma.setting.upsert({
+      where:  { key: 'TWILIO_ACCOUNT_SID' },
+      create: { key: 'TWILIO_ACCOUNT_SID', value: body.accountSid.trim() },
+      update: { value: body.accountSid.trim() },
+    }));
   }
-  if (body.authToken && !body.authToken.startsWith('••••')) {
-    ops.push(prisma.setting.upsert({ where: { key: 'TWILIO_AUTH_TOKEN' }, create: { key: 'TWILIO_AUTH_TOKEN', value: body.authToken }, update: { value: body.authToken } }));
+  if (body.authToken && !body.authToken.includes('••••')) {
+    ops.push(prisma.setting.upsert({
+      where:  { key: 'TWILIO_AUTH_TOKEN' },
+      create: { key: 'TWILIO_AUTH_TOKEN', value: body.authToken.trim() },
+      update: { value: body.authToken.trim() },
+    }));
   }
   if (body.fromNumber !== undefined) {
-    ops.push(prisma.setting.upsert({ where: { key: 'TWILIO_WHATSAPP_FROM' }, create: { key: 'TWILIO_WHATSAPP_FROM', value: body.fromNumber }, update: { value: body.fromNumber } }));
+    ops.push(prisma.setting.upsert({
+      where:  { key: 'TWILIO_WHATSAPP_FROM' },
+      create: { key: 'TWILIO_WHATSAPP_FROM', value: body.fromNumber.trim() },
+      update: { value: body.fromNumber.trim() },
+    }));
   }
 
   await Promise.all(ops);
