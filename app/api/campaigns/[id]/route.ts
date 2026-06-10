@@ -14,7 +14,7 @@ export async function GET(_: NextRequest, { params }: { params: { id: string } }
       costs: true,
       parcels: {
         include: {
-          client: { select: { id: true, name: true, email: true, phone: true } },
+          client: { select: { id: true, name: true, email: true, phone: true, city: true } },
           payment: true,
           trackingEvents: { orderBy: { createdAt: 'desc' } },
         },
