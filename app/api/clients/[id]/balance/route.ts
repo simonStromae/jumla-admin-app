@@ -70,11 +70,16 @@ async function getBalance(clientId: string) {
   const totalDue = invoices.reduce((s, i) => s + i.remaining, 0);
 
   // Credit = money received beyond what was invoiced
-  const [txRow] = await prisma.$queryRawUnsafe(
-    `SELECT COALESCE(SUM(amount), 0)::int AS total FROM transactions WHERE "clientId" = $1`,
-    clientId
-  ) as { total: number }[];
-  const totalReceived = Number(txRow?.total ?? 0);
+  let totalReceived = 0;
+  try {
+    const [txRow] = await prisma.$queryRawUnsafe(
+      `SELECT COALESCE(SUM(amount), 0)::int AS total FROM transactions WHERE "clientId" = $1`,
+      clientId
+    ) as { total: number }[];
+    totalReceived = Number(txRow?.total ?? 0);
+  } catch {
+    // transactions table not yet migrated
+  }
   const creditBalance = Math.max(0, totalReceived - totalAllocated);
 
   return NextResponse.json({

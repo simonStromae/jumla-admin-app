@@ -52,7 +52,7 @@ function RecordPaymentModal({ preselectedClient, preselectedPaymentId, onClose, 
   useEffect(() => {
     if (!selectedClient) { setBalance(null); return; }
     fetch(`/api/clients/${selectedClient.id}/balance`)
-      .then(r => r.json())
+      .then(r => r.ok ? r.json() : Promise.reject(r.status))
       .then(d => {
         setBalance(d);
         if (preselectedPaymentId) {
@@ -62,7 +62,8 @@ function RecordPaymentModal({ preselectedClient, preselectedPaymentId, onClose, 
             setForm(f => ({ ...f, amount: String(inv.remaining) }));
           }
         }
-      });
+      })
+      .catch(() => setBalance({ totalDue: 0, creditBalance: 0, unpaidInvoices: [], allInvoices: [] }));
   }, [selectedClient, preselectedPaymentId]);
 
   const upd = (k, v) => setForm(f => ({ ...f, [k]: v }));
