@@ -3,12 +3,23 @@ import I from '../components/Icons.jsx';
 import { RoutePill, Avatar, Modal } from '../components/Shell.jsx';
 
 const STEPS = [
-  { id: 'open',       label: 'Ouverte',    color: 'var(--brand-500)' },
-  { id: 'in-transit', label: 'En transit', color: 'var(--warn-500)' },
-  { id: 'arrived',    label: 'Arrivée',    color: 'var(--info-500)' },
-  { id: 'closed',     label: 'Clôturée',   color: 'var(--ink-500)' },
+  { id: 'open',                label: 'Ouvert',               color: 'var(--brand-500)' },
+  { id: 'preparing_departure', label: 'Préparation départ',   color: 'var(--info-500)' },
+  { id: 'in-transit',          label: 'Départ',               color: 'var(--warn-500)' },
+  { id: 'in_transit_2',        label: 'Départ 2',             color: 'var(--warn-600)' },
+  { id: 'arrived',             label: 'Arrivé',               color: 'var(--ok-500)' },
+  { id: 'preparing_arrival',   label: 'Préparation arrivée',  color: 'var(--ok-700)' },
+  { id: 'closed',              label: 'Clôturé',              color: 'var(--ink-500)' },
 ];
-const STEP_LABELS = { open: 'Ouverte', 'in-transit': 'En transit', arrived: 'Arrivée', closed: 'Clôturée' };
+const STEP_LABELS = {
+  open:                'Ouvert',
+  preparing_departure: 'Préparation départ',
+  'in-transit':        'Départ',
+  in_transit_2:        'Départ 2',
+  arrived:             'Arrivé',
+  preparing_arrival:   'Préparation arrivée',
+  closed:              'Clôturé',
+};
 const PAYMENT_STATUS = {
   completed: { label: 'Payé',       cls: 'ok' },
   pending:   { label: 'En attente', cls: 'warn' },
@@ -20,15 +31,21 @@ const PARCEL_STATUS = {
 };
 
 export default function CampaignDetailScreen({ id, onNav }) {
-  const [campaign,       setCampaign]       = useState(null);
-  const [loading,        setLoading]        = useState(true);
-  const [advancing,      setAdvancing]      = useState(false);
-  const [showCloseModal, setShowCloseModal] = useState(false);
+  const [campaign,           setCampaign]           = useState(null);
+  const [loading,            setLoading]            = useState(true);
+  const [advancing,          setAdvancing]          = useState(false);
+  const [showCloseModal,     setShowCloseModal]     = useState(false);
+  const [showDepartureModal, setShowDepartureModal] = useState(null); // targetStep
+  const [statusNotes,        setStatusNotes]        = useState({});
 
   useEffect(() => {
     fetch('/api/campaigns/' + id)
       .then(r => r.json())
-      .then(c => { setCampaign(c); setLoading(false); })
+      .then(c => {
+        setCampaign(c);
+        setStatusNotes(c.statusNotes ?? {});
+        setLoading(false);
+      })
       .catch(() => setLoading(false));
   }, [id]);
 
@@ -67,17 +84,18 @@ export default function CampaignDetailScreen({ id, onNav }) {
 
   const unpaidCount = parcels.filter(p => p.payment?.status !== 'completed').length;
 
-  async function doAdvance(targetStep) {
+  async function doAdvance(targetStep, note) {
     setAdvancing(true);
     try {
       const res = await fetch('/api/campaigns/' + id, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status: targetStep.id }),
+        body: JSON.stringify({ status: targetStep.id, ...(note && { statusNote: note }) }),
       });
       if (res.ok) {
         const updated = await fetch('/api/campaigns/' + id).then(r => r.json());
         setCampaign(updated);
+        setStatusNotes(updated.statusNotes ?? {});
       }
     } catch (e) {}
     finally { setAdvancing(false); }
@@ -86,6 +104,10 @@ export default function CampaignDetailScreen({ id, onNav }) {
   function handleAdvance() {
     if (!nextStep) return;
     if (nextStep.id === 'closed') { setShowCloseModal(true); return; }
+    if (nextStep.id === 'in-transit' || nextStep.id === 'in_transit_2') {
+      setShowDepartureModal(nextStep);
+      return;
+    }
     doAdvance(nextStep);
   }
 
@@ -159,12 +181,13 @@ export default function CampaignDetailScreen({ id, onNav }) {
 
       {/* Status stepper */}
       <div className="card" style={{ marginBottom: 16, padding: '16px 20px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 0 }}>
+        <div style={{ display: 'flex', alignItems: 'flex-start', gap: 0 }}>
           {STEPS.map((step, i) => {
             const isActive = step.id === campaign.status;
             const isDone = i < currentStepIdx;
+            const hasNote = (step.id === 'in-transit' || step.id === 'in_transit_2') && statusNotes?.[step.id];
             return (
-              <div key={step.id} style={{ display: 'flex', alignItems: 'center', flex: i < STEPS.length - 1 ? 1 : 'none' }}>
+              <div key={step.id} style={{ display: 'flex', alignItems: 'flex-start', flex: i < STEPS.length - 1 ? 1 : 'none' }}>
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
                   <div style={{
                     width: 32, height: 32, borderRadius: '50%', display: 'grid', placeItems: 'center',
@@ -178,13 +201,19 @@ export default function CampaignDetailScreen({ id, onNav }) {
                     fontSize: 11.5, fontWeight: isActive ? 700 : 500,
                     color: isActive ? step.color : isDone ? 'var(--ok-600)' : 'var(--ink-400)',
                     whiteSpace: 'nowrap',
+                    textAlign: 'center',
                   }}>
                     {step.label}
                   </span>
+                  {(isActive || isDone) && hasNote && (
+                    <span style={{ fontSize: 10, color: isDone ? 'var(--ok-600)' : step.color, whiteSpace: 'normal', maxWidth: 80, textAlign: 'center' }}>
+                      {statusNotes[step.id]}
+                    </span>
+                  )}
                 </div>
                 {i < STEPS.length - 1 && (
                   <div style={{
-                    flex: 1, height: 2, margin: '0 8px', marginBottom: 18,
+                    flex: 1, height: 2, margin: '15px 8px 0',
                     background: isDone ? 'var(--ok-500)' : 'var(--border)',
                   }} />
                 )}
@@ -211,7 +240,7 @@ export default function CampaignDetailScreen({ id, onNav }) {
         )}
       </div>
 
-      {/* Parcel table */}
+      {/* Close modal */}
       {showCloseModal && (
         <Modal title="Clôturer la cargaison" onClose={() => setShowCloseModal(false)}>
           <div style={{ padding: '4px 0 20px' }}>
@@ -250,6 +279,19 @@ export default function CampaignDetailScreen({ id, onNav }) {
         </Modal>
       )}
 
+      {/* Departure note modal */}
+      {showDepartureModal && (
+        <DepartureNoteModal
+          targetStep={showDepartureModal}
+          onClose={() => setShowDepartureModal(null)}
+          onConfirm={(note) => {
+            setShowDepartureModal(null);
+            doAdvance(showDepartureModal, note);
+          }}
+        />
+      )}
+
+      {/* Parcel table */}
       {parcels.length === 0 ? (
         <div className="card" style={{ padding: '48px 24px', textAlign: 'center' }}>
           <div style={{ fontSize: 32, marginBottom: 12 }}>📦</div>
@@ -334,5 +376,40 @@ export default function CampaignDetailScreen({ id, onNav }) {
         {parcels.length} colis · Capacité {campaign.capacityKg != null ? campaign.capacityKg + ' kg' : '—'}
       </div>
     </div>
+  );
+}
+
+function DepartureNoteModal({ targetStep, onClose, onConfirm }) {
+  const [note, setNote] = useState('');
+  return (
+    <Modal
+      width={420}
+      onClose={onClose}
+      title="Confirmer le départ"
+      sub={targetStep.label}
+      footer={
+        <>
+          <button className="btn btn--ghost" onClick={onClose}>Annuler</button>
+          <button className="btn btn--brand" onClick={() => onConfirm(note)}>
+            Confirmer le départ
+          </button>
+        </>
+      }
+    >
+      <div style={{ display: 'grid', gap: 14 }}>
+        <div>
+          <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--ink-600)', display: 'block', marginBottom: 6 }}>
+            Étape <span style={{ fontWeight: 400, color: 'var(--ink-400)' }}>(ex: DLA → BRU)</span>
+          </label>
+          <input
+            className="input"
+            value={note}
+            onChange={e => setNote(e.target.value)}
+            placeholder="DLA → BRU"
+            autoFocus
+          />
+        </div>
+      </div>
+    </Modal>
   );
 }

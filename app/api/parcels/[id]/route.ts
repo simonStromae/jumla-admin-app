@@ -27,7 +27,17 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
   if (error) return error;
 
   const body = await req.json();
-  const { status, confirmed, notes, weightKg, priceXaf, eventNote, eventLocation } = body;
+  const { status, confirmed, notes, weightKg, priceXaf, eventNote, eventLocation, items } = body;
+
+  // Fetch parcel with campaign to check lock status
+  const existing = await prisma.parcel.findUnique({
+    where: { id: params.id },
+    select: { campaign: { select: { status: true } } },
+  });
+  const LOCKED_STATUSES = ['in_transit', 'in_transit_2', 'arrived', 'preparing_arrival', 'closed'];
+  if (existing?.campaign && LOCKED_STATUSES.includes(existing.campaign.status as string)) {
+    return NextResponse.json({ error: 'Colis verrouillé — la cargaison est déjà en transit.' }, { status: 403 });
+  }
 
   const parcel = await prisma.parcel.update({
     where: { id: params.id },
@@ -37,6 +47,7 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
       ...(notes     !== undefined && { notes }),
       ...(weightKg  !== undefined && { weightKg:  Number(weightKg) }),
       ...(priceXaf  !== undefined && { priceXaf:  Number(priceXaf) }),
+      ...(items     !== undefined && { items } as any),
     },
   });
 

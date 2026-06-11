@@ -95,7 +95,7 @@ export default function SlipPrintScreen({ code, onNav }) {
           {/* Title */}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: 20, marginTop: 18, marginBottom: 20, alignItems: 'start' }}>
             <div>
-              <div style={{ fontSize: 24, fontWeight: 700, letterSpacing: '-.02em' }}>Bordereau de livraison</div>
+              <div style={{ fontSize: 24, fontWeight: 700, letterSpacing: '-.02em' }}>Bordereau du colis</div>
               <div style={{ fontSize: 12, color: '#6B7280', marginTop: 2 }}>Delivery slip · for inspection on arrival</div>
             </div>
             <div style={{ textAlign: 'right' }}>

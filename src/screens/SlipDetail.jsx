@@ -117,7 +117,7 @@ export default function SlipDetailScreen({ id, onNav }) {
       <div className="page__head" style={{ marginBottom: 16 }}>
         <div style={{ flex: 1 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 6 }}>
-            <h1 className="page__title" style={{ margin: 0 }}>Bordereau de livraison</h1>
+            <h1 className="page__title" style={{ margin: 0 }}>Bordereau du colis</h1>
             <span className="mono badge badge--lg badge--neutral">{slip.code}</span>
             <span className={'badge badge--lg badge--dot badge--' + blSt.cls}>{blSt.l}</span>
           </div>
@@ -127,7 +127,7 @@ export default function SlipDetailScreen({ id, onNav }) {
           </div>
         </div>
         <div className="page__actions">
-          <button className="btn btn--ghost" onClick={() => onNav('/admin/slips/' + slip.code + '/print')}>
+          <button className="btn btn--ghost" onClick={() => window.open('/admin/slips/' + slip.code + '/print', '_blank')}>
             <I.Print />Imprimer
           </button>
           {slip.status !== 'valide' && slip.status !== 'libere' && (
@@ -173,6 +173,7 @@ export default function SlipDetailScreen({ id, onNav }) {
                   <tr>
                     <th style={{ borderRadius: 0, width: 28 }}>#</th>
                     <th>Désignation</th>
+                    <th style={{ width: 140 }}>Description</th>
                     <th style={{ width: 80 }}>Type</th>
                     <th style={{ width: 55, textAlign: 'center' }}>Nb</th>
                     <th style={{ width: 70, textAlign: 'center' }}>Pièces</th>
@@ -186,6 +187,7 @@ export default function SlipDetailScreen({ id, onNav }) {
                     <tr key={it.id}>
                       <td className="mono" style={{ color: 'var(--ink-400)', fontSize: 11.5 }}>{i + 1}</td>
                       <td style={{ fontWeight: 500, fontSize: 12.5 }}>{it.designation || '—'}</td>
+                      <td style={{ fontSize: 12, color: 'var(--ink-500)' }}>{it.description || '—'}</td>
                       <td style={{ fontSize: 12, color: 'var(--ink-600)' }}>{TYPE_LABELS[it.type] ?? it.type}</td>
                       <td className="mono" style={{ textAlign: 'center' }}>{it.count}</td>
                       <td className="mono" style={{ textAlign: 'center', color: 'var(--ink-400)' }}>{it.nbPieces || '—'}</td>

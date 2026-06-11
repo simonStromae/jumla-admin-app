@@ -81,6 +81,18 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
   const body = await req.json();
   const { description, weightKg, nbPieces, status, notes, items } = body;
 
+  // Check campaign lock for structural edits (not status validation)
+  if (!body.status) {
+    const bl = await prisma.bordereau.findUnique({
+      where: { id: params.id },
+      select: { parcel: { select: { campaign: { select: { status: true } } } } },
+    });
+    const LOCKED_STATUSES = ['in_transit', 'in_transit_2', 'arrived', 'preparing_arrival', 'closed'];
+    if (bl?.parcel?.campaign && LOCKED_STATUSES.includes(bl.parcel.campaign.status as string)) {
+      return NextResponse.json({ error: 'Bordereau verrouillé — la cargaison est déjà en transit.' }, { status: 403 });
+    }
+  }
+
   const bordereau = await prisma.bordereau.update({
     where: { id: params.id },
     data: {

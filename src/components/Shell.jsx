@@ -313,19 +313,14 @@ export function ParcelActionsMenu({ parcel, onNav, isLocked }) {
 
   const sections = [
     [
-      { icon: I.Eye,  label: 'Voir le détail',  onClick: () => onNav('/parcels/' + parcel.id) },
-      { icon: I.Edit, label: 'Modifier',         onClick: () => onNav('/parcels/' + parcel.id + '/edit'), disabled: isLocked },
+      { icon: I.Eye,   label: 'Voir le détail',          onClick: () => onNav('/parcels/' + parcel.id) },
+      { icon: I.Edit,  label: 'Modifier',                onClick: () => onNav('/parcels/' + parcel.id + '/edit'), disabled: isLocked },
     ],
     [
-      { icon: I.Whatsapp, label: 'Lien paiement — WhatsApp', onClick: () => {}, green: true },
-      { icon: I.Send,     label: 'Lien paiement — Email',    onClick: () => {} },
-      { icon: I.Copy,     label: 'Copier le lien',           onClick: () => navigator.clipboard?.writeText(window.location.origin + payLink) },
+      { icon: I.Print, label: 'Bordereau du colis',      onClick: () => onNav('/admin/slips/' + parcel.id) },
     ],
     [
-      { icon: I.Print, label: 'Imprimer le bordereau', onClick: () => {} },
-    ],
-    [
-      { icon: I.Trash, label: 'Supprimer', onClick: () => {}, danger: true, disabled: isLocked },
+      { icon: I.Trash, label: 'Supprimer',               onClick: () => {}, danger: true, disabled: isLocked },
     ],
   ];
 

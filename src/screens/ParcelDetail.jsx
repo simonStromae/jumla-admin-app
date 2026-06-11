@@ -24,15 +24,17 @@ const BORDEREAU_STATUS = {
 };
 
 export default function ParcelDetailScreen({ id, onNav }) {
-  const [parcel,     setParcel]     = useState(null);
-  const [bordereaux, setBordereaux] = useState([]);
-  const [loading,    setLoading]    = useState(true);
+  const [parcel,        setParcel]        = useState(null);
+  const [bordereaux,    setBordereaux]    = useState([]);
+  const [loading,       setLoading]       = useState(true);
   const [showPayModal,    setShowPayModal]    = useState(false);
   const [showStatusModal, setShowStatusModal] = useState(false);
   const [showWeightModal, setShowWeightModal] = useState(false);
   const [showAddBl,       setShowAddBl]       = useState(false);
   const [newBl,    setNewBl]    = useState({ description: '', weightKg: '', items: [] });
   const [addingBl, setAddingBl] = useState(false);
+  const [editingBlId,    setEditingBlId]    = useState(null);
+  const [editingBlItems, setEditingBlItems] = useState([]);
 
   useEffect(() => {
     fetch('/api/parcels/' + id)
@@ -88,7 +90,7 @@ export default function ParcelDetailScreen({ id, onNav }) {
   };
 
   const addBlItem = () => {
-    setNewBl(b => ({ ...b, items: [...b.items, { designation: '', type: 'carton', count: 1, nbPieces: '' }] }));
+    setNewBl(b => ({ ...b, items: [...b.items, { designation: '', description: '', type: 'carton', count: 1, nbPieces: '' }] }));
   };
 
   const updBlItem = (idx, k, v) => {
@@ -119,6 +121,8 @@ export default function ParcelDetailScreen({ id, onNav }) {
   const pStatus    = PARCEL_STATUS[parcel.status]  || { label: parcel.status,  cls: 'neutral' };
   const payStatus  = payment ? (PAYMENT_STATUS[payment.status] || { label: payment.status, cls: 'neutral' }) : { label: 'Non créé', cls: 'neutral' };
   const totalVerif = bordereaux.filter(b => b.status === 'verifie').length;
+
+  const campaignLocked = ['in_transit', 'in_transit_2', 'arrived', 'preparing_arrival', 'closed'].includes(parcel?.campaign?.status);
 
   return (
     <div className="page">
@@ -212,17 +216,26 @@ export default function ParcelDetailScreen({ id, onNav }) {
           <div className="card" style={{ overflow: 'hidden' }}>
             <div style={{ padding: '14px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid var(--border)' }}>
               <div>
-                <div style={{ fontSize: 14, fontWeight: 700 }}>Bordereaux de livraison</div>
+                <div style={{ fontSize: 14, fontWeight: 700 }}>Bordereaux du colis</div>
                 <div style={{ fontSize: 12, color: 'var(--ink-400)', marginTop: 2 }}>
                   {bordereaux.length === 0 ? 'Aucun bordereau' : `${totalVerif}/${bordereaux.length} vérifiés`}
                 </div>
               </div>
-              <button className="btn btn--brand btn--sm" onClick={() => setShowAddBl(v => !v)}>
-                <I.Plus />{showAddBl ? 'Annuler' : 'Ajouter'}
-              </button>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 6, alignItems: 'flex-end' }}>
+                {campaignLocked && (
+                  <div style={{ padding: '8px 12px', background: 'var(--warn-50)', border: '1px solid var(--warn-200)', borderRadius: 6, fontSize: 12, color: 'var(--warn-700)' }}>
+                    🔒 Cargaison en transit — modifications verrouillées
+                  </div>
+                )}
+                {!campaignLocked && (
+                  <button className="btn btn--brand btn--sm" onClick={() => setShowAddBl(v => !v)}>
+                    <I.Plus />{showAddBl ? 'Annuler' : 'Ajouter'}
+                  </button>
+                )}
+              </div>
             </div>
 
-            {showAddBl && (
+            {showAddBl && !campaignLocked && (
               <div style={{ padding: '14px 16px', background: 'var(--brand-50)', borderBottom: '1px solid var(--border)' }}>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 100px', gap: 8, marginBottom: 12 }}>
                   <div>
@@ -245,7 +258,7 @@ export default function ParcelDetailScreen({ id, onNav }) {
                   <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: 8, fontSize: 12 }}>
                     <thead>
                       <tr style={{ background: 'var(--brand-100)' }}>
-                        {['Désignation', 'Type', 'Nb', 'Pièces (alt)', ''].map(h => (
+                        {['Désignation', 'Description', 'Type', 'Nb', 'Pièces (alt)', ''].map(h => (
                           <th key={h} style={{ padding: '5px 8px', textAlign: 'left', fontSize: 10.5, fontWeight: 700, color: 'var(--brand-800)', borderBottom: '1px solid var(--brand-200)' }}>{h}</th>
                         ))}
                       </tr>
@@ -256,6 +269,10 @@ export default function ParcelDetailScreen({ id, onNav }) {
                           <td style={{ padding: '4px 4px' }}>
                             <input className="input input--sm" value={it.designation}
                               onChange={e => updBlItem(idx, 'designation', e.target.value)} placeholder="Ex: Vêtements adulte" />
+                          </td>
+                          <td style={{ padding: '4px 4px', width: 140 }}>
+                            <input className="input input--sm" value={it.description ?? ''}
+                              onChange={e => updBlItem(idx, 'description', e.target.value)} placeholder="Détails…" />
                           </td>
                           <td style={{ padding: '4px 4px', width: 110 }}>
                             <select className="select input--sm" value={it.type} onChange={e => updBlItem(idx, 'type', e.target.value)}>
@@ -296,7 +313,7 @@ export default function ParcelDetailScreen({ id, onNav }) {
 
             {bordereaux.length === 0 && !showAddBl ? (
               <div style={{ padding: '24px 16px', textAlign: 'center', color: 'var(--ink-400)', fontSize: 13 }}>
-                Aucun bordereau. Cliquez sur "Ajouter" pour créer le premier paquet.
+                Aucun bordereau du colis. Cliquez sur "Ajouter" pour créer le premier paquet.
               </div>
             ) : (
               <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12.5 }}>
@@ -312,31 +329,64 @@ export default function ParcelDetailScreen({ id, onNav }) {
                     const bs = BORDEREAU_STATUS[bl.status] || { label: bl.status, cls: 'neutral' };
                     const itemCount = Array.isArray(bl.items) ? bl.items.length : 0;
                     return (
-                      <tr key={bl.id} style={{ borderBottom: '1px solid var(--border-soft)' }}>
-                        <td style={{ padding: '8px 12px' }}>
-                          <a className="mono" style={{ fontWeight: 700, fontSize: 12, color: 'var(--brand-700)', cursor: 'pointer' }}
-                            onClick={() => onNav?.('/admin/slips/' + bl.code)}>
-                            {bl.code}
-                          </a>
-                        </td>
-                        <td style={{ padding: '8px 12px', color: 'var(--ink-700)', fontSize: 12 }}>
-                          {bl.description || (itemCount > 0 ? `${itemCount} ligne${itemCount > 1 ? 's' : ''}` : '—')}
-                        </td>
-                        <td style={{ padding: '8px 12px', fontFamily: 'monospace' }}>{bl.weightKg ? bl.weightKg + ' kg' : '—'}</td>
-                        <td style={{ padding: '8px 12px', fontFamily: 'monospace', color: 'var(--ink-500)' }}>{itemCount || bl.nbPieces}</td>
-                        <td style={{ padding: '8px 12px' }}>
-                          <select className="select" style={{ height: 26, padding: '0 6px', fontSize: 11.5, border: '1px solid var(--border)', borderRadius: 4 }}
-                            value={bl.status} onChange={e => updateBlStatus(bl.id, e.target.value)}>
-                            {Object.entries(BORDEREAU_STATUS).map(([v, { label }]) => (
-                              <option key={v} value={v}>{label}</option>
-                            ))}
-                          </select>
-                        </td>
-                        <td style={{ padding: '8px 12px' }}>
-                          <button onClick={() => deleteBl(bl.id)}
-                            style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--ink-400)', fontSize: 16, lineHeight: 1, padding: '2px 4px' }}>×</button>
-                        </td>
-                      </tr>
+                      <>
+                        <tr key={bl.id} style={{ borderBottom: '1px solid var(--border-soft)' }}>
+                          <td style={{ padding: '8px 12px' }}>
+                            <a className="mono" style={{ fontWeight: 700, fontSize: 12, color: 'var(--brand-700)', cursor: 'pointer' }}
+                              onClick={() => onNav?.('/admin/slips/' + bl.code)}>
+                              {bl.code}
+                            </a>
+                          </td>
+                          <td style={{ padding: '8px 12px', color: 'var(--ink-700)', fontSize: 12 }}>
+                            {bl.description || (itemCount > 0 ? `${itemCount} ligne${itemCount > 1 ? 's' : ''}` : '—')}
+                          </td>
+                          <td style={{ padding: '8px 12px', fontFamily: 'monospace' }}>{bl.weightKg ? bl.weightKg + ' kg' : '—'}</td>
+                          <td style={{ padding: '8px 12px', fontFamily: 'monospace', color: 'var(--ink-500)' }}>{itemCount || bl.nbPieces}</td>
+                          <td style={{ padding: '8px 12px' }}>
+                            <select className="select" style={{ height: 26, padding: '0 6px', fontSize: 11.5, border: '1px solid var(--border)', borderRadius: 4 }}
+                              value={bl.status} onChange={e => updateBlStatus(bl.id, e.target.value)}>
+                              {Object.entries(BORDEREAU_STATUS).map(([v, { label }]) => (
+                                <option key={v} value={v}>{label}</option>
+                              ))}
+                            </select>
+                          </td>
+                          <td style={{ padding: '8px 12px', display: 'flex', gap: 6 }}>
+                            {!campaignLocked && (
+                              <button onClick={() => {
+                                if (editingBlId === bl.id) { setEditingBlId(null); return; }
+                                setEditingBlId(bl.id);
+                                setEditingBlItems(Array.isArray(bl.items) ? bl.items.map(it => ({ ...it })) : []);
+                              }} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--ink-400)', padding: '2px 4px', fontSize: 14 }}>
+                                ✏️
+                              </button>
+                            )}
+                            <button onClick={() => deleteBl(bl.id)}
+                              style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--ink-400)', fontSize: 16, lineHeight: 1, padding: '2px 4px' }}>×</button>
+                          </td>
+                        </tr>
+                        {editingBlId === bl.id && (
+                          <tr key={bl.id + '-edit'}>
+                            <td colSpan={6} style={{ padding: '0 12px 12px', background: 'var(--brand-50)' }}>
+                              <BlItemsEditor
+                                items={editingBlItems}
+                                onChange={setEditingBlItems}
+                                onSave={async () => {
+                                  const res = await fetch('/api/bordereaux/' + bl.id, {
+                                    method: 'PUT',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({ items: editingBlItems }),
+                                  });
+                                  if (res.ok) {
+                                    setBordereaux(bs => bs.map(b => b.id === bl.id ? { ...b, items: editingBlItems } : b));
+                                    setEditingBlId(null);
+                                  }
+                                }}
+                                onCancel={() => setEditingBlId(null)}
+                              />
+                            </td>
+                          </tr>
+                        )}
+                      </>
                     );
                   })}
                 </tbody>
@@ -433,7 +483,7 @@ export default function ParcelDetailScreen({ id, onNav }) {
           parcel={parcel}
           onClose={() => setShowWeightModal(false)}
           onSaved={(updated) => {
-            setParcel(p => ({ ...p, weightKg: updated.weightKg, priceXaf: updated.priceXaf }));
+            setParcel(p => ({ ...p, weightKg: updated.weightKg, priceXaf: updated.priceXaf, items: updated.items || p.items }));
             setShowWeightModal(false);
           }}
         />
@@ -460,33 +510,117 @@ export default function ParcelDetailScreen({ id, onNav }) {
   );
 }
 
+function BlItemsEditor({ items, onChange, onSave, onCancel }) {
+  const upd = (idx, k, v) => onChange(its => its.map((it, i) => i === idx ? { ...it, [k]: v } : it));
+  const add = () => onChange(its => [...its, { id: Date.now(), designation: '', description: '', type: 'carton', count: 1, nbPieces: '' }]);
+  const del = (idx) => onChange(its => its.filter((_, i) => i !== idx));
+
+  return (
+    <div style={{ paddingTop: 8 }}>
+      <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12, marginBottom: 8 }}>
+        <thead>
+          <tr style={{ background: 'var(--brand-100)' }}>
+            {['Désignation', 'Description', 'Type', 'Nb', ''].map(h => (
+              <th key={h} style={{ padding: '4px 6px', textAlign: 'left', fontSize: 10.5, fontWeight: 700, color: 'var(--brand-800)' }}>{h}</th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {items.map((it, idx) => (
+            <tr key={idx}>
+              <td style={{ padding: '3px 3px' }}>
+                <input className="input input--sm" value={it.designation ?? ''} onChange={e => upd(idx, 'designation', e.target.value)} placeholder="Désignation" />
+              </td>
+              <td style={{ padding: '3px 3px' }}>
+                <input className="input input--sm" value={it.description ?? ''} onChange={e => upd(idx, 'description', e.target.value)} placeholder="Détails…" />
+              </td>
+              <td style={{ padding: '3px 3px', width: 100 }}>
+                <select className="select input--sm" value={it.type ?? 'carton'} onChange={e => upd(idx, 'type', e.target.value)}>
+                  <option value="carton">Carton</option>
+                  <option value="paquet">Paquet</option>
+                  <option value="sachet">Sachet</option>
+                  <option value="bouteille">Bouteille</option>
+                </select>
+              </td>
+              <td style={{ padding: '3px 3px', width: 55 }}>
+                <input className="input input--sm mono" type="number" min="1" value={it.count ?? 1} onChange={e => upd(idx, 'count', e.target.value)} />
+              </td>
+              <td style={{ padding: '3px 3px', width: 28 }}>
+                <button onClick={() => del(idx)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--bad-500)', fontSize: 16, padding: '0 4px' }}>×</button>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      <div style={{ display: 'flex', gap: 8 }}>
+        <button className="btn btn--ghost btn--sm" onClick={add}>+ Ligne</button>
+        <div style={{ flex: 1 }} />
+        <button className="btn btn--ghost btn--sm" onClick={onCancel}>Annuler</button>
+        <button className="btn btn--brand btn--sm" onClick={onSave}>Enregistrer</button>
+      </div>
+    </div>
+  );
+}
+
 function WeightModal({ parcel, onClose, onSaved }) {
-  const [weightKg,  setWeightKg]  = useState(parcel.weightKg ?? '');
-  const [priceXaf,  setPriceXaf]  = useState(parcel.priceXaf ?? '');
+  const [items, setItems] = useState(() =>
+    Array.isArray(parcel.items) && parcel.items.length > 0
+      ? parcel.items.map(it => ({ ...it }))
+      : [{ description: parcel.description || '', productType: parcel.productType || 'standard', weightKg: parcel.weightKg || '' }]
+  );
   const [saving,    setSaving]    = useState(false);
-  const [error,     setError]     = useState('');
+  const [calcPrice, setCalcPrice] = useState(null);
+
+  const totalWeight = items.reduce((s, it) => s + (Number(it.weightKg) || 0), 0);
+
+  // Auto-calculate price when weight changes
+  useEffect(() => {
+    if (!totalWeight) return;
+    const productType = parcel.productType || items[0]?.productType || 'standard';
+    fetch('/api/pricing/calculate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        weightKg: totalWeight,
+        productType,
+        nbCartons:         parcel.nbCartons         || 0,
+        nbPetitsSacs:      parcel.nbPetitsSacs      || 0,
+        nbSacsMoyens:      parcel.nbSacsMoyens       || 0,
+        nbGrandsSacs:      parcel.nbGrandsSacs       || 0,
+        nbPlastiques:      parcel.nbPlastiques       || 0,
+        nbPlastiquesBiere: parcel.nbPlastiquesBiere  || 0,
+        nbCasiers24x65:    parcel.nbCasiers24x65     || 0,
+        nbCasiers24x33:    parcel.nbCasiers24x33     || 0,
+        nbCasiers12x50:    parcel.nbCasiers12x50     || 0,
+        marginPct:         parcel.marginPct ?? 30,
+      }),
+    }).then(r => r.json()).then(d => setCalcPrice(d.prixClient ? Math.round(d.prixClient) : null)).catch(() => {});
+  }, [totalWeight]);
+
+  const updItem = (idx, k, v) => setItems(its => its.map((it, i) => i === idx ? { ...it, [k]: v } : it));
+  const addItem = () => setItems(its => [...its, { description: '', productType: parcel.productType || 'standard', weightKg: '' }]);
+  const delItem = (idx) => setItems(its => its.filter((_, i) => i !== idx));
 
   const handleSave = async () => {
     setSaving(true);
-    setError('');
     const res = await fetch('/api/parcels/' + parcel.id, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        weightKg: weightKg !== '' ? Number(weightKg) : undefined,
-        priceXaf: priceXaf !== '' ? Number(priceXaf) : undefined,
+        weightKg: totalWeight || undefined,
+        priceXaf: calcPrice || undefined,
+        items,
       }),
     });
     const json = await res.json();
     setSaving(false);
-    if (!res.ok) { setError(json.error || 'Erreur'); return; }
-    onSaved(json.parcel);
+    if (json.ok) onSaved(json.parcel);
   };
 
   return (
-    <Modal width={400} onClose={onClose}
-      title="Modifier le poids et le prix"
-      sub={parcel.trackingCode}
+    <Modal width={560} onClose={onClose}
+      title="Modifier le contenu déclaré"
+      sub={`${parcel.trackingCode} — Poids total : ${totalWeight.toFixed(2)} kg`}
       footer={
         <>
           <button className="btn btn--ghost" onClick={onClose}>Annuler</button>
@@ -495,38 +629,57 @@ function WeightModal({ parcel, onClose, onSaved }) {
           </button>
         </>
       }>
-      <div style={{ display: 'grid', gap: 14 }}>
-        <div>
-          <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--ink-600)', display: 'block', marginBottom: 6 }}>
-            Poids réel <span style={{ fontWeight: 400, color: 'var(--ink-400)' }}>(kg)</span>
-          </label>
-          <input
-            className="input mono"
-            type="number" min="0" step="0.1"
-            value={weightKg}
-            onChange={e => setWeightKg(e.target.value)}
-            placeholder="ex. 12.5"
-          />
-        </div>
-        <div>
-          <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--ink-600)', display: 'block', marginBottom: 6 }}>
-            Prix ajusté <span style={{ fontWeight: 400, color: 'var(--ink-400)' }}>(CAD)</span>
-          </label>
-          <input
-            className="input mono"
-            type="number" min="0"
-            value={priceXaf}
-            onChange={e => setPriceXaf(e.target.value)}
-            placeholder="ex. 150"
-          />
-        </div>
-        {error && (
-          <div style={{ padding: '8px 12px', background: 'var(--bad-50)', border: '1px solid var(--bad-200)', borderRadius: 6, fontSize: 12.5, color: 'var(--bad-700)' }}>
-            {error}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12.5 }}>
+          <thead>
+            <tr style={{ background: 'var(--bg-soft)' }}>
+              {['Description', 'Type produit', 'Poids (kg)', ''].map(h => (
+                <th key={h} style={{ padding: '6px 8px', textAlign: 'left', fontSize: 10.5, fontWeight: 700, color: 'var(--ink-400)', textTransform: 'uppercase', letterSpacing: '.04em' }}>{h}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {items.map((it, idx) => (
+              <tr key={idx} style={{ borderBottom: '1px solid var(--border-soft)' }}>
+                <td style={{ padding: '4px 6px' }}>
+                  <input className="input input--sm" value={it.description ?? ''} onChange={e => updItem(idx, 'description', e.target.value)} placeholder="Ex: Vêtements" />
+                </td>
+                <td style={{ padding: '4px 6px', width: 130 }}>
+                  <select className="select input--sm" value={it.productType ?? 'standard'} onChange={e => updItem(idx, 'productType', e.target.value)}>
+                    <option value="standard">Standard</option>
+                    <option value="biere">Bière</option>
+                    <option value="manioc_huile">Manioc/Huile</option>
+                    <option value="cosmetique">Cosmétique</option>
+                    <option value="vetements">Vêtements</option>
+                  </select>
+                </td>
+                <td style={{ padding: '4px 6px', width: 90 }}>
+                  <input className="input input--sm mono" type="number" min="0" step="0.1" value={it.weightKg ?? ''} onChange={e => updItem(idx, 'weightKg', e.target.value)} placeholder="0.0" />
+                </td>
+                <td style={{ padding: '4px 6px', width: 28 }}>
+                  <button onClick={() => delItem(idx)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--ink-400)', fontSize: 16, lineHeight: 1, padding: '0 4px' }}>×</button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        <button className="btn btn--ghost btn--sm" onClick={addItem} style={{ alignSelf: 'flex-start' }}>+ Ajouter une ligne</button>
+
+        {/* Summary */}
+        <div style={{ background: 'var(--bg-soft)', borderRadius: 8, padding: '12px 14px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+          <div>
+            <div style={{ fontSize: 10.5, color: 'var(--ink-400)', fontWeight: 700, textTransform: 'uppercase', marginBottom: 4 }}>Poids total</div>
+            <div className="mono" style={{ fontSize: 18, fontWeight: 700 }}>{totalWeight.toFixed(2)} <span style={{ fontSize: 12, color: 'var(--ink-400)' }}>kg</span></div>
           </div>
-        )}
-        <div style={{ padding: '10px 14px', background: 'var(--info-50)', border: '1px solid var(--info-100)', borderRadius: 8, fontSize: 12, color: 'var(--info-700)' }}>
-          La modification du poids impacte le prix de transport. Pensez à mettre à jour le prix manuellement si nécessaire.
+          <div>
+            <div style={{ fontSize: 10.5, color: 'var(--ink-400)', fontWeight: 700, textTransform: 'uppercase', marginBottom: 4 }}>Prix calculé</div>
+            <div className="mono" style={{ fontSize: 18, fontWeight: 700, color: calcPrice ? 'var(--ok-700)' : 'var(--ink-300)' }}>
+              {calcPrice ? calcPrice.toLocaleString('fr') : '—'} <span style={{ fontSize: 12, color: 'var(--ink-400)' }}>CAD</span>
+            </div>
+          </div>
+        </div>
+        <div style={{ fontSize: 11.5, color: 'var(--info-600)', background: 'var(--info-50)', padding: '8px 12px', borderRadius: 6 }}>
+          Le prix est recalculé automatiquement à partir du poids total et du type de produit.
         </div>
       </div>
     </Modal>
