@@ -44,7 +44,8 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
   if (status && statusNote) {
     const prismaStatus = toPrismaStatus(status);
     if (prismaStatus === 'in_transit' || prismaStatus === 'in_transit_2') {
-      const current = (await prisma.campaign.findUnique({ where: { id: params.id }, select: { statusNotes: true } }))?.statusNotes as any ?? {};
+      const rows = await prisma.$queryRawUnsafe<any[]>(`SELECT "statusNotes" FROM campaigns WHERE id = $1`, params.id);
+      const current = (rows[0]?.statusNotes ?? {}) as any;
       statusNotesUpdate = { ...current, [prismaStatus === 'in_transit' ? 'in-transit' : 'in_transit_2']: statusNote };
     }
   }
