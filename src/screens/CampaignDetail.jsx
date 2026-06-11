@@ -20,6 +20,17 @@ const STEP_LABELS = {
   preparing_arrival:   'Préparation arrivée',
   closed:              'Clôturé',
 };
+
+// Description of what each transition does
+const STEP_EFFECTS = {
+  preparing_departure: 'La cargaison passe en mode préparation au départ.',
+  'in-transit':        'Tous les colis reçus (statut "Reçu") seront automatiquement passés en transit.',
+  in_transit_2:        'Tous les colis reçus (statut "Reçu") seront automatiquement passés en transit.',
+  arrived:             'Tous les colis en transit seront automatiquement passés au statut "Arrivé".',
+  preparing_arrival:   'La cargaison passe en mode préparation à l\'arrivée.',
+  closed:              'La cargaison sera définitivement clôturée. Cette action est irréversible.',
+};
+
 const PAYMENT_STATUS = {
   completed: { label: 'Payé',       cls: 'ok' },
   pending:   { label: 'En attente', cls: 'warn' },
@@ -34,7 +45,8 @@ export default function CampaignDetailScreen({ id, onNav }) {
   const [campaign,           setCampaign]           = useState(null);
   const [loading,            setLoading]            = useState(true);
   const [advancing,          setAdvancing]          = useState(false);
-  const [showCloseModal,     setShowCloseModal]     = useState(false);
+  const [advanceError,       setAdvanceError]       = useState('');
+  const [showConfirmModal,   setShowConfirmModal]   = useState(null); // nextStep
   const [showDepartureModal, setShowDepartureModal] = useState(null); // targetStep
   const [statusNotes,        setStatusNotes]        = useState({});
 
@@ -86,29 +98,36 @@ export default function CampaignDetailScreen({ id, onNav }) {
 
   async function doAdvance(targetStep, note) {
     setAdvancing(true);
+    setAdvanceError('');
     try {
       const res = await fetch('/api/campaigns/' + id, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status: targetStep.id, ...(note && { statusNote: note }) }),
       });
-      if (res.ok) {
+      const json = await res.json();
+      if (!res.ok) {
+        setAdvanceError(json.error || `Erreur ${res.status}`);
+      } else {
         const updated = await fetch('/api/campaigns/' + id).then(r => r.json());
         setCampaign(updated);
         setStatusNotes(updated.statusNotes ?? {});
       }
-    } catch (e) {}
-    finally { setAdvancing(false); }
+    } catch {
+      setAdvanceError('Erreur réseau — réessayez.');
+    } finally {
+      setAdvancing(false);
+    }
   }
 
   function handleAdvance() {
     if (!nextStep) return;
-    if (nextStep.id === 'closed') { setShowCloseModal(true); return; }
+    setAdvanceError('');
     if (nextStep.id === 'in-transit' || nextStep.id === 'in_transit_2') {
       setShowDepartureModal(nextStep);
       return;
     }
-    doAdvance(nextStep);
+    setShowConfirmModal(nextStep);
   }
 
   const route = campaign.route || {};
@@ -223,10 +242,15 @@ export default function CampaignDetailScreen({ id, onNav }) {
         </div>
 
         {nextStep && (
-          <div style={{ marginTop: 16, display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: 12 }}>
+          <div style={{ marginTop: 16, display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
             {nextStep.id === 'closed' && unpaidCount > 0 && (
               <span style={{ fontSize: 12, color: 'var(--warn-700)', fontWeight: 600 }}>
                 ⚠️ {unpaidCount} colis non payé{unpaidCount > 1 ? 's' : ''}
+              </span>
+            )}
+            {advanceError && (
+              <span style={{ fontSize: 12, color: 'var(--bad-600)', fontWeight: 600 }}>
+                ✕ {advanceError}
               </span>
             )}
             <button
@@ -234,55 +258,32 @@ export default function CampaignDetailScreen({ id, onNav }) {
               onClick={handleAdvance}
               disabled={advancing}
             >
-              {advancing ? 'Mise à jour…' : nextStep.id === 'closed' ? 'Clôturer la cargaison' : `Faire avancer → ${nextStep.label}`}
+              {advancing ? 'Mise à jour…' : nextStep.id === 'closed' ? 'Clôturer la cargaison' : `Avancer → ${nextStep.label}`}
             </button>
           </div>
         )}
       </div>
 
-      {/* Close modal */}
-      {showCloseModal && (
-        <Modal title="Clôturer la cargaison" onClose={() => setShowCloseModal(false)}>
-          <div style={{ padding: '4px 0 20px' }}>
-            <p style={{ fontSize: 14, color: 'var(--ink-700)', marginBottom: 16 }}>
-              Vous êtes sur le point de clôturer la cargaison <strong>{campaign.code}</strong>.
-              Cette action est irréversible.
-            </p>
-            {unpaidCount > 0 ? (
-              <div style={{ background: 'var(--warn-50)', border: '1px solid var(--warn-200)', borderRadius: 8, padding: '12px 16px', marginBottom: 16 }}>
-                <div style={{ fontWeight: 700, color: 'var(--warn-700)', marginBottom: 4 }}>
-                  ⚠️ {unpaidCount} colis non payé{unpaidCount > 1 ? 's' : ''}
-                </div>
-                <div style={{ fontSize: 12.5, color: 'var(--warn-600)' }}>
-                  Ces colis resteront en attente de paiement après la clôture.
-                  Vérifiez que tous les règlements ont bien été enregistrés avant de continuer.
-                </div>
-              </div>
-            ) : (
-              <div style={{ background: 'var(--ok-50)', border: '1px solid var(--ok-200)', borderRadius: 8, padding: '12px 16px', marginBottom: 16 }}>
-                <div style={{ fontWeight: 700, color: 'var(--ok-700)' }}>
-                  ✓ Tous les colis sont réglés
-                </div>
-              </div>
-            )}
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
-              <button className="btn btn--ghost" onClick={() => setShowCloseModal(false)}>Annuler</button>
-              <button
-                className="btn btn--danger"
-                disabled={advancing}
-                onClick={() => { setShowCloseModal(false); doAdvance(nextStep); }}
-              >
-                {advancing ? 'Clôture…' : 'Confirmer la clôture'}
-              </button>
-            </div>
-          </div>
-        </Modal>
+      {/* Generic confirmation modal (all non-transit steps) */}
+      {showConfirmModal && (
+        <ConfirmAdvanceModal
+          campaign={campaign}
+          targetStep={showConfirmModal}
+          unpaidCount={unpaidCount}
+          advancing={advancing}
+          onClose={() => setShowConfirmModal(null)}
+          onConfirm={() => {
+            setShowConfirmModal(null);
+            doAdvance(showConfirmModal);
+          }}
+        />
       )}
 
-      {/* Departure note modal */}
+      {/* Departure note modal (transit steps) */}
       {showDepartureModal && (
         <DepartureNoteModal
           targetStep={showDepartureModal}
+          advancing={advancing}
           onClose={() => setShowDepartureModal(null)}
           onConfirm={(note) => {
             setShowDepartureModal(null);
@@ -379,7 +380,69 @@ export default function CampaignDetailScreen({ id, onNav }) {
   );
 }
 
-function DepartureNoteModal({ targetStep, onClose, onConfirm }) {
+/* ── Confirmation modal for non-transit steps ── */
+function ConfirmAdvanceModal({ campaign, targetStep, unpaidCount, advancing, onClose, onConfirm }) {
+  const isClosure = targetStep.id === 'closed';
+  const effect = STEP_EFFECTS[targetStep.id];
+
+  return (
+    <Modal
+      title={isClosure ? 'Clôturer la cargaison' : 'Confirmer l\'avancement'}
+      onClose={onClose}
+      footer={
+        <>
+          <button className="btn btn--ghost" onClick={onClose} disabled={advancing}>Annuler</button>
+          <button
+            className={isClosure ? 'btn btn--danger' : 'btn btn--primary'}
+            onClick={onConfirm}
+            disabled={advancing}
+          >
+            {advancing ? 'Mise à jour…' : isClosure ? 'Confirmer la clôture' : `Confirmer → ${targetStep.label}`}
+          </button>
+        </>
+      }
+    >
+      <div style={{ padding: '4px 0 8px', display: 'grid', gap: 14 }}>
+        <p style={{ fontSize: 14, color: 'var(--ink-700)', margin: 0 }}>
+          Vous êtes sur le point de faire passer la cargaison{' '}
+          <strong>{campaign.code}</strong> au statut{' '}
+          <strong style={{ color: targetStep.color }}>{targetStep.label}</strong>.
+        </p>
+
+        {effect && (
+          <div style={{
+            background: isClosure ? 'var(--warn-50)' : 'var(--info-50)',
+            border: `1px solid ${isClosure ? 'var(--warn-200)' : 'var(--info-200)'}`,
+            borderRadius: 8, padding: '10px 14px',
+            fontSize: 13, color: isClosure ? 'var(--warn-700)' : 'var(--info-700)',
+          }}>
+            {effect}
+          </div>
+        )}
+
+        {isClosure && unpaidCount > 0 && (
+          <div style={{ background: 'var(--bad-50)', border: '1px solid var(--bad-200)', borderRadius: 8, padding: '10px 14px' }}>
+            <div style={{ fontWeight: 700, color: 'var(--bad-700)', marginBottom: 4 }}>
+              ⚠️ {unpaidCount} colis non payé{unpaidCount > 1 ? 's' : ''}
+            </div>
+            <div style={{ fontSize: 12.5, color: 'var(--bad-600)' }}>
+              Ces colis resteront en attente de paiement après la clôture.
+            </div>
+          </div>
+        )}
+
+        {isClosure && unpaidCount === 0 && (
+          <div style={{ background: 'var(--ok-50)', border: '1px solid var(--ok-200)', borderRadius: 8, padding: '10px 14px' }}>
+            <div style={{ fontWeight: 700, color: 'var(--ok-700)' }}>✓ Tous les colis sont réglés</div>
+          </div>
+        )}
+      </div>
+    </Modal>
+  );
+}
+
+/* ── Departure note modal (transit steps) ── */
+function DepartureNoteModal({ targetStep, advancing, onClose, onConfirm }) {
   const [note, setNote] = useState('');
   return (
     <Modal
@@ -389,17 +452,20 @@ function DepartureNoteModal({ targetStep, onClose, onConfirm }) {
       sub={targetStep.label}
       footer={
         <>
-          <button className="btn btn--ghost" onClick={onClose}>Annuler</button>
-          <button className="btn btn--brand" onClick={() => onConfirm(note)}>
-            Confirmer le départ
+          <button className="btn btn--ghost" onClick={onClose} disabled={advancing}>Annuler</button>
+          <button className="btn btn--brand" onClick={() => onConfirm(note)} disabled={advancing}>
+            {advancing ? 'Mise à jour…' : 'Confirmer le départ'}
           </button>
         </>
       }
     >
       <div style={{ display: 'grid', gap: 14 }}>
+        <p style={{ margin: 0, fontSize: 13.5, color: 'var(--ink-700)' }}>
+          Tous les colis reçus seront automatiquement passés en transit.
+        </p>
         <div>
           <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--ink-600)', display: 'block', marginBottom: 6 }}>
-            Étape <span style={{ fontWeight: 400, color: 'var(--ink-400)' }}>(ex: DLA → BRU)</span>
+            Note de transit <span style={{ fontWeight: 400, color: 'var(--ink-400)' }}>(optionnel · ex: DLA → BRU)</span>
           </label>
           <input
             className="input"
