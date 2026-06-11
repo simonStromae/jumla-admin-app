@@ -64,6 +64,7 @@ export async function GET(_: NextRequest, { params }: { params: { id: string } }
       weightKg:     parcel.weightKg,
       priceXaf:     parcel.priceXaf,
       status:       parcel.status,
+      items:        (parcel as any).items ?? [],
     },
     payment: parcel.payment ? {
       status:     parcel.payment.status,

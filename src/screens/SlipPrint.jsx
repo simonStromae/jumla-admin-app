@@ -28,9 +28,16 @@ export default function SlipPrintScreen({ code, onNav }) {
       .catch(() => { setError('Erreur réseau'); setLoading(false); });
   }, [code]);
 
+  const PRODUCT_LABELS = {
+    standard: 'Standard', biere: 'Bière', manioc_huile: 'Manioc / Huile',
+    cosmetique: 'Cosmétique', vetements: 'Vêtements',
+  };
+  const TYPE_LABELS = { carton: 'Carton', paquet: 'Paquet', sachet: 'Sachet', bouteille: 'Bouteille' };
+
   const paid = data?.payment?.status === 'completed';
-  const items = data?.items ?? [];
-  const totalPieces = items.reduce((s, i) => s + (Number(i.nbPieces) || 0), 0) || data?.nbPieces || 0;
+  const blItems     = data?.items ?? [];                    // bordereau lines
+  const parcelItems = data?.parcel?.items ?? [];            // declared content
+  const totalPieces = blItems.reduce((s, i) => s + (Number(i.nbPieces) || 0), 0) || data?.nbPieces || 0;
 
   return (
     <div style={{ background: '#E5E7EB', minHeight: '100vh', padding: '24px 0', fontFamily: 'var(--ff-sans)' }}>
@@ -146,25 +153,58 @@ export default function SlipPrintScreen({ code, onNav }) {
             ))}
           </div>
 
-          {/* Items table */}
-          <div style={{ fontSize: 10.5, fontWeight: 700, letterSpacing: '.06em', marginBottom: 8, color: '#374151' }}>DÉTAIL DU CONTENU / CONTENT INSPECTION</div>
+          {/* Section 1 : Contenu déclaré */}
+          {parcelItems.length > 0 && (
+            <>
+              <div style={{ fontSize: 10.5, fontWeight: 700, letterSpacing: '.06em', marginBottom: 8, color: '#374151' }}>CONTENU DÉCLARÉ / DECLARED CONTENT</div>
+              <table style={{ width: '100%', borderCollapse: 'collapse', border: '1px solid #D1D5DB', fontSize: 12, marginBottom: 18 }}>
+                <thead>
+                  <tr style={{ background: '#F4F5F7' }}>
+                    <th style={cellH(40)}>#</th>
+                    <th style={cellH(null, 'left')}>Description</th>
+                    <th style={cellH(120, 'left')}>Catégorie</th>
+                    <th style={cellH(70)}>Poids</th>
+                    <th style={cellH(60)}>Qté</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {parcelItems.map((it, idx) => (
+                    <tr key={idx}>
+                      <td style={{ ...cell, fontFamily: 'monospace', color: '#6B7280' }}>{idx + 1}</td>
+                      <td style={{ ...cell, fontWeight: 500 }}>{it.description || it.designation || '—'}</td>
+                      <td style={{ ...cell, color: '#374151' }}>{PRODUCT_LABELS[it.productType] || it.type || '—'}</td>
+                      <td style={{ ...cell, textAlign: 'center', fontFamily: 'monospace' }}>{it.weightKg ? it.weightKg + ' kg' : '—'}</td>
+                      <td style={{ ...cell, textAlign: 'center', fontFamily: 'monospace' }}>{it.nbPieces || it.count || '—'}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </>
+          )}
+
+          {/* Section 2 : Détail du bordereau */}
+          <div style={{ fontSize: 10.5, fontWeight: 700, letterSpacing: '.06em', marginBottom: 8, color: '#374151' }}>DÉTAIL DU BORDEREAU / CONTENT INSPECTION</div>
           <table style={{ width: '100%', borderCollapse: 'collapse', border: '1px solid #D1D5DB', fontSize: 12 }}>
             <thead>
               <tr style={{ background: '#F4F5F7' }}>
                 <th style={cellH(40)}>#</th>
-                <th style={cellH(null, 'left')}>Article / Item</th>
-                <th style={cellH(60)}>Colis</th>
+                <th style={cellH(null, 'left')}>Désignation</th>
+                <th style={cellH(null, 'left')}>Description</th>
+                <th style={cellH(70, 'left')}>Type</th>
+                <th style={cellH(50)}>Nb</th>
                 <th style={cellH(60)}>Pièces</th>
                 <th style={cellH(110)}>Vérification</th>
                 <th style={cellH(null, 'left')}>Note</th>
               </tr>
             </thead>
             <tbody>
-              {items.length > 0 ? items.map((item, idx) => (
+              {blItems.length > 0 ? blItems.map((item, idx) => (
                 <tr key={idx}>
                   <td style={{ ...cell, fontFamily: 'monospace', color: '#6B7280' }}>{idx + 1}</td>
-                  <td style={{ ...cell, fontWeight: 500 }}>{item.description || item.productType || '—'}</td>
-                  <td style={{ ...cell, textAlign: 'center', fontFamily: 'monospace' }}>1</td>
+                  <td style={{ ...cell, fontWeight: 500 }}>{item.designation || '—'}</td>
+                  <td style={{ ...cell, fontSize: 11, color: '#374151' }}>{item.description || '—'}</td>
+                  <td style={{ ...cell }}>{TYPE_LABELS[item.type] || item.type || '—'}</td>
+                  <td style={{ ...cell, textAlign: 'center', fontFamily: 'monospace' }}>{item.count ?? '—'}</td>
                   <td style={{ ...cell, textAlign: 'center', fontFamily: 'monospace' }}>{item.nbPieces ?? '—'}</td>
                   <td style={{ ...cell, textAlign: 'center' }}>□ À vérifier</td>
                   <td style={{ ...cell, fontSize: 11, color: '#374151' }}></td>
@@ -172,16 +212,17 @@ export default function SlipPrintScreen({ code, onNav }) {
               )) : (
                 <tr>
                   <td style={{ ...cell, fontFamily: 'monospace', color: '#6B7280' }}>1</td>
-                  <td style={{ ...cell, fontWeight: 500 }}>{data.description || data.parcel.description || '—'}</td>
+                  <td colSpan={2} style={{ ...cell, fontWeight: 500 }}>{data.description || data.parcel.description || '—'}</td>
+                  <td style={cell}>—</td>
                   <td style={{ ...cell, textAlign: 'center', fontFamily: 'monospace' }}>1</td>
                   <td style={{ ...cell, textAlign: 'center', fontFamily: 'monospace' }}>{data.nbPieces ?? '—'}</td>
                   <td style={{ ...cell, textAlign: 'center' }}>□ À vérifier</td>
-                  <td style={{ ...cell, fontSize: 11, color: '#374151' }}></td>
+                  <td style={cell}></td>
                 </tr>
               )}
               <tr style={{ background: '#F4F5F7', fontWeight: 700 }}>
-                <td colSpan={2} style={{ ...cell, fontSize: 11.5 }}>TOTAL</td>
-                <td style={{ ...cell, textAlign: 'center', fontFamily: 'monospace' }}>{items.length || 1}</td>
+                <td colSpan={4} style={{ ...cell, fontSize: 11.5 }}>TOTAL</td>
+                <td style={{ ...cell, textAlign: 'center', fontFamily: 'monospace' }}>{blItems.reduce((s, it) => s + (Number(it.count) || 0), 0) || blItems.length || 1}</td>
                 <td style={{ ...cell, textAlign: 'center', fontFamily: 'monospace' }}>{totalPieces || '—'}</td>
                 <td style={{ ...cell, textAlign: 'center', fontSize: 11 }}></td>
                 <td style={cell}></td>
