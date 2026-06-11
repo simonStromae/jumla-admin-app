@@ -29,17 +29,15 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
       fees        ? JSON.stringify(fees) : null,
       params.id,
     );
-  } catch {
-    // columns not yet migrated — update basic fields only
-    await prisma.route.update({
-      where: { id: params.id },
-      data: {
-        ...(origin      !== undefined && { origin:      origin.toUpperCase().trim() }),
-        ...(destination !== undefined && { destination: destination.toUpperCase().trim() }),
-        ...(label       !== undefined && { label }),
-        ...(active      !== undefined && { active }),
-      },
-    });
+  } catch (e: any) {
+    // If migration columns don't exist yet, return a clear error
+    if (e?.message?.includes('column') || e?.message?.includes('does not exist') || e?.code === '42703') {
+      return NextResponse.json(
+        { error: 'Migration requise — visitez /api/_migrate puis réessayez.' },
+        { status: 500 }
+      );
+    }
+    return NextResponse.json({ error: e?.message ?? 'Erreur serveur' }, { status: 500 });
   }
 
   let r: any;

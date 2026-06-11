@@ -55,9 +55,14 @@ export async function POST(req: Request) {
       fees        ? JSON.stringify(fees) : null,
     );
     r = rows[0];
-  } catch {
-    // columns not yet migrated — create with basic fields
-    r = await prisma.route.create({ data: { origin: org, destination: dest, label: lbl, active: true } });
+  } catch (e: any) {
+    if (e?.message?.includes('column') || e?.message?.includes('does not exist') || e?.code === '42703') {
+      return NextResponse.json(
+        { error: 'Migration requise — visitez /api/_migrate puis réessayez.' },
+        { status: 500 }
+      );
+    }
+    return NextResponse.json({ error: e?.message ?? 'Erreur serveur' }, { status: 500 });
   }
 
   return NextResponse.json({

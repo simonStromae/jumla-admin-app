@@ -110,6 +110,38 @@ function SectionCompany() {
 }
 
 /* ── Routes ──────────────────────────────────────────────── */
+function MigrationBanner() {
+  const [status, setStatus] = useState('idle'); // idle | running | done | error
+  const run = async () => {
+    setStatus('running');
+    try {
+      const res = await fetch('/api/_migrate');
+      const d   = await res.json();
+      setStatus(d.ok ? 'done' : 'error');
+      if (d.ok) setTimeout(() => window.location.reload(), 800);
+    } catch { setStatus('error'); }
+  };
+  if (status === 'done') return (
+    <div style={{ display: 'flex', gap: 10, alignItems: 'center', padding: '10px 14px', background: 'var(--ok-50)', border: '1px solid var(--ok-100)', borderRadius: 8, marginBottom: 14, fontSize: 13 }}>
+      <span style={{ color: 'var(--ok-600)', fontWeight: 700 }}>✓ Migration réussie — rechargement…</span>
+    </div>
+  );
+  return (
+    <div style={{ display: 'flex', gap: 12, alignItems: 'center', padding: '12px 16px', background: 'var(--warn-50)', border: '1px solid var(--warn-200)', borderRadius: 8, marginBottom: 14, fontSize: 13 }}>
+      <span style={{ fontSize: 18 }}>⚠️</span>
+      <div style={{ flex: 1 }}>
+        <div style={{ fontWeight: 700, color: 'var(--warn-800)', marginBottom: 2 }}>Migration de base de données requise</div>
+        <div style={{ color: 'var(--warn-700)', fontSize: 12 }}>
+          Les colonnes <code style={{ fontFamily: 'var(--ff-mono)', background: 'var(--warn-100)', padding: '1px 5px', borderRadius: 4 }}>fees</code>, <code style={{ fontFamily: 'var(--ff-mono)', background: 'var(--warn-100)', padding: '1px 5px', borderRadius: 4 }}>transitDays</code> et <code style={{ fontFamily: 'var(--ff-mono)', background: 'var(--warn-100)', padding: '1px 5px', borderRadius: 4 }}>currency</code> n'existent pas encore en base. La grille tarifaire ne peut pas être sauvegardée.
+        </div>
+      </div>
+      <button className="btn btn--warn btn--sm" onClick={run} disabled={status === 'running'}>
+        {status === 'running' ? 'En cours…' : '⚡ Lancer la migration'}
+      </button>
+    </div>
+  );
+}
+
 function SectionRoutes({ routes, onEdit, onDetail }) {
   return (
     <SettingsCard
@@ -583,7 +615,19 @@ function RouteEditModal({ editRoute, onClose, onSaved }) {
   return (
     <Modal width={740} onClose={onClose} title={isNew ? 'Nouvelle route' : `Modifier — ${r?.label ?? r?.code ?? ''}`}>
       <div style={{ fontSize: 10.5, fontWeight: 700, letterSpacing: '.08em', textTransform: 'uppercase', color: 'var(--ink-400)', marginBottom: 10 }}>Informations générales</div>
-      {err && <div style={{ padding: '8px 12px', background: 'var(--bad-50)', color: 'var(--bad-700)', borderRadius: 6, fontSize: 12.5, marginBottom: 12 }}>{err}</div>}
+      {err && (
+        err.includes('Migration requise') ? (
+          <div style={{ padding: '12px 14px', background: 'var(--warn-50)', border: '1px solid var(--warn-200)', borderRadius: 8, marginBottom: 14 }}>
+            <div style={{ fontWeight: 700, color: 'var(--warn-800)', fontSize: 13, marginBottom: 6 }}>⚠️ Migration de base de données requise</div>
+            <div style={{ fontSize: 12, color: 'var(--warn-700)', marginBottom: 10 }}>
+              Les colonnes de tarification n'existent pas encore. Lancez la migration puis réessayez.
+            </div>
+            <MigrationBanner />
+          </div>
+        ) : (
+          <div style={{ padding: '8px 12px', background: 'var(--bad-50)', color: 'var(--bad-700)', borderRadius: 6, fontSize: 12.5, marginBottom: 12 }}>{err}</div>
+        )
+      )}
       <div className="field-row field-row--2">
         <div className="field"><label className="label">Code IATA départ</label><input className="input mono" value={origin} onChange={e => setOrigin(e.target.value.toUpperCase())} placeholder="DLA" maxLength={3} /></div>
         <div className="field"><label className="label">Code IATA arrivée</label><input className="input mono" value={destination} onChange={e => setDestination(e.target.value.toUpperCase())} placeholder="YUL" maxLength={3} /></div>
