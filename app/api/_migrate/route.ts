@@ -45,5 +45,22 @@ export async function GET() {
   await run('campaign_status.preparing_arrival',   `ALTER TYPE "CampaignStatus" ADD VALUE IF NOT EXISTS 'preparing_arrival'`);
   await run('campaigns.statusNotes',               `ALTER TABLE campaigns ADD COLUMN IF NOT EXISTS "statusNotes" JSONB`);
 
+  // Notifications
+  await run('notifications', `
+    CREATE TABLE IF NOT EXISTS notifications (
+      id TEXT PRIMARY KEY,
+      "userId" TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      type TEXT NOT NULL DEFAULT 'info',
+      title TEXT NOT NULL,
+      body TEXT,
+      "parcelId" TEXT,
+      read BOOLEAN NOT NULL DEFAULT false,
+      "createdAt" TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )
+  `);
+  // Client confirmation of bordereau
+  await run('bordereaux.clientConfirmed', `ALTER TABLE bordereaux ADD COLUMN IF NOT EXISTS "clientConfirmed" BOOLEAN NOT NULL DEFAULT false`);
+  await run('bordereaux.clientConfirmedAt', `ALTER TABLE bordereaux ADD COLUMN IF NOT EXISTS "clientConfirmedAt" TIMESTAMPTZ`);
+
   return NextResponse.json({ ok: true, results });
 }

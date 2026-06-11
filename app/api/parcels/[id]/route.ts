@@ -2,6 +2,7 @@ export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/src/lib/prisma';
 import { requireAdmin, requirePermission } from '@/src/lib/api-auth';
+import { createNotification } from '@/src/lib/notifications';
 
 export async function GET(_: NextRequest, { params }: { params: { id: string } }) {
   const { error } = await requireAdmin();
@@ -32,7 +33,7 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
   // Fetch parcel with campaign to check lock status
   const existing = await prisma.parcel.findUnique({
     where: { id: params.id },
-    select: { campaign: { select: { status: true } } },
+    select: { clientId: true, trackingCode: true, campaign: { select: { status: true } } },
   });
   const LOCKED_STATUSES = ['in_transit', 'in_transit_2', 'arrived', 'preparing_arrival', 'closed'];
   if (existing?.campaign && LOCKED_STATUSES.includes(existing.campaign.status as string)) {
@@ -62,6 +63,19 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
         createdById: (sess?.user as any)?.id ?? null,
       },
     });
+  }
+
+  // Notify client when admin modifies parcel info (not just status)
+  const infoChanged = weightKg !== undefined || priceXaf !== undefined || notes !== undefined || items !== undefined;
+  if (infoChanged && existing?.clientId) {
+    const code = existing.trackingCode ?? params.id;
+    await createNotification(
+      existing.clientId,
+      'parcel_modified',
+      'Colis modifié',
+      `Des informations de votre colis ${code} ont été mises à jour. Vérifiez les détails dans votre espace.`,
+      params.id,
+    ).catch(() => {});
   }
 
   return NextResponse.json({ ok: true, parcel });

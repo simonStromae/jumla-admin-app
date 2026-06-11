@@ -1,7 +1,7 @@
 'use client';
 import { useSession, signOut } from 'next-auth/react';
 import { useRouter, usePathname } from 'next/navigation';
-import { useEffect } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import '@/src/styles/tokens.css';
 import I from '@/src/components/Icons.jsx';
 
@@ -12,6 +12,137 @@ const NAV_ALL = [
   { label: 'Paiements',      icon: I.CreditCard, href: '/client/invoices', suspendedOk: true },
   { label: 'Mon profil',     icon: I.Users,  href: '/client/profile',   suspendedOk: true  },
 ];
+
+function NotificationBell({ router }) {
+  const [notifs, setNotifs]       = useState([]);
+  const [open, setOpen]           = useState(false);
+  const [loading, setLoading]     = useState(false);
+  const dropRef                   = useRef(null);
+
+  const load = async () => {
+    setLoading(true);
+    try {
+      const res  = await fetch('/api/me/notifications');
+      const json = await res.json();
+      if (json.notifications) setNotifs(json.notifications);
+    } catch {}
+    setLoading(false);
+  };
+
+  useEffect(() => { load(); }, []);
+
+  // Poll every 60 seconds
+  useEffect(() => {
+    const t = setInterval(load, 60_000);
+    return () => clearInterval(t);
+  }, []);
+
+  // Close on outside click
+  useEffect(() => {
+    const handler = (e) => {
+      if (dropRef.current && !dropRef.current.contains(e.target)) setOpen(false);
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
+
+  const unread = notifs.filter(n => !n.read).length;
+
+  const handleOpen = async () => {
+    setOpen(o => !o);
+    if (!open && unread > 0) {
+      await fetch('/api/me/notifications', { method: 'PATCH' });
+      setNotifs(ns => ns.map(n => ({ ...n, read: true })));
+    }
+  };
+
+  const fmtTime = (d) => {
+    const diff = (Date.now() - new Date(d).getTime()) / 1000;
+    if (diff < 60)   return 'À l\'instant';
+    if (diff < 3600) return `il y a ${Math.floor(diff / 60)} min`;
+    if (diff < 86400) return `il y a ${Math.floor(diff / 3600)} h`;
+    return new Date(d).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' });
+  };
+
+  return (
+    <div ref={dropRef} style={{ position: 'relative' }}>
+      <button
+        onClick={handleOpen}
+        style={{
+          position: 'relative',
+          width: 36, height: 36,
+          borderRadius: 9, border: '1px solid var(--border)',
+          background: open ? 'var(--brand-50)' : 'white',
+          cursor: 'pointer',
+          display: 'grid', placeItems: 'center',
+          color: open ? 'var(--brand-600)' : 'var(--ink-500)',
+        }}
+      >
+        <I.Bell style={{ width: 17, height: 17 }} />
+        {unread > 0 && (
+          <span style={{
+            position: 'absolute', top: -4, right: -4,
+            width: 17, height: 17, borderRadius: '50%',
+            background: 'var(--bad-500)', color: 'white',
+            fontSize: 10, fontWeight: 700,
+            display: 'grid', placeItems: 'center',
+            border: '2px solid white',
+          }}>
+            {unread > 9 ? '9+' : unread}
+          </span>
+        )}
+      </button>
+
+      {open && (
+        <div style={{
+          position: 'absolute', top: 'calc(100% + 8px)', right: 0,
+          width: 340, background: 'white',
+          border: '1px solid var(--border)', borderRadius: 12,
+          boxShadow: '0 8px 32px rgba(0,0,0,.12)',
+          zIndex: 200, overflow: 'hidden',
+        }}>
+          <div style={{ padding: '14px 16px', borderBottom: '1px solid var(--border-soft)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <span style={{ fontWeight: 700, fontSize: 13.5, color: 'var(--ink-900)' }}>Notifications</span>
+            {loading && <span style={{ fontSize: 11, color: 'var(--ink-400)' }}>Chargement…</span>}
+          </div>
+          <div style={{ maxHeight: 360, overflowY: 'auto' }}>
+            {notifs.length === 0 ? (
+              <div style={{ padding: '28px 20px', textAlign: 'center', color: 'var(--ink-400)', fontSize: 13, fontStyle: 'italic' }}>
+                Aucune notification pour l'instant.
+              </div>
+            ) : notifs.map(n => (
+              <div
+                key={n.id}
+                onClick={() => {
+                  setOpen(false);
+                  if (n.parcelId) router.push('/client/dashboard');
+                }}
+                style={{
+                  padding: '12px 16px',
+                  borderBottom: '1px solid var(--border-soft)',
+                  background: n.read ? 'transparent' : 'var(--brand-50)',
+                  cursor: n.parcelId ? 'pointer' : 'default',
+                  transition: 'background .1s',
+                }}
+                onMouseEnter={e => { e.currentTarget.style.background = 'var(--bg-soft)'; }}
+                onMouseLeave={e => { e.currentTarget.style.background = n.read ? 'transparent' : 'var(--brand-50)'; }}
+              >
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8 }}>
+                  <div style={{ fontWeight: 600, fontSize: 13, color: 'var(--ink-900)', lineHeight: 1.3 }}>
+                    {!n.read && <span style={{ display: 'inline-block', width: 6, height: 6, borderRadius: '50%', background: 'var(--brand-500)', marginRight: 6, verticalAlign: 'middle' }} />}
+                    {n.title}
+                  </div>
+                  <span style={{ fontSize: 10.5, color: 'var(--ink-400)', whiteSpace: 'nowrap', flexShrink: 0 }}>{fmtTime(n.createdAt)}</span>
+                </div>
+                {n.body && <div style={{ fontSize: 12, color: 'var(--ink-500)', marginTop: 3, lineHeight: 1.5 }}>{n.body}</div>}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
 
 export default function ClientLayout({ children }) {
   const { data: session, status } = useSession();
@@ -131,6 +262,7 @@ export default function ClientLayout({ children }) {
           <div style={{ flex: 1, fontSize: 14, fontWeight: 600, color: 'var(--ink-700)' }}>
             {NAV.find(n => pathname === n.href || pathname.startsWith(n.href + '/'))?.label ?? 'Espace client'}
           </div>
+          <NotificationBell router={router} />
           <span style={{ fontSize: 12.5, color: 'var(--ink-500)' }}>
             Bonjour, <span style={{ fontWeight: 600, color: 'var(--ink-800)' }}>{user?.name?.split(' ')[0]}</span> 👋
           </span>

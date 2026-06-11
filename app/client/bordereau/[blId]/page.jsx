@@ -9,25 +9,43 @@ function fmt(date) {
 const BL_STATUS = {
   en_attente:  { label: 'En attente de vérification', color: '#6b7280' },
   recu:        { label: 'Reçu',                        color: '#2563eb' },
-  verifie:     { label: 'Vérifié',                     color: '#16a34a' },
+  valide:      { label: 'Confirmé par Jumla',          color: '#16a34a' },
   discordance: { label: 'Discordance signalée',        color: '#dc2626' },
 };
 
 export default function BordereauPage({ params }) {
-  const [data, setData]       = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError]     = useState('');
+  const [data, setData]           = useState(null);
+  const [loading, setLoading]     = useState(true);
+  const [error, setError]         = useState('');
+  const [checked, setChecked]     = useState(false);
+  const [confirming, setConfirming] = useState(false);
+  const [confirmed, setConfirmed] = useState(false);
 
   useEffect(() => {
     fetch('/api/me/bordereau/' + params.blId)
       .then(r => r.json())
       .then(json => {
         if (json.error) setError(json.error);
-        else setData(json);
+        else {
+          setData(json);
+          if (json.clientConfirmed) setConfirmed(true);
+        }
         setLoading(false);
       })
       .catch(() => { setError('Erreur réseau'); setLoading(false); });
   }, [params.blId]);
+
+  const handleConfirm = async () => {
+    if (!checked || confirming) return;
+    setConfirming(true);
+    try {
+      const res = await fetch('/api/me/bordereau/' + params.blId, { method: 'PATCH' });
+      const json = await res.json();
+      if (!res.ok) { alert(json.error || 'Erreur'); }
+      else setConfirmed(true);
+    } catch { alert('Erreur réseau'); }
+    setConfirming(false);
+  };
 
   if (loading) return (
     <div style={{ padding: 60, textAlign: 'center', color: '#6b7280', fontFamily: 'system-ui, sans-serif' }}>
@@ -41,6 +59,7 @@ export default function BordereauPage({ params }) {
   );
 
   const st = BL_STATUS[data.status] ?? { label: data.status, color: '#6b7280' };
+  const needsConfirmation = data.status === 'valide' && !confirmed;
 
   return (
     <>
@@ -72,7 +91,7 @@ export default function BordereauPage({ params }) {
             <div style={{ fontSize: 11, opacity: .7, marginTop: 3 }}>Émis le {fmt(data.createdAt)}</div>
             <div style={{
               display: 'inline-block', marginTop: 8, padding: '3px 10px', borderRadius: 999,
-              background: data.status === 'verifie' ? '#16a34a' : 'rgba(255,255,255,.2)',
+              background: data.status === 'valide' ? '#16a34a' : 'rgba(255,255,255,.2)',
               fontSize: 11, fontWeight: 700,
             }}>{st.label}</div>
           </div>
@@ -120,17 +139,28 @@ export default function BordereauPage({ params }) {
               </tr>
             </thead>
             <tbody>
-              <tr>
-                <td style={{ padding: '12px 14px', border: '1px solid #e5e7eb', color: '#111827', fontSize: 14 }}>
-                  {data.description || '—'}
-                </td>
-                <td style={{ padding: '12px 14px', border: '1px solid #e5e7eb', textAlign: 'center', fontFamily: 'monospace', fontSize: 14, fontWeight: 600 }}>
-                  {data.weightKg ? data.weightKg + ' kg' : '—'}
-                </td>
-                <td style={{ padding: '12px 14px', border: '1px solid #e5e7eb', textAlign: 'center', fontFamily: 'monospace', fontSize: 14, fontWeight: 600 }}>
-                  {data.nbPieces ?? '—'}
-                </td>
-              </tr>
+              {data.items && data.items.length > 0 ? data.items.map((item, i) => (
+                <tr key={i}>
+                  <td style={{ padding: '12px 14px', border: '1px solid #e5e7eb', color: '#111827', fontSize: 14 }}>
+                    <div style={{ fontWeight: 600 }}>{item.designation || '—'}</div>
+                    {item.description && <div style={{ fontSize: 12, color: '#6b7280', marginTop: 2 }}>{item.description}</div>}
+                  </td>
+                  <td style={{ padding: '12px 14px', border: '1px solid #e5e7eb', textAlign: 'center', fontFamily: 'monospace', fontSize: 14 }}>—</td>
+                  <td style={{ padding: '12px 14px', border: '1px solid #e5e7eb', textAlign: 'center', fontFamily: 'monospace', fontSize: 14, fontWeight: 600 }}>
+                    {item.nbPieces ?? item.count ?? '—'}
+                  </td>
+                </tr>
+              )) : (
+                <tr>
+                  <td style={{ padding: '12px 14px', border: '1px solid #e5e7eb', color: '#111827', fontSize: 14 }}>{data.description || '—'}</td>
+                  <td style={{ padding: '12px 14px', border: '1px solid #e5e7eb', textAlign: 'center', fontFamily: 'monospace', fontSize: 14, fontWeight: 600 }}>
+                    {data.weightKg ? data.weightKg + ' kg' : '—'}
+                  </td>
+                  <td style={{ padding: '12px 14px', border: '1px solid #e5e7eb', textAlign: 'center', fontFamily: 'monospace', fontSize: 14, fontWeight: 600 }}>
+                    {data.nbPieces ?? '—'}
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
 
@@ -140,7 +170,70 @@ export default function BordereauPage({ params }) {
             </div>
           )}
 
-          {/* Signature zones */}
+          {/* Client confirmation section — only shown when bordereau is validated */}
+          {(needsConfirmation || confirmed) && (
+            <div className="no-print" style={{
+              marginTop: 28,
+              padding: '20px 24px',
+              borderRadius: 10,
+              background: confirmed ? '#f0fdf4' : '#fefce8',
+              border: `1px solid ${confirmed ? '#86efac' : '#fde68a'}`,
+            }}>
+              {confirmed ? (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                  <div style={{ fontSize: 28 }}>✅</div>
+                  <div>
+                    <div style={{ fontWeight: 700, fontSize: 15, color: '#15803d' }}>Contenu accepté</div>
+                    <div style={{ fontSize: 13, color: '#166534', marginTop: 2 }}>
+                      Vous avez confirmé le contenu de ce bordereau.
+                      {data.clientConfirmedAt && ` Accepté le ${fmt(data.clientConfirmedAt)}.`}
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  <div style={{ fontWeight: 700, fontSize: 15, color: '#92400e', marginBottom: 6 }}>
+                    ⚠️ Action requise — Confirmation du contenu
+                  </div>
+                  <div style={{ fontSize: 13, color: '#78350f', marginBottom: 16, lineHeight: 1.6 }}>
+                    Jumla Shipping a confirmé votre bordereau. Veuillez vérifier le contenu déclaré ci-dessus et l'accepter avant l'expédition de votre colis.
+                  </div>
+                  <label style={{ display: 'flex', alignItems: 'flex-start', gap: 12, cursor: 'pointer' }}>
+                    <input
+                      type="checkbox"
+                      checked={checked}
+                      onChange={e => setChecked(e.target.checked)}
+                      style={{ marginTop: 2, width: 16, height: 16, accentColor: '#1e3a5f', flexShrink: 0, cursor: 'pointer' }}
+                    />
+                    <span style={{ fontSize: 13, color: '#374151', lineHeight: 1.6 }}>
+                      En cochant cette case, je confirme avoir vérifié le contenu déclaré dans ce bordereau et j'atteste que les informations sont exactes.
+                      Cette confirmation tient lieu de signature électronique et vaut acceptation des conditions d'expédition.
+                    </span>
+                  </label>
+                  <button
+                    onClick={handleConfirm}
+                    disabled={!checked || confirming}
+                    style={{
+                      marginTop: 16,
+                      padding: '10px 24px',
+                      borderRadius: 8,
+                      border: 'none',
+                      background: checked ? '#1e3a5f' : '#d1d5db',
+                      color: 'white',
+                      fontSize: 14,
+                      fontWeight: 600,
+                      cursor: checked ? 'pointer' : 'not-allowed',
+                      transition: 'background .15s',
+                    }}
+                  >
+                    {confirming ? 'Confirmation…' : 'Confirmer le contenu du colis'}
+                  </button>
+                </>
+              )}
+            </div>
+          )}
+
+          {/* Signature zones — print only */}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 32, marginTop: 40 }}>
             {['Signature Jumla Shipping', 'Signature destinataire'].map(label => (
               <div key={label}>

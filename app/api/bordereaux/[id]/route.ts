@@ -3,6 +3,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/src/lib/prisma';
 import { requireAdmin } from '@/src/lib/api-auth';
 import { auth } from '@/auth';
+import { createNotification } from '@/src/lib/notifications';
+import { getTwilioSettings, twilioSendWhatsapp, formatWhatsappNumber } from '@/src/lib/twilio';
 
 export async function GET(_: NextRequest, { params }: { params: { id: string } }) {
   const { error } = await requireAdmin();
@@ -106,10 +108,23 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
     } as any,
   });
 
-  // Validating a bordereau moves the parcel to "recu"
+  // Validating a bordereau moves the parcel to "recu" + notifies client
   if (status === 'valide') {
     const sess = await auth();
-    const bl = await prisma.bordereau.findUnique({ where: { id: params.id }, select: { parcelId: true } });
+    const bl = await prisma.bordereau.findUnique({
+      where: { id: params.id },
+      select: {
+        parcelId: true,
+        code: true,
+        parcel: {
+          select: {
+            clientId: true,
+            trackingCode: true,
+            client: { select: { phone: true, name: true } },
+          },
+        },
+      },
+    });
     if (bl) {
       const parcel = await prisma.parcel.findUnique({ where: { id: bl.parcelId }, select: { status: true } });
       if (parcel?.status === 'en_attente') {
@@ -122,6 +137,36 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
             createdById: (sess?.user as any)?.id ?? null,
           },
         });
+      }
+
+      const clientId     = bl.parcel.clientId;
+      const trackingCode = bl.parcel.trackingCode;
+      const blCode       = bl.code;
+      const clientName   = bl.parcel.client.name;
+      const clientPhone  = bl.parcel.client.phone;
+
+      // In-app notification
+      await createNotification(
+        clientId,
+        'bordereau_confirmed',
+        'Bordereau confirmé — action requise',
+        `Votre bordereau ${blCode} (colis ${trackingCode}) a été confirmé par Jumla. Veuillez vérifier et accepter le contenu déclaré dans votre espace client.`,
+        bl.parcelId,
+      ).catch(() => {});
+
+      // WhatsApp notification
+      if (clientPhone) {
+        const twilio = await getTwilioSettings().catch(() => null);
+        if (twilio?.accountSid && twilio?.authToken && twilio?.fromNumber) {
+          const msg = `Bonjour ${clientName} 👋\n\nVotre bordereau *${blCode}* (colis ${trackingCode}) a été confirmé par Jumla Shipping.\n\nMerci de vous connecter à votre espace client pour vérifier et accepter le contenu déclaré avant l'expédition.`;
+          await twilioSendWhatsapp(
+            twilio.accountSid,
+            twilio.authToken,
+            twilio.fromNumber,
+            formatWhatsappNumber(clientPhone),
+            msg,
+          ).catch(() => {});
+        }
       }
     }
   }

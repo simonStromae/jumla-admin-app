@@ -165,24 +165,44 @@ function SuiviContent() {
 
           {/* Timeline */}
           <div style={{ background: 'white', border: '1px solid var(--border)', borderRadius: 12, padding: '18px 20px' }}>
-            <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '.06em', textTransform: 'uppercase', color: 'var(--ink-400)', marginBottom: 16 }}>Historique</div>
+            <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '.06em', textTransform: 'uppercase', color: 'var(--ink-400)', marginBottom: 16 }}>Historique des événements</div>
             {result.tracking.length === 0 ? (
               <div style={{ color: 'var(--ink-300)', fontSize: 13, fontStyle: 'italic' }}>Aucun événement enregistré pour l'instant.</div>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
-                {[...result.tracking].reverse().map((e, i, arr) => {
-                  const es = STATUS[e.status] ?? { label: e.status, color: 'var(--ink-400)', icon: '•', bg: 'var(--bg-soft)' };
+                {result.tracking.map((e, i, arr) => {
+                  const es = STATUS[e.status] ?? { label: e.status, color: 'var(--ink-500)', icon: '📦', bg: 'var(--bg-soft)' };
+                  const isLatest = i === arr.length - 1;
                   return (
-                    <div key={i} style={{ display: 'flex', gap: 14, paddingBottom: i < arr.length - 1 ? 16 : 0 }}>
+                    <div key={i} style={{ display: 'flex', gap: 14, paddingBottom: i < arr.length - 1 ? 18 : 0 }}>
                       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                        <div style={{ width: 34, height: 34, borderRadius: '50%', background: es.bg, display: 'grid', placeItems: 'center', fontSize: 17, flexShrink: 0, border: '1px solid ' + es.color + '33' }}>{es.icon}</div>
-                        {i < arr.length - 1 && <div style={{ width: 2, flex: 1, background: 'var(--border-soft)', marginTop: 4 }} />}
+                        <div style={{
+                          width: isLatest ? 38 : 32, height: isLatest ? 38 : 32,
+                          borderRadius: '50%',
+                          background: isLatest ? es.bg : 'var(--bg-soft)',
+                          display: 'grid', placeItems: 'center',
+                          fontSize: isLatest ? 18 : 14,
+                          flexShrink: 0,
+                          border: `2px solid ${isLatest ? es.color : 'var(--border)'}`,
+                          boxShadow: isLatest ? `0 0 0 4px ${es.color}18` : 'none',
+                          transition: 'all .2s',
+                        }}>{isLatest ? es.icon : '✓'}</div>
+                        {i < arr.length - 1 && (
+                          <div style={{ width: 2, flex: 1, background: 'var(--ok-200)', marginTop: 4, minHeight: 20 }} />
+                        )}
                       </div>
-                      <div style={{ paddingTop: 6 }}>
-                        <div style={{ fontWeight: 700, fontSize: 13.5, color: es.color }}>{es.label}</div>
+                      <div style={{ paddingTop: isLatest ? 7 : 4, paddingBottom: i < arr.length - 1 ? 0 : 0 }}>
+                        <div style={{
+                          fontWeight: isLatest ? 700 : 500,
+                          fontSize: isLatest ? 14 : 13,
+                          color: isLatest ? es.color : 'var(--ink-700)',
+                        }}>
+                          {es.label}
+                          {isLatest && <span style={{ marginLeft: 8, fontSize: 10, fontWeight: 700, background: es.color, color: 'white', padding: '2px 7px', borderRadius: 99, verticalAlign: 'middle' }}>ACTUEL</span>}
+                        </div>
                         {e.location && <div style={{ fontSize: 12, color: 'var(--ink-500)', marginTop: 2 }}>📍 {e.location}</div>}
                         {e.note     && <div style={{ fontSize: 12, color: 'var(--ink-500)', fontStyle: 'italic', marginTop: 2 }}>{e.note}</div>}
-                        <div style={{ fontSize: 11, color: 'var(--ink-300)', marginTop: 4 }}>{fmtFull(e.createdAt)}</div>
+                        <div style={{ fontSize: 11, color: 'var(--ink-300)', marginTop: 3 }}>{fmtFull(e.createdAt)}</div>
                       </div>
                     </div>
                   );
