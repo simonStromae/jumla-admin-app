@@ -553,13 +553,16 @@ function RouteEditModal({ editRoute, onClose, onSaved }) {
   const [currency, setCurrency]       = useState(r?.currency ?? 'CAD');
   const [active, setActive]           = useState(r?.active ?? true);
 
-  const defaultBreakdown = () => [
-    { id: 1, label: 'Frais de base',          amount: '50' },
-    { id: 2, label: 'Frais de douane',         amount: '5'  },
-    { id: 3, label: 'Carton / manutention',    amount: '1'  },
-    { id: 4, label: "Formalités d'expédition", amount: '4'  },
-    { id: 5, label: 'Frais de service',        amount: '5'  },
-  ];
+  const defaultBreakdown = () => {
+    const base = Date.now();
+    return [
+      { id: base + 1, label: 'Frais de base',          amount: '50' },
+      { id: base + 2, label: 'Frais de douane',         amount: '5'  },
+      { id: base + 3, label: 'Carton / manutention',    amount: '1'  },
+      { id: base + 4, label: "Formalités d'expédition", amount: '4'  },
+      { id: base + 5, label: 'Frais de service',        amount: '5'  },
+    ];
+  };
 
   const [tiers, setTiers] = useState(() => {
     if (r?.fees?.tiers?.length) {
@@ -576,7 +579,7 @@ function RouteEditModal({ editRoute, onClose, onSaved }) {
   const toggleTier = id => setTiers(ts => ts.map(t => t.id === id ? { ...t, expanded: !t.expanded } : t));
   const delTier    = id => setTiers(ts => ts.filter(t => t.id !== id));
   const updTier    = (id, k, v) => setTiers(ts => ts.map(t => t.id === id ? { ...t, [k]: v } : t));
-  const addTier    = () => setTiers(ts => [...ts, { id: Date.now(), from: '', to: '', flat: '', expanded: true, breakdown: [] }]);
+  const addTier    = () => setTiers(ts => [...ts, { id: Date.now(), from: '', to: '', flat: '', expanded: true, breakdown: defaultBreakdown() }]);
   const addBRow    = tid => setTiers(ts => ts.map(t => t.id === tid ? { ...t, breakdown: [...t.breakdown, { id: Date.now(), label: '', amount: '' }] } : t));
   const delBRow    = (tid, rid) => setTiers(ts => ts.map(t => t.id === tid ? { ...t, breakdown: t.breakdown.filter(b => b.id !== rid) } : t));
   const updBRow    = (tid, rid, k, v) => setTiers(ts => ts.map(t => t.id === tid ? { ...t, breakdown: t.breakdown.map(b => b.id === rid ? { ...b, [k]: v } : b) } : t));
