@@ -29,6 +29,7 @@ export default function ParcelDetailScreen({ id, onNav }) {
   const [loading,    setLoading]    = useState(true);
   const [showPayModal,    setShowPayModal]    = useState(false);
   const [showStatusModal, setShowStatusModal] = useState(false);
+  const [showWeightModal, setShowWeightModal] = useState(false);
   const [showAddBl,       setShowAddBl]       = useState(false);
   const [newBl,    setNewBl]    = useState({ description: '', weightKg: '', items: [] });
   const [addingBl, setAddingBl] = useState(false);
@@ -144,6 +145,7 @@ export default function ParcelDetailScreen({ id, onNav }) {
           </div>
         </div>
         <div className="page__actions">
+          <button className="btn btn--ghost" onClick={() => setShowWeightModal(true)}><I.Edit />Poids / Prix</button>
           <button className="btn btn--ghost" onClick={() => setShowStatusModal(true)}><I.Edit />Statut</button>
           <button className="btn btn--ghost" onClick={() => setShowPayModal(true)}><I.Send />Lien Interac</button>
         </div>
@@ -426,6 +428,16 @@ export default function ParcelDetailScreen({ id, onNav }) {
         </div>
       </div>
 
+      {showWeightModal && parcel && (
+        <WeightModal
+          parcel={parcel}
+          onClose={() => setShowWeightModal(false)}
+          onSaved={(updated) => {
+            setParcel(p => ({ ...p, weightKg: updated.weightKg, priceXaf: updated.priceXaf }));
+            setShowWeightModal(false);
+          }}
+        />
+      )}
       {showPayModal && parcel && (
         <InteracModal parcel={parcel} onClose={() => setShowPayModal(false)} />
       )}
@@ -445,6 +457,79 @@ export default function ParcelDetailScreen({ id, onNav }) {
         />
       )}
     </div>
+  );
+}
+
+function WeightModal({ parcel, onClose, onSaved }) {
+  const [weightKg,  setWeightKg]  = useState(parcel.weightKg ?? '');
+  const [priceXaf,  setPriceXaf]  = useState(parcel.priceXaf ?? '');
+  const [saving,    setSaving]    = useState(false);
+  const [error,     setError]     = useState('');
+
+  const handleSave = async () => {
+    setSaving(true);
+    setError('');
+    const res = await fetch('/api/parcels/' + parcel.id, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        weightKg: weightKg !== '' ? Number(weightKg) : undefined,
+        priceXaf: priceXaf !== '' ? Number(priceXaf) : undefined,
+      }),
+    });
+    const json = await res.json();
+    setSaving(false);
+    if (!res.ok) { setError(json.error || 'Erreur'); return; }
+    onSaved(json.parcel);
+  };
+
+  return (
+    <Modal width={400} onClose={onClose}
+      title="Modifier le poids et le prix"
+      sub={parcel.trackingCode}
+      footer={
+        <>
+          <button className="btn btn--ghost" onClick={onClose}>Annuler</button>
+          <button className="btn btn--brand" onClick={handleSave} disabled={saving}>
+            {saving ? 'Enregistrement…' : 'Enregistrer'}
+          </button>
+        </>
+      }>
+      <div style={{ display: 'grid', gap: 14 }}>
+        <div>
+          <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--ink-600)', display: 'block', marginBottom: 6 }}>
+            Poids réel <span style={{ fontWeight: 400, color: 'var(--ink-400)' }}>(kg)</span>
+          </label>
+          <input
+            className="input mono"
+            type="number" min="0" step="0.1"
+            value={weightKg}
+            onChange={e => setWeightKg(e.target.value)}
+            placeholder="ex. 12.5"
+          />
+        </div>
+        <div>
+          <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--ink-600)', display: 'block', marginBottom: 6 }}>
+            Prix ajusté <span style={{ fontWeight: 400, color: 'var(--ink-400)' }}>(CAD)</span>
+          </label>
+          <input
+            className="input mono"
+            type="number" min="0"
+            value={priceXaf}
+            onChange={e => setPriceXaf(e.target.value)}
+            placeholder="ex. 150"
+          />
+        </div>
+        {error && (
+          <div style={{ padding: '8px 12px', background: 'var(--bad-50)', border: '1px solid var(--bad-200)', borderRadius: 6, fontSize: 12.5, color: 'var(--bad-700)' }}>
+            {error}
+          </div>
+        )}
+        <div style={{ padding: '10px 14px', background: 'var(--info-50)', border: '1px solid var(--info-100)', borderRadius: 8, fontSize: 12, color: 'var(--info-700)' }}>
+          La modification du poids impacte le prix de transport. Pensez à mettre à jour le prix manuellement si nécessaire.
+        </div>
+      </div>
+    </Modal>
   );
 }
 

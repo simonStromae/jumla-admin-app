@@ -5,13 +5,17 @@ export const authConfig = {
   session: { strategy: 'jwt' },
   pages: { signIn: '/login' },
   callbacks: {
-    jwt({ token, user }) {
+    jwt({ token, user, trigger, session }) {
       if (user) {
         token.id                 = user.id;
         token.role               = (user as any).role;
         token.permissions        = (user as any).permissions;
         token.mustChangePassword = (user as any).mustChangePassword ?? false;
         token.status             = (user as any).status ?? 'active';
+      }
+      if (trigger === 'update' && session) {
+        if (session.mustChangePassword !== undefined) token.mustChangePassword = session.mustChangePassword;
+        if (session.status             !== undefined) token.status             = session.status;
       }
       return token;
     },

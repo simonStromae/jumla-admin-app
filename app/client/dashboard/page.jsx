@@ -63,9 +63,81 @@ function TrackingTimeline({ events }) {
   );
 }
 
-function ParcelModal({ parcel, onClose }) {
+function EditParcelForm({ parcel, onSaved, onCancel }) {
+  const [description, setDescription] = useState(parcel.description ?? '');
+  const [weightKg,    setWeightKg]    = useState(parcel.weightKg    ?? '');
+  const [saving,      setSaving]      = useState(false);
+  const [error,       setError]       = useState('');
+
+  const handleSave = async () => {
+    setSaving(true);
+    setError('');
+    const res = await fetch('/api/me/parcels/' + parcel.id, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ description, weightKg: weightKg !== '' ? Number(weightKg) : undefined }),
+    });
+    const json = await res.json();
+    setSaving(false);
+    if (!res.ok) { setError(json.error || 'Erreur'); return; }
+    onSaved(json.parcel);
+  };
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+      <div style={{ padding: '10px 14px', background: 'var(--info-50)', border: '1px solid var(--info-100)', borderRadius: 8, fontSize: 12.5, color: 'var(--info-700)' }}>
+        Vous pouvez modifier votre colis tant qu'il n'est pas encore en transit.
+      </div>
+      <div>
+        <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--ink-600)', display: 'block', marginBottom: 6 }}>Description du contenu</label>
+        <input
+          className="input"
+          value={description}
+          onChange={e => setDescription(e.target.value)}
+          placeholder="Ex : Vêtements, électronique…"
+        />
+      </div>
+      <div>
+        <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--ink-600)', display: 'block', marginBottom: 6 }}>
+          Poids estimé <span style={{ fontWeight: 400, color: 'var(--ink-400)' }}>(kg)</span>
+        </label>
+        <input
+          className="input mono"
+          type="number" min="0" step="0.1"
+          value={weightKg}
+          onChange={e => setWeightKg(e.target.value)}
+          placeholder="ex. 5.0"
+        />
+      </div>
+      {error && (
+        <div style={{ padding: '8px 12px', background: 'var(--bad-50)', border: '1px solid var(--bad-200)', borderRadius: 6, fontSize: 12.5, color: 'var(--bad-700)' }}>
+          {error}
+        </div>
+      )}
+      <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+        <button className="btn btn--ghost" onClick={onCancel}>Annuler</button>
+        <button className="btn btn--brand" onClick={handleSave} disabled={saving}>
+          {saving ? 'Enregistrement…' : 'Enregistrer les modifications'}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function ParcelModal({ parcel: initialParcel, onClose, onUpdated }) {
+  const [parcel,   setParcel]   = useState(initialParcel);
+  const [editing,  setEditing]  = useState(false);
+  const canEdit = ['en_attente', 'recu'].includes(parcel.status);
   const paid = parcel.payment?.status === 'completed';
   const s    = PARCEL_STATUS[parcel.status] ?? { label: parcel.status, color: 'var(--ink-500)', bg: 'var(--bg-soft)' };
+
+  const handleSaved = (updated) => {
+    const merged = { ...parcel, description: updated.description, weightKg: updated.weightKg };
+    setParcel(merged);
+    onUpdated?.(merged);
+    setEditing(false);
+  };
+
   return (
     <Modal
       width={540}
@@ -73,73 +145,86 @@ function ParcelModal({ parcel, onClose }) {
       title={<span className="mono" style={{ fontWeight: 700 }}>{parcel.trackingCode}</span>}
       sub={`${parcel.campaign?.from} → ${parcel.campaign?.to} · ${parcel.campaign?.code}`}
       footer={
-        <>
-          <a href={'/client/invoice/' + parcel.id} target="_blank" rel="noreferrer" className="btn btn--ghost">
-            📄 Voir la facture
-          </a>
-          <div style={{ flex: 1 }} />
-          <button className="btn btn--ghost" onClick={onClose}>Fermer</button>
-        </>
+        !editing ? (
+          <>
+            <a href={'/client/invoice/' + parcel.id} target="_blank" rel="noreferrer" className="btn btn--ghost">
+              📄 Voir la facture
+            </a>
+            <div style={{ flex: 1 }} />
+            {canEdit && (
+              <button className="btn btn--ghost" onClick={() => setEditing(true)}>
+                ✏️ Modifier
+              </button>
+            )}
+            <button className="btn btn--ghost" onClick={onClose}>Fermer</button>
+          </>
+        ) : null
       }
     >
-      {/* Status + payment row */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 16 }}>
-        <div style={{ background: 'var(--bg-soft)', borderRadius: 8, padding: '12px 14px' }}>
-          <div style={{ fontSize: 10.5, color: 'var(--ink-400)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.04em', marginBottom: 6 }}>Statut colis</div>
-          <StatusBadge status={parcel.status} />
-        </div>
-        <div style={{ background: 'var(--bg-soft)', borderRadius: 8, padding: '12px 14px' }}>
-          <div style={{ fontSize: 10.5, color: 'var(--ink-400)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.04em', marginBottom: 6 }}>Paiement</div>
-          <span style={{ fontSize: 13, fontWeight: 700, color: paid ? 'var(--ok-700)' : 'var(--bad-600)' }}>
-            {paid ? '✓ Réglé' : `${(parcel.priceXaf ?? 0).toLocaleString('fr')} CAD dû`}
-          </span>
-        </div>
-      </div>
-
-      {/* Info row */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10, marginBottom: 16 }}>
-        {[
-          { label: 'Poids',    val: parcel.weightKg != null ? `${parcel.weightKg} kg` : '—' },
-          { label: 'Montant',  val: parcel.priceXaf  != null ? `${parcel.priceXaf.toLocaleString('fr')} CAD` : '—' },
-          { label: 'Cargaison', val: parcel.campaign?.code ?? '—' },
-        ].map(({ label, val }) => (
-          <div key={label} style={{ background: 'var(--bg-soft)', borderRadius: 8, padding: '10px 12px' }}>
-            <div style={{ fontSize: 10.5, color: 'var(--ink-400)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.04em', marginBottom: 4 }}>{label}</div>
-            <div className="mono" style={{ fontSize: 13, fontWeight: 700, color: 'var(--ink-800)' }}>{val}</div>
+      {editing ? (
+        <EditParcelForm parcel={parcel} onSaved={handleSaved} onCancel={() => setEditing(false)} />
+      ) : (
+        <>
+          {/* Status + payment row */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 16 }}>
+            <div style={{ background: 'var(--bg-soft)', borderRadius: 8, padding: '12px 14px' }}>
+              <div style={{ fontSize: 10.5, color: 'var(--ink-400)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.04em', marginBottom: 6 }}>Statut colis</div>
+              <StatusBadge status={parcel.status} />
+            </div>
+            <div style={{ background: 'var(--bg-soft)', borderRadius: 8, padding: '12px 14px' }}>
+              <div style={{ fontSize: 10.5, color: 'var(--ink-400)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.04em', marginBottom: 6 }}>Paiement</div>
+              <span style={{ fontSize: 13, fontWeight: 700, color: paid ? 'var(--ok-700)' : 'var(--bad-600)' }}>
+                {paid ? '✓ Réglé' : `${(parcel.priceXaf ?? 0).toLocaleString('fr')} CAD dû`}
+              </span>
+            </div>
           </div>
-        ))}
-      </div>
 
-      {/* Payment pending banner */}
-      {!paid && (
-        <div style={{ background: 'var(--warn-50)', border: '1px solid var(--warn-200)', borderRadius: 8, padding: '10px 14px', marginBottom: 16, fontSize: 13 }}>
-          <strong style={{ color: 'var(--warn-700)' }}>Paiement en attente</strong>
-          <div style={{ color: 'var(--warn-600)', marginTop: 3 }}>
-            Envoyez <strong>{(parcel.priceXaf ?? 0).toLocaleString('fr')} CAD</strong> par Virement Interac · indiquez votre numéro de colis dans le message.
-          </div>
-        </div>
-      )}
-
-      {/* Bordereaux */}
-      {parcel.bordereaux?.length > 0 && (
-        <div style={{ marginBottom: 16 }}>
-          <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--ink-400)', textTransform: 'uppercase', letterSpacing: '.05em', marginBottom: 8 }}>Bordereaux</div>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-            {parcel.bordereaux.map(bl => (
-              <a key={bl.id} href={'/client/bordereau/' + bl.id} target="_blank" rel="noreferrer"
-                className="btn btn--ghost btn--xs" style={{ textDecoration: 'none', fontFamily: 'var(--font-mono)', fontSize: 12 }}>
-                📋 {bl.code}
-              </a>
+          {/* Info row */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10, marginBottom: 16 }}>
+            {[
+              { label: 'Poids',    val: parcel.weightKg != null ? `${parcel.weightKg} kg` : '—' },
+              { label: 'Montant',  val: parcel.priceXaf  != null ? `${parcel.priceXaf.toLocaleString('fr')} CAD` : '—' },
+              { label: 'Cargaison', val: parcel.campaign?.code ?? '—' },
+            ].map(({ label, val }) => (
+              <div key={label} style={{ background: 'var(--bg-soft)', borderRadius: 8, padding: '10px 12px' }}>
+                <div style={{ fontSize: 10.5, color: 'var(--ink-400)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.04em', marginBottom: 4 }}>{label}</div>
+                <div className="mono" style={{ fontSize: 13, fontWeight: 700, color: 'var(--ink-800)' }}>{val}</div>
+              </div>
             ))}
           </div>
-        </div>
-      )}
 
-      {/* Timeline */}
-      <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--ink-400)', textTransform: 'uppercase', letterSpacing: '.05em', marginBottom: 10 }}>
-        Historique de suivi
-      </div>
-      <TrackingTimeline events={parcel.tracking} />
+          {/* Payment pending banner */}
+          {!paid && (
+            <div style={{ background: 'var(--warn-50)', border: '1px solid var(--warn-200)', borderRadius: 8, padding: '10px 14px', marginBottom: 16, fontSize: 13 }}>
+              <strong style={{ color: 'var(--warn-700)' }}>Paiement en attente</strong>
+              <div style={{ color: 'var(--warn-600)', marginTop: 3 }}>
+                Envoyez <strong>{(parcel.priceXaf ?? 0).toLocaleString('fr')} CAD</strong> par Virement Interac · indiquez votre numéro de colis dans le message.
+              </div>
+            </div>
+          )}
+
+          {/* Bordereaux */}
+          {parcel.bordereaux?.length > 0 && (
+            <div style={{ marginBottom: 16 }}>
+              <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--ink-400)', textTransform: 'uppercase', letterSpacing: '.05em', marginBottom: 8 }}>Bordereaux</div>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                {parcel.bordereaux.map(bl => (
+                  <a key={bl.id} href={'/client/bordereau/' + bl.id} target="_blank" rel="noreferrer"
+                    className="btn btn--ghost btn--xs" style={{ textDecoration: 'none', fontFamily: 'var(--font-mono)', fontSize: 12 }}>
+                    📋 {bl.code}
+                  </a>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Timeline */}
+          <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--ink-400)', textTransform: 'uppercase', letterSpacing: '.05em', marginBottom: 10 }}>
+            Historique de suivi
+          </div>
+          <TrackingTimeline events={parcel.tracking} />
+        </>
+      )}
     </Modal>
   );
 }
@@ -282,7 +367,13 @@ export default function ClientDashboard() {
         </>
       )}
 
-      {detail && <ParcelModal parcel={detail} onClose={() => setSelected(null)} />}
+      {detail && (
+        <ParcelModal
+          parcel={detail}
+          onClose={() => setSelected(null)}
+          onUpdated={(updated) => setParcels(ps => ps.map(p => p.id === updated.id ? { ...p, ...updated } : p))}
+        />
+      )}
     </div>
   );
 }
