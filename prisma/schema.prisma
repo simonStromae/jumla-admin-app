@@ -12,13 +12,6 @@ enum UserRole {
   admin
 }
 
-enum CampaignStatus {
-  open
-  in_transit
-  arrived
-  closed
-}
-
 enum ParcelStatus {
   en_attente
   recu
@@ -81,7 +74,7 @@ model Campaign {
   route         Route          @relation(fields: [routeId], references: [id])
   departureDate DateTime?
   arrivalDate   DateTime?
-  status        CampaignStatus @default(open)
+  status        String         @default("open")
   capacityKg    Float?
   createdById   String?
   createdBy     User?          @relation(fields: [createdById], references: [id])

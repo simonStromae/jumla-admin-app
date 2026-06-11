@@ -39,11 +39,13 @@ export async function GET() {
   await run('routes.fees',        `ALTER TABLE routes ADD COLUMN IF NOT EXISTS fees JSONB`);
   await run('campaign_costs.entrepot', `ALTER TABLE campaign_costs ADD COLUMN IF NOT EXISTS entrepot INTEGER NOT NULL DEFAULT 0`);
 
-  // Campaign status enum new values
-  await run('campaign_status.preparing_departure', `ALTER TYPE "CampaignStatus" ADD VALUE IF NOT EXISTS 'preparing_departure'`);
-  await run('campaign_status.in_transit_2',        `ALTER TYPE "CampaignStatus" ADD VALUE IF NOT EXISTS 'in_transit_2'`);
-  await run('campaign_status.preparing_arrival',   `ALTER TYPE "CampaignStatus" ADD VALUE IF NOT EXISTS 'preparing_arrival'`);
-  await run('campaigns.statusNotes',               `ALTER TABLE campaigns ADD COLUMN IF NOT EXISTS "statusNotes" JSONB`);
+  // Convert CampaignStatus from enum → TEXT (once and for all — no more enum migrations needed)
+  // This is idempotent: if already TEXT it's a no-op, if still enum it converts safely
+  await run('campaigns.status_to_text', `
+    ALTER TABLE campaigns
+      ALTER COLUMN status TYPE TEXT USING status::TEXT
+  `);
+  await run('campaigns.statusNotes', `ALTER TABLE campaigns ADD COLUMN IF NOT EXISTS "statusNotes" JSONB`);
 
   // Notifications
   await run('notifications', `

@@ -47,44 +47,36 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
   const { status, departureDate, arrivalDate, capacityKg, statusNote } = body;
 
   try {
-    // Update status via raw SQL to support new enum values not yet in schema.prisma
-    if (status) {
-      const prismaStatus = toPrismaStatus(status);
-      await prisma.$executeRawUnsafe(
-        `UPDATE campaigns SET status = $1::\"CampaignStatus\" WHERE id = $2`,
-        prismaStatus,
-        params.id,
+    // status is now a plain TEXT column — Prisma can write it directly
+    const prismaStatus = status ? toPrismaStatus(status) : undefined;
+
+    // Update statusNotes for transit legs (JSONB column outside schema — raw SQL)
+    if (prismaStatus && statusNote && (prismaStatus === 'in_transit' || prismaStatus === 'in_transit_2')) {
+      const rows = await prisma.$queryRawUnsafe<any[]>(
+        `SELECT "statusNotes" FROM campaigns WHERE id = $1`, params.id
       );
-
-      // Update statusNotes for transit legs (also outside schema)
-      if (statusNote && (prismaStatus === 'in_transit' || prismaStatus === 'in_transit_2')) {
-        const rows = await prisma.$queryRawUnsafe<any[]>(
-          `SELECT "statusNotes" FROM campaigns WHERE id = $1`, params.id
-        );
-        const current = (rows[0]?.statusNotes ?? {}) as any;
-        const noteKey = prismaStatus === 'in_transit' ? 'in-transit' : 'in_transit_2';
-        const updated = { ...current, [noteKey]: statusNote };
-        await prisma.$executeRawUnsafe(
-          `UPDATE campaigns SET "statusNotes" = $1::jsonb WHERE id = $2`,
-          JSON.stringify(updated),
-          params.id,
-        );
-      }
+      const current = (rows[0]?.statusNotes ?? {}) as any;
+      const noteKey = prismaStatus === 'in_transit' ? 'in-transit' : 'in_transit_2';
+      const updated = { ...current, [noteKey]: statusNote };
+      await prisma.$executeRawUnsafe(
+        `UPDATE campaigns SET "statusNotes" = $1::jsonb WHERE id = $2`,
+        JSON.stringify(updated), params.id,
+      );
     }
 
-    // Update regular fields via Prisma (these are in the schema)
-    const regularUpdate: any = {};
-    if (departureDate !== undefined) regularUpdate.departureDate = departureDate ? new Date(departureDate) : null;
-    if (arrivalDate   !== undefined) regularUpdate.arrivalDate   = arrivalDate   ? new Date(arrivalDate)   : null;
-    if (capacityKg    !== undefined) regularUpdate.capacityKg    = capacityKg    ? Number(capacityKg)      : null;
+    // Regular Prisma update (status is now String — no casting needed)
+    const data: any = {};
+    if (prismaStatus !== undefined)    data.status        = prismaStatus;
+    if (departureDate !== undefined)   data.departureDate = departureDate ? new Date(departureDate) : null;
+    if (arrivalDate   !== undefined)   data.arrivalDate   = arrivalDate   ? new Date(arrivalDate)   : null;
+    if (capacityKg    !== undefined)   data.capacityKg    = capacityKg    ? Number(capacityKg)      : null;
 
-    if (Object.keys(regularUpdate).length > 0) {
-      await prisma.campaign.update({ where: { id: params.id }, data: regularUpdate });
+    if (Object.keys(data).length > 0) {
+      await prisma.campaign.update({ where: { id: params.id }, data });
     }
 
-    // Cascade parcel statuses when campaign advances
-    if (status) {
-      const prismaStatus = toPrismaStatus(status);
+    // Cascade parcel statuses
+    if (prismaStatus) {
       if (prismaStatus === 'in_transit' || prismaStatus === 'in_transit_2') {
         await prisma.parcel.updateMany({
           where: { campaignId: params.id, status: 'recu' },
@@ -98,7 +90,7 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
       }
     }
 
-    // Re-fetch the full updated campaign to return
+    // Re-fetch full updated campaign
     const updated = await prisma.campaign.findUnique({
       where: { id: params.id },
       include: { route: true },
