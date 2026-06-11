@@ -63,52 +63,62 @@ export async function POST(req: NextRequest) {
   if (error) return error;
 
   const recordedById = (session!.user as any).id as string;
-  const { clientId, amount, type, method, reference, note, allocations } = await req.json();
+  const body = await req.json();
+  const { clientId, amount, type, method, reference, note, allocations } = body;
 
   if (!clientId || !amount) {
     return NextResponse.json({ error: 'clientId et amount requis' }, { status: 400 });
   }
 
-  const txId = crypto.randomUUID().replace(/-/g, '');
+  try {
+    const txId = crypto.randomUUID().replace(/-/g, '');
 
-  await prisma.$executeRawUnsafe(
-    `INSERT INTO transactions (id, "clientId", amount, type, method, reference, note, "recordedById", "createdAt")
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW())`,
-    txId, clientId, Number(amount), type || 'payment', method || 'interac',
-    reference || null, note || null, recordedById
-  );
-
-  for (const alloc of (allocations ?? []) as { paymentId: string; amount: number }[]) {
-    if (!alloc.paymentId || !alloc.amount) continue;
-
-    const allocId = crypto.randomUUID().replace(/-/g, '');
     await prisma.$executeRawUnsafe(
-      `INSERT INTO transaction_allocations (id, "transactionId", "paymentId", amount) VALUES ($1, $2, $3, $4)`,
-      allocId, txId, alloc.paymentId, Number(alloc.amount)
+      `INSERT INTO transactions (id, "clientId", amount, type, method, reference, note, "recordedById", "createdAt")
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW())`,
+      txId, clientId, Number(amount), type || 'payment', method || 'interac',
+      reference || null, note || null, recordedById
     );
 
-    // Mark payment completed if fully covered
-    const [{ total }] = await prisma.$queryRawUnsafe(
-      `SELECT COALESCE(SUM(amount), 0)::int AS total FROM transaction_allocations WHERE "paymentId" = $1`,
-      alloc.paymentId
-    ) as any[];
+    for (const alloc of (allocations ?? []) as { paymentId: string; amount: number }[]) {
+      if (!alloc.paymentId || !alloc.amount) continue;
 
-    const payment = await prisma.payment.findUnique({
-      where: { id: alloc.paymentId },
-      select: { amount: true, status: true },
-    });
+      const allocId = crypto.randomUUID().replace(/-/g, '');
+      await prisma.$executeRawUnsafe(
+        `INSERT INTO transaction_allocations (id, "transactionId", "paymentId", amount) VALUES ($1, $2, $3, $4)`,
+        allocId, txId, alloc.paymentId, Number(alloc.amount)
+      );
 
-    if (payment && Number(total) >= payment.amount && payment.status !== 'completed') {
-      await prisma.payment.update({
+      // Mark payment completed if fully covered
+      const [row] = await prisma.$queryRawUnsafe(
+        `SELECT COALESCE(SUM(amount), 0)::int AS total FROM transaction_allocations WHERE "paymentId" = $1`,
+        alloc.paymentId
+      ) as any[];
+
+      const payment = await prisma.payment.findUnique({
         where: { id: alloc.paymentId },
-        data: {
-          status:     'completed',
-          paidAt:     new Date(),
-          interacRef: reference || undefined,
-        },
+        select: { amount: true, status: true },
       });
-    }
-  }
 
-  return NextResponse.json({ ok: true, transactionId: txId });
+      if (payment && Number(row.total) >= payment.amount && payment.status !== 'completed') {
+        await prisma.payment.update({
+          where: { id: alloc.paymentId },
+          data: {
+            status:     'completed',
+            paidAt:     new Date(),
+            interacRef: reference || undefined,
+          },
+        });
+      }
+    }
+
+    return NextResponse.json({ ok: true, transactionId: txId });
+  } catch (e: any) {
+    console.error('[transactions POST]', e);
+    const msg = e?.message ?? 'Erreur serveur';
+    const hint = msg.includes('does not exist')
+      ? 'Tables non initialisées — visitez /api/_migrate pour créer les tables.'
+      : msg;
+    return NextResponse.json({ error: hint }, { status: 500 });
+  }
 }

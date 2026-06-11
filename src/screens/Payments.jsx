@@ -109,10 +109,18 @@ function RecordPaymentModal({ preselectedClient, preselectedPaymentId, onClose, 
           allocations: allocs,
         }),
       });
-      const json = await res.json();
-      if (json.ok) onSave();
-      else { setErr(json.error || 'Erreur'); setSaving(false); }
-    } catch { setErr('Erreur réseau'); setSaving(false); }
+      let json = {};
+      try { json = await res.json(); } catch { /* non-JSON body */ }
+      if (res.ok && json.ok) {
+        onSave();
+      } else {
+        setErr(json.error || `Erreur ${res.status} — vérifiez que /api/_migrate a été lancé.`);
+        setSaving(false);
+      }
+    } catch {
+      setErr('Erreur réseau — vérifiez votre connexion.');
+      setSaving(false);
+    }
   };
 
   const unpaid = balance?.unpaidInvoices ?? [];
