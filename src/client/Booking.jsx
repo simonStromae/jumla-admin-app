@@ -30,23 +30,34 @@ const DEFAULT_FEES = {
 // Convert stored route fees (admin grille tarifaire) → calcPrice-compatible format
 function routeFeesToCalcFees(storedFees) {
   if (!storedFees?.tiers?.length) return DEFAULT_FEES;
-  const sorted = [...storedFees.tiers].sort((a, b) => parseFloat(a.from) - parseFloat(b.from));
-  const firstTier  = sorted[0];
-  const secondTier = sorted[1];
-  const flatUpTo3kg = parseFloat(firstTier?.flat) || DEFAULT_FEES.flatUpTo3kg;
-  let perHalfKgRate = DEFAULT_FEES.perHalfKgRate;
-  if (secondTier) {
-    const rangeKg = parseFloat(secondTier.to) - parseFloat(secondTier.from);
-    const tierFlat = parseFloat(secondTier.flat) || 0;
-    if (rangeKg > 0 && tierFlat > 0) {
-      perHalfKgRate = Math.round((tierFlat / rangeKg / 2) * 10) / 10;
-    }
-  }
+
   const bags = storedFees.bags ?? {};
   const deliveryFee = storedFees.deliveryFee ?? DEFAULT_FEES.montrealIleDelivery;
+
+  // Normalize and sort tiers
+  const tiers = [...storedFees.tiers]
+    .map(t => ({ from: parseFloat(t.from) || 0, to: parseFloat(t.to) || 0, flat: parseFloat(t.flat) || 0 }))
+    .filter(t => t.to >= t.from)
+    .sort((a, b) => a.from - b.from);
+
+  const firstTier = tiers[0];
+
+  // Estimate perHalfKgRate from the MARGINAL cost between last two tiers (display only)
+  let perHalfKgRate = DEFAULT_FEES.perHalfKgRate;
+  if (tiers.length >= 2) {
+    const last = tiers[tiers.length - 1];
+    const prev = tiers[tiers.length - 2];
+    const rangeKg   = last.to - last.from;
+    const deltaFlat = last.flat - prev.flat;
+    if (rangeKg > 0 && deltaFlat > 0) {
+      perHalfKgRate = Math.round((deltaFlat / rangeKg / 2) * 10) / 10;
+    }
+  }
+
   return {
     ...DEFAULT_FEES,
-    flatUpTo3kg,
+    tiers,
+    flatUpTo3kg:          firstTier?.flat || DEFAULT_FEES.flatUpTo3kg,
     perHalfKgRate,
     addons: {
       smallBag:  bags.small  ?? DEFAULT_FEES.addons.smallBag,
@@ -56,6 +67,25 @@ function routeFeesToCalcFees(storedFees) {
     montrealIleDelivery:   deliveryFee,
     montrealGrandDelivery: Math.round(deliveryFee * 1.2),
   };
+}
+
+// Lookup base shipping from tiers (flat per weight range) or fall back to linear formula
+function calcBaseShipping(fees, billedKg) {
+  if (fees.tiers?.length) {
+    const tier = fees.tiers.find(t => billedKg >= t.from && billedKg <= t.to);
+    if (tier) return tier.flat;
+    // Weight exceeds all defined tiers — extrapolate from the last tier's marginal rate
+    const last = fees.tiers[fees.tiers.length - 1];
+    const prev = fees.tiers[fees.tiers.length - 2];
+    const ratePerHalfKg = prev && (last.to - last.from) > 0
+      ? Math.max(1, (last.flat - prev.flat) / ((last.to - last.from) / 0.5))
+      : fees.perHalfKgRate;
+    const extraIncrements = Math.ceil((billedKg - last.to) / 0.5);
+    return last.flat + extraIncrements * ratePerHalfKg;
+  }
+  // No tiers — original linear formula
+  const surplusIncrements = billedKg > 3 ? (billedKg - 3) / 0.5 : 0;
+  return fees.flatUpTo3kg + surplusIncrements * fees.perHalfKgRate;
 }
 
 // ── Villes avec 3 zones ──
@@ -100,7 +130,7 @@ function calcPrice(items, fees, addons, delivery, cityZone) {
 
   const billedKg = totalKg <= 3 ? totalKg : roundUpToHalfKg(totalKg);
   const surplusIncrements = billedKg > 3 ? (billedKg - 3) / 0.5 : 0;
-  const baseShipping = fees.flatUpTo3kg + surplusIncrements * fees.perHalfKgRate;
+  const baseShipping = calcBaseShipping(fees, billedKg);
 
   // Group kg by category
   const catGroups = {};
