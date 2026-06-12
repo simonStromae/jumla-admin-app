@@ -25,19 +25,20 @@ export default function ProfileScreen({ onNav }) {
     e.preventDefault();
     setPwMsg('');
     if (!pwData.current) { setPwMsg('Veuillez saisir le mot de passe actuel.'); return; }
-    if (pwData.next.length < 6) { setPwMsg('Le nouveau mot de passe doit contenir au moins 6 caractères.'); return; }
+    if (pwData.next.length < 8) { setPwMsg('Le nouveau mot de passe doit contenir au moins 8 caractères.'); return; }
     if (pwData.next !== pwData.confirm) { setPwMsg('Les mots de passe ne correspondent pas.'); return; }
     setPwSaving(true);
-    // TODO: implement /api/auth/change-password endpoint
-    // await fetch('/api/auth/change-password', {
-    //   method: 'POST',
-    //   headers: { 'Content-Type': 'application/json' },
-    //   body: JSON.stringify({ current: pwData.current, next: pwData.next }),
-    // });
-    await new Promise(r => setTimeout(r, 1000));
+    try {
+      const res = await fetch('/api/auth/change-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ currentPassword: pwData.current, newPassword: pwData.next }),
+      });
+      const json = await res.json();
+      if (!res.ok) { setPwMsg(json.error || 'Erreur'); }
+      else { setPwMsg('success'); setPwData({ current: '', next: '', confirm: '' }); }
+    } catch { setPwMsg('Erreur réseau'); }
     setPwSaving(false);
-    setPwMsg('success');
-    setPwData({ current: '', next: '', confirm: '' });
   };
 
   return (
