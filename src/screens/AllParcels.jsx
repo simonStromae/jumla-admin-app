@@ -115,6 +115,7 @@ export default function AllParcelsScreen({ onNav, initialSearch = '' }) {
             <th style={{ textAlign: 'right' }}>Montant</th>
             <th>Paiement</th>
             <th>Livraison</th>
+            <th title="Dernier message WhatsApp">WA</th>
             <th style={{ borderRadius: 0, width: 44 }}></th>
           </tr>
         </thead>
@@ -158,6 +159,23 @@ export default function AllParcelsScreen({ onNav, initialSearch = '' }) {
                 <span style={{ fontSize: 12, display: 'inline-flex', alignItems: 'center', gap: 4, color: 'var(--ink-600)' }}>
                   {p.delivery === 'home' ? <><I.Truck style={{ width: 13, height: 13 }} /> Domicile</> : <><I.Warehouse style={{ width: 13, height: 13 }} /> Retrait</>}
                 </span>
+              </td>
+              <td>
+                {p.lastWhatsapp ? (
+                  <span
+                    title={`${p.lastWhatsapp.status === 'sent' ? 'Envoyé' : 'Échec'} · ${new Date(p.lastWhatsapp.sentAt).toLocaleDateString('fr-CA', { day: '2-digit', month: '2-digit' })}`}
+                    style={{ display: 'inline-flex', alignItems: 'center', gap: 3, cursor: 'default' }}
+                  >
+                    <svg viewBox="0 0 24 24" fill={p.lastWhatsapp.status === 'sent' ? '#25D366' : '#ef4444'} width="14" height="14">
+                      <path d="M17.5 14.4c-.3-.1-1.7-.9-2-1s-.5-.1-.7.1c-.2.3-.7 1-.9 1.1-.2.2-.3.2-.6 0-.3-.1-1.2-.5-2.3-1.4-.8-.7-1.4-1.7-1.6-2-.2-.3 0-.5.1-.6l.5-.5c.1-.2.2-.3.3-.5 0-.2 0-.4-.1-.5 0-.1-.7-1.6-1-2.2-.2-.6-.5-.5-.7-.5h-.6c-.2 0-.5.1-.7.4-.3.3-1 1-1 2.4s1 2.8 1.2 3.1c.2.2 2 3 4.8 4.3.7.3 1.2.4 1.6.6.7.2 1.3.2 1.8.1.6-.1 1.7-.7 1.9-1.3.3-.7.3-1.2.2-1.3-.1-.2-.3-.3-.6-.4zM12 21a9 9 0 0 1-4.6-1.3L3 21l1.3-4.3A9 9 0 1 1 12 21z" />
+                    </svg>
+                    <span style={{ fontSize: 10, color: 'var(--ink-400)' }}>
+                      {new Date(p.lastWhatsapp.sentAt).toLocaleDateString('fr-CA', { day: '2-digit', month: '2-digit' })}
+                    </span>
+                  </span>
+                ) : (
+                  <span style={{ fontSize: 11, color: 'var(--ink-300)' }}>—</span>
+                )}
               </td>
               <td style={{ overflow: 'visible' }}>
                 <ParcelActionsMenu parcel={{ ...p, id: p.id.split('-').pop() }} onNav={onNav} isLocked={false} />

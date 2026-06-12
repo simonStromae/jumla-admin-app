@@ -25,6 +25,20 @@ export async function GET(req: NextRequest) {
     },
   });
 
+  // Last WhatsApp log per parcel
+  const parcelIds = parcels.map(p => p.id);
+  let lastWhatsappMap: Record<string, { status: string; sentAt: Date }> = {};
+  if (parcelIds.length) {
+    const logs = await prisma.$queryRawUnsafe<{ parcelId: string; status: string; sentAt: Date }[]>(
+      `SELECT DISTINCT ON ("parcelId") "parcelId", status, "sentAt"
+       FROM whatsapp_logs
+       WHERE "parcelId" = ANY($1::text[])
+       ORDER BY "parcelId", "sentAt" DESC`,
+      parcelIds
+    ).catch(() => []);
+    for (const l of logs) lastWhatsappMap[l.parcelId] = { status: l.status, sentAt: l.sentAt };
+  }
+
   const result = parcels.map(p => ({
     id:           p.id,
     code:         p.trackingCode,
@@ -51,6 +65,7 @@ export async function GET(req: NextRequest) {
     delivery:     'pickup',
     createdAt:    p.createdAt,
     payment:      p.payment,
+    lastWhatsapp: lastWhatsappMap[p.id] ?? null,
   }));
 
   return NextResponse.json(result);
