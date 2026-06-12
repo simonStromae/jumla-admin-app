@@ -412,9 +412,8 @@ export default function ParcelDetailScreen({ id, onNav }) {
         {/* Right */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
 
-          {/* ── Inline status update ── */}
-          {!campaignLocked && (
-            <div className="card" style={{ padding: 16 }}>
+          {/* ── Inline status update — always available, even when campaign is locked ── */}
+          <div className="card" style={{ padding: 16 }}>
               <div className="section-title" style={{ marginBottom: 12 }}>
                 <I.Edit style={{ width: 14, height: 14, color: 'var(--brand-600)' }} /> Mettre à jour le statut
               </div>
@@ -482,8 +481,7 @@ export default function ParcelDetailScreen({ id, onNav }) {
                   {statusForm.saving ? 'Enregistrement…' : 'Enregistrer'}
                 </button>
               </div>
-            </div>
-          )}
+          </div>
 
           {/* Payment */}
           <div className="card" style={{ padding: 16 }}>

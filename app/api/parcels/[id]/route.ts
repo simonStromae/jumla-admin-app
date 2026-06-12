@@ -41,9 +41,12 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
       client: { select: { name: true, email: true } },
     },
   });
+  // Content edits (weight, items, price) are locked once the campaign is in transit.
+  // Status updates are ALWAYS allowed — individual parcels can have problems at any stage.
   const LOCKED_STATUSES = ['in_transit', 'in_transit_2', 'arrived', 'preparing_arrival', 'closed'];
-  if (existing?.campaign && LOCKED_STATUSES.includes(existing.campaign.status as string)) {
-    return NextResponse.json({ error: 'Colis verrouillé — la cargaison est déjà en transit.' }, { status: 403 });
+  const contentChanged  = weightKg !== undefined || priceXaf !== undefined || items !== undefined || confirmed !== undefined || notes !== undefined;
+  if (contentChanged && existing?.campaign && LOCKED_STATUSES.includes(existing.campaign.status as string)) {
+    return NextResponse.json({ error: 'Colis verrouillé — le contenu ne peut plus être modifié (cargaison en transit).' }, { status: 403 });
   }
 
   const parcel = await prisma.parcel.update({

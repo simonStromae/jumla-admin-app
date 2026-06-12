@@ -75,16 +75,21 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
       await prisma.campaign.update({ where: { id: params.id }, data });
     }
 
-    // Cascade parcel statuses
+    // Cascade parcel statuses — only update parcels in the expected "normal flow" states.
+    // Parcels already individually set to exceptional statuses (ret, ins, adr, dom, etc.)
+    // or further ahead in the process are left untouched.
     if (prismaStatus) {
       if (prismaStatus === 'in_transit' || prismaStatus === 'in_transit_2') {
+        // Campaign departs: move parcels received at warehouse → shipped
         await prisma.parcel.updateMany({
           where: { campaignId: params.id, status: { in: ['rec', 'pre'] } },
           data:  { status: 'exp' },
         });
       } else if (prismaStatus === 'arrived') {
+        // Campaign arrives: move parcels still in transit → arrived at destination warehouse
+        // Do NOT touch: dou/ins/ret (customs issues), ard/ver/pdl/liv/ok (already ahead), exceptions
         await prisma.parcel.updateMany({
-          where: { campaignId: params.id, status: { in: ['exp', 'tra', 'apd', 'dou'] } },
+          where: { campaignId: params.id, status: { in: ['exp', 'tra'] } },
           data:  { status: 'ard' },
         });
       }
