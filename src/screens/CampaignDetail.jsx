@@ -255,27 +255,41 @@ export default function CampaignDetailScreen({ id, onNav }) {
           })}
         </div>
 
-        {nextStep && (
-          <div style={{ marginTop: 16, display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
-            {nextStep.id === 'closed' && unpaidCount > 0 && (
-              <span style={{ fontSize: 12, color: 'var(--warn-700)', fontWeight: 600 }}>
-                ⚠️ {unpaidCount} colis non payé{unpaidCount > 1 ? 's' : ''}
-              </span>
-            )}
-            {advanceError && (
-              <span style={{ fontSize: 12, color: 'var(--bad-600)', fontWeight: 600 }}>
-                ✕ {advanceError}
-              </span>
-            )}
+        {/* Direct status select */}
+        <div style={{ marginTop: 20, paddingTop: 16, borderTop: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+          <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--ink-500)', whiteSpace: 'nowrap' }}>Changer le statut :</span>
+          <select
+            className="input"
+            style={{ flex: 1, minWidth: 200, maxWidth: 320 }}
+            value={campaign.status}
+            onChange={e => {
+              const target = STEPS.find(s => s.id === e.target.value);
+              if (!target || target.id === campaign.status) return;
+              if (target.id === 'in-transit' || target.id === 'in_transit_2') {
+                setShowDepartureModal(target);
+              } else {
+                setShowConfirmModal(target);
+              }
+            }}
+          >
+            {STEPS.map(s => (
+              <option key={s.id} value={s.id}>{s.label}</option>
+            ))}
+          </select>
+          {advanceError && (
+            <span style={{ fontSize: 12, color: 'var(--bad-600)', fontWeight: 600 }}>✕ {advanceError}</span>
+          )}
+          {nextStep && (
             <button
               className={nextStep.id === 'closed' ? 'btn btn--danger' : 'btn btn--primary'}
               onClick={handleAdvance}
               disabled={advancing}
+              style={{ whiteSpace: 'nowrap' }}
             >
-              {advancing ? 'Mise à jour…' : nextStep.id === 'closed' ? 'Clôturer la cargaison' : `Avancer → ${nextStep.label}`}
+              {advancing ? 'Mise à jour…' : nextStep.id === 'closed' ? 'Clôturer' : `→ ${nextStep.label}`}
             </button>
-          </div>
-        )}
+          )}
+        </div>
       </div>
 
       {/* Generic confirmation modal (all non-transit steps) */}
