@@ -27,6 +27,37 @@ const DEFAULT_FEES = {
   montrealGrandDelivery: 30,
 };
 
+// Convert stored route fees (admin grille tarifaire) → calcPrice-compatible format
+function routeFeesToCalcFees(storedFees) {
+  if (!storedFees?.tiers?.length) return DEFAULT_FEES;
+  const sorted = [...storedFees.tiers].sort((a, b) => parseFloat(a.from) - parseFloat(b.from));
+  const firstTier  = sorted[0];
+  const secondTier = sorted[1];
+  const flatUpTo3kg = parseFloat(firstTier?.flat) || DEFAULT_FEES.flatUpTo3kg;
+  let perHalfKgRate = DEFAULT_FEES.perHalfKgRate;
+  if (secondTier) {
+    const rangeKg = parseFloat(secondTier.to) - parseFloat(secondTier.from);
+    const tierFlat = parseFloat(secondTier.flat) || 0;
+    if (rangeKg > 0 && tierFlat > 0) {
+      perHalfKgRate = Math.round((tierFlat / rangeKg / 2) * 10) / 10;
+    }
+  }
+  const bags = storedFees.bags ?? {};
+  const deliveryFee = storedFees.deliveryFee ?? DEFAULT_FEES.montrealIleDelivery;
+  return {
+    ...DEFAULT_FEES,
+    flatUpTo3kg,
+    perHalfKgRate,
+    addons: {
+      smallBag:  bags.small  ?? DEFAULT_FEES.addons.smallBag,
+      mediumBag: bags.medium ?? DEFAULT_FEES.addons.mediumBag,
+      largeBag:  bags.large  ?? DEFAULT_FEES.addons.largeBag,
+    },
+    montrealIleDelivery:   deliveryFee,
+    montrealGrandDelivery: Math.round(deliveryFee * 1.2),
+  };
+}
+
 // ── Villes avec 3 zones ──
 const CITIES = [
   // Île de Montréal
@@ -464,7 +495,12 @@ export default function BookingScreen({ onNav, embedded = false }) {
   const updItem    = (id, k, v) => setItems(is => is.map(i => i.id === id ? { ...i, [k]: v } : i));
 
   const routeData  = dbRoutes.find(r => r.id === form.route);
-  const route      = routeData ? { ...routeData, currency: 'CAD', transit: 14, fees: DEFAULT_FEES } : null;
+  const route      = routeData ? {
+    ...routeData,
+    currency: routeData.currency ?? 'CAD',
+    transit:  routeData.transitDays ?? 14,
+    fees:     routeFeesToCalcFees(routeData.fees),
+  } : null;
   const departure  = campaigns.find(c => c.id === form.departure);
   const isDone    = payStatus === 'pending';
 

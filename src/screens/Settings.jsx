@@ -46,11 +46,12 @@ function ToggleRow({ label, sub, checked, onChange }) {
 /* ── Entreprise ──────────────────────────────────────────── */
 function SectionCompany() {
   const [fields, setFields] = useState({
-    company_name:    'Jumla Shipping',
-    company_legal:   'Jumla Shipping SARL',
-    phone_douala:    '',
-    phone_montreal:  '',
-    warehouse_addr:  '5500 Place de la Savane, Lachine, QC H4S 1V8, Canada',
+    company_name:      'Jumla Shipping',
+    company_legal:     'Jumla Shipping SARL',
+    phone_douala:      '',
+    phone_montreal:    '',
+    contact_whatsapp:  '',
+    warehouse_addr:    '5500 Place de la Savane, Lachine, QC H4S 1V8, Canada',
   });
   const [saving, setSaving] = useState(false);
   const [saved,  setSaved]  = useState(false);
@@ -58,11 +59,12 @@ function SectionCompany() {
   useEffect(() => {
     fetch('/api/settings').then(r => r.json()).then(d => {
       setFields(f => ({
-        company_name:   d.company_name   ?? f.company_name,
-        company_legal:  d.company_legal  ?? f.company_legal,
-        phone_douala:   d.phone_douala   ?? f.phone_douala,
-        phone_montreal: d.phone_montreal ?? f.phone_montreal,
-        warehouse_addr: d.warehouse_addr ?? f.warehouse_addr,
+        company_name:     d.company_name     ?? f.company_name,
+        company_legal:    d.company_legal    ?? f.company_legal,
+        phone_douala:     d.phone_douala     ?? f.phone_douala,
+        phone_montreal:   d.phone_montreal   ?? f.phone_montreal,
+        contact_whatsapp: d.contact_whatsapp ?? f.contact_whatsapp,
+        warehouse_addr:   d.warehouse_addr   ?? f.warehouse_addr,
       }));
     }).catch(() => {});
   }, []);
@@ -85,6 +87,10 @@ function SectionCompany() {
         <div className="field-row field-row--2">
           <div className="field"><label className="label">Téléphone Douala</label><input className="input mono" value={fields.phone_douala} onChange={set('phone_douala')} placeholder="+237 6** ** ** **" /></div>
           <div className="field"><label className="label">Téléphone Montréal</label><input className="input mono" value={fields.phone_montreal} onChange={set('phone_montreal')} placeholder="+1 514 *** ****" /></div>
+        </div>
+        <div className="field">
+          <label className="label">WhatsApp contact client <span className="opt">/ numéro affiché aux clients pour support</span></label>
+          <input className="input mono" value={fields.contact_whatsapp} onChange={set('contact_whatsapp')} placeholder="+1 514 *** ****" />
         </div>
         <div className="field">
           <label className="label">Adresse entrepôt arrivée</label>

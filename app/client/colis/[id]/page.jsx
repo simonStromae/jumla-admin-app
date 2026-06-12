@@ -43,13 +43,15 @@ export default function ParcelDetailPage({ params }) {
   const [editing,      setEditing]      = useState(false);
   const [editForm,     setEditForm]     = useState({});
   const [saving,       setSaving]       = useState(false);
-  const [blConfirm,    setBlConfirm]    = useState({}); // blId → { checked, confirming, done }
+  const [blConfirm,    setBlConfirm]    = useState({});
+  const [contact,      setContact]      = useState({ whatsapp: '', companyName: 'Jumla Shipping' });
 
   useEffect(() => {
     fetch('/api/me/parcels/' + params.id)
       .then(r => r.ok ? r.json() : Promise.reject(r.status))
       .then(d => { setParcel(d); setLoading(false); })
       .catch(() => { setError('Colis introuvable ou accès refusé.'); setLoading(false); });
+    fetch('/api/public/contact').then(r => r.json()).then(setContact).catch(() => {});
   }, [params.id]);
 
   if (loading) return (
@@ -378,14 +380,18 @@ export default function ParcelDetailPage({ params }) {
         {/* Contact */}
         <div style={{ background: 'white', borderRadius: 14, padding: '16px', border: '1px solid #e5e7eb', textAlign: 'center' }}>
           <div style={{ fontSize: 13, color: '#6b7280', marginBottom: 12 }}>Une question sur votre colis ?</div>
-          <a href="https://wa.me/15145555555" target="_blank" rel="noreferrer" style={{
-            display: 'inline-flex', alignItems: 'center', gap: 8,
-            padding: '10px 20px', borderRadius: 10, textDecoration: 'none',
-            background: '#25D366', color: 'white', fontWeight: 700, fontSize: 14,
-          }}>
-            <svg viewBox="0 0 24 24" fill="currentColor" width="18" height="18"><path d="M17.5 14.4c-.3-.1-1.7-.9-2-1s-.5-.1-.7.1c-.2.3-.7 1-.9 1.1-.2.2-.3.2-.6 0-.3-.1-1.2-.5-2.3-1.4-.8-.7-1.4-1.7-1.6-2-.2-.3 0-.5.1-.6l.5-.5c.1-.2.2-.3.3-.5 0-.2 0-.4-.1-.5 0-.1-.7-1.6-1-2.2-.2-.6-.5-.5-.7-.5h-.6c-.2 0-.5.1-.7.4-.3.3-1 1-1 2.4s1 2.8 1.2 3.1c.2.2 2 3 4.8 4.3.7.3 1.2.4 1.6.6.7.2 1.3.2 1.8.1.6-.1 1.7-.7 1.9-1.3.3-.7.3-1.2.2-1.3-.1-.2-.3-.3-.6-.4zM12 21a9 9 0 0 1-4.6-1.3L3 21l1.3-4.3A9 9 0 1 1 12 21z" /></svg>
-            Contacter Jumla sur WhatsApp
-          </a>
+          {contact.whatsapp ? (
+            <a href={`https://wa.me/${contact.whatsapp.replace(/\D/g, '')}`} target="_blank" rel="noreferrer" style={{
+              display: 'inline-flex', alignItems: 'center', gap: 8,
+              padding: '10px 20px', borderRadius: 10, textDecoration: 'none',
+              background: '#25D366', color: 'white', fontWeight: 700, fontSize: 14,
+            }}>
+              <svg viewBox="0 0 24 24" fill="currentColor" width="18" height="18"><path d="M17.5 14.4c-.3-.1-1.7-.9-2-1s-.5-.1-.7.1c-.2.3-.7 1-.9 1.1-.2.2-.3.2-.6 0-.3-.1-1.2-.5-2.3-1.4-.8-.7-1.4-1.7-1.6-2-.2-.3 0-.5.1-.6l.5-.5c.1-.2.2-.3.3-.5 0-.2 0-.4-.1-.5 0-.1-.7-1.6-1-2.2-.2-.6-.5-.5-.7-.5h-.6c-.2 0-.5.1-.7.4-.3.3-1 1-1 2.4s1 2.8 1.2 3.1c.2.2 2 3 4.8 4.3.7.3 1.2.4 1.6.6.7.2 1.3.2 1.8.1.6-.1 1.7-.7 1.9-1.3.3-.7.3-1.2.2-1.3-.1-.2-.3-.3-.6-.4zM12 21a9 9 0 0 1-4.6-1.3L3 21l1.3-4.3A9 9 0 1 1 12 21z" /></svg>
+              Contacter {contact.companyName} sur WhatsApp
+            </a>
+          ) : (
+            <div style={{ fontSize: 13, color: '#9ca3af' }}>Contactez-nous via le formulaire ou par email.</div>
+          )}
         </div>
 
         <div style={{ height: 16 }} />
