@@ -137,7 +137,7 @@ export default function ParcelDetailScreen({ id, onNav }) {
   const payStatus  = payment ? (PAYMENT_STATUS[payment.status] || { label: payment.status, cls: 'neutral' }) : { label: 'Non créé', cls: 'neutral' };
   const totalVerif = bordereaux.filter(b => b.status === 'verifie').length;
 
-  const campaignLocked = ['in_transit', 'in_transit_2', 'arrived', 'preparing_arrival', 'closed'].includes(parcel?.campaign?.status);
+  const campaignLocked = ['exp', 'tra', 'apd', 'dou', 'lib', 'ard', 'pdl', 'ok'].includes(parcel?.campaign?.status);
 
   return (
     <div className="page">

@@ -11,7 +11,7 @@ export default function VerifyHubScreen({ onNav }) {
       .then(r => r.json())
       .then(data => {
         const all = Array.isArray(data) ? data : [];
-        setCampaigns(all.filter(c => c.status === 'in-transit' || c.status === 'arrived'));
+        setCampaigns(all.filter(c => c.status === 'ard' || c.status === 'pdl'));
         setLoading(false);
       })
       .catch(() => setLoading(false));
@@ -120,8 +120,8 @@ export default function VerifyHubScreen({ onNav }) {
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4 }}>
                   <span className="mono" style={{ fontSize: 14, fontWeight: 800, color: 'var(--ink-900)' }}>{c.code}</span>
                   <RoutePill from={c.from} to={c.to} size="sm" />
-                  {c.status === 'arrived' ? (
-                    <span style={{ fontSize: 11, fontWeight: 700, padding: '2px 8px', borderRadius: 999, background: 'var(--ok-100)', color: 'var(--ok-800)' }}>Arrivée</span>
+                  {c.status === 'ard' || c.status === 'pdl' ? (
+                    <span style={{ fontSize: 11, fontWeight: 700, padding: '2px 8px', borderRadius: 999, background: 'var(--ok-100)', color: 'var(--ok-800)' }}>Arrivée entrepôt</span>
                   ) : (
                     <span style={{ fontSize: 11, fontWeight: 700, padding: '2px 8px', borderRadius: 999, background: 'var(--warn-100)', color: 'var(--warn-800)' }}>En transit</span>
                   )}

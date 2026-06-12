@@ -81,7 +81,7 @@ export async function POST(req: NextRequest) {
       departureDate: departureDate ? new Date(departureDate) : null,
       arrivalDate:   arrivalDate   ? new Date(arrivalDate)   : null,
       capacityKg:    capacityKg    ? Number(capacityKg)      : null,
-      status:        status ?? 'open',
+      status:        status ?? 'enr',
     },
     include: { route: true },
   });

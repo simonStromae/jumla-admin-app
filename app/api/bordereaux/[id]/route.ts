@@ -90,7 +90,7 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
       where: { id: params.id },
       select: { parcel: { select: { campaign: { select: { status: true } } } } },
     });
-    const LOCKED_STATUSES = ['in_transit', 'in_transit_2', 'arrived', 'preparing_arrival', 'closed'];
+    const LOCKED_STATUSES = ['exp', 'tra', 'apd', 'dou', 'lib', 'ard', 'pdl', 'ok'];
     if (bl?.parcel?.campaign && LOCKED_STATUSES.includes(bl.parcel.campaign.status as string)) {
       return NextResponse.json({ error: 'Bordereau verrouillé — la cargaison est déjà en transit.' }, { status: 403 });
     }

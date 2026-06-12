@@ -8,7 +8,7 @@ export async function GET() {
     const [campaigns, clients, verifyPending, unpaidPayments] = await Promise.all([
       prisma.campaign.count(),
       prisma.user.count({ where: { role: 'client' } }),
-      prisma.campaign.count({ where: { status: { in: ['in_transit', 'arrived'] } } }),
+      prisma.campaign.count({ where: { status: { in: ['exp', 'tra', 'apd', 'dou', 'lib', 'ard'] } } }),
       prisma.payment.count({ where: { status: 'pending' } }),
     ]);
     return NextResponse.json({ campaigns, clients, verifyPending, unpaidPayments });

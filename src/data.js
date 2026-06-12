@@ -88,14 +88,14 @@ export const ROUTES = [
 ];
 
 export const CAMPAIGNS = [
-  { id: 'c1', code: 'DLA-YUL-APR-02', route: 'r-dla-yul', month: 'Avril 2026',    dep: '28 avr. 2026', status: 'in-transit', parcels: 64, weight: 1842, invoiced: 32450, collected: 18920, alerts: 3, costs: { fret: 8200, manutention: 960,  douane: 720, transport: 420, divers: 180 } },
-  { id: 'c2', code: 'DLA-YUL-APR-01', route: 'r-dla-yul', month: 'Avril 2026',    dep: '14 avr. 2026', status: 'closed',     parcels: 58, weight: 1622, invoiced: 28100, collected: 28100, alerts: 0, costs: { fret: 7400, manutention: 820,  douane: 640, transport: 360, divers: 140 } },
-  { id: 'c3', code: 'LOS-YUL-APR-01', route: 'r-los-yul', month: 'Avril 2026',    dep: '10 avr. 2026', status: 'closed',     parcels: 41, weight: 1108, invoiced: 19600, collected: 19200, alerts: 1, costs: { fret: 5800, manutention: 640,  douane: 520, transport: 280, divers: 120 } },
-  { id: 'c4', code: 'DLA-YUL-MAR-02', route: 'r-dla-yul', month: 'Mars 2026',     dep: '28 mars 2026', status: 'closed',     parcels: 71, weight: 2014, invoiced: 35200, collected: 35200, alerts: 0, costs: { fret: 9000, manutention: 1100, douane: 780, transport: 480, divers: 220 } },
-  { id: 'c5', code: 'DLA-YUL-MAR-01', route: 'r-dla-yul', month: 'Mars 2026',     dep: '14 mars 2026', status: 'closed',     parcels: 62, weight: 1722, invoiced: 30650, collected: 30650, alerts: 0, costs: { fret: 7800, manutention: 880,  douane: 680, transport: 400, divers: 160 } },
-  { id: 'c6', code: 'DLA-BRU-MAR-01', route: 'r-dla-bru', month: 'Mars 2026',     dep: '08 mars 2026', status: 'closed',     parcels: 34, weight: 962,  invoiced: 11400, collected: 11400, alerts: 0, costs: { fret: 3600, manutention: 460,  douane: 320, transport: 200, divers: 80  } },
-  { id: 'c7', code: 'DLA-YUL-FEB-02', route: 'r-dla-yul', month: 'Février 2026',  dep: '26 fév. 2026', status: 'closed',     parcels: 67, weight: 1880, invoiced: 32100, collected: 32100, alerts: 0, costs: { fret: 8400, manutention: 940,  douane: 700, transport: 420, divers: 180 } },
-  { id: 'c8', code: 'DLA-YUL-FEB-01', route: 'r-dla-yul', month: 'Février 2026',  dep: '12 fév. 2026', status: 'closed',     parcels: 55, weight: 1542, invoiced: 27300, collected: 27300, alerts: 0, costs: { fret: 6900, manutention: 760,  douane: 600, transport: 340, divers: 140 } },
+  { id: 'c1', code: 'DLA-YUL-APR-02', route: 'r-dla-yul', month: 'Avril 2026',    dep: '28 avr. 2026', status: 'exp', parcels: 64, weight: 1842, invoiced: 32450, collected: 18920, alerts: 3, costs: { fret: 8200, manutention: 960,  douane: 720, transport: 420, divers: 180 } },
+  { id: 'c2', code: 'DLA-YUL-APR-01', route: 'r-dla-yul', month: 'Avril 2026',    dep: '14 avr. 2026', status: 'ok',     parcels: 58, weight: 1622, invoiced: 28100, collected: 28100, alerts: 0, costs: { fret: 7400, manutention: 820,  douane: 640, transport: 360, divers: 140 } },
+  { id: 'c3', code: 'LOS-YUL-APR-01', route: 'r-los-yul', month: 'Avril 2026',    dep: '10 avr. 2026', status: 'ok',     parcels: 41, weight: 1108, invoiced: 19600, collected: 19200, alerts: 1, costs: { fret: 5800, manutention: 640,  douane: 520, transport: 280, divers: 120 } },
+  { id: 'c4', code: 'DLA-YUL-MAR-02', route: 'r-dla-yul', month: 'Mars 2026',     dep: '28 mars 2026', status: 'ok',     parcels: 71, weight: 2014, invoiced: 35200, collected: 35200, alerts: 0, costs: { fret: 9000, manutention: 1100, douane: 780, transport: 480, divers: 220 } },
+  { id: 'c5', code: 'DLA-YUL-MAR-01', route: 'r-dla-yul', month: 'Mars 2026',     dep: '14 mars 2026', status: 'ok',     parcels: 62, weight: 1722, invoiced: 30650, collected: 30650, alerts: 0, costs: { fret: 7800, manutention: 880,  douane: 680, transport: 400, divers: 160 } },
+  { id: 'c6', code: 'DLA-BRU-MAR-01', route: 'r-dla-bru', month: 'Mars 2026',     dep: '08 mars 2026', status: 'ok',     parcels: 34, weight: 962,  invoiced: 11400, collected: 11400, alerts: 0, costs: { fret: 3600, manutention: 460,  douane: 320, transport: 200, divers: 80  } },
+  { id: 'c7', code: 'DLA-YUL-FEB-02', route: 'r-dla-yul', month: 'Février 2026',  dep: '26 fév. 2026', status: 'ok',     parcels: 67, weight: 1880, invoiced: 32100, collected: 32100, alerts: 0, costs: { fret: 8400, manutention: 940,  douane: 700, transport: 420, divers: 180 } },
+  { id: 'c8', code: 'DLA-YUL-FEB-01', route: 'r-dla-yul', month: 'Février 2026',  dep: '12 fév. 2026', status: 'ok',     parcels: 55, weight: 1542, invoiced: 27300, collected: 27300, alerts: 0, costs: { fret: 6900, manutention: 760,  douane: 600, transport: 340, divers: 140 } },
 ];
 
 export const PARCELS = [
@@ -135,14 +135,14 @@ export const PARCELS = [
 ];
 
 export const CLIENTS = [
-  { id: 'cl1', name: 'Client A', code: 'CL-0142', role: 'sender',    phone: '+237 6** ** ** 12', city: 'Douala',   campaigns: 8,  weight: 96,  amount: 1820, lastCampaign: 'DLA-YUL-APR-02', lastStatus: 'in-transit', loyal: true,  color: 1 },
-  { id: 'cl2', name: 'Client J', code: 'CL-0418', role: 'recipient', phone: '+1 514 *** **45',  city: 'Montréal', campaigns: 12, weight: 188, amount: 2840, lastCampaign: 'DLA-YUL-APR-02', lastStatus: 'in-transit', loyal: true,  color: 2 },
-  { id: 'cl3', name: 'Client K', code: 'CL-0327', role: 'recipient', phone: '+1 438 *** **08',  city: 'Laval',    campaigns: 4,  weight: 42,  amount: 760,  lastCampaign: 'DLA-YUL-APR-02', lastStatus: 'in-transit', loyal: false, color: 3 },
-  { id: 'cl4', name: 'Client B', code: 'CL-0211', role: 'both',      phone: '+237 6** ** ** 24', city: 'Douala',   campaigns: 14, weight: 226, amount: 3200, lastCampaign: 'DLA-YUL-APR-02', lastStatus: 'in-transit', loyal: true,  color: 4 },
-  { id: 'cl5', name: 'Client M', code: 'CL-0501', role: 'recipient', phone: '+1 514 *** **19',  city: 'Montréal', campaigns: 2,  weight: 32,  amount: 580,  lastCampaign: 'DLA-YUL-APR-02', lastStatus: 'in-transit', loyal: false, color: 5 },
-  { id: 'cl6', name: 'Client D', code: 'CL-0388', role: 'sender',    phone: '+237 6** ** ** 02', city: 'Douala',   campaigns: 6,  weight: 78,  amount: 1180, lastCampaign: 'DLA-YUL-APR-02', lastStatus: 'in-transit', loyal: false, color: 6 },
-  { id: 'cl7', name: 'Client P', code: 'CL-0612', role: 'recipient', phone: '+1 450 *** **30',  city: 'Brossard', campaigns: 9,  weight: 142, amount: 2150, lastCampaign: 'DLA-YUL-APR-02', lastStatus: 'in-transit', loyal: true,  color: 7 },
-  { id: 'cl8', name: 'Client N', code: 'CL-0455', role: 'recipient', phone: '+1 819 *** **66',  city: 'Gatineau', campaigns: 3,  weight: 64,  amount: 980,  lastCampaign: 'DLA-YUL-APR-02', lastStatus: 'in-transit', loyal: false, color: 8 },
+  { id: 'cl1', name: 'Client A', code: 'CL-0142', role: 'sender',    phone: '+237 6** ** ** 12', city: 'Douala',   campaigns: 8,  weight: 96,  amount: 1820, lastCampaign: 'DLA-YUL-APR-02', lastStatus: 'exp', loyal: true,  color: 1 },
+  { id: 'cl2', name: 'Client J', code: 'CL-0418', role: 'recipient', phone: '+1 514 *** **45',  city: 'Montréal', campaigns: 12, weight: 188, amount: 2840, lastCampaign: 'DLA-YUL-APR-02', lastStatus: 'exp', loyal: true,  color: 2 },
+  { id: 'cl3', name: 'Client K', code: 'CL-0327', role: 'recipient', phone: '+1 438 *** **08',  city: 'Laval',    campaigns: 4,  weight: 42,  amount: 760,  lastCampaign: 'DLA-YUL-APR-02', lastStatus: 'exp', loyal: false, color: 3 },
+  { id: 'cl4', name: 'Client B', code: 'CL-0211', role: 'both',      phone: '+237 6** ** ** 24', city: 'Douala',   campaigns: 14, weight: 226, amount: 3200, lastCampaign: 'DLA-YUL-APR-02', lastStatus: 'exp', loyal: true,  color: 4 },
+  { id: 'cl5', name: 'Client M', code: 'CL-0501', role: 'recipient', phone: '+1 514 *** **19',  city: 'Montréal', campaigns: 2,  weight: 32,  amount: 580,  lastCampaign: 'DLA-YUL-APR-02', lastStatus: 'exp', loyal: false, color: 5 },
+  { id: 'cl6', name: 'Client D', code: 'CL-0388', role: 'sender',    phone: '+237 6** ** ** 02', city: 'Douala',   campaigns: 6,  weight: 78,  amount: 1180, lastCampaign: 'DLA-YUL-APR-02', lastStatus: 'exp', loyal: false, color: 6 },
+  { id: 'cl7', name: 'Client P', code: 'CL-0612', role: 'recipient', phone: '+1 450 *** **30',  city: 'Brossard', campaigns: 9,  weight: 142, amount: 2150, lastCampaign: 'DLA-YUL-APR-02', lastStatus: 'exp', loyal: true,  color: 7 },
+  { id: 'cl8', name: 'Client N', code: 'CL-0455', role: 'recipient', phone: '+1 819 *** **66',  city: 'Gatineau', campaigns: 3,  weight: 64,  amount: 980,  lastCampaign: 'DLA-YUL-APR-02', lastStatus: 'exp', loyal: false, color: 8 },
 ];
 
 export const PAYMENTS = [
@@ -184,10 +184,15 @@ export const getCategory = (id) => PARCEL_CATEGORIES.find(c => c.id === id);
 
 export const STATUS = {
   campaign: {
-    'in-transit': { label: 'En transit',    en: 'In transit',   cls: 'info',    dot: 'info' },
-    'closed':     { label: 'Clôturée',      en: 'Closed',       cls: 'ok',      dot: 'ok' },
-    'processing': { label: 'En traitement', en: 'Processing',   cls: 'warn',    dot: 'warn' },
-    'draft':      { label: 'Brouillon',     en: 'Draft',        cls: 'neutral', dot: 'neutral' },
+    enr: { label: 'Ouverte',          cls: 'brand',   dot: 'brand' },
+    exp: { label: 'Expédiée',         cls: 'info',    dot: 'info' },
+    tra: { label: 'En transit',       cls: 'warn',    dot: 'warn' },
+    apd: { label: 'Arrivée pays',     cls: 'ok',      dot: 'ok' },
+    dou: { label: 'En douane',        cls: 'warn',    dot: 'warn' },
+    lib: { label: 'Libérée',          cls: 'ok',      dot: 'ok' },
+    ard: { label: 'Entrepôt dest.',   cls: 'ok',      dot: 'ok' },
+    pdl: { label: 'Prête livr.',      cls: 'info',    dot: 'info' },
+    ok:  { label: 'Clôturée',         cls: 'neutral', dot: 'neutral' },
   },
   payment: {
     'paid':    { label: 'Payé',     en: 'Paid',    cls: 'ok' },
@@ -198,58 +203,59 @@ export const STATUS = {
 
 export const STATUS_STEPS = [
   {
-    id: 'draft', label: 'Brouillon', en: 'Draft',
-    desc: 'Cargaison en préparation — colis non acceptés',
-    effects: [
-      { type: 'unlock', text: 'Passage en statut Ouverte possible' },
-    ],
-  },
-  {
-    id: 'open', label: 'Ouverte', en: 'Open',
+    id: 'enr', label: 'Ouverte', en: 'Open',
     desc: 'Accepte les colis · Modifications autorisées',
-    nextLabel: 'Verrouiller',
     effects: [
       { type: 'unlock', text: 'Ajout et modification de colis activés' },
-      { type: 'system', text: 'Date d\'ouverture enregistrée' },
     ],
   },
   {
-    id: 'locked', label: 'Verrouillée', en: 'Locked',
-    desc: 'Fermeture des inscriptions · Expédition confirmée',
-    nextLabel: 'Passer en transit',
-    effects: [
-      { type: 'block', text: 'Ajout de colis bloqué' },
-      { type: 'notif', text: 'Message WhatsApp de confirmation aux expéditeurs' },
-      { type: 'auto',  text: 'Génération des bordereaux manquants' },
-    ],
-  },
-  {
-    id: 'in-transit', label: 'En transit', en: 'In transit',
+    id: 'exp', label: 'Expédiée', en: 'Shipped',
     desc: 'Cargaison partie · Édition restreinte',
-    nextLabel: 'Marquer arrivée',
+    nextLabel: 'Marquer arrivée pays',
     effects: [
       { type: 'block', text: 'Modification des poids et tarifs bloquée' },
-      { type: 'notif', text: '"Votre colis est en transit" — à tous les expéditeurs' },
-      { type: 'system', text: 'Horodatage de départ enregistré' },
+      { type: 'auto',  text: 'Colis REC/PRE → EXP automatiquement' },
     ],
   },
   {
-    id: 'arrived', label: 'Arrivée', en: 'Arrived',
-    desc: 'Vérification et livraison en cours',
-    nextLabel: 'Clôturer la cargaison',
+    id: 'tra', label: 'En transit', en: 'In transit',
+    desc: 'Second tronçon du trajet',
+    effects: [],
+  },
+  {
+    id: 'apd', label: 'Arrivée pays', en: 'Arrived at country',
+    desc: 'Arrivée au pays de destination',
+    effects: [],
+  },
+  {
+    id: 'dou', label: 'En douane', en: 'At customs',
+    desc: 'Présentée aux douanes',
+    effects: [],
+  },
+  {
+    id: 'lib', label: 'Libérée douanes', en: 'Customs cleared',
+    desc: 'Libérée par les douanes',
+    effects: [],
+  },
+  {
+    id: 'ard', label: 'Entrepôt dest.', en: 'At warehouse',
+    desc: 'Arrivée à l\'entrepôt de destination',
     effects: [
       { type: 'unlock', text: 'Vérification des bordereaux activée' },
-      { type: 'notif', text: '"Votre colis est arrivé · Présentez-vous" — aux 64 destinataires' },
-      { type: 'system', text: 'Horodatage d\'arrivée enregistré' },
+      { type: 'auto',  text: 'Colis EXP/TRA/APD → ARD automatiquement' },
     ],
   },
   {
-    id: 'closed', label: 'Clôturée', en: 'Closed',
+    id: 'pdl', label: 'Prête livraison', en: 'Ready',
+    desc: 'Prête pour la livraison ou le retrait',
+    effects: [],
+  },
+  {
+    id: 'ok', label: 'Clôturée', en: 'Closed',
     desc: 'Lecture seule · Bilan P&L disponible',
     effects: [
       { type: 'block', text: 'Cargaison en lecture seule' },
-      { type: 'auto',  text: 'P&L PDF généré et archivé' },
-      { type: 'system', text: 'Récapitulatif financier disponible dans Analyses' },
     ],
   },
 ];

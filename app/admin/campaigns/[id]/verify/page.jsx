@@ -67,7 +67,7 @@ export default function CampaignVerifyPage({ params }) {
       await fetch(`/api/campaigns/${params.id}`, {
         method:  'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body:    JSON.stringify({ status: 'arrived' }),
+        body:    JSON.stringify({ status: 'ard' }),
       });
 
       onNav('/admin/campaigns/' + params.id);

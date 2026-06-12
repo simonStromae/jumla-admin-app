@@ -7,7 +7,7 @@ export async function GET(req: NextRequest) {
 
   const campaigns = await prisma.campaign.findMany({
     where: {
-      status: 'open',
+      status: 'enr',
       ...(routeId ? { routeId } : {}),
     },
     include: {

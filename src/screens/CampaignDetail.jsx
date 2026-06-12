@@ -3,32 +3,38 @@ import I from '../components/Icons.jsx';
 import { RoutePill, Avatar, Modal } from '../components/Shell.jsx';
 
 const STEPS = [
-  { id: 'open',                label: 'Ouvert',               color: 'var(--brand-500)' },
-  { id: 'preparing_departure', label: 'Préparation départ',   color: 'var(--info-500)' },
-  { id: 'in-transit',          label: 'Départ',               color: 'var(--warn-500)' },
-  { id: 'in_transit_2',        label: 'Départ 2',             color: 'var(--warn-600)' },
-  { id: 'arrived',             label: 'Arrivé',               color: 'var(--ok-500)' },
-  { id: 'preparing_arrival',   label: 'Préparation arrivée',  color: 'var(--ok-700)' },
-  { id: 'closed',              label: 'Clôturé',              color: 'var(--ink-500)' },
+  { id: 'enr', label: 'Ouverte',          color: 'var(--brand-500)' },
+  { id: 'exp', label: 'Expédiée',          color: 'var(--info-500)' },
+  { id: 'tra', label: 'En transit',        color: 'var(--warn-500)' },
+  { id: 'apd', label: 'Arrivée au pays',  color: 'var(--ok-400)' },
+  { id: 'dou', label: 'En douane',         color: '#b45309' },
+  { id: 'lib', label: 'Libérée douanes',  color: 'var(--ok-500)' },
+  { id: 'ard', label: 'Entrepôt dest.',   color: '#16a34a' },
+  { id: 'pdl', label: 'Prête livraison',  color: 'var(--info-600)' },
+  { id: 'ok',  label: 'Clôturée',         color: 'var(--ink-500)' },
 ];
 const STEP_LABELS = {
-  open:                'Ouvert',
-  preparing_departure: 'Préparation départ',
-  'in-transit':        'Départ',
-  in_transit_2:        'Départ 2',
-  arrived:             'Arrivé',
-  preparing_arrival:   'Préparation arrivée',
-  closed:              'Clôturé',
+  enr: 'Ouverte',
+  exp: 'Expédiée',
+  tra: 'En transit',
+  apd: 'Arrivée au pays',
+  dou: 'En douane',
+  lib: 'Libérée douanes',
+  ard: 'Entrepôt dest.',
+  pdl: 'Prête livraison',
+  ok:  'Clôturée',
 };
 
 // Description of what each transition does
 const STEP_EFFECTS = {
-  preparing_departure: 'La cargaison passe en mode préparation au départ.',
-  'in-transit':        'Tous les colis reçus/préparés seront automatiquement passés à "Expédié".',
-  in_transit_2:        'Tous les colis reçus/préparés seront automatiquement passés à "Expédié".',
-  arrived:             'Tous les colis expédiés/en transit seront passés à "Arrivé au pays de destination".',
-  preparing_arrival:   'La cargaison passe en mode préparation à l\'arrivée.',
-  closed:              'La cargaison sera définitivement clôturée. Cette action est irréversible.',
+  exp: 'Tous les colis reçus/préparés (REC, PRE) seront automatiquement passés à "Expédié" (EXP).',
+  tra: 'La cargaison est en transit — second tronçon.',
+  apd: 'La cargaison est arrivée au pays de destination.',
+  dou: 'La cargaison est présentée aux douanes.',
+  lib: 'La cargaison a été libérée par les douanes.',
+  ard: 'Tous les colis expédiés/en transit (EXP, TRA, APD) seront passés à "Arrivé entrepôt destination" (ARD).',
+  pdl: 'La cargaison est prête pour la livraison.',
+  ok:  'La cargaison sera définitivement clôturée. Cette action est irréversible.',
 };
 
 const PAYMENT_STATUS = {
@@ -128,7 +134,7 @@ export default function CampaignDetailScreen({ id, onNav }) {
   function handleAdvance() {
     if (!nextStep) return;
     setAdvanceError('');
-    if (nextStep.id === 'in-transit' || nextStep.id === 'in_transit_2') {
+    if (nextStep.id === 'exp' || nextStep.id === 'tra') {
       setShowDepartureModal(nextStep);
       return;
     }
@@ -182,7 +188,7 @@ export default function CampaignDetailScreen({ id, onNav }) {
             <svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16"><path d="M17.5 14.4c-.3-.1-1.7-.9-2-1s-.5-.1-.7.1c-.2.3-.7 1-.9 1.1-.2.2-.3.2-.6 0-.3-.1-1.2-.5-2.3-1.4-.8-.7-1.4-1.7-1.6-2-.2-.3 0-.5.1-.6l.5-.5c.1-.2.2-.3.3-.5 0-.2 0-.4-.1-.5 0-.1-.7-1.6-1-2.2-.2-.6-.5-.5-.7-.5h-.6c-.2 0-.5.1-.7.4-.3.3-1 1-1 2.4s1 2.8 1.2 3.1c.2.2 2 3 4.8 4.3.7.3 1.2.4 1.6.6.7.2 1.3.2 1.8.1.6-.1 1.7-.7 1.9-1.3.3-.7.3-1.2.2-1.3-.1-.2-.3-.3-.6-.4zM12 21a9 9 0 0 1-4.6-1.3L3 21l1.3-4.3A9 9 0 1 1 12 21z" /></svg>
             WhatsApp groupe
           </button>
-          {campaign.status === 'open' && (
+          {campaign.status === 'enr' && (
             <button
               className="btn btn--brand"
               onClick={() => onNav('/parcels/new?campaign=' + id)}
@@ -218,7 +224,7 @@ export default function CampaignDetailScreen({ id, onNav }) {
           {STEPS.map((step, i) => {
             const isActive = step.id === campaign.status;
             const isDone = i < currentStepIdx;
-            const hasNote = (step.id === 'in-transit' || step.id === 'in_transit_2') && statusNotes?.[step.id];
+            const hasNote = (step.id === 'exp' || step.id === 'tra') && statusNotes?.[step.id];
             return (
               <div key={step.id} style={{ display: 'flex', alignItems: 'flex-start', flex: i < STEPS.length - 1 ? 1 : 'none' }}>
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
@@ -265,7 +271,7 @@ export default function CampaignDetailScreen({ id, onNav }) {
             onChange={e => {
               const target = STEPS.find(s => s.id === e.target.value);
               if (!target || target.id === campaign.status) return;
-              if (target.id === 'in-transit' || target.id === 'in_transit_2') {
+              if (target.id === 'exp' || target.id === 'tra') {
                 setShowDepartureModal(target);
               } else {
                 setShowConfirmModal(target);
@@ -281,12 +287,12 @@ export default function CampaignDetailScreen({ id, onNav }) {
           )}
           {nextStep && (
             <button
-              className={nextStep.id === 'closed' ? 'btn btn--danger' : 'btn btn--primary'}
+              className={nextStep.id === 'ok' ? 'btn btn--danger' : 'btn btn--primary'}
               onClick={handleAdvance}
               disabled={advancing}
               style={{ whiteSpace: 'nowrap' }}
             >
-              {advancing ? 'Mise à jour…' : nextStep.id === 'closed' ? 'Clôturer' : `→ ${nextStep.label}`}
+              {advancing ? 'Mise à jour…' : nextStep.id === 'ok' ? 'Clôturer' : `→ ${nextStep.label}`}
             </button>
           )}
         </div>
@@ -326,7 +332,7 @@ export default function CampaignDetailScreen({ id, onNav }) {
           <div style={{ fontSize: 32, marginBottom: 12 }}>📦</div>
           <div style={{ fontSize: 16, fontWeight: 600, color: 'var(--ink-700)', marginBottom: 6 }}>Aucun colis dans cette cargaison</div>
           <div style={{ fontSize: 13, color: 'var(--ink-400)', marginBottom: 20 }}>Ajoutez le premier colis pour commencer.</div>
-          {campaign.status === 'open' && (
+          {campaign.status === 'enr' && (
             <button className="btn btn--brand" onClick={() => onNav('/parcels/new?campaign=' + id)}>
               <I.Plus />Ajouter un colis
             </button>
@@ -410,7 +416,7 @@ export default function CampaignDetailScreen({ id, onNav }) {
 
 /* ── Confirmation modal for non-transit steps ── */
 function ConfirmAdvanceModal({ campaign, targetStep, unpaidCount, advancing, onClose, onConfirm }) {
-  const isClosure = targetStep.id === 'closed';
+  const isClosure = targetStep.id === 'ok';
   const effect = STEP_EFFECTS[targetStep.id];
 
   return (

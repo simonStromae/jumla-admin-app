@@ -262,16 +262,14 @@ function Mini({ label, v, unit }) {
 }
 
 const CAMP_STATUS_CLS = {
-  open:       'ok',
-  in_transit: 'info',
-  arrived:    'ok',
-  closed:     'neutral',
+  enr: 'brand', exp: 'info', tra: 'warn',
+  apd: 'ok',    dou: 'warn', lib: 'ok',
+  ard: 'ok',    pdl: 'info', ok:  'neutral',
 };
 const CAMP_STATUS_LBL = {
-  open:       'Ouverte',
-  in_transit: 'En transit',
-  arrived:    'Arrivée',
-  closed:     'Clôturée',
+  enr: 'Ouverte',        exp: 'Expédiée',    tra: 'En transit',
+  apd: 'Arrivée pays',   dou: 'En douane',   lib: 'Libérée douanes',
+  ard: 'Entrepôt dest.', pdl: 'Prête livr.', ok:  'Clôturée',
 };
 
 function ClientDrawer({ cl, onClose, onEdit, onNav, onStatusChange }) {

@@ -50,14 +50,13 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
     // status is now a plain TEXT column — Prisma can write it directly
     const prismaStatus = status ? toPrismaStatus(status) : undefined;
 
-    // Update statusNotes for transit legs (JSONB column outside schema — raw SQL)
-    if (prismaStatus && statusNote && (prismaStatus === 'in_transit' || prismaStatus === 'in_transit_2')) {
+    // Update statusNotes for departure legs (JSONB column outside schema — raw SQL)
+    if (prismaStatus && statusNote && (prismaStatus === 'exp' || prismaStatus === 'tra')) {
       const rows = await prisma.$queryRawUnsafe<any[]>(
         `SELECT "statusNotes" FROM campaigns WHERE id = $1`, params.id
       );
       const current = (rows[0]?.statusNotes ?? {}) as any;
-      const noteKey = prismaStatus === 'in_transit' ? 'in-transit' : 'in_transit_2';
-      const updated = { ...current, [noteKey]: statusNote };
+      const updated = { ...current, [prismaStatus]: statusNote };
       await prisma.$executeRawUnsafe(
         `UPDATE campaigns SET "statusNotes" = $1::jsonb WHERE id = $2`,
         JSON.stringify(updated), params.id,
@@ -75,21 +74,20 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
       await prisma.campaign.update({ where: { id: params.id }, data });
     }
 
-    // Cascade parcel statuses — only update parcels in the expected "normal flow" states.
-    // Parcels already individually set to exceptional statuses (ret, ins, adr, dom, etc.)
-    // or further ahead in the process are left untouched.
+    // Cascade parcel statuses — only update parcels in expected "normal flow" states.
+    // Parcels already individually set to exceptional statuses are left untouched.
     if (prismaStatus) {
-      if (prismaStatus === 'in_transit' || prismaStatus === 'in_transit_2') {
-        // Campaign departs: move parcels received at warehouse → shipped
+      if (prismaStatus === 'exp') {
+        // Campaign departs: move parcels received/prepared at warehouse → shipped
         await prisma.parcel.updateMany({
           where: { campaignId: params.id, status: { in: ['rec', 'pre'] } },
           data:  { status: 'exp' },
         });
-      } else if (prismaStatus === 'arrived') {
-        // Campaign arrives: move parcels still in transit → arrived at destination warehouse
-        // Do NOT touch: dou/ins/ret (customs issues), ard/ver/pdl/liv/ok (already ahead), exceptions
+      } else if (prismaStatus === 'ard') {
+        // Campaign arrives at destination warehouse: move parcels still en route → ard
+        // Do NOT touch: dou/ins/ret (customs issues), ver/pdl/liv/ok (already ahead), exceptions
         await prisma.parcel.updateMany({
-          where: { campaignId: params.id, status: { in: ['exp', 'tra'] } },
+          where: { campaignId: params.id, status: { in: ['exp', 'tra', 'apd'] } },
           data:  { status: 'ard' },
         });
       }

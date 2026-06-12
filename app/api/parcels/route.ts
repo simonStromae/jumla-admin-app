@@ -90,7 +90,7 @@ export async function POST(req: NextRequest) {
   // Block adding parcels to campaigns that are no longer open
   const campaign = await prisma.campaign.findUnique({ where: { id: campaignId }, select: { status: true } });
   if (!campaign) return NextResponse.json({ error: 'Cargaison introuvable' }, { status: 404 });
-  if (campaign.status !== 'open') {
+  if (campaign.status !== 'enr') {
     return NextResponse.json({ error: 'Cette cargaison n\'est plus ouverte — impossible d\'ajouter un colis' }, { status: 409 });
   }
 

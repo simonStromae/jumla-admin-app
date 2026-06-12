@@ -3,10 +3,15 @@ import I from '../components/Icons.jsx';
 import { Bi, RoutePill, StatusDot, Progress, Skel, useCan } from '../components/Shell.jsx';
 
 const CAMPAIGN_STATUS = {
-  open:         { label: 'Ouverte',    dot: 'brand' },
-  'in-transit': { label: 'En transit', dot: 'warn' },
-  arrived:      { label: 'Arrivée',    dot: 'info' },
-  closed:       { label: 'Clôturée',   dot: 'neutral' },
+  enr: { label: 'Ouverte',          dot: 'brand' },
+  exp: { label: 'Expédiée',         dot: 'warn' },
+  tra: { label: 'En transit',       dot: 'warn' },
+  apd: { label: 'Arrivée au pays',  dot: 'info' },
+  dou: { label: 'En douane',        dot: 'warn' },
+  lib: { label: 'Libérée douanes',  dot: 'ok' },
+  ard: { label: 'Entrepôt dest.',   dot: 'ok' },
+  pdl: { label: 'Prête livraison',  dot: 'info' },
+  ok:  { label: 'Clôturée',         dot: 'neutral' },
 };
 
 export function CampaignCard({ c, onClick }) {
@@ -94,10 +99,13 @@ export default function CampaignsScreen({ onNav, onNewCampaign }) {
     });
   }, []);
 
-  const filtered = campaigns.filter(c =>
-    (routeFilter === 'all' || c.route === routeFilter) &&
-    (filter === 'all' || c.status === filter)
-  );
+  const filtered = campaigns.filter(c => {
+    if (routeFilter !== 'all' && c.route !== routeFilter) return false;
+    if (filter === 'all') return true;
+    if (filter === 'transit') return ['exp','tra','apd','dou','lib'].includes(c.status);
+    if (filter === 'ard') return c.status === 'ard' || c.status === 'pdl';
+    return c.status === filter;
+  });
 
   const byMonth = {};
   filtered.forEach(c => {
@@ -158,10 +166,11 @@ export default function CampaignsScreen({ onNav, onNewCampaign }) {
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
         <div className="tabs">
           {[
-            { id: 'all',        l: 'Tous',        n: campaigns.length },
-            { id: 'in-transit', l: 'En transit',  n: campaigns.filter(c => c.status === 'in-transit').length },
-            { id: 'open',       l: 'Ouvertes',    n: campaigns.filter(c => c.status === 'open').length },
-            { id: 'closed',     l: 'Clôturées',   n: campaigns.filter(c => c.status === 'closed').length },
+            { id: 'all',     l: 'Tous',       n: campaigns.length },
+            { id: 'enr',     l: 'Ouvertes',   n: campaigns.filter(c => c.status === 'enr').length },
+            { id: 'transit', l: 'En transit', n: campaigns.filter(c => ['exp','tra','apd','dou','lib'].includes(c.status)).length },
+            { id: 'ard',     l: 'Arrivées',   n: campaigns.filter(c => c.status === 'ard' || c.status === 'pdl').length },
+            { id: 'ok',      l: 'Clôturées',  n: campaigns.filter(c => c.status === 'ok').length },
           ].map(t => (
             <button key={t.id} className={'tab ' + (filter === t.id ? 'is-active' : '')} onClick={() => setFilter(t.id)}>
               {t.l} {t.n > 0 && <span className="count">{t.n}</span>}

@@ -39,10 +39,5 @@ export async function requirePermission(permKey: string) {
   return { session };
 }
 
-export function mapCampaignStatus(s: string): string {
-  return s === 'in_transit' ? 'in-transit' : s;
-}
-
-export function toPrismaStatus(s: string): string {
-  return s === 'in-transit' ? 'in_transit' : s;
-}
+export function mapCampaignStatus(s: string): string { return s; }
+export function toPrismaStatus(s: string): string { return s; }

@@ -263,8 +263,8 @@ export default function CostsScreen({ onNav }) {
                           {c.dep} · {c.parcels} colis · {(c.weight / 1000).toFixed(1)} t
                         </div>
                       </div>
-                      <span className={'badge badge--' + (c.status === 'closed' ? 'ok' : 'info') + ' badge--dot'}>
-                        {c.status === 'closed' ? 'Clôturé' : 'En transit'}
+                      <span className={'badge badge--' + (c.status === 'ok' ? 'ok' : 'info') + ' badge--dot'}>
+                        {c.status === 'ok' ? 'Clôturé' : 'En transit'}
                       </span>
                     </div>
                   </td>
