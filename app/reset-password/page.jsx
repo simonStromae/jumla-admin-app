@@ -2,17 +2,18 @@
 import { useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import '@/src/styles/tokens.css';
+import I from '@/src/components/Icons.jsx';
 
 function ResetForm() {
   const router       = useRouter();
   const searchParams = useSearchParams();
   const token        = searchParams.get('token') ?? '';
 
-  const [pw,       setPw]       = useState('');
-  const [confirm,  setConfirm]  = useState('');
-  const [status,   setStatus]   = useState('idle'); // idle | loading | done | error
-  const [errMsg,   setErrMsg]   = useState('');
-  const [show,     setShow]     = useState(false);
+  const [pw,      setPw]      = useState('');
+  const [confirm, setConfirm] = useState('');
+  const [show,    setShow]    = useState(false);
+  const [status,  setStatus]  = useState('idle'); // idle | loading | done | error
+  const [errMsg,  setErrMsg]  = useState('');
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -35,71 +36,127 @@ function ResetForm() {
     }
   }
 
-  const input = {
-    width: '100%', height: 42, padding: '0 12px', fontSize: 14,
-    border: '1.5px solid #d1d5db', background: 'white',
-    outline: 'none', boxSizing: 'border-box',
-  };
-  const btn = {
-    width: '100%', height: 44, background: '#1a1408', color: 'white',
-    border: 'none', fontSize: 15, fontWeight: 700, cursor: 'pointer',
-    opacity: status === 'loading' ? .6 : 1,
-  };
-
-  if (!token) return (
-    <div style={{ textAlign: 'center', padding: 40, color: '#dc2626' }}>
-      Lien invalide. <button onClick={() => router.push('/forgot-password')} style={{ background: 'none', border: 'none', color: '#2563eb', cursor: 'pointer', textDecoration: 'underline' }}>Demander un nouveau lien</button>
-    </div>
-  );
-
   return (
-    <div style={{ minHeight: '100vh', display: 'grid', placeItems: 'center', background: '#f9fafb', fontFamily: 'system-ui, sans-serif' }}>
-      <div style={{ width: '100%', maxWidth: 400, padding: '0 16px' }}>
-        <div style={{ background: 'white', border: '1px solid #e5e7eb', padding: '40px 36px' }}>
-          <div style={{ marginBottom: 28, textAlign: 'center' }}>
-            <div style={{ display: 'inline-flex', alignItems: 'center', gap: 10 }}>
-              <div style={{ width: 36, height: 36, background: 'linear-gradient(135deg,#F5A524,#D97706)', display: 'grid', placeItems: 'center', fontWeight: 800, fontSize: 16, color: 'white' }}>J</div>
-              <div style={{ fontWeight: 800, fontSize: 16, color: '#1a1408' }}>Jumla Shipping</div>
-            </div>
-          </div>
+    <div style={{ minHeight: '100vh', display: 'grid', gridTemplateColumns: '1fr 1fr', background: 'var(--bg-page)' }}>
 
-          {status === 'done' ? (
-            <div style={{ textAlign: 'center' }}>
+      {/* Left — same visual as login */}
+      <div style={{
+        position: 'relative',
+        background: 'linear-gradient(155deg, #1a1408 0%, #2a1d0c 45%, #432a0d 100%)',
+        color: 'white', padding: '48px 56px',
+        display: 'flex', flexDirection: 'column', overflow: 'hidden',
+      }}>
+        <div style={{
+          position: 'absolute', inset: 0,
+          backgroundImage: 'radial-gradient(circle at 80% 20%, rgba(245,165,36,.25), transparent 50%), radial-gradient(circle at 20% 80%, rgba(217,119,6,.2), transparent 50%)',
+          pointerEvents: 'none',
+        }} />
+        <svg style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', opacity: .06 }} xmlns="http://www.w3.org/2000/svg">
+          <defs><pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse"><path d="M40 0H0v40" fill="none" stroke="white" strokeWidth=".5" /></pattern></defs>
+          <rect width="100%" height="100%" fill="url(#grid)" />
+        </svg>
+        <button onClick={() => router.push('/')} style={{
+          display: 'flex', alignItems: 'center', gap: 12, position: 'relative', zIndex: 2,
+          background: 'none', border: 'none', cursor: 'pointer', padding: 0, color: 'inherit',
+        }}>
+          <div style={{
+            width: 44, height: 44, background: 'linear-gradient(135deg, #F5A524, #D97706)',
+            display: 'grid', placeItems: 'center', fontWeight: 700, fontSize: 19, color: 'white',
+          }}>J</div>
+          <div>
+            <div style={{ fontWeight: 700, fontSize: 18 }}>Jumla Shipping</div>
+            <div style={{ fontSize: 11.5, color: 'rgba(255,255,255,.55)', marginTop: 1 }}>Fret international · Douala</div>
+          </div>
+        </button>
+        <div style={{ marginTop: 'auto', position: 'relative', zIndex: 2 }}>
+          <h1 style={{ fontSize: 36, fontWeight: 700, letterSpacing: '-.025em', lineHeight: 1.2, margin: '0 0 16px', color: 'white' }}>
+            Réinitialisation<br />de mot de passe
+          </h1>
+          <p style={{ fontSize: 14, color: 'rgba(255,255,255,.6)', margin: 0, lineHeight: 1.55 }}>
+            Choisissez un nouveau mot de passe sécurisé pour accéder à votre espace Jumla.
+          </p>
+        </div>
+        <div style={{ position: 'absolute', bottom: 20, left: 56, right: 56, display: 'flex', justifyContent: 'space-between', fontSize: 11, color: 'rgba(255,255,255,.4)', zIndex: 2 }}>
+          <span>© 2026 Jumla Shipping</span><span>v2.4</span>
+        </div>
+      </div>
+
+      {/* Right — form */}
+      <div style={{ display: 'flex', flexDirection: 'column', padding: '36px 56px', position: 'relative' }}>
+        <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+          <button className="btn btn--ghost btn--sm" onClick={() => router.push('/login')}><I.ArrowRight style={{ transform: 'rotate(180deg)' }} />Retour</button>
+        </div>
+
+        <div style={{ margin: 'auto 0', maxWidth: 380, width: '100%', alignSelf: 'center' }}>
+          {!token ? (
+            <div>
+              <p style={{ color: 'var(--bad-600)', marginBottom: 20 }}>Lien invalide ou expiré.</p>
+              <button className="btn btn--brand" onClick={() => router.push('/forgot-password')}>Demander un nouveau lien</button>
+            </div>
+          ) : status === 'done' ? (
+            <div>
               <div style={{ fontSize: 40, marginBottom: 16 }}>✅</div>
-              <h2 style={{ margin: '0 0 10px', fontSize: 18, fontWeight: 700, color: '#111827' }}>Mot de passe mis à jour</h2>
-              <p style={{ margin: '0 0 24px', fontSize: 14, color: '#6b7280' }}>Vous pouvez maintenant vous connecter avec votre nouveau mot de passe.</p>
-              <button onClick={() => router.push('/login')} style={btn}>Se connecter</button>
+              <h2 style={{ margin: '0 0 8px', fontSize: 22, fontWeight: 700, color: 'var(--ink-900)' }}>Mot de passe mis à jour</h2>
+              <p style={{ color: 'var(--ink-400)', fontSize: 14, marginBottom: 24 }}>
+                Vous pouvez maintenant vous connecter avec votre nouveau mot de passe.
+              </p>
+              <button className="btn btn--brand btn--lg" style={{ width: '100%', justifyContent: 'center' }} onClick={() => router.push('/login')}>
+                <span>Se connecter</span><I.ArrowRight />
+              </button>
             </div>
           ) : (
             <>
-              <h2 style={{ margin: '0 0 6px', fontSize: 20, fontWeight: 700, color: '#111827' }}>Nouveau mot de passe</h2>
-              <p style={{ margin: '0 0 24px', fontSize: 13.5, color: '#6b7280' }}>Choisissez un mot de passe d'au moins 8 caractères.</p>
+              <div style={{ borderBottom: '1px solid var(--border)', marginBottom: 24, paddingBottom: 12 }}>
+                <h2 style={{ fontSize: 22, fontWeight: 700, margin: 0, color: 'var(--ink-900)' }}>Nouveau mot de passe</h2>
+              </div>
+              <p style={{ color: 'var(--ink-400)', fontSize: 13.5, marginTop: 0, marginBottom: 20 }}>
+                Choisissez un mot de passe d'au moins 8 caractères.
+              </p>
+
               {errMsg && (
-                <div style={{ background: '#fef2f2', border: '1px solid #fecaca', padding: '10px 14px', marginBottom: 16, fontSize: 13, color: '#dc2626' }}>{errMsg}</div>
+                <div style={{ background: 'var(--bad-50)', color: 'var(--bad-600)', padding: '10px 14px', fontSize: 13, marginBottom: 16, border: '1px solid var(--bad-200)' }}>
+                  {errMsg}
+                </div>
               )}
-              <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-                <div>
-                  <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#374151', marginBottom: 6 }}>Nouveau mot de passe</label>
+
+              <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
+                <div className="field">
+                  <label className="label">Nouveau mot de passe</label>
                   <div style={{ position: 'relative' }}>
-                    <input type={show ? 'text' : 'password'} required value={pw} onChange={e => setPw(e.target.value)}
-                      placeholder="••••••••" style={{ ...input, paddingRight: 40 }} autoFocus />
-                    <button type="button" onClick={() => setShow(s => !s)}
-                      style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: '#9ca3af', fontSize: 13 }}>
-                      {show ? 'Cacher' : 'Voir'}
+                    <input className="input" type={show ? 'text' : 'password'} required
+                      value={pw} onChange={e => setPw(e.target.value)}
+                      placeholder="8 caractères minimum" style={{ paddingRight: 38 }} autoFocus />
+                    <button type="button" className="icon-btn" style={{ position: 'absolute', right: 3, top: 3 }}
+                      onClick={() => setShow(s => !s)}>
+                      {show ? <I.EyeOff /> : <I.Eye />}
                     </button>
                   </div>
                 </div>
-                <div>
-                  <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#374151', marginBottom: 6 }}>Confirmer</label>
-                  <input type={show ? 'text' : 'password'} required value={confirm} onChange={e => setConfirm(e.target.value)}
-                    placeholder="••••••••" style={input} />
+                <div className="field">
+                  <label className="label">Confirmer</label>
+                  <input className="input" type={show ? 'text' : 'password'} required
+                    value={confirm} onChange={e => setConfirm(e.target.value)}
+                    placeholder="••••••••" />
                 </div>
-                <button type="submit" disabled={status === 'loading'} style={btn}>
-                  {status === 'loading' ? 'Mise à jour…' : 'Mettre à jour'}
+                <button type="submit" disabled={status === 'loading'}
+                  className="btn btn--brand btn--lg"
+                  style={{ width: '100%', justifyContent: 'center', fontSize: 14, fontWeight: 600, marginTop: 8, opacity: status === 'loading' ? .7 : 1 }}>
+                  {status === 'loading' ? 'Mise à jour…' : <><span>Mettre à jour</span><I.ArrowRight /></>}
                 </button>
               </form>
+
+              <div style={{ marginTop: 28, padding: 14, background: 'var(--bg-soft)', border: '1px solid var(--border-soft)', display: 'flex', gap: 10 }}>
+                <I.Info style={{ flex: '0 0 16px', color: 'var(--ink-400)', marginTop: 1 }} />
+                <div style={{ fontSize: 12, color: 'var(--ink-500)', lineHeight: 1.45 }}>
+                  <strong style={{ color: 'var(--ink-700)' }}>Accès sécurisé.</strong> Ce lien expire après utilisation.
+                </div>
+              </div>
             </>
           )}
+        </div>
+
+        <div style={{ fontSize: 11, color: 'var(--ink-400)', display: 'flex', justifyContent: 'space-between' }}>
+          <span>Conditions · Confidentialité</span><span>support@jumla.cargo</span>
         </div>
       </div>
     </div>

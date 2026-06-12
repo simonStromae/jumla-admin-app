@@ -15,7 +15,6 @@ function LoginForm() {
   const [error, setError]   = useState('');
   const [loading, setLoading] = useState(false);
   const [show, setShow]     = useState(false);
-  const [lang, setLang]     = useState('FR');
 
   const set = (k, v) => setFields(f => ({ ...f, [k]: v }));
 
@@ -133,11 +132,7 @@ function LoginForm() {
 
       {/* Right — form */}
       <div style={{ display: 'flex', flexDirection: 'column', padding: '36px 56px', position: 'relative' }}>
-        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, alignItems: 'center' }}>
-          <div className="topbar__lang">
-            <button className={lang === 'FR' ? 'is-active' : ''} onClick={() => setLang('FR')}>FR</button>
-            <button className={lang === 'EN' ? 'is-active' : ''} onClick={() => setLang('EN')}>EN</button>
-          </div>
+        <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
           <button className="btn btn--ghost btn--sm"><I.Help />Besoin d'aide ?</button>
         </div>
 
@@ -147,7 +142,7 @@ function LoginForm() {
           {tab !== 'verify' && (
             <>
               <div style={{ display: 'flex', borderBottom: '1px solid var(--border)', marginBottom: 24 }}>
-                {[['login', 'Connexion', 'Sign in'], ['register', 'Créer un compte', 'Register']].map(([t, fr, en]) => (
+                {[['login', 'Connexion'], ['register', 'Créer un compte']].map(([t, label]) => (
                   <button key={t} onClick={() => { setTab(t); setError(''); }}
                     style={{
                       flex: 1, paddingBottom: 12, background: 'none', border: 'none',
@@ -156,7 +151,7 @@ function LoginForm() {
                       fontWeight: tab === t ? 700 : 400, fontSize: 15, cursor: 'pointer',
                       marginBottom: -1, textAlign: 'left',
                     }}>
-                    {fr} <span style={{ color: 'var(--ink-400)', fontWeight: 400, fontSize: '.72em' }}>/ {en}</span>
+                    {label}
                   </button>
                 ))}
               </div>
@@ -177,13 +172,13 @@ function LoginForm() {
           {tab === 'login' && (
             <form onSubmit={doLogin} style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
               <div className="field">
-                <label className="label">Email <span className="opt">/ Email</span></label>
+                <label className="label">Email </label>
                 <input className="input" type="email" value={fields.email}
                   onChange={e => set('email', e.target.value)} required placeholder="vous@exemple.com" />
               </div>
               <div className="field">
                 <label className="label" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span>Mot de passe <span className="opt">/ Password</span></span>
+                  <span>Mot de passe</span>
                   <a href="/forgot-password" style={{ fontSize: 12, color: 'var(--brand-600)', textDecoration: 'none', fontWeight: 500 }}>Mot de passe oublié ?</a>
                 </label>
                 <div style={{ position: 'relative' }}>
@@ -208,22 +203,22 @@ function LoginForm() {
           {tab === 'register' && (
             <form onSubmit={doRegister} style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
               <div className="field">
-                <label className="label">Nom complet <span className="opt">/ Full name</span></label>
+                <label className="label">Nom complet</label>
                 <input className="input" type="text" value={fields.name}
                   onChange={e => set('name', e.target.value)} required placeholder="Jean Dupont" />
               </div>
               <div className="field">
-                <label className="label">Email <span className="opt">/ Email</span></label>
+                <label className="label">Email </label>
                 <input className="input" type="email" value={fields.email}
                   onChange={e => set('email', e.target.value)} required placeholder="vous@exemple.com" />
               </div>
               <div className="field">
-                <label className="label">Mot de passe <span className="opt">/ Password</span></label>
+                <label className="label">Mot de passe</label>
                 <input className="input" type="password" value={fields.password}
                   onChange={e => set('password', e.target.value)} required placeholder="6 caractères minimum" />
               </div>
               <div className="field">
-                <label className="label">Confirmer <span className="opt">/ Confirm password</span></label>
+                <label className="label">Confirmer</label>
                 <input className="input" type="password" value={fields.confirm}
                   onChange={e => set('confirm', e.target.value)} required placeholder="••••••••" />
               </div>
@@ -240,7 +235,7 @@ function LoginForm() {
             <form onSubmit={doVerify} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
               <div>
                 <h2 style={{ fontSize: 22, fontWeight: 700, margin: '0 0 6px', color: 'var(--ink-900)' }}>
-                  Vérification email <span style={{ color: 'var(--ink-400)', fontWeight: 400, fontSize: '.7em' }}>/ Verify email</span>
+                  Vérification email
                 </h2>
                 <p style={{ color: 'var(--ink-400)', fontSize: 13.5, margin: 0 }}>
                   Code envoyé à <strong style={{ color: 'var(--ink-700)' }}>{fields.email}</strong>
