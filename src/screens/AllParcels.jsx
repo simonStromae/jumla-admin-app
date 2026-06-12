@@ -45,7 +45,7 @@ export default function AllParcelsScreen({ onNav, initialSearch = '' }) {
 
   function exportCSV() {
     const PAYMENT_LABEL = { paid: 'Payé', pending: 'En cours', unpaid: 'Impayé' };
-    const STATUS_LABEL  = { enr: 'Enregistré', rec: 'Reçu entrepôt', pre: 'Vérifié/Préparé', exp: 'Expédié', tra: 'En transit', apd: 'Arrivé pays dest.', dou: 'Aux douanes', ins: 'Inspection', ret: 'Retenu', lib: 'Libéré', del: 'En livraison', liv: 'Livré' };
+    const STATUS_LABEL  = { enr: 'Enregistré', rec: 'Reçu entrepôt', pre: 'Vérifié/Préparé', exp: 'Expédié', tra: 'En transit', apd: 'Arrivé pays dest.', dou: 'Aux douanes', ins: 'Inspection', ret: 'Retenu', lib: 'Libéré', ard: 'Entrepôt dest.', ver: 'Vérification', pdl: 'Prêt livraison', liv: 'En livraison', ok: 'Livré', adr: 'Adresse incompl.', tdl: 'Tentative livr.', rte: 'Retour entrepôt', dom: 'Endommagé', cla: 'Réclamation' };
     const headers = ['Code', 'Cargaison', 'Expéditeur', 'Tél expéditeur', 'Destinataire', 'Ville', 'Poids (kg)', 'Montant (CAD)', 'Paiement', 'Statut', 'Date'];
     const rows = filtered.map(p => [
       p.code,

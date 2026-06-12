@@ -37,10 +37,13 @@ const PAYMENT_STATUS = {
   failed:    { label: 'Échoué',     cls: 'bad' },
 };
 const PARCEL_STATUS = {
-  enr: 'Enregistré', rec: 'Reçu entrepôt', pre: 'Vérifié/Préparé',
-  exp: 'Expédié', tra: 'En transit', apd: 'Arrivé pays dest.',
-  dou: 'Aux douanes', ins: 'Inspection', ret: 'Retenu',
-  lib: 'Libéré', del: 'En livraison', liv: 'Livré',
+  enr: 'Enregistré',  rec: 'Reçu entrepôt',    pre: 'Vérifié/Préparé',
+  exp: 'Expédié',     tra: 'En transit',        apd: 'Arrivé pays dest.',
+  dou: 'Aux douanes', ins: 'Inspection',        ret: 'Retenu',
+  lib: 'Libéré',      ard: 'Entrepôt dest.',    ver: 'Vérification',
+  pdl: 'Prêt livr.',  liv: 'En livraison',      ok: 'Livré',
+  adr: 'Adr. incompl.', tdl: 'Tent. livr.',     rte: 'Retour entrepôt',
+  dom: 'Endommagé',   cla: 'Réclamation',
 };
 
 export default function CampaignDetailScreen({ id, onNav }) {

@@ -38,7 +38,7 @@ export async function GET() {
 
   try {
     const result: any[] = await prisma.$queryRawUnsafe(
-      `SELECT COUNT(*)::int as count FROM parcels WHERE "weightKg" IS NULL AND status NOT IN ('liv')`
+      `SELECT COUNT(*)::int as count FROM parcels WHERE "weightKg" IS NULL AND status NOT IN ('ok')`
     );
     missingWeightCount = result[0]?.count ?? 0;
   } catch (e) {

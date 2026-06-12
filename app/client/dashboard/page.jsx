@@ -13,8 +13,10 @@ const JOURNEY = [
   { key: 'apd', label: 'Arrivé pays',  icon: '🛬', color: '#16a34a' },
   { key: 'dou', label: 'Douanes',      icon: '🛃', color: '#d97706' },
   { key: 'lib', label: 'Libéré',       icon: '✅', color: '#16a34a' },
-  { key: 'del', label: 'Livraison',    icon: '🚚', color: '#0e7490' },
-  { key: 'liv', label: 'Livré',        icon: '🎉', color: '#15803d' },
+  { key: 'ard', label: 'Entrepôt',    icon: '🏭', color: '#16a34a' },
+  { key: 'pdl', label: 'Prêt',        icon: '📦', color: '#0e7490' },
+  { key: 'liv', label: 'En chemin',   icon: '🚚', color: '#0891b2' },
+  { key: 'ok',  label: 'Livré',       icon: '🎉', color: '#15803d' },
 ];
 
 function getJourneyStep(status) {
@@ -55,7 +57,7 @@ function ParcelCard({ parcel, onClick }) {
   const partial  = parcel.payment?.status === 'partial';
   const hasUnconfirmedBl = parcel.bordereaux?.some(b => b.status === 'valide' && !b.clientConfirmed);
   const hasBl    = parcel.bordereaux?.length > 0;
-  const isLivré  = parcel.status === 'liv';
+  const isLivré  = parcel.status === 'ok';
 
   const needsAction = hasUnconfirmedBl || (!paid && parcel.payment);
 
@@ -175,8 +177,8 @@ function ClientDashboardInner() {
 
   useEffect(() => { load(); }, [load]);
 
-  const active  = parcels.filter(p => p.status !== 'liv');
-  const done    = parcels.filter(p => p.status === 'liv');
+  const active  = parcels.filter(p => p.status !== 'ok');
+  const done    = parcels.filter(p => p.status === 'ok');
   const actions = active.filter(p =>
     p.bordereaux?.some(b => b.status === 'valide' && !b.clientConfirmed) ||
     (p.payment && p.payment.status !== 'completed')

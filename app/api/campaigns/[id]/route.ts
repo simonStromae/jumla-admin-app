@@ -84,8 +84,8 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
         });
       } else if (prismaStatus === 'arrived') {
         await prisma.parcel.updateMany({
-          where: { campaignId: params.id, status: { in: ['exp', 'tra'] } },
-          data:  { status: 'apd' },
+          where: { campaignId: params.id, status: { in: ['exp', 'tra', 'apd', 'dou'] } },
+          data:  { status: 'ard' },
         });
       }
     }

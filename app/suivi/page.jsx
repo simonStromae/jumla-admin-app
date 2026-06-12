@@ -14,10 +14,17 @@ const STATUS = {
   ins: { label: 'En inspection douanière',        color: '#b45309', bg: '#fffbeb', icon: '🔎' },
   ret: { label: 'Retenu par les douanes',         color: '#dc2626', bg: '#fef2f2', icon: '⚠️' },
   lib: { label: 'Libéré par les douanes',         color: '#16a34a', bg: '#f0fdf4', icon: '✅' },
-  del: { label: 'En cours de livraison',          color: '#0e7490', bg: '#ecfeff', icon: '🚚' },
-  liv: { label: 'Livré',                          color: '#15803d', bg: '#dcfce7', icon: '🎉' },
+  ard: { label: 'Arrivé à l\'entrepôt de destination', color: '#16a34a', bg: '#f0fdf4', icon: '🏭' },
+  ver: { label: 'Vérification finale',            color: '#7c3aed', bg: '#f5f3ff', icon: '🔬' },
+  pdl: { label: 'Prêt pour livraison ou retrait', color: '#0e7490', bg: '#ecfeff', icon: '📦' },
+  liv: { label: 'En cours de livraison',          color: '#0891b2', bg: '#ecfeff', icon: '🚚' },
+  ok:  { label: 'Livré',                          color: '#15803d', bg: '#dcfce7', icon: '🎉' },
+  adr: { label: 'Adresse incomplète',             color: '#dc2626', bg: '#fef2f2', icon: '📍' },
+  tdl: { label: 'Tentative de livraison',         color: '#b45309', bg: '#fffbeb', icon: '🔔' },
+  rte: { label: 'Retour à l\'entrepôt',           color: '#dc2626', bg: '#fef2f2', icon: '↩️' },
+  dom: { label: 'Colis endommagé',                color: '#dc2626', bg: '#fef2f2', icon: '💥' },
+  cla: { label: 'Réclamation ouverte',            color: '#dc2626', bg: '#fef2f2', icon: '📋' },
 };
-const STEPS = ['enr', 'rec', 'pre', 'exp', 'tra', 'apd', 'dou', 'lib', 'del', 'liv'];
 
 function fmt(d) {
   if (!d) return '—';
@@ -100,85 +107,89 @@ function TrackContent() {
 
         {result && s && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+
+            {/* Status banner */}
             <div style={{ background: s.bg, border: '1px solid ' + s.color + '33', padding: '18px 20px', display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
-              <span style={{ fontSize: 36 }}>{s.icon}</span>
+              <span style={{ fontSize: 40 }}>{s.icon}</span>
               <div style={{ flex: 1 }}>
-                <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.06em', color: s.color, marginBottom: 3 }}>Statut actuel</div>
-                <div style={{ fontSize: 18, fontWeight: 700, color: s.color }}>{s.label}</div>
-                <div style={{ fontSize: 12, color: s.color, opacity: .7, marginTop: 2 }}>{result.campaign.from} → {result.campaign.to} · {result.campaign.code}</div>
+                <div style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.08em', color: s.color, marginBottom: 4, opacity: .8 }}>Statut actuel · {result.campaign.from} → {result.campaign.to}</div>
+                <div style={{ fontSize: 20, fontWeight: 800, color: s.color, letterSpacing: '-.01em' }}>{s.label}</div>
+                <div style={{ fontSize: 12, color: s.color, opacity: .65, marginTop: 3 }}>Cargaison {result.campaign.code}</div>
               </div>
               <div style={{ textAlign: 'right' }}>
-                <div style={{ fontFamily: 'monospace', fontSize: 17, fontWeight: 700, color: '#111827' }}>{result.trackingCode}</div>
-                <div style={{ fontSize: 11, marginTop: 2 }}>
-                  {result.paid ? <span style={{ color: '#15803d', fontWeight: 600 }}>✓ Payé</span> : <span style={{ color: '#b45309', fontWeight: 600 }}>⏳ Paiement en attente</span>}
+                <div style={{ fontFamily: 'monospace', fontSize: 18, fontWeight: 700, color: '#111827', letterSpacing: '.04em' }}>{result.trackingCode}</div>
+                <div style={{ fontSize: 11, marginTop: 4 }}>
+                  {result.paid
+                    ? <span style={{ color: '#15803d', fontWeight: 600 }}>✓ Paiement confirmé</span>
+                    : <span style={{ color: '#b45309', fontWeight: 600 }}>⏳ Paiement en attente</span>}
                 </div>
               </div>
             </div>
 
-            <div style={{ background: 'white', border: '1px solid #e5e7eb', padding: '18px 20px' }}>
-              <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '.06em', textTransform: 'uppercase', color: '#9ca3af', marginBottom: 16 }}>Progression</div>
-              <div style={{ display: 'flex', alignItems: 'center', overflowX: 'auto' }}>
-                {STEPS.map((step, i) => {
-                  const st = STATUS[step]; const done = i <= currentStep; const cur = i === currentStep;
-                  return (
-                    <div key={step} style={{ display: 'flex', alignItems: 'center', flex: i < STEPS.length - 1 ? 1 : 'none', minWidth: 40 }}>
-                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
-                        <div style={{ width: 30, height: 30, borderRadius: '50%', display: 'grid', placeItems: 'center', fontSize: 14, background: done ? (cur ? s.bg : '#f0fdf4') : '#f3f4f6', border: '2px solid ' + (cur ? s.color : done ? '#4ade80' : '#e5e7eb'), boxShadow: cur ? '0 0 0 4px ' + s.color + '22' : 'none' }}>
-                          {done ? (cur ? st.icon : '✓') : ''}
-                        </div>
-                        <span style={{ fontSize: 9, fontWeight: 600, color: done ? (cur ? s.color : '#16a34a') : '#d1d5db', textAlign: 'center', whiteSpace: 'nowrap', maxWidth: 52 }}>{st.label.split(' ')[0]}</span>
-                      </div>
-                      {i < STEPS.length - 1 && <div style={{ flex: 1, height: 2, background: i < currentStep ? '#4ade80' : '#e5e7eb', margin: '0 4px', marginBottom: 22 }} />}
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-
-            <div style={{ background: 'white', border: '1px solid #e5e7eb', padding: '18px 20px' }}>
-              <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '.06em', textTransform: 'uppercase', color: '#9ca3af', marginBottom: 14 }}>Détails</div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px 20px' }}>
+            {/* Details */}
+            <div style={{ background: 'white', border: '1px solid #e5e7eb', padding: '16px 20px' }}>
+              <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '.08em', textTransform: 'uppercase', color: '#9ca3af', marginBottom: 12 }}>Détails de l'envoi</div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px 24px' }}>
                 {[
                   { l: 'Description',    v: result.description || '—' },
-                  { l: 'Poids',          v: result.weightKg ? result.weightKg + ' kg' : '—' },
+                  { l: 'Poids déclaré',  v: result.weightKg ? result.weightKg + ' kg' : '—' },
                   { l: 'Départ prévu',   v: fmt(result.campaign.departureDate) },
                   { l: 'Arrivée prévue', v: fmt(result.campaign.arrivalDate) },
                 ].map(r => (
                   <div key={r.l}>
-                    <div style={{ fontSize: 10.5, color: '#9ca3af', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '.04em', marginBottom: 3 }}>{r.l}</div>
-                    <div style={{ fontSize: 13, fontWeight: 600, color: '#1f2937' }}>{r.v}</div>
+                    <div style={{ fontSize: 10, color: '#9ca3af', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.05em', marginBottom: 3 }}>{r.l}</div>
+                    <div style={{ fontSize: 13, fontWeight: 600, color: '#111827' }}>{r.v}</div>
                   </div>
                 ))}
               </div>
             </div>
 
-            <div style={{ background: 'white', border: '1px solid #e5e7eb', padding: '18px 20px' }}>
-              <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '.06em', textTransform: 'uppercase', color: '#9ca3af', marginBottom: 16 }}>Historique</div>
+            {/* Timeline */}
+            <div style={{ background: 'white', border: '1px solid #e5e7eb', padding: '16px 20px' }}>
+              <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '.08em', textTransform: 'uppercase', color: '#9ca3af', marginBottom: 16 }}>Historique du colis</div>
               {result.tracking.length === 0 ? (
-                <div style={{ color: '#d1d5db', fontSize: 13, fontStyle: 'italic' }}>Aucun événement enregistré.</div>
-              ) : result.tracking.map((e, i, arr) => {
-                const es = STATUS[e.status] ?? { label: e.status, color: '#6b7280', icon: '📦', bg: '#f9fafb' };
-                const isLatest = i === arr.length - 1;
-                return (
-                  <div key={i} style={{ display: 'flex', gap: 14, paddingBottom: i < arr.length - 1 ? 18 : 0 }}>
-                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                      <div style={{ width: isLatest ? 36 : 30, height: isLatest ? 36 : 30, borderRadius: '50%', background: isLatest ? es.bg : '#f9fafb', display: 'grid', placeItems: 'center', fontSize: isLatest ? 17 : 13, flexShrink: 0, border: '2px solid ' + (isLatest ? es.color : '#e5e7eb') }}>
-                        {isLatest ? es.icon : '✓'}
+                <div style={{ color: '#d1d5db', fontSize: 13, fontStyle: 'italic' }}>Aucun événement enregistré pour le moment.</div>
+              ) : (
+                <div>
+                  {[...result.tracking].reverse().map((e, i, arr) => {
+                    const es      = STATUS[e.status] ?? { label: e.status, color: '#6b7280', icon: '📦', bg: '#f9fafb' };
+                    const isFirst = i === 0;
+                    return (
+                      <div key={i} style={{ display: 'flex', gap: 14, paddingBottom: i < arr.length - 1 ? 20 : 0, position: 'relative' }}>
+                        {i < arr.length - 1 && <div style={{ position: 'absolute', left: 17, top: 36, bottom: 0, width: 2, background: '#e5e7eb' }} />}
+                        <div style={{ flexShrink: 0 }}>
+                          <div style={{
+                            width: isFirst ? 36 : 30, height: isFirst ? 36 : 30,
+                            borderRadius: '50%',
+                            background: isFirst ? es.bg : '#f9fafb',
+                            border: '2px solid ' + (isFirst ? es.color : '#e5e7eb'),
+                            display: 'grid', placeItems: 'center',
+                            fontSize: isFirst ? 18 : 13,
+                            boxShadow: isFirst ? '0 0 0 4px ' + es.color + '18' : 'none',
+                          }}>
+                            {isFirst ? es.icon : '✓'}
+                          </div>
+                        </div>
+                        <div style={{ paddingTop: isFirst ? 6 : 4 }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                            <span style={{ fontSize: isFirst ? 15 : 13, fontWeight: isFirst ? 700 : 500, color: isFirst ? es.color : '#374151' }}>
+                              {es.label}
+                            </span>
+                            {isFirst && (
+                              <span style={{ fontSize: 9.5, fontWeight: 700, background: es.color, color: 'white', padding: '2px 8px', letterSpacing: '.05em' }}>
+                                ACTUEL
+                              </span>
+                            )}
+                          </div>
+                          {e.location && <div style={{ fontSize: 12, color: '#6b7280', marginTop: 3 }}>📍 {e.location}</div>}
+                          {e.note     && <div style={{ fontSize: 12, color: '#6b7280', fontStyle: 'italic', marginTop: 2 }}>{e.note}</div>}
+                          <div style={{ fontSize: 11, color: '#9ca3af', marginTop: 3 }}>{fmtFull(e.createdAt)}</div>
+                        </div>
                       </div>
-                      {i < arr.length - 1 && <div style={{ width: 2, flex: 1, background: '#d1fae5', marginTop: 4, minHeight: 20 }} />}
-                    </div>
-                    <div style={{ paddingTop: isLatest ? 6 : 3 }}>
-                      <div style={{ fontWeight: isLatest ? 700 : 500, fontSize: isLatest ? 14 : 13, color: isLatest ? es.color : '#374151' }}>
-                        {es.label}
-                        {isLatest && <span style={{ marginLeft: 8, fontSize: 10, fontWeight: 700, background: es.color, color: 'white', padding: '2px 7px', verticalAlign: 'middle' }}>ACTUEL</span>}
-                      </div>
-                      {e.location && <div style={{ fontSize: 12, color: '#6b7280', marginTop: 2 }}>📍 {e.location}</div>}
-                      {e.note     && <div style={{ fontSize: 12, color: '#6b7280', fontStyle: 'italic', marginTop: 2 }}>{e.note}</div>}
-                      <div style={{ fontSize: 11, color: '#9ca3af', marginTop: 3 }}>{fmtFull(e.createdAt)}</div>
-                    </div>
-                  </div>
-                );
-              })}
+                    );
+                  })}
+                </div>
+              )}
             </div>
 
             <div style={{ textAlign: 'center', fontSize: 13, color: '#9ca3af' }}>

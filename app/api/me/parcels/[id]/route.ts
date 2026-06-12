@@ -110,7 +110,7 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
   });
 }
 
-const EDITABLE_STATUSES = ['enr', 'rec'];
+const EDITABLE_STATUSES = ['enr', 'rec', 'pre'];
 
 export async function PUT(req: NextRequest, { params }: { params: { id: string } }) {
   const { error, session } = await requireAuth();

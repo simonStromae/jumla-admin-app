@@ -4,18 +4,26 @@ import I from '../components/Icons.jsx';
 import { Avatar, Modal } from '../components/Shell.jsx';
 
 const PARCEL_STATUS = {
-  enr: { label: 'Enregistré',          cls: 'neutral' },
-  rec: { label: 'Reçu entrepôt',       cls: 'info' },
-  pre: { label: 'Vérifié/Préparé',     cls: 'info' },
-  exp: { label: 'Expédié',             cls: 'info' },
-  tra: { label: 'En transit',          cls: 'info' },
-  apd: { label: 'Arrivé pays dest.',   cls: 'ok' },
-  dou: { label: 'Aux douanes',         cls: 'warn' },
-  ins: { label: 'Inspection douan.',   cls: 'warn' },
-  ret: { label: 'Retenu douanes',      cls: 'bad' },
-  lib: { label: 'Libéré douanes',      cls: 'ok' },
-  del: { label: 'En livraison',        cls: 'info' },
-  liv: { label: 'Livré',              cls: 'ok' },
+  enr: { label: 'Enregistré',                    cls: 'neutral', icon: '📝' },
+  rec: { label: 'Reçu à l\'entrepôt',            cls: 'info',    icon: '📥' },
+  pre: { label: 'Vérifié et préparé',             cls: 'info',    icon: '🔍' },
+  exp: { label: 'Expédié',                        cls: 'info',    icon: '🚀' },
+  tra: { label: 'En transit',                     cls: 'info',    icon: '✈️' },
+  apd: { label: 'Arrivé au pays de destination',  cls: 'ok',      icon: '🛬' },
+  dou: { label: 'Présenté aux douanes',           cls: 'warn',    icon: '🛃' },
+  ins: { label: 'En inspection douanière',        cls: 'warn',    icon: '🔎' },
+  ret: { label: 'Retenu par les douanes',         cls: 'bad',     icon: '⚠️' },
+  lib: { label: 'Libéré par les douanes',         cls: 'ok',      icon: '✅' },
+  ard: { label: 'Arrivé entrepôt de destination', cls: 'ok',      icon: '🏭' },
+  ver: { label: 'Vérification finale',            cls: 'info',    icon: '🔬' },
+  pdl: { label: 'Prêt pour livraison/retrait',   cls: 'info',    icon: '📦' },
+  liv: { label: 'En cours de livraison',          cls: 'info',    icon: '🚚' },
+  ok:  { label: 'Livré',                          cls: 'ok',      icon: '🎉' },
+  adr: { label: 'Adresse incomplète',             cls: 'bad',     icon: '📍' },
+  tdl: { label: 'Tentative de livraison',         cls: 'warn',    icon: '🔔' },
+  rte: { label: 'Retour à l\'entrepôt',           cls: 'bad',     icon: '↩️' },
+  dom: { label: 'Colis endommagé',                cls: 'bad',     icon: '💥' },
+  cla: { label: 'Réclamation ouverte',            cls: 'bad',     icon: '📋' },
 };
 const PAYMENT_STATUS = {
   pending:   { label: 'En attente', cls: 'warn' },
@@ -35,8 +43,8 @@ export default function ParcelDetailScreen({ id, onNav }) {
   const [bordereaux,    setBordereaux]    = useState([]);
   const [loading,       setLoading]       = useState(true);
   const [showPayModal,    setShowPayModal]    = useState(false);
-  const [showStatusModal, setShowStatusModal] = useState(false);
   const [showWeightModal, setShowWeightModal] = useState(false);
+  const [statusForm, setStatusForm] = useState({ status: '', note: '', location: '', saving: false });
   const [showAddBl,       setShowAddBl]       = useState(false);
   const [newBl,    setNewBl]    = useState({ description: '', weightKg: '', items: [] });
   const [addingBl, setAddingBl] = useState(false);
@@ -157,7 +165,6 @@ export default function ParcelDetailScreen({ id, onNav }) {
         </div>
         <div className="page__actions">
           <button className="btn btn--ghost" onClick={() => setShowWeightModal(true)}><I.Edit />Poids / Prix</button>
-          <button className="btn btn--ghost" onClick={() => setShowStatusModal(true)}><I.Edit />Statut</button>
           <button className="btn btn--ghost" onClick={() => setShowPayModal(true)}><I.Send />Lien Interac</button>
         </div>
       </div>
@@ -404,6 +411,80 @@ export default function ParcelDetailScreen({ id, onNav }) {
 
         {/* Right */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+
+          {/* ── Inline status update ── */}
+          {!campaignLocked && (
+            <div className="card" style={{ padding: 16 }}>
+              <div className="section-title" style={{ marginBottom: 12 }}>
+                <I.Edit style={{ width: 14, height: 14, color: 'var(--brand-600)' }} /> Mettre à jour le statut
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                <select
+                  className="input"
+                  value={statusForm.status || parcel.status}
+                  onChange={e => setStatusForm(f => ({ ...f, status: e.target.value }))}
+                >
+                  <optgroup label="Flux principal">
+                    {['enr','rec','pre','exp','tra','apd'].map(k => (
+                      <option key={k} value={k}>{PARCEL_STATUS[k].icon} {PARCEL_STATUS[k].label}</option>
+                    ))}
+                  </optgroup>
+                  <optgroup label="Douanes">
+                    {['dou','ins','ret','lib'].map(k => (
+                      <option key={k} value={k}>{PARCEL_STATUS[k].icon} {PARCEL_STATUS[k].label}</option>
+                    ))}
+                  </optgroup>
+                  <optgroup label="Livraison">
+                    {['ard','ver','pdl','liv','ok'].map(k => (
+                      <option key={k} value={k}>{PARCEL_STATUS[k].icon} {PARCEL_STATUS[k].label}</option>
+                    ))}
+                  </optgroup>
+                  <optgroup label="Exceptionnels">
+                    {['adr','tdl','rte','dom','cla'].map(k => (
+                      <option key={k} value={k}>{PARCEL_STATUS[k].icon} {PARCEL_STATUS[k].label}</option>
+                    ))}
+                  </optgroup>
+                </select>
+                <input className="input" placeholder="📍 Localisation (ex. Douala – Aéroport)"
+                  value={statusForm.location}
+                  onChange={e => setStatusForm(f => ({ ...f, location: e.target.value }))}
+                />
+                <textarea className="input" rows={2} placeholder="Note pour le client…"
+                  value={statusForm.note}
+                  onChange={e => setStatusForm(f => ({ ...f, note: e.target.value }))}
+                  style={{ resize: 'vertical', fontFamily: 'inherit', fontSize: 13 }}
+                />
+                <button
+                  className="btn btn--brand"
+                  style={{ justifyContent: 'center' }}
+                  disabled={statusForm.saving || (statusForm.status || parcel.status) === parcel.status && !statusForm.note && !statusForm.location}
+                  onClick={async () => {
+                    const newStatus = statusForm.status || parcel.status;
+                    setStatusForm(f => ({ ...f, saving: true }));
+                    const res = await fetch('/api/parcels/' + parcel.id, {
+                      method: 'PUT',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({
+                        status:        newStatus !== parcel.status ? newStatus : undefined,
+                        eventNote:     statusForm.note     || undefined,
+                        eventLocation: statusForm.location || undefined,
+                      }),
+                    });
+                    if (res.ok) {
+                      const fresh = await fetch('/api/parcels/' + parcel.id).then(r => r.json());
+                      setParcel(fresh);
+                      setStatusForm({ status: '', note: '', location: '', saving: false });
+                    } else {
+                      setStatusForm(f => ({ ...f, saving: false }));
+                    }
+                  }}
+                >
+                  {statusForm.saving ? 'Enregistrement…' : 'Enregistrer'}
+                </button>
+              </div>
+            </div>
+          )}
+
           {/* Payment */}
           <div className="card" style={{ padding: 16 }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
@@ -431,7 +512,7 @@ export default function ParcelDetailScreen({ id, onNav }) {
             )}
           </div>
 
-          {/* Delivery info */}
+          {/* Campaign info */}
           <div className="card" style={{ padding: 16 }}>
             <div className="section-title" style={{ marginBottom: 12 }}>
               <I.Truck style={{ width: 14, height: 14, color: 'var(--brand-600)' }} /> Campagne & Route
@@ -451,29 +532,61 @@ export default function ParcelDetailScreen({ id, onNav }) {
             )}
           </div>
 
-          {/* History */}
+          {/* Timeline */}
           <div className="card" style={{ padding: 16 }}>
-            <div className="section-title" style={{ marginBottom: 12 }}>
-              <I.History style={{ width: 14, height: 14, color: 'var(--brand-600)' }} /> Historique
+            <div className="section-title" style={{ marginBottom: 14 }}>
+              <I.History style={{ width: 14, height: 14, color: 'var(--brand-600)' }} /> Timeline
             </div>
             {events.length === 0 ? (
-              <div style={{ fontSize: 12.5, color: 'var(--ink-400)' }}>Aucun événement enregistré.</div>
+              <div style={{ fontSize: 12.5, color: 'var(--ink-400)', fontStyle: 'italic' }}>Aucun événement enregistré.</div>
             ) : (
-              <div style={{ display: 'grid', gap: 10 }}>
-                {events.map((ev, i) => {
-                  const st = PARCEL_STATUS[ev.status] || { label: ev.status };
+              <div>
+                {[...events].reverse().map((ev, i, arr) => {
+                  const st   = PARCEL_STATUS[ev.status] ?? { label: ev.status, icon: '📦', cls: 'neutral' };
+                  const isLatest = i === 0;
+                  const clsBg = {
+                    ok: 'var(--ok-100)', info: 'var(--brand-100)', warn: 'var(--warn-100)',
+                    bad: 'var(--bad-100)', neutral: 'var(--bg-soft)',
+                  }[st.cls] ?? 'var(--bg-soft)';
+                  const clsColor = {
+                    ok: 'var(--ok-700)', info: 'var(--brand-600)', warn: 'var(--warn-700)',
+                    bad: 'var(--bad-600)', neutral: 'var(--ink-500)',
+                  }[st.cls] ?? 'var(--ink-500)';
                   return (
-                    <div key={ev.id} style={{ display: 'flex', gap: 10, position: 'relative' }}>
-                      {i < events.length - 1 && <div style={{ position: 'absolute', left: 10, top: 22, bottom: -6, width: 1, background: 'var(--border)' }} />}
-                      <div style={{ width: 20, height: 20, borderRadius: '50%', background: 'var(--brand-100)', display: 'grid', placeItems: 'center', flexShrink: 0 }}>
-                        <I.Check style={{ width: 10, height: 10, color: 'var(--brand-600)' }} />
+                    <div key={i} style={{ display: 'flex', gap: 12, position: 'relative', paddingBottom: i < arr.length - 1 ? 16 : 0 }}>
+                      {i < arr.length - 1 && (
+                        <div style={{ position: 'absolute', left: 15, top: 32, bottom: 0, width: 1.5, background: 'var(--border)' }} />
+                      )}
+                      <div style={{
+                        width: 32, height: 32, borderRadius: '50%', flexShrink: 0,
+                        background: isLatest ? clsBg : 'var(--bg-soft)',
+                        border: `2px solid ${isLatest ? clsColor : 'var(--border)'}`,
+                        display: 'grid', placeItems: 'center', fontSize: 14,
+                      }}>
+                        {isLatest ? st.icon : '✓'}
                       </div>
-                      <div style={{ flex: 1 }}>
-                        <div style={{ fontSize: 12.5, fontWeight: 600 }}>{st.label}</div>
-                        {ev.note && <div style={{ fontSize: 12, color: 'var(--ink-500)' }}>{ev.note}</div>}
-                        {ev.location && <div style={{ fontSize: 11.5, color: 'var(--ink-400)' }}>{ev.location}</div>}
-                        <div style={{ fontSize: 11, color: 'var(--ink-400)', marginTop: 1 }}>
-                          {ev.createdBy?.name ?? 'Système'} · {new Date(ev.createdAt).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                      <div style={{ flex: 1, paddingTop: 4 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                          <span style={{
+                            fontSize: 12.5, fontWeight: isLatest ? 700 : 500,
+                            color: isLatest ? clsColor : 'var(--ink-700)',
+                          }}>
+                            {st.label}
+                          </span>
+                          {isLatest && (
+                            <span style={{ fontSize: 9.5, fontWeight: 700, background: clsColor, color: 'white', padding: '1px 6px', letterSpacing: '.04em' }}>
+                              ACTUEL
+                            </span>
+                          )}
+                        </div>
+                        {ev.location && (
+                          <div style={{ fontSize: 11.5, color: 'var(--ink-500)', marginTop: 1 }}>📍 {ev.location}</div>
+                        )}
+                        {ev.note && (
+                          <div style={{ fontSize: 11.5, color: 'var(--ink-500)', fontStyle: 'italic', marginTop: 1 }}>{ev.note}</div>
+                        )}
+                        <div style={{ fontSize: 11, color: 'var(--ink-400)', marginTop: 2 }}>
+                          {ev.createdBy?.name ?? 'Système'} · {new Date(ev.createdAt).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
                         </div>
                       </div>
                     </div>
@@ -497,21 +610,6 @@ export default function ParcelDetailScreen({ id, onNav }) {
       )}
       {showPayModal && parcel && (
         <InteracModal parcel={parcel} onClose={() => setShowPayModal(false)} />
-      )}
-      {showStatusModal && parcel && (
-        <StatusModal
-          parcel={parcel}
-          onClose={() => setShowStatusModal(false)}
-          onSaved={(updated, event) => {
-            setParcel(p => ({ ...p, status: updated.status }));
-            setShowStatusModal(false);
-            // prepend new event to history
-            if (event) {
-              // refetch to get full event with createdBy
-              fetch('/api/parcels/' + id).then(r => r.json()).then(d => setParcel(d));
-            }
-          }}
-        />
       )}
     </div>
   );
@@ -714,67 +812,3 @@ function InteracModal({ parcel, onClose }) {
   );
 }
 
-function StatusModal({ parcel, onClose, onSaved }) {
-  const [status,   setStatus]   = useState(parcel.status);
-  const [note,     setNote]     = useState('');
-  const [location, setLocation] = useState('');
-  const [saving,   setSaving]   = useState(false);
-
-  const handleSave = async () => {
-    setSaving(true);
-    const res = await fetch('/api/parcels/' + parcel.id, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ status, eventNote: note || undefined, eventLocation: location || undefined }),
-    });
-    const json = await res.json();
-    setSaving(false);
-    if (json.ok) onSaved(json.parcel, true);
-  };
-
-  return (
-    <Modal width={480} onClose={onClose}
-      title="Mettre à jour le statut"
-      sub={parcel.trackingCode}
-      footer={
-        <>
-          <button className="btn btn--ghost" onClick={onClose}>Annuler</button>
-          <button className="btn btn--brand" onClick={handleSave} disabled={saving || status === parcel.status}>
-            {saving ? 'Enregistrement…' : 'Mettre à jour'}
-          </button>
-        </>
-      }>
-      <div style={{ display: 'grid', gap: 14 }}>
-        <div>
-          <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--ink-600)', display: 'block', marginBottom: 6 }}>
-            Nouveau statut
-          </label>
-          <select className="input" value={status} onChange={e => setStatus(e.target.value)}>
-            {Object.entries(PARCEL_STATUS).map(([v, { label }]) => (
-              <option key={v} value={v}>{label}</option>
-            ))}
-          </select>
-        </div>
-        <div>
-          <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--ink-600)', display: 'block', marginBottom: 6 }}>
-            Localisation <span style={{ fontWeight: 400, color: 'var(--ink-400)' }}>(optionnel)</span>
-          </label>
-          <input className="input" placeholder="ex. Douala – Aéroport international" value={location} onChange={e => setLocation(e.target.value)} />
-        </div>
-        <div>
-          <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--ink-600)', display: 'block', marginBottom: 6 }}>
-            Note <span style={{ fontWeight: 400, color: 'var(--ink-400)' }}>(optionnel)</span>
-          </label>
-          <textarea className="input" rows={3} placeholder="Information supplémentaire pour le client…"
-            value={note} onChange={e => setNote(e.target.value)}
-            style={{ resize: 'vertical', fontFamily: 'inherit' }} />
-        </div>
-        {status !== parcel.status && (
-          <div style={{ padding: '10px 14px', background: 'var(--brand-50)', border: '1px solid var(--brand-100)', borderRadius: 8, fontSize: 12.5, color: 'var(--brand-700)' }}>
-            {PARCEL_STATUS[parcel.status]?.label} → <strong>{PARCEL_STATUS[status]?.label}</strong>
-          </div>
-        )}
-      </div>
-    </Modal>
-  );
-}

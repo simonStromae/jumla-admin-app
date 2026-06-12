@@ -11,8 +11,11 @@ const JOURNEY = [
   { key: 'apd', label: 'Arrivé',      icon: '🛬', desc: 'Votre colis est arrivé au pays de destination' },
   { key: 'dou', label: 'Douanes',     icon: '🛃', desc: 'Votre colis est présenté aux autorités douanières' },
   { key: 'lib', label: 'Dédouané',    icon: '✅', desc: 'Votre colis a été libéré par les douanes' },
-  { key: 'del', label: 'Livraison',   icon: '🚚', desc: 'Votre colis est en cours de livraison' },
-  { key: 'liv', label: 'Livré',       icon: '🎉', desc: 'Votre colis a été remis au destinataire' },
+  { key: 'ard', label: 'Entrepôt dest.', icon: '🏭', desc: 'Votre colis est arrivé à notre entrepôt de destination' },
+  { key: 'ver', label: 'Vérification', icon: '🔬', desc: 'Vérification finale avant remise' },
+  { key: 'pdl', label: 'Prêt',         icon: '📦', desc: 'Votre colis est prêt pour livraison ou retrait' },
+  { key: 'liv', label: 'En livraison', icon: '🚚', desc: 'Le livreur est en route' },
+  { key: 'ok',  label: 'Livré',        icon: '🎉', desc: 'Votre colis a été remis au destinataire' },
 ];
 
 const PRODUCT_TYPES = [

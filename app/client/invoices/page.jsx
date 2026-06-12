@@ -3,10 +3,13 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 
 const STATUS_LABEL = {
-  enr: 'Enregistré', rec: 'Reçu entrepôt', pre: 'Préparé',
-  exp: 'Expédié',    tra: 'En transit',     apd: 'Arrivé pays dest.',
-  dou: 'Aux douanes', ins: 'Inspection',    ret: 'Retenu',
-  lib: 'Libéré',     del: 'En livraison',   liv: 'Livré',
+  enr: 'Enregistré',  rec: 'Reçu entrepôt', pre: 'Préparé',
+  exp: 'Expédié',     tra: 'En transit',     apd: 'Arrivé pays',
+  dou: 'Aux douanes', ins: 'Inspection',     ret: 'Retenu',
+  lib: 'Libéré',      ard: 'Entrepôt dest.', ver: 'Vérification',
+  pdl: 'Prêt',        liv: 'En livraison',   ok: 'Livré',
+  adr: 'Adr. incompl.', tdl: 'Tent. livr.', rte: 'Retour entrepôt',
+  dom: 'Endommagé',   cla: 'Réclamation',
 };
 
 const PAYMENT_COLOR = {

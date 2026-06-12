@@ -13,11 +13,17 @@ const STATUS = {
   ins: { label: 'En inspection douanière',        color: 'var(--warn-700)', bg: 'var(--warn-50)',   icon: '🔎' },
   ret: { label: 'Retenu par les douanes',         color: 'var(--bad-700)',   bg: 'var(--bad-50)',    icon: '⚠️' },
   lib: { label: 'Libéré par les douanes',         color: 'var(--ok-700)',    bg: 'var(--ok-50)',     icon: '✅' },
-  del: { label: 'En cours de livraison',          color: 'var(--info-700)',  bg: 'var(--info-50)',   icon: '🚚' },
-  liv: { label: 'Livré',                          color: 'var(--ok-700)',    bg: 'var(--ok-50)',     icon: '🎉' },
+  ard: { label: 'Arrivé à l\'entrepôt de destination', color: 'var(--ok-700)', bg: 'var(--ok-50)', icon: '🏭' },
+  ver: { label: 'Vérification finale',            color: '#7c3aed',          bg: '#f5f3ff',          icon: '🔬' },
+  pdl: { label: 'Prêt pour livraison/retrait',   color: 'var(--info-700)',  bg: 'var(--info-50)',   icon: '📦' },
+  liv: { label: 'En cours de livraison',          color: 'var(--info-700)',  bg: 'var(--info-50)',   icon: '🚚' },
+  ok:  { label: 'Livré',                          color: 'var(--ok-700)',    bg: 'var(--ok-50)',     icon: '🎉' },
+  adr: { label: 'Adresse incomplète',             color: 'var(--bad-700)',   bg: 'var(--bad-50)',    icon: '📍' },
+  tdl: { label: 'Tentative de livraison',         color: 'var(--warn-700)', bg: 'var(--warn-50)',   icon: '🔔' },
+  rte: { label: 'Retour à l\'entrepôt',           color: 'var(--bad-700)',   bg: 'var(--bad-50)',    icon: '↩️' },
+  dom: { label: 'Colis endommagé',                color: 'var(--bad-700)',   bg: 'var(--bad-50)',    icon: '💥' },
+  cla: { label: 'Réclamation ouverte',            color: 'var(--bad-700)',   bg: 'var(--bad-50)',    icon: '📋' },
 };
-
-const STEPS = ['enr', 'rec', 'pre', 'exp', 'tra', 'apd', 'dou', 'lib', 'del', 'liv'];
 
 function fmt(date) {
   if (!date) return '—';
@@ -61,7 +67,6 @@ function SuiviContent() {
     search(input);
   };
 
-  const currentStep = result ? STEPS.indexOf(result.status) : -1;
   const s = result ? (STATUS[result.status] ?? { label: result.status, color: 'var(--ink-400)', bg: 'var(--bg-soft)', icon: '📦' }) : null;
 
   return (
@@ -118,39 +123,6 @@ function SuiviContent() {
             </div>
           </div>
 
-          {/* Progress bar */}
-          <div style={{ background: 'white', border: '1px solid var(--border)', borderRadius: 12, padding: '18px 20px' }}>
-            <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '.06em', textTransform: 'uppercase', color: 'var(--ink-400)', marginBottom: 16 }}>Progression</div>
-            <div style={{ display: 'flex', alignItems: 'center' }}>
-              {STEPS.map((step, i) => {
-                const st   = STATUS[step];
-                const done = i <= currentStep;
-                const cur  = i === currentStep;
-                return (
-                  <div key={step} style={{ display: 'flex', alignItems: 'center', flex: i < STEPS.length - 1 ? 1 : 'none' }}>
-                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
-                      <div style={{
-                        width: 30, height: 30, borderRadius: '50%', display: 'grid', placeItems: 'center', fontSize: 14,
-                        background: done ? (cur ? s.bg : 'var(--ok-50)') : 'var(--ink-100)',
-                        border: '2px solid ' + (cur ? s.color : done ? 'var(--ok-400)' : 'var(--border)'),
-                        boxShadow: cur ? '0 0 0 4px ' + s.color + '22' : 'none',
-                        transition: 'all .2s',
-                      }}>
-                        {done ? (cur ? st.icon : '✓') : ''}
-                      </div>
-                      <span style={{ fontSize: 9, fontWeight: 600, color: done ? (cur ? s.color : 'var(--ok-600)') : 'var(--ink-300)', textAlign: 'center', whiteSpace: 'nowrap', maxWidth: 52 }}>
-                        {st.label.split(' ')[0]}
-                      </span>
-                    </div>
-                    {i < STEPS.length - 1 && (
-                      <div style={{ flex: 1, height: 2, background: i < currentStep ? 'var(--ok-400)' : 'var(--border)', margin: '0 4px', marginBottom: 22, borderRadius: 999 }} />
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-
           {/* Info card */}
           <div style={{ background: 'white', border: '1px solid var(--border)', borderRadius: 12, padding: '18px 20px' }}>
             <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '.06em', textTransform: 'uppercase', color: 'var(--ink-400)', marginBottom: 14 }}>Détails</div>
@@ -176,9 +148,9 @@ function SuiviContent() {
               <div style={{ color: 'var(--ink-300)', fontSize: 13, fontStyle: 'italic' }}>Aucun événement enregistré pour l'instant.</div>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
-                {result.tracking.map((e, i, arr) => {
+                {[...result.tracking].reverse().map((e, i, arr) => {
                   const es = STATUS[e.status] ?? { label: e.status, color: 'var(--ink-500)', icon: '📦', bg: 'var(--bg-soft)' };
-                  const isLatest = i === arr.length - 1;
+                  const isLatest = i === 0;
                   return (
                     <div key={i} style={{ display: 'flex', gap: 14, paddingBottom: i < arr.length - 1 ? 18 : 0 }}>
                       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
