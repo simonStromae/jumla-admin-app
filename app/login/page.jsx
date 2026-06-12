@@ -182,8 +182,9 @@ function LoginForm() {
                   onChange={e => set('email', e.target.value)} required placeholder="vous@exemple.com" />
               </div>
               <div className="field">
-                <label className="label" style={{ display: 'flex', justifyContent: 'space-between' }}>
+                <label className="label" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <span>Mot de passe <span className="opt">/ Password</span></span>
+                  <a href="/forgot-password" style={{ fontSize: 12, color: 'var(--brand-600)', textDecoration: 'none', fontWeight: 500 }}>Mot de passe oublié ?</a>
                 </label>
                 <div style={{ position: 'relative' }}>
                   <input className="input" type={show ? 'text' : 'password'} value={fields.password}

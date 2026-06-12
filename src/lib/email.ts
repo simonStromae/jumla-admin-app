@@ -27,3 +27,33 @@ export async function sendVerificationEmail(email: string, name: string, code: s
     `,
   });
 }
+
+export async function sendPasswordResetEmail(email: string, name: string, resetUrl: string) {
+  if (!process.env.RESEND_API_KEY) return;
+  const resend = new Resend(process.env.RESEND_API_KEY);
+  await resend.emails.send({
+    from: process.env.RESEND_FROM_EMAIL ?? 'Jumla Shipping <onboarding@resend.dev>',
+    to: email,
+    subject: 'Réinitialisation de votre mot de passe Jumla',
+    html: `
+      <div style="font-family:sans-serif;max-width:480px;margin:0 auto">
+        <div style="background:#1a1408;padding:24px 32px">
+          <div style="color:#F5A524;font-size:22px;font-weight:800">Jumla Shipping</div>
+          <div style="color:rgba(255,255,255,.5);font-size:12px;margin-top:2px">Fret international · Douala → Montréal</div>
+        </div>
+        <div style="background:#fff;padding:32px;border:1px solid #e5e7eb;border-top:none">
+          <p style="margin:0 0 8px;font-size:16px;color:#111">Bonjour <strong>${name}</strong>,</p>
+          <p style="margin:0 0 24px;font-size:14px;color:#6b7280">
+            Vous avez demandé la réinitialisation de votre mot de passe. Cliquez sur le bouton ci-dessous — ce lien expire dans 1 heure.
+          </p>
+          <a href="${resetUrl}" style="display:inline-block;background:#1a1408;color:white;padding:14px 28px;font-size:15px;font-weight:700;text-decoration:none;margin-bottom:24px">
+            Réinitialiser mon mot de passe
+          </a>
+          <p style="margin:0;font-size:12px;color:#9ca3af">
+            Si vous n'avez pas demandé cette réinitialisation, ignorez cet email. Votre mot de passe ne sera pas modifié.
+          </p>
+        </div>
+      </div>
+    `,
+  });
+}

@@ -692,7 +692,9 @@ export default function BookingScreen({ onNav, embedded = false }) {
                   <strong>Frais de livraison :</strong> les frais vers <strong>{form.recipCity === 'Hors région' ? form.recipCityCustom : form.recipCity}</strong> seront évalués à l'arrivée à Montréal.
                 </div>
               )}
-              <button className="co-btn co-btn--ghost" style={{ marginTop: 8 }} onClick={() => onNav?.('/')}>← Retour à l'accueil</button>
+              <button className="co-btn co-btn--ghost" style={{ marginTop: 8 }} onClick={() => onNav?.(embedded ? '/client/dashboard?booked=' + refCode : '/')}>
+                {embedded ? '→ Voir mes colis' : '← Retour à l\'accueil'}
+              </button>
             </div>
           ) : (
             <>

@@ -1,7 +1,7 @@
 'use client';
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, Suspense } from 'react';
 import { useSession } from 'next-auth/react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import I from '@/src/components/Icons.jsx';
 
 const JOURNEY = [
@@ -149,13 +149,16 @@ function ParcelCard({ parcel, onClick }) {
   );
 }
 
-export default function ClientDashboard() {
+function ClientDashboardInner() {
   const { data: session } = useSession();
   const router    = useRouter();
-  const suspended = session?.user?.status === 'suspended';
+  const suspended  = session?.user?.status === 'suspended';
+  const searchParams = useSearchParams();
+  const bookedCode   = searchParams.get('booked');
   const [parcels,  setParcels]  = useState([]);
   const [loading,  setLoading]  = useState(true);
   const [tab,      setTab]      = useState('active'); // 'active' | 'done'
+  const [showBooked, setShowBooked] = useState(!!bookedCode);
 
   const load = useCallback(async () => {
     try {
@@ -179,6 +182,26 @@ export default function ClientDashboard() {
 
   return (
     <div>
+      {/* Booking success banner */}
+      {showBooked && bookedCode && (
+        <div style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          background: '#f0fdf4', border: '1px solid #86efac',
+          padding: '14px 18px', marginBottom: 20,
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <span style={{ fontSize: 22 }}>✅</span>
+            <div>
+              <div style={{ fontWeight: 700, fontSize: 14, color: '#15803d' }}>Réservation enregistrée !</div>
+              <div style={{ fontSize: 12.5, color: '#166534', marginTop: 1 }}>
+                Numéro de suivi : <span style={{ fontFamily: 'monospace', fontWeight: 700 }}>{bookedCode}</span> · En attente de confirmation du paiement.
+              </div>
+            </div>
+          </div>
+          <button onClick={() => setShowBooked(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 18, color: '#16a34a', lineHeight: 1 }}>×</button>
+        </div>
+      )}
+
       {/* Welcome */}
       <div style={{ marginBottom: 20 }}>
         <h1 style={{ fontSize: 22, fontWeight: 800, margin: '0 0 2px', color: '#111827' }}>
@@ -279,4 +302,8 @@ export default function ClientDashboard() {
       )}
     </div>
   );
+}
+
+export default function ClientDashboard() {
+  return <Suspense><ClientDashboardInner /></Suspense>;
 }
