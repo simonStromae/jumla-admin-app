@@ -31,7 +31,7 @@ export async function GET(req: NextRequest) {
       arrivalDate:   parcel.campaign.arrivalDate,
       status:        parcel.campaign.status,
     },
-    paid: parcel.payment?.status === 'completed',
+    paid: parcel.payment?.status === 'paid',
     tracking: parcel.trackingEvents.map(e => ({
       status:    e.status,
       location:  e.location,

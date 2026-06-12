@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/src/lib/prisma';
 import { requireAdmin, requirePermission } from '@/src/lib/api-auth';
 import { createNotification } from '@/src/lib/notifications';
+import { sendStatusEmail } from '@/src/lib/email';
 
 export async function GET(_: NextRequest, { params }: { params: { id: string } }) {
   const { error } = await requireAdmin();
@@ -33,7 +34,12 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
   // Fetch parcel with campaign to check lock status
   const existing = await prisma.parcel.findUnique({
     where: { id: params.id },
-    select: { clientId: true, trackingCode: true, campaign: { select: { status: true } } },
+    select: {
+      clientId: true,
+      trackingCode: true,
+      campaign: { select: { status: true } },
+      client: { select: { name: true, email: true } },
+    },
   });
   const LOCKED_STATUSES = ['in_transit', 'in_transit_2', 'arrived', 'preparing_arrival', 'closed'];
   if (existing?.campaign && LOCKED_STATUSES.includes(existing.campaign.status as string)) {
@@ -63,6 +69,16 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
         createdById: (sess?.user as any)?.id ?? null,
       },
     });
+    if (existing?.client?.email && existing.trackingCode) {
+      sendStatusEmail(
+        existing.client.email,
+        existing.client.name ?? 'Client',
+        existing.trackingCode,
+        status,
+        eventLocation || null,
+        eventNote || null,
+      ).catch(() => {});
+    }
   }
 
   // Notify client when admin modifies parcel info (not just status)
