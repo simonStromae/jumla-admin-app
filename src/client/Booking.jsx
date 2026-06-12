@@ -576,37 +576,66 @@ export default function BookingScreen({ onNav, embedded = false }) {
       {!embedded && <TopBar />}
       {!embedded && <SiteNav onNav={onNav} onBook={() => {}} mode="booking" />}
 
-      {/* Breadcrumb */}
-      <div className="co-subhead">
-        <div className="co-subhead__inner">
-          <span className="co-subhead__title">Réservation</span>
-          <span style={{ fontSize: 12, color: 'var(--ink-400)', display: 'flex', alignItems: 'center', gap: 6 }}>
-            <span style={{ width: 24, height: 24, borderRadius: 999, background: 'var(--brand-100)', color: 'var(--brand-700)', fontSize: 11, fontWeight: 800, display: 'grid', placeItems: 'center', flexShrink: 0 }}>
-              {effectiveUser?.name?.charAt(0).toUpperCase()}
-            </span>
-            {effectiveUser?.name} · {effectiveUser?.email}
-            {!embedded && (
+      {/* Breadcrumb — public site only */}
+      {!embedded && (
+        <div className="co-subhead">
+          <div className="co-subhead__inner">
+            <span className="co-subhead__title">Réservation</span>
+            <span style={{ fontSize: 12, color: 'var(--ink-400)', display: 'flex', alignItems: 'center', gap: 6 }}>
+              <span style={{ width: 24, height: 24, borderRadius: 999, background: 'var(--brand-100)', color: 'var(--brand-700)', fontSize: 11, fontWeight: 800, display: 'grid', placeItems: 'center', flexShrink: 0 }}>
+                {effectiveUser?.name?.charAt(0).toUpperCase()}
+              </span>
+              {effectiveUser?.name} · {effectiveUser?.email}
               <button onClick={() => { localStorage.removeItem('jumla_user'); setUser(null); }}
                 style={{ background: 'none', border: 'none', color: 'var(--ink-300)', fontSize: 11, cursor: 'pointer', marginLeft: 4 }}>
                 Déconnexion
               </button>
-            )}
-          </span>
-          <nav className="co-crumbs">
-            {STEPS.map((s, i) => (
-              <span key={i} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                {i > 0 && <span className="co-crumb__sep">›</span>}
-                <span className={`co-crumb${i === step && !isDone ? ' is-active' : i < step || isDone ? ' is-done' : ''}`}>
-                  <span className="co-crumb__num">{i < step || isDone ? '✓' : i + 1}</span>
-                  {s.label}
+            </span>
+            <nav className="co-crumbs">
+              {STEPS.map((s, i) => (
+                <span key={i} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                  {i > 0 && <span className="co-crumb__sep">›</span>}
+                  <span className={`co-crumb${i === step && !isDone ? ' is-active' : i < step || isDone ? ' is-done' : ''}`}>
+                    <span className="co-crumb__num">{i < step || isDone ? '✓' : i + 1}</span>
+                    {s.label}
+                  </span>
                 </span>
-              </span>
-            ))}
-          </nav>
+              ))}
+            </nav>
+          </div>
         </div>
-      </div>
+      )}
 
-      <div className="co-body">
+      {/* Embedded: step indicator */}
+      {embedded && !isDone && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 0, marginBottom: 24, maxWidth: 900 }}>
+          {STEPS.map((s, i) => {
+            const done    = i < step;
+            const current = i === step;
+            return (
+              <div key={i} style={{ display: 'flex', alignItems: 'center', flex: i < STEPS.length - 1 ? 1 : 0 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+                  <div style={{
+                    width: 28, height: 28, borderRadius: '50%', display: 'grid', placeItems: 'center',
+                    fontSize: 12, fontWeight: 700, flexShrink: 0,
+                    background: done ? '#16a34a' : current ? '#111827' : '#f3f4f6',
+                    color: done || current ? 'white' : '#6b7280',
+                    border: `2px solid ${done ? '#16a34a' : current ? '#111827' : '#e5e7eb'}`,
+                  }}>{done ? '✓' : i + 1}</div>
+                  <span style={{ fontSize: 12.5, fontWeight: current ? 700 : 500, color: current ? '#111827' : done ? '#16a34a' : '#9ca3af', whiteSpace: 'nowrap' }}>
+                    {s.label}
+                  </span>
+                </div>
+                {i < STEPS.length - 1 && (
+                  <div style={{ flex: 1, height: 2, background: done ? '#16a34a' : '#e5e7eb', margin: '0 12px' }} />
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      <div className={embedded ? 'co-body-embedded' : 'co-body'}>
         <div className="co-main">
           {isDone ? (
             <div className="co-done">
@@ -707,25 +736,29 @@ export default function BookingScreen({ onNav, embedded = false }) {
                     💡 Créez <strong>une ligne par produit</strong>. Si votre produit n'apparaît pas dans les catégories, choisissez <strong>Standard</strong>.
                   </div>
 
-                  {/* Articles table */}
+                  {/* Articles */}
                   <div className="co-label" style={{ marginBottom: 10 }}>Articles</div>
-                  <div className="co-table-wrap">
-                    <div className="co-table-head" style={{ gridTemplateColumns: '160px 1fr 76px 96px 38px' }}>
+                  <div style={{ border: '1px solid var(--border)', borderRadius: 'var(--radius)', overflow: 'hidden' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: '180px 1fr 80px 100px 36px', gap: 0, padding: '8px 12px', background: 'var(--bg-soft)', borderBottom: '1px solid var(--border)', fontSize: 10.5, fontWeight: 700, letterSpacing: '.06em', textTransform: 'uppercase', color: 'var(--ink-500)' }}>
                       <div>Catégorie</div>
                       <div>Description</div>
                       <div>Pièces</div>
                       <div>Poids (kg)</div>
                       <div></div>
                     </div>
-                    {items.map(item => {
+                    {items.map((item, idx) => {
                       const isStd = item.cat === 'standard';
                       return (
-                        <div key={item.id} className="co-table-row" style={{ gridTemplateColumns: '160px 1fr 76px 96px 38px' }}>
+                        <div key={item.id} style={{
+                          display: 'grid', gridTemplateColumns: '180px 1fr 80px 100px 36px', gap: 0,
+                          padding: '8px 12px', borderBottom: idx < items.length - 1 ? '1px solid var(--border-soft)' : 'none',
+                          alignItems: 'center', background: 'white',
+                        }}>
                           <select
                             className="co-input"
                             value={item.cat}
                             onChange={e => updItem(item.id, 'cat', e.target.value)}
-                            style={{ fontSize: 12.5 }}
+                            style={{ fontSize: 12.5, marginRight: 6 }}
                           >
                             {ITEM_CATEGORIES.map(c => (
                               <option key={c.id} value={c.id}>{c.icon} {c.label}</option>
@@ -733,21 +766,29 @@ export default function BookingScreen({ onNav, embedded = false }) {
                           </select>
                           <input className="co-input" value={item.desc}
                             onChange={e => updItem(item.id, 'desc', e.target.value)}
-                            placeholder={ITEM_CATEGORIES.find(c => c.id === item.cat)?.hint || 'Description…'} />
+                            placeholder={ITEM_CATEGORIES.find(c => c.id === item.cat)?.hint || 'Description…'}
+                            style={{ marginRight: 6 }} />
                           <input className="co-input" type="number" min="1" value={item.pieces}
                             disabled={isStd}
                             onChange={e => updItem(item.id, 'pieces', e.target.value)}
-                            style={{ opacity: isStd ? .35 : 1, cursor: isStd ? 'not-allowed' : 'text' }}
+                            style={{ opacity: isStd ? .35 : 1, cursor: isStd ? 'not-allowed' : 'text', marginRight: 6 }}
                             title={isStd ? 'Non requis pour Standard' : ''} />
                           <input className="co-input" type="number" min="0" step="0.5" value={item.kg}
-                            onChange={e => updItem(item.id, 'kg', e.target.value)} placeholder="0" />
-                          <button className="co-table-del" disabled={items.length === 1}
+                            onChange={e => updItem(item.id, 'kg', e.target.value)} placeholder="0"
+                            style={{ marginRight: 6 }} />
+                          <button style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--ink-300)', fontSize: 20, display: 'grid', placeItems: 'center', opacity: items.length === 1 ? .25 : 1 }}
+                            disabled={items.length === 1}
                             onClick={() => removeItem(item.id)}>×</button>
                         </div>
                       );
                     })}
                   </div>
-                  <button className="co-add-row" onClick={addItem}>+ Ajouter un article</button>
+                  <button style={{
+                    width: '100%', padding: '10px', marginTop: 6,
+                    background: 'none', border: '2px dashed var(--border)',
+                    borderRadius: 'var(--radius)', fontSize: 13, fontWeight: 600,
+                    color: 'var(--ink-400)', cursor: 'pointer',
+                  }} onClick={addItem}>+ Ajouter un article</button>
 
                   {/* Poids total */}
                   {totalKg > 0 && (
@@ -1188,12 +1229,14 @@ export default function BookingScreen({ onNav, embedded = false }) {
           )}
         </div>
 
-        <aside className="co-aside">
-          <Summary
-            route={route} departure={departure}
-            items={items} price={price} form={form} step={step} isDone={isDone}
-          />
-        </aside>
+        {!embedded && (
+          <aside className="co-aside">
+            <Summary
+              route={route} departure={departure}
+              items={items} price={price} form={form} step={step} isDone={isDone}
+            />
+          </aside>
+        )}
       </div>
 
       {!embedded && <SiteFooter />}
