@@ -46,15 +46,28 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
   }
 
   return NextResponse.json({
-    id:           parcel.id,
-    trackingCode: parcel.trackingCode,
-    description:  parcel.description,
-    weightKg:     parcel.weightKg,
-    priceXaf:     parcel.priceXaf,
-    status:       parcel.status,
-    confirmed:    parcel.confirmed,
-    notes:        (parcel as any).notes ?? null,
-    createdAt:    parcel.createdAt,
+    id:                parcel.id,
+    trackingCode:      parcel.trackingCode,
+    description:       parcel.description,
+    weightKg:          parcel.weightKg,
+    priceXaf:          parcel.priceXaf,
+    status:            parcel.status,
+    confirmed:         parcel.confirmed,
+    notes:             (parcel as any).notes ?? null,
+    createdAt:         parcel.createdAt,
+    productType:       parcel.productType,
+    nbCartons:         parcel.nbCartons,
+    nbPetitsSacs:      parcel.nbPetitsSacs,
+    nbSacsMoyens:      parcel.nbSacsMoyens,
+    nbGrandsSacs:      parcel.nbGrandsSacs,
+    nbPlastiques:      parcel.nbPlastiques,
+    nbPlastiquesBiere: parcel.nbPlastiquesBiere,
+    nbCasiers24x65:    parcel.nbCasiers24x65,
+    nbCasiers24x33:    parcel.nbCasiers24x33,
+    nbCasiers12x50:    parcel.nbCasiers12x50,
+    marginPct:         parcel.marginPct,
+    pricingDetails:    parcel.pricingDetails,
+    items:             parcel.items,
     campaign: {
       id:            parcel.campaign.id,
       code:          parcel.campaign.code,
@@ -121,15 +134,38 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
     );
   }
 
-  const { description, weightKg } = await req.json();
+  const body = await req.json();
+  const {
+    description, weightKg, notes, items,
+    nbCartons, nbPetitsSacs, nbSacsMoyens, nbGrandsSacs,
+    nbPlastiques, nbPlastiquesBiere,
+    nbCasiers24x65, nbCasiers24x33, nbCasiers12x50,
+  } = body;
+
+  const data: any = {};
+  if (description       !== undefined) data.description       = description;
+  if (weightKg          !== undefined) data.weightKg          = Number(weightKg);
+  if (notes             !== undefined) data.notes             = notes;
+  if (items             !== undefined) data.items             = items;
+  if (nbCartons         !== undefined) data.nbCartons         = Number(nbCartons);
+  if (nbPetitsSacs      !== undefined) data.nbPetitsSacs      = Number(nbPetitsSacs);
+  if (nbSacsMoyens      !== undefined) data.nbSacsMoyens      = Number(nbSacsMoyens);
+  if (nbGrandsSacs      !== undefined) data.nbGrandsSacs      = Number(nbGrandsSacs);
+  if (nbPlastiques      !== undefined) data.nbPlastiques      = Number(nbPlastiques);
+  if (nbPlastiquesBiere !== undefined) data.nbPlastiquesBiere = Number(nbPlastiquesBiere);
+  if (nbCasiers24x65    !== undefined) data.nbCasiers24x65    = Number(nbCasiers24x65);
+  if (nbCasiers24x33    !== undefined) data.nbCasiers24x33    = Number(nbCasiers24x33);
+  if (nbCasiers12x50    !== undefined) data.nbCasiers12x50    = Number(nbCasiers12x50);
 
   const updated = await prisma.parcel.update({
     where: { id: params.id },
-    data: {
-      ...(description !== undefined && { description }),
-      ...(weightKg    !== undefined && { weightKg: Number(weightKg) }),
+    data,
+    select: {
+      id: true, description: true, weightKg: true, status: true, notes: true, items: true,
+      nbCartons: true, nbPetitsSacs: true, nbSacsMoyens: true, nbGrandsSacs: true,
+      nbPlastiques: true, nbPlastiquesBiere: true,
+      nbCasiers24x65: true, nbCasiers24x33: true, nbCasiers12x50: true,
     },
-    select: { id: true, description: true, weightKg: true, status: true },
   });
 
   return NextResponse.json({ ok: true, parcel: updated });
