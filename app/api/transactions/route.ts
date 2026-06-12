@@ -110,7 +110,7 @@ export async function POST(req: NextRequest) {
         } else if (totalAllocated > 0 && totalAllocated < payment.amount && payment.status === 'pending') {
           await prisma.payment.update({
             where: { id: alloc.paymentId },
-            data: { status: 'partial' as any },
+            data: { status: 'partial' },
           });
         }
       }

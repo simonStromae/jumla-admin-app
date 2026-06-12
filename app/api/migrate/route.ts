@@ -64,5 +64,11 @@ export async function GET() {
   await run('bordereaux.clientConfirmed', `ALTER TABLE bordereaux ADD COLUMN IF NOT EXISTS "clientConfirmed" BOOLEAN NOT NULL DEFAULT false`);
   await run('bordereaux.clientConfirmedAt', `ALTER TABLE bordereaux ADD COLUMN IF NOT EXISTS "clientConfirmedAt" TIMESTAMPTZ`);
 
+  // Convert PaymentStatus enum → TEXT so "partial" and future statuses work without migrations
+  await run('payments.status_to_text', `
+    ALTER TABLE payments
+      ALTER COLUMN status TYPE TEXT USING status::TEXT
+  `);
+
   return NextResponse.json({ ok: true, results });
 }

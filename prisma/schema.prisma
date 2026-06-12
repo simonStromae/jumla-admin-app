@@ -146,7 +146,7 @@ model Payment {
   clientId   String
   client     User          @relation(fields: [clientId], references: [id])
   amount     Int
-  status     PaymentStatus @default(pending)
+  status     String        @default("pending")
   interacRef String?
   paidAt     DateTime?
   createdAt  DateTime      @default(now())
