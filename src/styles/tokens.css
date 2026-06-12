@@ -719,3 +719,8 @@ a { color: inherit; text-decoration: none; }
 @media (max-width: 1180px) {
   .layout-2col { grid-template-columns: 1fr; }
 }
+
+/* Global border-radius reset */
+*, *::before, *::after {
+  border-radius: 0 !important;
+}
