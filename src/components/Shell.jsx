@@ -86,6 +86,7 @@ export function Sidebar({ route, onNav }) {
   const initials    = name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
 
   const allItems = [
+    { id: 'dashboard', label: 'Tableau de bord', icon: I.Home,   route: '/admin/dashboard',                                       perm: null },
     { id: 'home',      label: 'Cargaisons',   icon: I.Plane,    route: '/admin/campaigns', count: stats.campaigns || null,      perm: 'campaigns' },
     { id: 'analytics', label: 'Analyses',     icon: I.Activity, route: '/admin/analytics',                                      perm: 'analytics' },
     { id: 'parcels',   label: 'Colis',        icon: I.Box,      route: '/admin/parcels',                                        perm: 'parcels' },

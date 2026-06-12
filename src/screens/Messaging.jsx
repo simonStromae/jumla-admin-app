@@ -3,6 +3,7 @@ import { useState, useEffect, useCallback } from 'react';
 import I from '../components/Icons.jsx';
 import { Bi, Avatar } from '../components/Shell.jsx';
 
+
 const TEMPLATES = [
   { id: 'arrival',   l: "Avis d'arrivée",   body: `Bonjour {first_name} 👋\n\nVotre colis ({parcel_code}) est arrivé à Montréal.\n\n📦 Poids : {weight} kg\n💰 Montant dû : {amount} CAD\n\n📍 Retrait : {warehouse_address}\n📞 Contact : {agent_phone}\n\nMerci,\nJumla Shipping` },
   { id: 'reminder',  l: 'Relance paiement', body: `Bonjour {first_name},\n\nNous n'avons pas encore reçu votre paiement pour le colis {parcel_code} — montant dû : {amount} CAD.\n\nMerci de régulariser votre situation au plus vite.\n\nJumla Shipping` },
@@ -12,37 +13,49 @@ const TEMPLATES = [
 ];
 const VARIABLES = ['{first_name}', '{amount}', '{weight}', '{parcel_code}', '{arrival_date}', '{warehouse_address}', '{agent_phone}'];
 
-export default function MessagingScreen({ onNav }) {
-  const [selected,   setSelected]   = useState([]);
-  const [template,   setTemplate]   = useState('arrival');
-  const [body,       setBody]       = useState(TEMPLATES[0].body);
-  const [parcels,    setParcels]    = useState([]);
-  const [loading,    setLoading]    = useState(true);
-  const [filter,     setFilter]     = useState('all');
-  const [apiStatus,  setApiStatus]  = useState(null); // {configured, fromNumber}
-  const [logs,       setLogs]       = useState([]);
-  const [sending,    setSending]    = useState(false);
-  const [sendResult, setSendResult] = useState(null);
+export default function MessagingScreen({ onNav, campaignId }) {
+  const [selected,        setSelected]        = useState([]);
+  const [template,        setTemplate]        = useState('arrival');
+  const [body,            setBody]            = useState(TEMPLATES[0].body);
+  const [parcels,         setParcels]         = useState([]);
+  const [campaigns,       setCampaigns]       = useState([]);
+  const [loading,         setLoading]         = useState(true);
+  const [filter,          setFilter]          = useState('all');
+  const [campaignFilter,  setCampaignFilter]  = useState(campaignId ?? '');
+  const [apiStatus,       setApiStatus]       = useState(null); // {configured, fromNumber}
+  const [logs,            setLogs]            = useState([]);
+  const [sending,         setSending]         = useState(false);
+  const [sendResult,      setSendResult]      = useState(null);
 
   const loadData = useCallback(() => {
     Promise.all([
       fetch('/api/parcels').then(r => r.json()),
       fetch('/api/messaging/status').then(r => r.json()),
       fetch('/api/messaging/logs').then(r => r.json()),
-    ]).then(([ps, status, ls]) => {
+      fetch('/api/campaigns').then(r => r.json()),
+    ]).then(([ps, status, ls, cs]) => {
       setParcels(Array.isArray(ps) ? ps : []);
       setApiStatus(status);
       setLogs(Array.isArray(ls) ? ls : []);
+      setCampaigns(Array.isArray(cs) ? cs : []);
       setLoading(false);
     }).catch(() => setLoading(false));
   }, []);
 
   useEffect(() => { loadData(); }, [loadData]);
 
+  // Sync campaignFilter when campaignId prop changes
+  useEffect(() => {
+    if (campaignId) setCampaignFilter(campaignId);
+  }, [campaignId]);
+
   const filtered = parcels.filter(p => {
+    if (campaignFilter && p.campaignId !== campaignFilter) return false;
     if (filter === 'unpaid') return p.paid !== 'paid';
     return true;
   });
+
+  const activeCampaign = campaignFilter ? campaigns.find(c => c.id === campaignFilter) : null;
 
   const toggleSelect = (id) => setSelected(sel =>
     sel.includes(id) ? sel.filter(x => x !== id) : [...sel, id]
@@ -129,6 +142,22 @@ export default function MessagingScreen({ onNav }) {
         </div>
       </div>
 
+      {activeCampaign && (
+        <div style={{
+          marginBottom: 12, padding: '10px 16px', borderRadius: 8,
+          background: '#F0FDF4', border: '1px solid #25D366',
+          display: 'flex', alignItems: 'center', gap: 10,
+        }}>
+          <svg viewBox="0 0 24 24" fill="#25D366" width="18" height="18"><path d="M17.5 14.4c-.3-.1-1.7-.9-2-1s-.5-.1-.7.1c-.2.3-.7 1-.9 1.1-.2.2-.3.2-.6 0-.3-.1-1.2-.5-2.3-1.4-.8-.7-1.4-1.7-1.6-2-.2-.3 0-.5.1-.6l.5-.5c.1-.2.2-.3.3-.5 0-.2 0-.4-.1-.5 0-.1-.7-1.6-1-2.2-.2-.6-.5-.5-.7-.5h-.6c-.2 0-.5.1-.7.4-.3.3-1 1-1 2.4s1 2.8 1.2 3.1c.2.2 2 3 4.8 4.3.7.3 1.2.4 1.6.6.7.2 1.3.2 1.8.1.6-.1 1.7-.7 1.9-1.3.3-.7.3-1.2.2-1.3-.1-.2-.3-.3-.6-.4zM12 21a9 9 0 0 1-4.6-1.3L3 21l1.3-4.3A9 9 0 1 1 12 21z" /></svg>
+          <span style={{ fontSize: 13, fontWeight: 700, color: '#166534', flex: 1 }}>
+            Envoi groupé — Cargaison <strong>{activeCampaign.code}</strong> · {filtered.length} client{filtered.length !== 1 ? 's' : ''}
+          </span>
+          <button onClick={() => setCampaignFilter('')} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 13, color: '#166534', fontWeight: 600 }}>
+            Voir tous ✕
+          </button>
+        </div>
+      )}
+
       {sendResult && (
         <div style={{
           marginBottom: 12, padding: '10px 14px', borderRadius: 8,
@@ -200,7 +229,14 @@ export default function MessagingScreen({ onNav }) {
             })}
           </div>
 
-          <div style={{ padding: 12, borderTop: '1px solid var(--border)', background: 'var(--bg-soft)', display: 'flex', gap: 6 }}>
+          <div style={{ padding: 12, borderTop: '1px solid var(--border)', background: 'var(--bg-soft)', display: 'flex', flexDirection: 'column', gap: 6 }}>
+            {activeCampaign && (
+              <button className="btn btn--sm" style={{ justifyContent: 'center', background: '#25D366', color: 'white', border: 'none' }}
+                onClick={() => setSelected(filtered.map(p => p.id))}>
+                Sélectionner tous de la cargaison ({filtered.length})
+              </button>
+            )}
+            <div style={{ display: 'flex', gap: 6 }}>
             <button className="btn btn--soft btn--sm" style={{ flex: 1, justifyContent: 'center' }}
               onClick={() => setSelected(filtered.filter(p => p.paid !== 'paid').map(p => p.id))}>
               <I.Send />Sélectionner les impayés
@@ -220,6 +256,7 @@ export default function MessagingScreen({ onNav }) {
                 <I.Chat />{sending ? 'Envoi…' : `Envoyer (${selected.length})`}
               </button>
             )}
+            </div>
           </div>
         </div>
 
