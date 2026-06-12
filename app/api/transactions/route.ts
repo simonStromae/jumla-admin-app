@@ -100,15 +100,19 @@ export async function POST(req: NextRequest) {
         select: { amount: true, status: true },
       });
 
-      if (payment && Number(row.total) >= payment.amount && payment.status !== 'completed') {
-        await prisma.payment.update({
-          where: { id: alloc.paymentId },
-          data: {
-            status:     'completed',
-            paidAt:     new Date(),
-            interacRef: reference || undefined,
-          },
-        });
+      if (payment) {
+        const totalAllocated = Number(row.total);
+        if (totalAllocated >= payment.amount && payment.status !== 'completed') {
+          await prisma.payment.update({
+            where: { id: alloc.paymentId },
+            data: { status: 'completed', paidAt: new Date(), interacRef: reference || undefined },
+          });
+        } else if (totalAllocated > 0 && totalAllocated < payment.amount && payment.status === 'pending') {
+          await prisma.payment.update({
+            where: { id: alloc.paymentId },
+            data: { status: 'partial' as any },
+          });
+        }
       }
     }
 

@@ -1,266 +1,150 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
-import { Modal } from '@/src/components/Shell.jsx';
 import I from '@/src/components/Icons.jsx';
 
-const PARCEL_STATUS = {
-  en_attente: { label: 'En attente', color: 'var(--ink-500)',    bg: 'var(--bg-soft)',   icon: '⏳' },
-  recu:       { label: 'Reçu',       color: 'var(--brand-700)', bg: 'var(--brand-50)',  icon: '✅' },
-  en_transit: { label: 'En transit', color: 'var(--info-700)',   bg: 'var(--info-50)',   icon: '✈️' },
-  en_douane:  { label: 'En douane',  color: 'var(--warn-700)',   bg: 'var(--warn-50)',   icon: '🛃' },
-  arrive:     { label: 'Arrivé',     color: 'var(--ok-700)',     bg: 'var(--ok-50)',     icon: '📦' },
-  livre:      { label: 'Livré',      color: 'var(--ok-700)',     bg: 'var(--ok-50)',     icon: '🎉' },
-};
+const JOURNEY = [
+  { key: 'en_attente', label: 'Réservé',         icon: '📝', color: '#6b7280' },
+  { key: 'recu',       label: 'Pris en charge',  icon: '✅', color: '#2563eb' },
+  { key: 'en_transit', label: 'En transit',       icon: '✈️', color: '#0891b2' },
+  { key: 'en_douane',  label: 'En douane',        icon: '🛃', color: '#d97706' },
+  { key: 'arrive',     label: 'Arrivé',           icon: '📦', color: '#16a34a' },
+  { key: 'livre',      label: 'Livré',            icon: '🎉', color: '#16a34a' },
+];
 
-function StatusBadge({ status }) {
-  const s = PARCEL_STATUS[status] ?? { label: status, color: 'var(--ink-500)', bg: 'var(--bg-soft)' };
+function getJourneyStep(status) {
+  const idx = JOURNEY.findIndex(s => s.key === status);
+  return idx >= 0 ? idx : 0;
+}
+
+function ProgressDots({ status }) {
+  const current = getJourneyStep(status);
   return (
-    <span style={{
-      display: 'inline-flex', alignItems: 'center', gap: 5,
-      padding: '3px 10px', borderRadius: 999,
-      background: s.bg, color: s.color,
-      fontSize: 12, fontWeight: 600,
-    }}>
-      {s.icon} {s.label}
-    </span>
+    <div style={{ display: 'flex', alignItems: 'center', gap: 3, marginTop: 6 }}>
+      {JOURNEY.slice(0, -1).map((s, i) => (
+        <div key={s.key} style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
+          <div style={{
+            width: i === current ? 8 : 6,
+            height: i === current ? 8 : 6,
+            borderRadius: '50%',
+            background: i <= current ? (i === current ? s.color : '#86efac') : '#e5e7eb',
+            transition: 'all .2s',
+          }} />
+          {i < JOURNEY.length - 2 && (
+            <div style={{ width: 12, height: 2, background: i < current ? '#86efac' : '#e5e7eb', borderRadius: 1 }} />
+          )}
+        </div>
+      ))}
+    </div>
   );
 }
 
-function TrackingTimeline({ events }) {
-  if (!events?.length) return (
-    <div style={{ padding: '16px 0', color: 'var(--ink-400)', fontSize: 13, textAlign: 'center' }}>
-      Aucun événement enregistré.
-    </div>
-  );
+function fmt(date) {
+  if (!date) return null;
+  return new Date(date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' });
+}
+
+function ParcelCard({ parcel, onClick }) {
+  const s        = JOURNEY[getJourneyStep(parcel.status)] ?? JOURNEY[0];
+  const paid     = parcel.payment?.status === 'completed';
+  const partial  = parcel.payment?.status === 'partial';
+  const hasUnconfirmedBl = parcel.bordereaux?.some(b => b.status === 'valide' && !b.clientConfirmed);
+  const hasBl    = parcel.bordereaux?.length > 0;
+  const isLivré  = parcel.status === 'livre';
+
+  const needsAction = hasUnconfirmedBl || (!paid && parcel.payment);
+
   return (
-    <div style={{ display: 'flex', flexDirection: 'column' }}>
-      {events.map((e, i) => {
-        const s = PARCEL_STATUS[e.status] ?? { label: e.status, color: 'var(--ink-400)', bg: 'var(--bg-soft)', icon: '•' };
-        return (
-          <div key={i} style={{ display: 'flex', gap: 12, paddingBottom: i < events.length - 1 ? 14 : 0 }}>
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-              <div style={{ width: 28, height: 28, borderRadius: '50%', background: s.bg, display: 'grid', placeItems: 'center', fontSize: 14, flexShrink: 0 }}>
-                {s.icon}
-              </div>
-              {i < events.length - 1 && (
-                <div style={{ width: 1, flex: 1, background: 'var(--border)', marginTop: 3 }} />
+    <div onClick={onClick} style={{
+      background: 'white',
+      border: `1.5px solid ${needsAction ? '#fbbf24' : 'var(--border)'}`,
+      borderRadius: 14,
+      padding: '16px',
+      cursor: 'pointer',
+      transition: 'box-shadow .15s, border-color .15s',
+      position: 'relative',
+      overflow: 'hidden',
+    }}
+    onTouchStart={e => e.currentTarget.style.background = 'var(--bg-soft)'}
+    onTouchEnd={e => e.currentTarget.style.background = 'white'}
+    >
+      {/* Left accent bar */}
+      <div style={{
+        position: 'absolute', left: 0, top: 0, bottom: 0, width: 4,
+        background: isLivré ? '#16a34a' : s.color,
+        borderRadius: '14px 0 0 14px',
+      }} />
+
+      <div style={{ paddingLeft: 8 }}>
+        {/* Top row */}
+        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 8 }}>
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <span style={{ fontFamily: 'var(--ff-mono, monospace)', fontWeight: 700, fontSize: 15, color: '#111827', letterSpacing: '.02em' }}>
+                {parcel.trackingCode}
+              </span>
+              {needsAction && (
+                <span style={{
+                  fontSize: 10, fontWeight: 700, padding: '2px 7px', borderRadius: 99,
+                  background: '#fef3c7', color: '#92400e', border: '1px solid #fde68a',
+                  textTransform: 'uppercase', letterSpacing: '.04em',
+                }}>Action requise</span>
               )}
             </div>
-            <div style={{ paddingTop: 3 }}>
-              <div style={{ fontWeight: 600, fontSize: 13, color: s.color }}>{s.label}</div>
-              {e.location && <div style={{ fontSize: 12, color: 'var(--ink-400)' }}>{e.location}</div>}
-              {e.note     && <div style={{ fontSize: 12, color: 'var(--ink-500)', fontStyle: 'italic' }}>{e.note}</div>}
-              <div style={{ fontSize: 11, color: 'var(--ink-300)', marginTop: 2 }}>
-                {new Date(e.createdAt).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' })}
-              </div>
+            <div style={{ fontSize: 12, color: '#6b7280', marginTop: 2 }}>
+              {parcel.campaign?.from} → {parcel.campaign?.to}
+              {parcel.campaign?.code && <span style={{ marginLeft: 4, color: '#9ca3af' }}>· {parcel.campaign.code}</span>}
             </div>
           </div>
-        );
-      })}
-    </div>
-  );
-}
-
-function EditParcelForm({ parcel, onSaved, onCancel }) {
-  const [description, setDescription] = useState(parcel.description ?? '');
-  const [weightKg,    setWeightKg]    = useState(parcel.weightKg    ?? '');
-  const [saving,      setSaving]      = useState(false);
-  const [error,       setError]       = useState('');
-
-  const handleSave = async () => {
-    setSaving(true);
-    setError('');
-    const res = await fetch('/api/me/parcels/' + parcel.id, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ description, weightKg: weightKg !== '' ? Number(weightKg) : undefined }),
-    });
-    const json = await res.json();
-    setSaving(false);
-    if (!res.ok) { setError(json.error || 'Erreur'); return; }
-    onSaved(json.parcel);
-  };
-
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-      <div style={{ padding: '10px 14px', background: 'var(--info-50)', border: '1px solid var(--info-100)', borderRadius: 8, fontSize: 12.5, color: 'var(--info-700)' }}>
-        Vous pouvez modifier votre colis tant qu'il n'est pas encore en transit.
-      </div>
-      <div>
-        <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--ink-600)', display: 'block', marginBottom: 6 }}>Description du contenu</label>
-        <input
-          className="input"
-          value={description}
-          onChange={e => setDescription(e.target.value)}
-          placeholder="Ex : Vêtements, électronique…"
-        />
-      </div>
-      <div>
-        <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--ink-600)', display: 'block', marginBottom: 6 }}>
-          Poids estimé <span style={{ fontWeight: 400, color: 'var(--ink-400)' }}>(kg)</span>
-        </label>
-        <input
-          className="input mono"
-          type="number" min="0" step="0.1"
-          value={weightKg}
-          onChange={e => setWeightKg(e.target.value)}
-          placeholder="ex. 5.0"
-        />
-      </div>
-      {error && (
-        <div style={{ padding: '8px 12px', background: 'var(--bad-50)', border: '1px solid var(--bad-200)', borderRadius: 6, fontSize: 12.5, color: 'var(--bad-700)' }}>
-          {error}
+          <div style={{ textAlign: 'right', flexShrink: 0 }}>
+            <div style={{ fontSize: 13.5, fontWeight: 700, color: '#111827' }}>
+              {parcel.priceXaf?.toLocaleString('fr') ?? '—'} <span style={{ fontSize: 11, fontWeight: 400, color: '#9ca3af' }}>CAD</span>
+            </div>
+            <div style={{ fontSize: 11.5, fontWeight: 600, marginTop: 1, color: paid ? '#16a34a' : partial ? '#d97706' : '#dc2626' }}>
+              {paid ? '✓ Payé' : partial ? '⏳ Partiel' : '⚡ À régler'}
+            </div>
+          </div>
         </div>
-      )}
-      <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
-        <button className="btn btn--ghost" onClick={onCancel}>Annuler</button>
-        <button className="btn btn--brand" onClick={handleSave} disabled={saving}>
-          {saving ? 'Enregistrement…' : 'Enregistrer les modifications'}
-        </button>
-      </div>
-    </div>
-  );
-}
 
-function ParcelModal({ parcel: initialParcel, onClose, onUpdated }) {
-  const [parcel,   setParcel]   = useState(initialParcel);
-  const [editing,  setEditing]  = useState(false);
-  const canEdit = ['en_attente', 'recu'].includes(parcel.status);
-  const paid = parcel.payment?.status === 'completed';
-  const s    = PARCEL_STATUS[parcel.status] ?? { label: parcel.status, color: 'var(--ink-500)', bg: 'var(--bg-soft)' };
+        {/* Status row */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
+          <span style={{ fontSize: 16 }}>{s.icon}</span>
+          <span style={{ fontSize: 13, fontWeight: 600, color: s.color }}>{s.label}</span>
+        </div>
 
-  const handleSaved = (updated) => {
-    const merged = { ...parcel, description: updated.description, weightKg: updated.weightKg };
-    setParcel(merged);
-    onUpdated?.(merged);
-    setEditing(false);
-  };
+        {/* Progress */}
+        <ProgressDots status={parcel.status} />
 
-  return (
-    <Modal
-      width={540}
-      onClose={onClose}
-      title={<span className="mono" style={{ fontWeight: 700 }}>{parcel.trackingCode}</span>}
-      sub={`${parcel.campaign?.from} → ${parcel.campaign?.to} · ${parcel.campaign?.code}`}
-      footer={
-        !editing ? (
-          <>
-            <a href={'/client/invoice/' + parcel.id} target="_blank" rel="noreferrer" className="btn btn--ghost">
-              📄 Voir la facture
-            </a>
-            <div style={{ flex: 1 }} />
-            {canEdit && (
-              <button className="btn btn--ghost" onClick={() => setEditing(true)}>
-                ✏️ Modifier
-              </button>
+        {/* Bottom info */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginTop: 10 }}>
+          <div style={{ fontSize: 11.5, color: '#9ca3af' }}>
+            {parcel.campaign?.departureDate && !isLivré && (
+              <span>Départ {fmt(parcel.campaign.departureDate)}</span>
             )}
-            <button className="btn btn--ghost" onClick={onClose}>Fermer</button>
-          </>
-        ) : null
-      }
-    >
-      {editing ? (
-        <EditParcelForm parcel={parcel} onSaved={handleSaved} onCancel={() => setEditing(false)} />
-      ) : (
-        <>
-          {/* Status + payment row */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 16 }}>
-            <div style={{ background: 'var(--bg-soft)', borderRadius: 8, padding: '12px 14px' }}>
-              <div style={{ fontSize: 10.5, color: 'var(--ink-400)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.04em', marginBottom: 6 }}>Statut colis</div>
-              <StatusBadge status={parcel.status} />
-            </div>
-            <div style={{ background: 'var(--bg-soft)', borderRadius: 8, padding: '12px 14px' }}>
-              <div style={{ fontSize: 10.5, color: 'var(--ink-400)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.04em', marginBottom: 6 }}>Paiement</div>
-              <span style={{ fontSize: 13, fontWeight: 700, color: paid ? 'var(--ok-700)' : 'var(--bad-600)' }}>
-                {paid ? '✓ Réglé' : `${(parcel.priceXaf ?? 0).toLocaleString('fr')} CAD dû`}
-              </span>
-            </div>
+            {parcel.campaign?.arrivalDate && !isLivré && (
+              <span> · Arrivée ~{fmt(parcel.campaign.arrivalDate)}</span>
+            )}
+            {parcel.weightKg && <span> · {parcel.weightKg} kg</span>}
           </div>
-
-          {/* Info row */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10, marginBottom: 16 }}>
-            {[
-              { label: 'Poids',    val: parcel.weightKg != null ? `${parcel.weightKg} kg` : '—' },
-              { label: 'Montant',  val: parcel.priceXaf  != null ? `${parcel.priceXaf.toLocaleString('fr')} CAD` : '—' },
-              { label: 'Cargaison', val: parcel.campaign?.code ?? '—' },
-            ].map(({ label, val }) => (
-              <div key={label} style={{ background: 'var(--bg-soft)', borderRadius: 8, padding: '10px 12px' }}>
-                <div style={{ fontSize: 10.5, color: 'var(--ink-400)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.04em', marginBottom: 4 }}>{label}</div>
-                <div className="mono" style={{ fontSize: 13, fontWeight: 700, color: 'var(--ink-800)' }}>{val}</div>
-              </div>
-            ))}
-          </div>
-
-          {/* Payment pending banner */}
-          {!paid && (
-            <div style={{ background: 'var(--warn-50)', border: '1px solid var(--warn-200)', borderRadius: 8, padding: '10px 14px', marginBottom: 16, fontSize: 13 }}>
-              <strong style={{ color: 'var(--warn-700)' }}>Paiement en attente</strong>
-              <div style={{ color: 'var(--warn-600)', marginTop: 3 }}>
-                Envoyez <strong>{(parcel.priceXaf ?? 0).toLocaleString('fr')} CAD</strong> par Virement Interac · indiquez votre numéro de colis dans le message.
-              </div>
+          {hasBl && (
+            <div style={{ fontSize: 11, color: hasUnconfirmedBl ? '#92400e' : '#6b7280', fontWeight: hasUnconfirmedBl ? 700 : 400 }}>
+              {hasUnconfirmedBl ? '⚠️ Bordereau à signer' : '📋 Bordereau OK'}
             </div>
           )}
+        </div>
 
-          {/* Bordereaux */}
-          {parcel.bordereaux?.length > 0 && (
-            <div style={{ marginBottom: 16 }}>
-              <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--ink-400)', textTransform: 'uppercase', letterSpacing: '.05em', marginBottom: 8 }}>Bordereaux</div>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-                {parcel.bordereaux.map(bl => (
-                  <a key={bl.id} href={'/client/bordereau/' + bl.id} target="_blank" rel="noreferrer"
-                    className="btn btn--ghost btn--xs" style={{ textDecoration: 'none', fontFamily: 'var(--font-mono)', fontSize: 12 }}>
-                    📋 {bl.code}
-                  </a>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Timeline */}
-          <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--ink-400)', textTransform: 'uppercase', letterSpacing: '.05em', marginBottom: 10 }}>
-            Historique de suivi
+        {/* Action banners */}
+        {hasUnconfirmedBl && (
+          <div style={{
+            marginTop: 10, padding: '8px 12px', borderRadius: 8,
+            background: '#fffbeb', border: '1px solid #fde68a',
+            fontSize: 12.5, color: '#92400e', fontWeight: 600,
+          }}>
+            ⚠️ Votre bordereau attend votre confirmation avant l&apos;expédition
           </div>
-          <TrackingTimeline events={parcel.tracking} />
-        </>
-      )}
-    </Modal>
-  );
-}
-
-function ParcelRow({ parcel, onSelect }) {
-  const paid = parcel.payment?.status === 'completed';
-  return (
-    <div
-      onClick={onSelect}
-      style={{
-        display: 'flex', alignItems: 'center', gap: 14,
-        padding: '13px 16px', background: 'white',
-        border: '1px solid var(--border)', borderRadius: 8,
-        cursor: 'pointer', transition: 'border-color .12s, background .12s',
-      }}
-      onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--brand-300)'; e.currentTarget.style.background = 'var(--brand-50)'; }}
-      onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.background = 'white'; }}>
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 3 }}>
-          <span className="mono" style={{ fontWeight: 700, fontSize: 14, color: 'var(--ink-900)' }}>{parcel.trackingCode}</span>
-          <StatusBadge status={parcel.status} />
-        </div>
-        <div style={{ fontSize: 12, color: 'var(--ink-400)' }}>
-          {parcel.campaign?.from} → {parcel.campaign?.to} · <strong>{parcel.campaign?.code}</strong>
-          {parcel.weightKg != null && <> · {parcel.weightKg} kg</>}
-        </div>
+        )}
       </div>
-      <div style={{ textAlign: 'right', flexShrink: 0 }}>
-        <div className="mono" style={{ fontWeight: 700, fontSize: 13, color: 'var(--ink-800)' }}>
-          {(parcel.priceXaf ?? 0).toLocaleString('fr')} <span style={{ fontSize: 11, fontWeight: 400, color: 'var(--ink-400)' }}>CAD</span>
-        </div>
-        <div style={{ fontSize: 12, marginTop: 2, color: paid ? 'var(--ok-600)' : 'var(--bad-500)', fontWeight: 600 }}>
-          {paid ? '✓ Payé' : 'À régler'}
-        </div>
-      </div>
-      <I.ChevronRight style={{ width: 16, height: 16, color: 'var(--ink-300)', flexShrink: 0 }} />
     </div>
   );
 }
@@ -269,110 +153,129 @@ export default function ClientDashboard() {
   const { data: session } = useSession();
   const router    = useRouter();
   const suspended = session?.user?.status === 'suspended';
-  const [parcels, setParcels] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [selected, setSelected] = useState(null);
+  const [parcels,  setParcels]  = useState([]);
+  const [loading,  setLoading]  = useState(true);
+  const [tab,      setTab]      = useState('active'); // 'active' | 'done'
 
-  useEffect(() => {
-    fetch('/api/me/parcels').then(r => r.json()).then(data => {
+  const load = useCallback(async () => {
+    try {
+      const res  = await fetch('/api/me/parcels');
+      const data = await res.json();
       setParcels(Array.isArray(data) ? data : []);
-      setLoading(false);
-    });
+    } catch {}
+    setLoading(false);
   }, []);
+
+  useEffect(() => { load(); }, [load]);
 
   const active  = parcels.filter(p => p.status !== 'livre');
   const done    = parcels.filter(p => p.status === 'livre');
-  const unpaid  = parcels.filter(p => !p.payment || p.payment.status !== 'completed');
-  const detail  = selected ? parcels.find(p => p.id === selected) : null;
+  const actions = active.filter(p =>
+    p.bordereaux?.some(b => b.status === 'valide' && !b.clientConfirmed) ||
+    (p.payment && p.payment.status !== 'completed')
+  );
+
+  const displayed = tab === 'active' ? active : done;
 
   return (
-    <div>
-      {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 24, gap: 16 }}>
-        <div>
-          <h1 style={{ fontSize: 20, fontWeight: 700, margin: '0 0 3px', color: 'var(--ink-900)' }}>
-            Bonjour, {session?.user?.name?.split(' ')[0]}
-          </h1>
-          <p style={{ fontSize: 13.5, color: 'var(--ink-400)', margin: 0 }}>
-            Suivez vos colis et gérez vos paiements.
-          </p>
-        </div>
-        {!suspended && (
-          <button onClick={() => router.push('/client/booking')} className="btn btn--brand">
-            <I.Plus /> Réserver un envoi
-          </button>
-        )}
+    <div style={{ maxWidth: 600, margin: '0 auto' }}>
+      {/* Welcome */}
+      <div style={{ marginBottom: 20 }}>
+        <h1 style={{ fontSize: 22, fontWeight: 800, margin: '0 0 2px', color: '#111827' }}>
+          Bonjour {session?.user?.name?.split(' ')[0]} 👋
+        </h1>
+        <p style={{ fontSize: 13.5, color: '#6b7280', margin: 0 }}>
+          {loading ? '…' : `${active.length} colis en cours · ${done.length} livré${done.length > 1 ? 's' : ''}`}
+        </p>
       </div>
 
-      {/* KPIs */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, marginBottom: 28 }}>
-        {[
-          { label: 'Colis en cours',  value: active.length,  color: 'var(--brand-700)', icon: <I.Plane  style={{ width: 18, height: 18 }} /> },
-          { label: 'Colis livrés',    value: done.length,    color: 'var(--ok-700)',    icon: <I.Check  style={{ width: 18, height: 18 }} /> },
-          { label: 'Paiements dus',   value: unpaid.length,  color: 'var(--bad-600)',   icon: <I.Wallet style={{ width: 18, height: 18 }} /> },
-        ].map((k, i) => (
-          <div key={i} className="kpi">
-            <div className="kpi__label" style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-              <span style={{ color: k.color }}>{k.icon}</span> {k.label}
+      {/* Action required banner */}
+      {actions.length > 0 && !loading && (
+        <div style={{
+          marginBottom: 20, padding: '12px 16px', borderRadius: 12,
+          background: '#fffbeb', border: '1.5px solid #fbbf24',
+          display: 'flex', alignItems: 'center', gap: 12,
+        }}>
+          <span style={{ fontSize: 22, flexShrink: 0 }}>⚡</span>
+          <div>
+            <div style={{ fontWeight: 700, fontSize: 14, color: '#92400e' }}>
+              {actions.length} action{actions.length > 1 ? 's' : ''} requise{actions.length > 1 ? 's' : ''}
             </div>
-            <div className="kpi__value" style={{ color: k.color }}>{k.value}</div>
+            <div style={{ fontSize: 12.5, color: '#b45309', marginTop: 1 }}>
+              {actions.some(p => p.bordereaux?.some(b => b.status === 'valide' && !b.clientConfirmed))
+                ? 'Des bordereaux attendent votre confirmation avant expédition'
+                : 'Des paiements sont en attente de règlement'}
+            </div>
           </div>
-        ))}
-      </div>
+        </div>
+      )}
 
-      {/* Parcels */}
+      {/* New booking CTA */}
+      {!suspended && (
+        <button onClick={() => router.push('/client/booking')} style={{
+          width: '100%', padding: '14px 20px', borderRadius: 12, border: 'none',
+          background: 'linear-gradient(135deg, #F5A524, #D97706)',
+          color: 'white', fontWeight: 700, fontSize: 15, cursor: 'pointer',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+          marginBottom: 24, boxShadow: '0 4px 14px rgba(217,119,6,.3)',
+        }}>
+          <I.Plus style={{ width: 18, height: 18 }} />
+          Réserver un nouvel envoi
+        </button>
+      )}
+
+      {/* Tabs */}
+      {!loading && parcels.length > 0 && (
+        <div style={{ display: 'flex', gap: 4, marginBottom: 16, background: '#f3f4f6', borderRadius: 10, padding: 4 }}>
+          {[
+            { key: 'active', label: `En cours (${active.length})` },
+            { key: 'done',   label: `Livrés (${done.length})` },
+          ].map(t => (
+            <button key={t.key} onClick={() => setTab(t.key)} style={{
+              flex: 1, padding: '8px 0', borderRadius: 7, border: 'none', cursor: 'pointer',
+              fontWeight: tab === t.key ? 700 : 500,
+              fontSize: 13.5,
+              background: tab === t.key ? 'white' : 'transparent',
+              color: tab === t.key ? '#111827' : '#6b7280',
+              boxShadow: tab === t.key ? '0 1px 4px rgba(0,0,0,.1)' : 'none',
+            }}>{t.label}</button>
+          ))}
+        </div>
+      )}
+
+      {/* Cards */}
       {loading ? (
-        <div style={{ textAlign: 'center', padding: 40, color: 'var(--ink-400)', fontSize: 13 }}>Chargement…</div>
-      ) : parcels.length === 0 ? (
-        <div style={{ textAlign: 'center', padding: 60, color: 'var(--ink-400)' }}>
-          <I.Box style={{ width: 40, height: 40, margin: '0 auto 12px', opacity: .3 }} />
-          <div style={{ fontSize: 15, fontWeight: 600, marginBottom: 6, color: 'var(--ink-700)' }}>Aucun colis enregistré</div>
-          {suspended ? (
-            <div style={{ fontSize: 13, color: 'var(--warn-600)' }}>Votre compte est suspendu. Contactez-nous pour régulariser.</div>
-          ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          {[1,2].map(i => (
+            <div key={i} style={{ height: 140, borderRadius: 14, background: 'white', border: '1.5px solid #e5e7eb', animation: 'pulse 1.5s infinite' }} />
+          ))}
+        </div>
+      ) : displayed.length === 0 ? (
+        <div style={{ textAlign: 'center', padding: '48px 20px', color: '#6b7280' }}>
+          <div style={{ fontSize: 40, marginBottom: 12 }}>{tab === 'done' ? '🎉' : '📦'}</div>
+          <div style={{ fontSize: 16, fontWeight: 600, color: '#374151', marginBottom: 6 }}>
+            {tab === 'done' ? 'Aucun colis livré' : 'Aucun colis en cours'}
+          </div>
+          {tab === 'active' && !suspended && (
             <>
               <div style={{ fontSize: 13, marginBottom: 16 }}>Commencez par réserver votre premier envoi.</div>
-              <button onClick={() => router.push('/client/booking')} className="btn btn--brand">
-                <I.Plus /> Réserver mon premier envoi
-              </button>
+              <button onClick={() => router.push('/client/booking')} style={{
+                padding: '10px 20px', borderRadius: 10, border: 'none',
+                background: '#F5A524', color: 'white', fontWeight: 700, cursor: 'pointer',
+              }}>Réserver maintenant</button>
             </>
           )}
         </div>
       ) : (
-        <>
-          {active.length > 0 && (
-            <div style={{ marginBottom: 24 }}>
-              <div style={{ fontSize: 11.5, fontWeight: 700, color: 'var(--ink-400)', textTransform: 'uppercase', letterSpacing: '.05em', marginBottom: 10 }}>
-                Colis en cours — {active.length}
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                {active.map(p => (
-                  <ParcelRow key={p.id} parcel={p} onSelect={() => setSelected(p.id)} />
-                ))}
-              </div>
-            </div>
-          )}
-          {done.length > 0 && (
-            <div>
-              <div style={{ fontSize: 11.5, fontWeight: 700, color: 'var(--ink-400)', textTransform: 'uppercase', letterSpacing: '.05em', marginBottom: 10 }}>
-                Colis livrés — {done.length}
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                {done.map(p => (
-                  <ParcelRow key={p.id} parcel={p} onSelect={() => setSelected(p.id)} />
-                ))}
-              </div>
-            </div>
-          )}
-        </>
-      )}
-
-      {detail && (
-        <ParcelModal
-          parcel={detail}
-          onClose={() => setSelected(null)}
-          onUpdated={(updated) => setParcels(ps => ps.map(p => p.id === updated.id ? { ...p, ...updated } : p))}
-        />
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          {displayed.map(p => (
+            <ParcelCard
+              key={p.id}
+              parcel={p}
+              onClick={() => router.push('/client/colis/' + p.id)}
+            />
+          ))}
+        </div>
       )}
     </div>
   );
