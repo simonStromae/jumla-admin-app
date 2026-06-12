@@ -259,7 +259,9 @@ export default function ClientLayout({ children }) {
           )}
 
           <div className="main-content" style={{ flex: 1, padding: '24px 20px' }}>
-            {children}
+            <div style={{ maxWidth: 1200, margin: '0 auto', width: '100%' }}>
+              {children}
+            </div>
           </div>
         </main>
 

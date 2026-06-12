@@ -178,7 +178,7 @@ export default function ParcelDetailPage({ params }) {
   ];
 
   return (
-    <div style={{ maxWidth: 1200, margin: '0 auto' }}>
+    <div>
       {/* Back */}
       <button onClick={() => router.push('/client/dashboard')} style={{
         display: 'flex', alignItems: 'center', gap: 6, marginBottom: 16,
