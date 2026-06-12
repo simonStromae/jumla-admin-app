@@ -178,7 +178,7 @@ export default function ClientDashboard() {
   const displayed = tab === 'active' ? active : done;
 
   return (
-    <div style={{ maxWidth: 600, margin: '0 auto' }}>
+    <div>
       {/* Welcome */}
       <div style={{ marginBottom: 20 }}>
         <h1 style={{ fontSize: 22, fontWeight: 800, margin: '0 0 2px', color: '#111827' }}>
