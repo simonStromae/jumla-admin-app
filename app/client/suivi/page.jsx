@@ -3,15 +3,21 @@ import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 
 const STATUS = {
-  en_attente: { label: 'En attente de prise en charge', color: 'var(--ink-500)',   bg: 'var(--bg-soft)',  icon: '⏳' },
-  recu:       { label: 'Reçu par Jumla',                color: 'var(--brand-700)', bg: 'var(--brand-50)', icon: '✅' },
-  en_transit: { label: 'En transit',                    color: 'var(--info-700)',  bg: 'var(--info-50)',  icon: '✈️' },
-  en_douane:  { label: 'En douane',                     color: 'var(--warn-700)',  bg: 'var(--warn-50)',  icon: '🛃' },
-  arrive:     { label: 'Arrivé à destination',          color: 'var(--ok-700)',    bg: 'var(--ok-50)',    icon: '📦' },
-  livre:      { label: 'Livré',                         color: 'var(--ok-700)',    bg: 'var(--ok-50)',    icon: '🎉' },
+  enr: { label: 'Colis enregistré',              color: 'var(--ink-500)',   bg: 'var(--bg-soft)',   icon: '📝' },
+  rec: { label: 'Reçu à l\'entrepôt',            color: 'var(--brand-700)', bg: 'var(--brand-50)', icon: '📥' },
+  pre: { label: 'Vérifié et préparé',             color: '#7c3aed',          bg: '#f5f3ff',          icon: '🔍' },
+  exp: { label: 'Expédié',                        color: 'var(--info-700)',  bg: 'var(--info-50)',   icon: '🚀' },
+  tra: { label: 'En transit',                     color: 'var(--info-700)',  bg: 'var(--info-50)',   icon: '✈️' },
+  apd: { label: 'Arrivé au pays de destination',  color: 'var(--ok-700)',    bg: 'var(--ok-50)',     icon: '🛬' },
+  dou: { label: 'Présenté aux douanes',           color: 'var(--warn-700)', bg: 'var(--warn-50)',   icon: '🛃' },
+  ins: { label: 'En inspection douanière',        color: 'var(--warn-700)', bg: 'var(--warn-50)',   icon: '🔎' },
+  ret: { label: 'Retenu par les douanes',         color: 'var(--bad-700)',   bg: 'var(--bad-50)',    icon: '⚠️' },
+  lib: { label: 'Libéré par les douanes',         color: 'var(--ok-700)',    bg: 'var(--ok-50)',     icon: '✅' },
+  del: { label: 'En cours de livraison',          color: 'var(--info-700)',  bg: 'var(--info-50)',   icon: '🚚' },
+  liv: { label: 'Livré',                          color: 'var(--ok-700)',    bg: 'var(--ok-50)',     icon: '🎉' },
 };
 
-const STEPS = ['en_attente', 'recu', 'en_transit', 'en_douane', 'arrive', 'livre'];
+const STEPS = ['enr', 'rec', 'pre', 'exp', 'tra', 'apd', 'dou', 'lib', 'del', 'liv'];
 
 function fmt(date) {
   if (!date) return '—';

@@ -74,5 +74,27 @@ export async function GET() {
       ALTER COLUMN status TYPE TEXT USING status::TEXT
   `);
 
+  // Convert ParcelStatus enum → TEXT (new multi-step tracking system)
+  await run('parcels.status_to_text', `
+    ALTER TABLE parcels
+      ALTER COLUMN status TYPE TEXT USING status::TEXT
+  `);
+  await run('tracking_events.status_to_text', `
+    ALTER TABLE tracking_events
+      ALTER COLUMN status TYPE TEXT USING status::TEXT
+  `);
+
+  // Full data reset — preserve users, wipe all operational data for clean start
+  await run('reset.tracking_events', `TRUNCATE TABLE tracking_events CASCADE`);
+  await run('reset.bordereaux',      `TRUNCATE TABLE bordereaux CASCADE`);
+  await run('reset.payments',        `TRUNCATE TABLE payments CASCADE`);
+  await run('reset.notifications',   `TRUNCATE TABLE notifications CASCADE`);
+  await run('reset.messages',        `TRUNCATE TABLE messages CASCADE`);
+  await run('reset.whatsapp_logs',   `TRUNCATE TABLE whatsapp_logs CASCADE`);
+  await run('reset.transactions',    `TRUNCATE TABLE transactions CASCADE`);
+  await run('reset.parcels',         `TRUNCATE TABLE parcels CASCADE`);
+  await run('reset.campaign_costs',  `TRUNCATE TABLE campaign_costs CASCADE`);
+  await run('reset.campaigns',       `TRUNCATE TABLE campaigns CASCADE`);
+
   return NextResponse.json({ ok: true, results });
 }

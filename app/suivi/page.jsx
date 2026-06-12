@@ -4,14 +4,20 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import '@/src/styles/tokens.css';
 
 const STATUS = {
-  en_attente: { label: 'En attente de prise en charge', color: '#6b7280', bg: '#f9fafb', icon: '⏳' },
-  recu:       { label: 'Reçu par Jumla',                color: '#1d4ed8', bg: '#eff6ff', icon: '✅' },
-  en_transit: { label: 'En transit',                    color: '#0e7490', bg: '#ecfeff', icon: '✈️' },
-  en_douane:  { label: 'En douane',                     color: '#b45309', bg: '#fffbeb', icon: '🛃' },
-  arrive:     { label: 'Arrivé à destination',          color: '#15803d', bg: '#f0fdf4', icon: '📦' },
-  livre:      { label: 'Livré',                         color: '#15803d', bg: '#f0fdf4', icon: '🎉' },
+  enr: { label: 'Colis enregistré',              color: '#6b7280', bg: '#f9fafb', icon: '📝' },
+  rec: { label: 'Reçu à l\'entrepôt',            color: '#1d4ed8', bg: '#eff6ff', icon: '📥' },
+  pre: { label: 'Vérifié et préparé',             color: '#7c3aed', bg: '#f5f3ff', icon: '🔍' },
+  exp: { label: 'Expédié',                        color: '#0e7490', bg: '#ecfeff', icon: '🚀' },
+  tra: { label: 'En transit',                     color: '#0891b2', bg: '#ecfeff', icon: '✈️' },
+  apd: { label: 'Arrivé au pays de destination',  color: '#16a34a', bg: '#f0fdf4', icon: '🛬' },
+  dou: { label: 'Présenté aux douanes',           color: '#b45309', bg: '#fffbeb', icon: '🛃' },
+  ins: { label: 'En inspection douanière',        color: '#b45309', bg: '#fffbeb', icon: '🔎' },
+  ret: { label: 'Retenu par les douanes',         color: '#dc2626', bg: '#fef2f2', icon: '⚠️' },
+  lib: { label: 'Libéré par les douanes',         color: '#16a34a', bg: '#f0fdf4', icon: '✅' },
+  del: { label: 'En cours de livraison',          color: '#0e7490', bg: '#ecfeff', icon: '🚚' },
+  liv: { label: 'Livré',                          color: '#15803d', bg: '#dcfce7', icon: '🎉' },
 };
-const STEPS = ['en_attente', 'recu', 'en_transit', 'en_douane', 'arrive', 'livre'];
+const STEPS = ['enr', 'rec', 'pre', 'exp', 'tra', 'apd', 'dou', 'lib', 'del', 'liv'];
 
 function fmt(d) {
   if (!d) return '—';

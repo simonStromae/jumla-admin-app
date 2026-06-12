@@ -84,7 +84,7 @@ export async function GET() {
         id:              b.id,
         code:            b.code,
         nbPieces:        b.nbPieces,
-        status:          blExtra[b.id]?.status ?? 'en_attente',
+        status:          blExtra[b.id]?.status ?? 'enr',
         clientConfirmed: blExtra[b.id]?.clientConfirmed ?? false,
       })),
     };

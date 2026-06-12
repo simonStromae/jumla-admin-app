@@ -4,11 +4,18 @@ import I from '../components/Icons.jsx';
 import { Avatar, Modal } from '../components/Shell.jsx';
 
 const PARCEL_STATUS = {
-  en_attente: { label: 'En attente',  cls: 'neutral' },
-  recu:       { label: 'Reçu',        cls: 'ok' },
-  en_transit: { label: 'En transit',  cls: 'info' },
-  arrive:     { label: 'Arrivé',      cls: 'ok' },
-  livre:      { label: 'Livré',       cls: 'ok' },
+  enr: { label: 'Enregistré',          cls: 'neutral' },
+  rec: { label: 'Reçu entrepôt',       cls: 'info' },
+  pre: { label: 'Vérifié/Préparé',     cls: 'info' },
+  exp: { label: 'Expédié',             cls: 'info' },
+  tra: { label: 'En transit',          cls: 'info' },
+  apd: { label: 'Arrivé pays dest.',   cls: 'ok' },
+  dou: { label: 'Aux douanes',         cls: 'warn' },
+  ins: { label: 'Inspection douan.',   cls: 'warn' },
+  ret: { label: 'Retenu douanes',      cls: 'bad' },
+  lib: { label: 'Libéré douanes',      cls: 'ok' },
+  del: { label: 'En livraison',        cls: 'info' },
+  liv: { label: 'Livré',              cls: 'ok' },
 };
 const PAYMENT_STATUS = {
   pending:   { label: 'En attente', cls: 'warn' },

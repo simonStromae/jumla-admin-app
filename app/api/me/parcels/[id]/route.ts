@@ -97,7 +97,7 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
       return {
         id:              b.id,
         code:            b.code,
-        status:          ex.status ?? 'en_attente',
+        status:          ex.status ?? 'enr',
         clientConfirmed: ex.clientConfirmed ?? false,
         clientConfirmedAt: ex.clientConfirmedAt ?? null,
         description:     ex.description ?? null,
@@ -110,7 +110,7 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
   });
 }
 
-const EDITABLE_STATUSES = ['en_attente', 'recu'];
+const EDITABLE_STATUSES = ['enr', 'rec'];
 
 export async function PUT(req: NextRequest, { params }: { params: { id: string } }) {
   const { error, session } = await requireAuth();

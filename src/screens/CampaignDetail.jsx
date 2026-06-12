@@ -24,9 +24,9 @@ const STEP_LABELS = {
 // Description of what each transition does
 const STEP_EFFECTS = {
   preparing_departure: 'La cargaison passe en mode préparation au départ.',
-  'in-transit':        'Tous les colis reçus (statut "Reçu") seront automatiquement passés en transit.',
-  in_transit_2:        'Tous les colis reçus (statut "Reçu") seront automatiquement passés en transit.',
-  arrived:             'Tous les colis en transit seront automatiquement passés au statut "Arrivé".',
+  'in-transit':        'Tous les colis reçus/préparés seront automatiquement passés à "Expédié".',
+  in_transit_2:        'Tous les colis reçus/préparés seront automatiquement passés à "Expédié".',
+  arrived:             'Tous les colis expédiés/en transit seront passés à "Arrivé au pays de destination".',
   preparing_arrival:   'La cargaison passe en mode préparation à l\'arrivée.',
   closed:              'La cargaison sera définitivement clôturée. Cette action est irréversible.',
 };
@@ -37,8 +37,10 @@ const PAYMENT_STATUS = {
   failed:    { label: 'Échoué',     cls: 'bad' },
 };
 const PARCEL_STATUS = {
-  en_attente: 'En attente', recu: 'Reçu', en_transit: 'En transit',
-  en_douane: 'En douane', arrive: 'Arrivé', livre: 'Livré',
+  enr: 'Enregistré', rec: 'Reçu entrepôt', pre: 'Vérifié/Préparé',
+  exp: 'Expédié', tra: 'En transit', apd: 'Arrivé pays dest.',
+  dou: 'Aux douanes', ins: 'Inspection', ret: 'Retenu',
+  lib: 'Libéré', del: 'En livraison', liv: 'Livré',
 };
 
 export default function CampaignDetailScreen({ id, onNav }) {

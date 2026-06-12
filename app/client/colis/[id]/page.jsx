@@ -3,12 +3,16 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 
 const JOURNEY = [
-  { key: 'en_attente', label: 'Réservé',         icon: '📝', desc: 'Votre envoi a été enregistré' },
-  { key: 'recu',       label: 'Pris en charge',  icon: '✅', desc: 'Jumla a réceptionné votre colis' },
-  { key: 'en_transit', label: 'En transit',       icon: '✈️', desc: 'Votre colis est en route' },
-  { key: 'en_douane',  label: 'En douane',        icon: '🛃', desc: 'Passage en douane en cours' },
-  { key: 'arrive',     label: 'Arrivé',           icon: '📦', desc: 'Votre colis est arrivé à destination' },
-  { key: 'livre',      label: 'Livré',            icon: '🎉', desc: 'Colis remis au destinataire' },
+  { key: 'enr', label: 'Enregistré',  icon: '📝', desc: 'Votre envoi a été enregistré dans notre système' },
+  { key: 'rec', label: 'Reçu',        icon: '📥', desc: 'Jumla a réceptionné votre colis à l\'entrepôt' },
+  { key: 'pre', label: 'Préparé',     icon: '🔍', desc: 'Votre colis a été vérifié, pesé et préparé' },
+  { key: 'exp', label: 'Expédié',     icon: '🚀', desc: 'Votre colis a quitté notre entrepôt' },
+  { key: 'tra', label: 'En transit',  icon: '✈️', desc: 'Votre colis est actuellement en transit' },
+  { key: 'apd', label: 'Arrivé',      icon: '🛬', desc: 'Votre colis est arrivé au pays de destination' },
+  { key: 'dou', label: 'Douanes',     icon: '🛃', desc: 'Votre colis est présenté aux autorités douanières' },
+  { key: 'lib', label: 'Dédouané',    icon: '✅', desc: 'Votre colis a été libéré par les douanes' },
+  { key: 'del', label: 'Livraison',   icon: '🚚', desc: 'Votre colis est en cours de livraison' },
+  { key: 'liv', label: 'Livré',       icon: '🎉', desc: 'Votre colis a été remis au destinataire' },
 ];
 
 const PRODUCT_TYPES = [
@@ -105,7 +109,7 @@ export default function ParcelDetailPage({ params }) {
   const s             = JOURNEY[currentStep] ?? JOURNEY[0];
   const paid          = parcel.payment?.status === 'completed';
   const partial       = parcel.payment?.status === 'partial';
-  const canEdit       = ['en_attente', 'recu'].includes(parcel.status);
+  const canEdit       = ['enr', 'rec'].includes(parcel.status);
   const unconfirmedBl = parcel.bordereaux?.filter(b => b.status === 'valide' && !b.clientConfirmed) ?? [];
 
   const startEdit = () => {

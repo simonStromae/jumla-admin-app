@@ -3,11 +3,10 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 
 const STATUS_LABEL = {
-  en_attente: 'En attente',
-  recu:       'Reçu',
-  en_transit: 'En transit',
-  arrive:     'Arrivé',
-  livre:      'Livré',
+  enr: 'Enregistré', rec: 'Reçu entrepôt', pre: 'Préparé',
+  exp: 'Expédié',    tra: 'En transit',     apd: 'Arrivé pays dest.',
+  dou: 'Aux douanes', ins: 'Inspection',    ret: 'Retenu',
+  lib: 'Libéré',     del: 'En livraison',   liv: 'Livré',
 };
 
 const PAYMENT_COLOR = {

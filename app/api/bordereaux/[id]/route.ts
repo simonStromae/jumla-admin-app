@@ -127,13 +127,13 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
     });
     if (bl) {
       const parcel = await prisma.parcel.findUnique({ where: { id: bl.parcelId }, select: { status: true } });
-      if (parcel?.status === 'en_attente') {
-        await prisma.parcel.update({ where: { id: bl.parcelId }, data: { status: 'recu' } });
+      if (parcel?.status === 'enr') {
+        await prisma.parcel.update({ where: { id: bl.parcelId }, data: { status: 'rec' } });
         await prisma.trackingEvent.create({
           data: {
             parcelId:    bl.parcelId,
-            status:      'recu',
-            note:        'Bordereau validé',
+            status:      'rec',
+            note:        'Bordereau validé — colis réceptionné à l\'entrepôt',
             createdById: (sess?.user as any)?.id ?? null,
           },
         });

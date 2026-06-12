@@ -79,13 +79,13 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
     if (prismaStatus) {
       if (prismaStatus === 'in_transit' || prismaStatus === 'in_transit_2') {
         await prisma.parcel.updateMany({
-          where: { campaignId: params.id, status: 'recu' },
-          data:  { status: 'en_transit' },
+          where: { campaignId: params.id, status: { in: ['rec', 'pre'] } },
+          data:  { status: 'exp' },
         });
       } else if (prismaStatus === 'arrived') {
         await prisma.parcel.updateMany({
-          where: { campaignId: params.id, status: 'en_transit' },
-          data:  { status: 'arrive' },
+          where: { campaignId: params.id, status: { in: ['exp', 'tra'] } },
+          data:  { status: 'apd' },
         });
       }
     }

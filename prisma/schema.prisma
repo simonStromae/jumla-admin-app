@@ -12,15 +12,6 @@ enum UserRole {
   admin
 }
 
-enum ParcelStatus {
-  en_attente
-  recu
-  en_transit
-  en_douane
-  arrive
-  livre
-}
-
 enum PaymentStatus {
   pending
   completed
@@ -128,7 +119,7 @@ model Parcel {
   pricingDetails    Json?
   items             Json?
   bordereaux        Bordereau[]
-  status        ParcelStatus @default(en_attente)
+  status        String       @default("enr")
   confirmed     Boolean      @default(false)
   notes         String?
   createdAt     DateTime     @default(now())
@@ -158,7 +149,7 @@ model TrackingEvent {
   id          String       @id @default(cuid())
   parcelId    String
   parcel      Parcel       @relation(fields: [parcelId], references: [id], onDelete: Cascade)
-  status      ParcelStatus
+  status      String
   location    String?
   note        String?
   createdById String?

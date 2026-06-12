@@ -29,12 +29,18 @@ export async function sendVerificationEmail(email: string, name: string, code: s
 }
 
 const STATUS_LABELS: Record<string, { label: string; icon: string }> = {
-  en_attente: { label: 'En attente de prise en charge', icon: '⏳' },
-  recu:       { label: 'Reçu par Jumla',                icon: '✅' },
-  en_transit: { label: 'En transit',                    icon: '✈️' },
-  en_douane:  { label: 'En douane',                     icon: '🛃' },
-  arrive:     { label: 'Arrivé à destination',          icon: '📦' },
-  livre:      { label: 'Livré',                         icon: '🎉' },
+  enr: { label: 'Colis enregistré',              icon: '📝' },
+  rec: { label: 'Reçu à l\'entrepôt',            icon: '📥' },
+  pre: { label: 'Vérifié et préparé',             icon: '🔍' },
+  exp: { label: 'Expédié',                        icon: '🚀' },
+  tra: { label: 'En transit',                     icon: '✈️' },
+  apd: { label: 'Arrivé au pays de destination',  icon: '🛬' },
+  dou: { label: 'Présenté aux douanes',           icon: '🛃' },
+  ins: { label: 'En inspection douanière',        icon: '🔎' },
+  ret: { label: 'Retenu par les douanes',         icon: '⚠️' },
+  lib: { label: 'Libéré par les douanes',         icon: '✅' },
+  del: { label: 'En cours de livraison',          icon: '🚚' },
+  liv: { label: 'Livré',                          icon: '🎉' },
 };
 
 export async function sendStatusEmail(

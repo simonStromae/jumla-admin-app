@@ -124,7 +124,7 @@ export async function POST(req: NextRequest) {
   await prisma.trackingEvent.create({
     data: {
       parcelId:    parcel.id,
-      status:      'en_attente',
+      status:      'enr',
       note:        'Réservation client enregistrée',
       createdById: userId,
     },

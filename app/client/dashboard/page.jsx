@@ -5,12 +5,16 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import I from '@/src/components/Icons.jsx';
 
 const JOURNEY = [
-  { key: 'en_attente', label: 'Réservé',         icon: '📝', color: '#6b7280' },
-  { key: 'recu',       label: 'Pris en charge',  icon: '✅', color: '#2563eb' },
-  { key: 'en_transit', label: 'En transit',       icon: '✈️', color: '#0891b2' },
-  { key: 'en_douane',  label: 'En douane',        icon: '🛃', color: '#d97706' },
-  { key: 'arrive',     label: 'Arrivé',           icon: '📦', color: '#16a34a' },
-  { key: 'livre',      label: 'Livré',            icon: '🎉', color: '#16a34a' },
+  { key: 'enr', label: 'Enregistré',   icon: '📝', color: '#6b7280' },
+  { key: 'rec', label: 'Reçu',         icon: '📥', color: '#2563eb' },
+  { key: 'pre', label: 'Préparé',      icon: '🔍', color: '#7c3aed' },
+  { key: 'exp', label: 'Expédié',      icon: '🚀', color: '#0e7490' },
+  { key: 'tra', label: 'En transit',   icon: '✈️', color: '#0891b2' },
+  { key: 'apd', label: 'Arrivé pays',  icon: '🛬', color: '#16a34a' },
+  { key: 'dou', label: 'Douanes',      icon: '🛃', color: '#d97706' },
+  { key: 'lib', label: 'Libéré',       icon: '✅', color: '#16a34a' },
+  { key: 'del', label: 'Livraison',    icon: '🚚', color: '#0e7490' },
+  { key: 'liv', label: 'Livré',        icon: '🎉', color: '#15803d' },
 ];
 
 function getJourneyStep(status) {
@@ -51,7 +55,7 @@ function ParcelCard({ parcel, onClick }) {
   const partial  = parcel.payment?.status === 'partial';
   const hasUnconfirmedBl = parcel.bordereaux?.some(b => b.status === 'valide' && !b.clientConfirmed);
   const hasBl    = parcel.bordereaux?.length > 0;
-  const isLivré  = parcel.status === 'livre';
+  const isLivré  = parcel.status === 'liv';
 
   const needsAction = hasUnconfirmedBl || (!paid && parcel.payment);
 
@@ -171,8 +175,8 @@ function ClientDashboardInner() {
 
   useEffect(() => { load(); }, [load]);
 
-  const active  = parcels.filter(p => p.status !== 'livre');
-  const done    = parcels.filter(p => p.status === 'livre');
+  const active  = parcels.filter(p => p.status !== 'liv');
+  const done    = parcels.filter(p => p.status === 'liv');
   const actions = active.filter(p =>
     p.bordereaux?.some(b => b.status === 'valide' && !b.clientConfirmed) ||
     (p.payment && p.payment.status !== 'completed')
