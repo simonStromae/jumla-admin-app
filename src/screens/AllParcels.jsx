@@ -43,6 +43,35 @@ export default function AllParcelsScreen({ onNav, initialSearch = '' }) {
   });
   const paged = filtered.slice((page - 1) * pageSize, page * pageSize);
 
+  function exportCSV() {
+    const PAYMENT_LABEL = { paid: 'Payé', pending: 'En cours', unpaid: 'Impayé' };
+    const STATUS_LABEL  = { en_attente: 'En attente', recu: 'Reçu', en_transit: 'En transit', en_douane: 'En douane', arrive: 'Arrivé', livre: 'Livré' };
+    const headers = ['Code', 'Cargaison', 'Expéditeur', 'Tél expéditeur', 'Destinataire', 'Ville', 'Poids (kg)', 'Montant (CAD)', 'Paiement', 'Statut', 'Date'];
+    const rows = filtered.map(p => [
+      p.code,
+      p.campaign,
+      p.senderName,
+      p.senderPhone,
+      p.recipName,
+      p.recipCity,
+      p.actualKg,
+      p.amount,
+      PAYMENT_LABEL[p.paid] ?? p.paid,
+      STATUS_LABEL[p.status] ?? p.status,
+      p.createdAt ? new Date(p.createdAt).toLocaleDateString('fr-CA') : '',
+    ]);
+    const csv = [headers, ...rows]
+      .map(row => row.map(v => `"${String(v ?? '').replace(/"/g, '""')}"`).join(','))
+      .join('\n');
+    const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' });
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href = url;
+    a.download = `colis-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
   return (
     <div className="page">
       <div className="page__head">
@@ -51,7 +80,7 @@ export default function AllParcelsScreen({ onNav, initialSearch = '' }) {
           <div className="page__sub">Vue globale — colis de toutes les cargaisons, filtrables par statut</div>
         </div>
         <div className="page__actions">
-          <button className="btn btn--ghost"><I.Download />Export CSV</button>
+          <button className="btn btn--ghost" onClick={exportCSV}><I.Download />Export CSV ({filtered.length})</button>
           {can('parcels', 'create') && <button className="btn btn--brand" onClick={() => onNav('/parcels/new')}><I.Plus />Nouveau colis</button>}
         </div>
       </div>
