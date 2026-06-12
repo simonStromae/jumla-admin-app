@@ -96,5 +96,12 @@ export async function GET() {
   await run('reset.campaign_costs',  `TRUNCATE TABLE campaign_costs CASCADE`);
   await run('reset.campaigns',       `TRUNCATE TABLE campaigns CASCADE`);
 
+  // Normalise campaign status values to new unified codes (idempotent)
+  await run('campaigns.status_enr',  `UPDATE campaigns SET status='enr' WHERE status IN ('open','preparing_departure','draft')`);
+  await run('campaigns.status_exp',  `UPDATE campaigns SET status='exp' WHERE status IN ('in-transit','in_transit')`);
+  await run('campaigns.status_tra',  `UPDATE campaigns SET status='tra' WHERE status='in_transit_2'`);
+  await run('campaigns.status_ard',  `UPDATE campaigns SET status='ard' WHERE status IN ('arrived','preparing_arrival')`);
+  await run('campaigns.status_ok',   `UPDATE campaigns SET status='ok'  WHERE status IN ('closed','locked')`);
+
   return NextResponse.json({ ok: true, results });
 }
