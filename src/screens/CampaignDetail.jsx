@@ -220,84 +220,40 @@ export default function CampaignDetailScreen({ id, onNav }) {
         ))}
       </div>
 
-      {/* Status stepper */}
-      <div className="card" style={{ marginBottom: 16, padding: '16px 20px' }}>
-        <div style={{ display: 'flex', alignItems: 'flex-start', gap: 0 }}>
-          {STEPS.map((step, i) => {
-            const isActive = step.id === campaign.status;
-            const isDone = i < currentStepIdx;
-            const hasNote = (step.id === 'exp' || step.id === 'tra') && statusNotes?.[step.id];
-            return (
-              <div key={step.id} style={{ display: 'flex', alignItems: 'flex-start', flex: i < STEPS.length - 1 ? 1 : 'none' }}>
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
-                  <div style={{
-                    width: 32, height: 32, borderRadius: '50%', display: 'grid', placeItems: 'center',
-                    background: isActive ? step.color : isDone ? 'var(--ok-500)' : 'var(--border)',
-                    color: isActive || isDone ? 'white' : 'var(--ink-400)',
-                    fontWeight: 700, fontSize: 13, transition: 'background .2s',
-                  }}>
-                    {isDone ? '✓' : i + 1}
-                  </div>
-                  <span style={{
-                    fontSize: 11.5, fontWeight: isActive ? 700 : 500,
-                    color: isActive ? step.color : isDone ? 'var(--ok-600)' : 'var(--ink-400)',
-                    whiteSpace: 'nowrap',
-                    textAlign: 'center',
-                  }}>
-                    {step.label}
-                  </span>
-                  {(isActive || isDone) && hasNote && (
-                    <span style={{ fontSize: 10, color: isDone ? 'var(--ok-600)' : step.color, whiteSpace: 'normal', maxWidth: 80, textAlign: 'center' }}>
-                      {statusNotes[step.id]}
-                    </span>
-                  )}
-                </div>
-                {i < STEPS.length - 1 && (
-                  <div style={{
-                    flex: 1, height: 2, margin: '15px 8px 0',
-                    background: isDone ? 'var(--ok-500)' : 'var(--border)',
-                  }} />
-                )}
-              </div>
-            );
-          })}
-        </div>
-
-        {/* Direct status select */}
-        <div style={{ marginTop: 20, paddingTop: 16, borderTop: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
-          <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--ink-500)', whiteSpace: 'nowrap' }}>Changer le statut :</span>
-          <select
-            className="input"
-            style={{ flex: 1, minWidth: 200, maxWidth: 320 }}
-            value={campaign.status}
-            onChange={e => {
-              const target = STEPS.find(s => s.id === e.target.value);
-              if (!target || target.id === campaign.status) return;
-              if (target.id === 'exp' || target.id === 'tra') {
-                setShowDepartureModal(target);
-              } else {
-                setShowConfirmModal(target);
-              }
-            }}
+      {/* Status controls */}
+      <div className="card" style={{ marginBottom: 16, padding: '14px 20px', display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+        <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--ink-500)', whiteSpace: 'nowrap' }}>Changer le statut :</span>
+        <select
+          className="input"
+          style={{ flex: 1, minWidth: 200, maxWidth: 320 }}
+          value={campaign.status}
+          onChange={e => {
+            const target = STEPS.find(s => s.id === e.target.value);
+            if (!target || target.id === campaign.status) return;
+            if (target.id === 'exp' || target.id === 'tra') {
+              setShowDepartureModal(target);
+            } else {
+              setShowConfirmModal(target);
+            }
+          }}
+        >
+          {STEPS.map(s => (
+            <option key={s.id} value={s.id}>{s.label}</option>
+          ))}
+        </select>
+        {advanceError && (
+          <span style={{ fontSize: 12, color: 'var(--bad-600)', fontWeight: 600 }}>✕ {advanceError}</span>
+        )}
+        {nextStep && (
+          <button
+            className={nextStep.id === 'ok' ? 'btn btn--danger' : 'btn btn--primary'}
+            onClick={handleAdvance}
+            disabled={advancing}
+            style={{ whiteSpace: 'nowrap' }}
           >
-            {STEPS.map(s => (
-              <option key={s.id} value={s.id}>{s.label}</option>
-            ))}
-          </select>
-          {advanceError && (
-            <span style={{ fontSize: 12, color: 'var(--bad-600)', fontWeight: 600 }}>✕ {advanceError}</span>
-          )}
-          {nextStep && (
-            <button
-              className={nextStep.id === 'ok' ? 'btn btn--danger' : 'btn btn--primary'}
-              onClick={handleAdvance}
-              disabled={advancing}
-              style={{ whiteSpace: 'nowrap' }}
-            >
-              {advancing ? 'Mise à jour…' : nextStep.id === 'ok' ? 'Clôturer' : `→ ${nextStep.label}`}
-            </button>
-          )}
-        </div>
+            {advancing ? 'Mise à jour…' : nextStep.id === 'ok' ? 'Clôturer' : `→ ${nextStep.label}`}
+          </button>
+        )}
       </div>
 
       {/* Generic confirmation modal (all non-transit steps) */}
