@@ -14,7 +14,7 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
     include: {
       campaign: { include: { route: true } },
       payment:  true,
-      trackingEvents: { orderBy: { createdAt: 'asc' } },
+      trackingEvents: { orderBy: { createdAt: 'asc' }, include: { createdBy: { select: { name: true } } } },
       bordereaux: { orderBy: { createdAt: 'asc' } },
     },
   });
@@ -87,10 +87,11 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
       remaining:  Math.max(0, parcel.payment.amount - allocated),
     } : null,
     tracking: parcel.trackingEvents.map(e => ({
-      status:    e.status,
-      location:  e.location,
-      note:      e.note,
-      createdAt: e.createdAt,
+      status:      e.status,
+      location:    e.location,
+      note:        e.note,
+      createdAt:   e.createdAt,
+      createdBy:   e.createdBy?.name ?? null,
     })),
     bordereaux: parcel.bordereaux.map(b => {
       const ex = blExtra[b.id] ?? {};

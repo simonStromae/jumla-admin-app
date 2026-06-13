@@ -25,7 +25,9 @@ const STEP_LABELS = {
   ok:  'Clôturée',
 };
 
-// Description of what each transition does
+const STEP_ICONS = {
+  enr: '✏️', exp: '🚀', tra: '✈️', apd: '🛬', dou: '🔍', lib: '✅', ard: '🏭', pdl: '📦', ok: '🔒',
+};
 const STEP_EFFECTS = {
   exp: 'Tous les colis reçus/préparés (REC, PRE) seront automatiquement passés à "Expédié" (EXP).',
   tra: 'La cargaison est en transit — second tronçon.',
@@ -409,6 +411,96 @@ export default function CampaignDetailScreen({ id, onNav }) {
 
       <div style={{ marginTop: 12, fontSize: 12, color: 'var(--ink-400)' }}>
         {parcels.length} colis · Capacité {campaign.capacityKg != null ? campaign.capacityKg + ' kg' : '—'}
+      </div>
+
+      {/* ── Campaign Timeline ── */}
+      <CampaignTimeline campaign={campaign} route={route} />
+    </div>
+  );
+}
+
+/* ── Campaign Timeline ── */
+function CampaignTimeline({ campaign, route }) {
+  const currentIdx = STEPS.findIndex(s => s.id === campaign.status);
+  const notes = campaign.statusNotes ?? {};
+
+  const fmtDate = (d) => d
+    ? new Date(d).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })
+    : null;
+
+  // Contextual location per step
+  const stepLocation = (id) => {
+    if (['enr', 'exp'].includes(id))             return route.origin ?? null;
+    if (['tra'].includes(id))                     return null;
+    if (['apd', 'dou', 'lib', 'ard', 'pdl', 'ok'].includes(id)) return route.destination ?? null;
+    return null;
+  };
+
+  // Contextual date per step
+  const stepDate = (id) => {
+    if (id === 'enr') return campaign.createdAt;
+    if (id === 'exp') return campaign.departureDate;
+    if (id === 'ard') return campaign.arrivalDate;
+    return null;
+  };
+
+  return (
+    <div className="card" style={{ padding: '18px 22px', marginTop: 20 }}>
+      <div className="section-title" style={{ marginBottom: 18 }}>
+        <I.History style={{ width: 14, height: 14, color: 'var(--brand-600)' }} /> Timeline de la cargaison
+      </div>
+      <div>
+        {STEPS.map((step, i) => {
+          const isDone    = i < currentIdx;
+          const isCurrent = i === currentIdx;
+          const isPending = i > currentIdx;
+
+          const bg     = isCurrent ? step.color : isDone ? 'var(--ok-50)'      : 'transparent';
+          const border = isCurrent ? step.color : isDone ? 'var(--ok-300)'     : 'var(--border)';
+          const txtCol = isCurrent ? step.color : isDone ? 'var(--ink-700)'    : 'var(--ink-300)';
+          const lineCol= isDone ? 'var(--ok-200)' : 'var(--border)';
+
+          const location = (isDone || isCurrent) ? stepLocation(step.id) : null;
+          const date     = (isDone || isCurrent) ? fmtDate(stepDate(step.id)) : null;
+          const note     = notes[step.id] ?? null;
+
+          return (
+            <div key={step.id} style={{ display: 'flex', gap: 14, position: 'relative', paddingBottom: i < STEPS.length - 1 ? 20 : 0 }}>
+              {i < STEPS.length - 1 && (
+                <div style={{ position: 'absolute', left: 15, top: 32, bottom: 0, width: 1.5, background: lineCol }} />
+              )}
+              <div style={{
+                width: 32, height: 32, borderRadius: '50%', flexShrink: 0,
+                background: bg, border: `2px solid ${border}`,
+                display: 'grid', placeItems: 'center', fontSize: 14,
+                color: isCurrent ? 'white' : isDone ? 'var(--ok-600)' : 'var(--ink-200)',
+              }}>
+                {isCurrent ? STEP_ICONS[step.id] : isDone ? '✓' : ''}
+              </div>
+              <div style={{ flex: 1, paddingTop: 5, opacity: isPending ? 0.3 : 1 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <span style={{ fontSize: 13, fontWeight: isCurrent ? 700 : isDone ? 500 : 400, color: txtCol }}>
+                    {step.label}
+                  </span>
+                  {isCurrent && (
+                    <span style={{ fontSize: 9.5, fontWeight: 700, background: step.color, color: 'white', padding: '1px 6px', borderRadius: 2, letterSpacing: '.04em' }}>
+                      ACTUEL
+                    </span>
+                  )}
+                </div>
+                {location && (
+                  <div style={{ fontSize: 12, color: 'var(--ink-500)', marginTop: 2 }}>📍 {location}</div>
+                )}
+                {note && (
+                  <div style={{ fontSize: 12, color: 'var(--ink-500)', fontStyle: 'italic', marginTop: 2 }}>{note}</div>
+                )}
+                {date && (
+                  <div style={{ fontSize: 11, color: 'var(--ink-400)', marginTop: 2 }}>{date}</div>
+                )}
+              </div>
+            </div>
+          );
+        })}
       </div>
     </div>
   );

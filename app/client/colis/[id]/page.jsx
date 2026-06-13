@@ -516,39 +516,51 @@ export default function ParcelDetailPage({ params }) {
         )}
 
         {/* ── Tracking ── */}
-        <Section title="Historique de suivi">
+        <Section title="Suivi de votre colis">
           {parcel.tracking.length === 0 ? (
             <div style={{ fontSize: 13, color: '#9ca3af', fontStyle: 'italic', textAlign: 'center', padding: '8px 0' }}>
               Aucun événement enregistré pour l&apos;instant.
             </div>
           ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
+            <div>
               {parcel.tracking.map((e, i, arr) => {
-                const step    = JOURNEY.find(st => st.key === e.status) ?? { icon: '•', label: e.status, desc: '' };
-                const isLast  = i === arr.length - 1;
+                const step   = JOURNEY.find(st => st.key === e.status) ?? { icon: '📦', label: e.status };
+                const isLast = i === arr.length - 1;
                 return (
-                  <div key={i} style={{ display: 'flex', gap: 12, paddingBottom: isLast ? 0 : 16 }}>
-                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                      <div style={{
-                        width: isLast ? 36 : 30, height: isLast ? 36 : 30,
-                        borderRadius: '50%',
-                        background: isLast ? '#f0fdf4' : '#f9fafb',
-                        border: `2px solid ${isLast ? '#86efac' : '#e5e7eb'}`,
-                        display: 'grid', placeItems: 'center', fontSize: isLast ? 18 : 14, flexShrink: 0,
-                        boxShadow: isLast ? '0 0 0 3px #dcfce7' : 'none',
-                      }}>
-                        {step.icon}
-                      </div>
-                      {!isLast && <div style={{ width: 2, flex: 1, background: '#e5e7eb', marginTop: 4, minHeight: 16 }} />}
+                  <div key={i} style={{ display: 'flex', gap: 14, position: 'relative', paddingBottom: isLast ? 0 : 20 }}>
+                    {!isLast && (
+                      <div style={{ position: 'absolute', left: 16, top: 34, bottom: 0, width: 1.5, background: '#e5e7eb' }} />
+                    )}
+                    <div style={{
+                      width: 34, height: 34, borderRadius: '50%', flexShrink: 0,
+                      background: isLast ? '#f0fdf4' : '#f9fafb',
+                      border: `2px solid ${isLast ? '#86efac' : '#e5e7eb'}`,
+                      display: 'grid', placeItems: 'center',
+                      fontSize: isLast ? 17 : 14,
+                      boxShadow: isLast ? '0 0 0 3px #dcfce7' : 'none',
+                    }}>
+                      {isLast ? step.icon : '✓'}
                     </div>
-                    <div style={{ paddingTop: isLast ? 6 : 3, paddingBottom: isLast ? 0 : 4 }}>
-                      <div style={{ fontWeight: isLast ? 700 : 500, fontSize: isLast ? 14 : 13, color: isLast ? '#111827' : '#374151', display: 'flex', alignItems: 'center', gap: 8 }}>
-                        {step.label}
-                        {isLast && <span style={{ fontSize: 10, background: '#16a34a', color: 'white', padding: '1px 7px', borderRadius: 99, fontWeight: 700 }}>ACTUEL</span>}
+                    <div style={{ flex: 1, paddingTop: 6 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 2 }}>
+                        <span style={{ fontWeight: isLast ? 700 : 500, fontSize: isLast ? 14 : 13, color: isLast ? '#111827' : '#374151' }}>
+                          {step.label}
+                        </span>
+                        {isLast && (
+                          <span style={{ fontSize: 10, fontWeight: 700, background: '#16a34a', color: 'white', padding: '1px 7px', borderRadius: 3, letterSpacing: '.04em' }}>
+                            ACTUEL
+                          </span>
+                        )}
                       </div>
-                      {e.location && <div style={{ fontSize: 12, color: '#6b7280', marginTop: 2 }}>📍 {e.location}</div>}
-                      {e.note     && <div style={{ fontSize: 12, color: '#6b7280', fontStyle: 'italic', marginTop: 2 }}>{e.note}</div>}
-                      <div style={{ fontSize: 11, color: '#9ca3af', marginTop: 3 }}>{fmtFull(e.createdAt)}</div>
+                      {e.location && (
+                        <div style={{ fontSize: 12, color: '#6b7280', marginTop: 1 }}>📍 {e.location}</div>
+                      )}
+                      {e.note && (
+                        <div style={{ fontSize: 12, color: '#6b7280', fontStyle: 'italic', marginTop: 1 }}>{e.note}</div>
+                      )}
+                      <div style={{ fontSize: 11, color: '#9ca3af', marginTop: 3 }}>
+                        {e.createdBy ? `${e.createdBy} · ` : ''}{fmtFull(e.createdAt)}
+                      </div>
                     </div>
                   </div>
                 );
