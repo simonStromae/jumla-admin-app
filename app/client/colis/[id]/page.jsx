@@ -215,36 +215,6 @@ export default function ParcelDetailPage({ params }) {
             <div style={{ fontSize: 11.5, color: '#9ca3af', marginTop: 4 }}>Créé le {fmt(parcel.createdAt, { day: 'numeric', month: 'short', year: 'numeric' })}</div>
           </div>
         </div>
-
-        {/* Journey stepper */}
-        <div style={{ marginTop: 16, display: 'flex', alignItems: 'center', overflowX: 'auto', paddingBottom: 4 }}>
-          {JOURNEY.map((step, i) => {
-            const done    = i <= currentStep;
-            const current = i === currentStep;
-            return (
-              <div key={step.key} style={{ display: 'flex', alignItems: 'center', flexShrink: 0 }}>
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
-                  <div style={{
-                    width: current ? 34 : 28, height: current ? 34 : 28,
-                    borderRadius: '50%', display: 'grid', placeItems: 'center',
-                    background: done ? (current ? 'white' : 'rgba(255,255,255,.6)') : 'rgba(255,255,255,.3)',
-                    fontSize: current ? 18 : 14,
-                    border: current ? '2.5px solid rgba(0,0,0,.15)' : '1px solid rgba(255,255,255,.5)',
-                    boxShadow: current ? '0 2px 8px rgba(0,0,0,.1)' : 'none',
-                  }}>
-                    {done ? step.icon : '○'}
-                  </div>
-                  <span style={{ fontSize: 9, fontWeight: current ? 700 : 400, color: done ? '#374151' : '#9ca3af', textAlign: 'center', maxWidth: 44, lineHeight: 1.2 }}>
-                    {step.label}
-                  </span>
-                </div>
-                {i < JOURNEY.length - 1 && (
-                  <div style={{ width: 20, height: 2, background: i < currentStep ? '#86efac' : 'rgba(255,255,255,.4)', margin: '0 2px', marginBottom: 16, flexShrink: 0 }} />
-                )}
-              </div>
-            );
-          })}
-        </div>
       </div>
 
       {/* Action required: bordereau to confirm */}
@@ -516,7 +486,7 @@ export default function ParcelDetailPage({ params }) {
         )}
 
         {/* ── Tracking ── */}
-        <Section title="Suivi de votre colis">
+        <Section title="Timeline" col="1 / -1">
           {parcel.tracking.length === 0 ? (
             <div style={{ fontSize: 13, color: '#9ca3af', fontStyle: 'italic', textAlign: 'center', padding: '8px 0' }}>
               Aucun événement enregistré pour l&apos;instant.
