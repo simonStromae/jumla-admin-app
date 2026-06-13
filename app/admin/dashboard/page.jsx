@@ -98,7 +98,7 @@ export default function DashboardPage() {
   const hasUrgences = unconfirmed.length > 0 || unpaid.length > 0;
 
   return (
-    <div style={{ padding: '32px 40px', maxWidth: 1100 }}>
+    <div className="page">
       {/* Header */}
       <div style={{ marginBottom: 28, display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between' }}>
         <div>
