@@ -52,7 +52,7 @@ export async function GET(req: NextRequest) {
 
   const result = clients.map((u, i) => {
     const totalWeight   = u.parcels.reduce((s, p) => s + (p.weightKg ?? 0), 0);
-    const totalAmount   = u.parcels.reduce((s, p) => s + (p.priceXaf  ?? 0), 0);
+    const totalAmount   = u.parcels.reduce((s, p) => s + (p.payment?.amount ?? p.priceXaf ?? 0), 0);
     const lastParcel    = u.parcels[0];
     const campaigns     = new Set(u.parcels.map(p => p.campaignId)).size;
 

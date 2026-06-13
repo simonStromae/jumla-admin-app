@@ -55,7 +55,7 @@ export async function GET(req: NextRequest) {
     actualKg:     p.weightKg,
     reservedKg:   p.weightKg,
     weightKg:     p.weightKg,
-    amount:       p.priceXaf,
+    amount:       p.payment?.amount ?? p.priceXaf,
     priceXaf:     p.priceXaf,
     declaredValue: p.declaredValue,
     paid:         p.payment?.status === 'completed' ? 'paid' : p.payment ? 'pending' : 'unpaid',

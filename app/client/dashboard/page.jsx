@@ -105,7 +105,7 @@ function ParcelCard({ parcel, onClick }) {
           </div>
           <div style={{ textAlign: 'right', flexShrink: 0 }}>
             <div style={{ fontSize: 13.5, fontWeight: 700, color: '#111827' }}>
-              {parcel.priceXaf?.toLocaleString('fr') ?? '—'} <span style={{ fontSize: 11, fontWeight: 400, color: '#9ca3af' }}>CAD</span>
+              {(parcel.payment?.amount ?? parcel.priceXaf)?.toLocaleString('fr') ?? '—'} <span style={{ fontSize: 11, fontWeight: 400, color: '#9ca3af' }}>CAD</span>
             </div>
             <div style={{ fontSize: 11.5, fontWeight: 600, marginTop: 1, color: paid ? '#16a34a' : partial ? '#d97706' : '#dc2626' }}>
               {paid ? '✓ Payé' : partial ? '⏳ Partiel' : '⚡ À régler'}

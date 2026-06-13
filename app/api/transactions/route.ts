@@ -83,36 +83,44 @@ export async function POST(req: NextRequest) {
     for (const alloc of (allocations ?? []) as { paymentId: string; amount: number }[]) {
       if (!alloc.paymentId || !alloc.amount) continue;
 
-      const allocId = crypto.randomUUID().replace(/-/g, '');
-      await prisma.$executeRawUnsafe(
-        `INSERT INTO transaction_allocations (id, "transactionId", "paymentId", amount) VALUES ($1, $2, $3, $4)`,
-        allocId, txId, alloc.paymentId, Number(alloc.amount)
-      );
-
-      // Mark payment completed if fully covered
-      const [row] = await prisma.$queryRawUnsafe(
-        `SELECT COALESCE(SUM(amount), 0)::int AS total FROM transaction_allocations WHERE "paymentId" = $1`,
-        alloc.paymentId
-      ) as any[];
-
+      // Prevent overpayment: check remaining balance before allocating
       const payment = await prisma.payment.findUnique({
         where: { id: alloc.paymentId },
         select: { amount: true, status: true },
       });
+      if (!payment) continue;
 
-      if (payment) {
-        const totalAllocated = Number(row.total);
-        if (totalAllocated >= payment.amount && payment.status !== 'completed') {
-          await prisma.payment.update({
-            where: { id: alloc.paymentId },
-            data: { status: 'completed', paidAt: new Date(), interacRef: reference || undefined },
-          });
-        } else if (totalAllocated > 0 && totalAllocated < payment.amount && payment.status === 'pending') {
-          await prisma.payment.update({
-            where: { id: alloc.paymentId },
-            data: { status: 'partial' },
-          });
-        }
+      const [existingRow] = await prisma.$queryRawUnsafe<any[]>(
+        `SELECT COALESCE(SUM(amount), 0)::int AS total FROM transaction_allocations WHERE "paymentId" = $1`,
+        alloc.paymentId
+      );
+      const alreadyAllocated = Number(existingRow.total);
+      const remaining = payment.amount - alreadyAllocated;
+      if (remaining <= 0) continue; // already fully paid
+      const allocAmount = Math.min(Number(alloc.amount), remaining); // cap at remaining balance
+
+      const allocId = crypto.randomUUID().replace(/-/g, '');
+      await prisma.$executeRawUnsafe(
+        `INSERT INTO transaction_allocations (id, "transactionId", "paymentId", amount) VALUES ($1, $2, $3, $4)`,
+        allocId, txId, alloc.paymentId, allocAmount
+      );
+
+      // Mark payment completed if fully covered
+      const [row] = await prisma.$queryRawUnsafe<any[]>(
+        `SELECT COALESCE(SUM(amount), 0)::int AS total FROM transaction_allocations WHERE "paymentId" = $1`,
+        alloc.paymentId
+      );
+      const totalAllocated = Number(row.total);
+      if (totalAllocated >= payment.amount && payment.status !== 'completed') {
+        await prisma.payment.update({
+          where: { id: alloc.paymentId },
+          data: { status: 'completed', paidAt: new Date(), interacRef: reference || undefined },
+        });
+      } else if (totalAllocated > 0 && totalAllocated < payment.amount && payment.status !== 'partial') {
+        await prisma.payment.update({
+          where: { id: alloc.paymentId },
+          data: { status: 'partial' },
+        });
       }
     }
 
