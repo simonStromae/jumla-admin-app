@@ -13,8 +13,8 @@ const TYPE_LABELS = {
 const VERIFY_STATUS = {
   ok:      { lbl: '✓ Conforme',   cls: 'ok' },
   missing: { lbl: '✗ Manquant',   cls: 'bad' },
-  extra:   { lbl: '+ En plus',    cls: 'warn' },
-  verify:  { lbl: '? À vérifier', cls: 'neutral' },
+  issue:   { lbl: '⚠ Problème',   cls: 'warn' },
+  pending: { lbl: '? À vérifier', cls: 'neutral' },
 };
 
 const BL_STATUS = {
@@ -22,6 +22,8 @@ const BL_STATUS = {
   en_cours:   { l: 'En cours',    cls: 'warn' },
   valide:     { l: 'Validé',      cls: 'ok' },
   libere:     { l: 'Libéré',      cls: 'ok' },
+  verifie:    { l: 'Vérifié',     cls: 'ok' },
+  ecart:      { l: 'Écart',       cls: 'bad' },
 };
 
 export default function SlipDetailScreen({ id, onNav }) {
@@ -44,9 +46,10 @@ export default function SlipDetailScreen({ id, onNav }) {
           type:        it.type ?? 'carton',
           count:       it.count ?? it.packs ?? 1,
           nbPieces:    it.nbPieces ?? it.pieces ?? null,
-          status:      it.status ?? 'ok',
-          discrepancy: it.discrepancy ?? it.discr ?? 0,
-          note:        it.note ?? '',
+          status:      it._verifStatus ?? it.status ?? 'pending',
+          discrepancy: it._verifEcart  ?? it.discrepancy ?? it.discr ?? 0,
+          note:        it._verifNote   ?? it.note ?? '',
+          _orig:       it,
         })));
         setLoading(false);
       })
@@ -57,29 +60,55 @@ export default function SlipDetailScreen({ id, onNav }) {
 
   const totalCount  = items.reduce((a, i) => a + (Number(i.count) || 0), 0);
   const okCount     = items.filter(i => i.status === 'ok').reduce((a, i) => a + (Number(i.count) || 0), 0);
-  const totalDiscr  = items.reduce((a, i) => a + (Number(i.discrepancy) || 0), 0);
+  const totalDiscr  = items.reduce((a, i) => {
+    if (i.status === 'missing') return a + (Number(i.discrepancy) || Number(i.count) || 0);
+    return a + (Number(i.discrepancy) || 0);
+  }, 0);
 
   const saveItems = async () => {
     setSaving(true);
+
+    // Compute worst-case bordereau status from items
+    const statuses = items.map(it => it.status);
+    let blStatus;
+    if (statuses.includes('missing') || statuses.includes('issue')) blStatus = 'ecart';
+    else if (statuses.every(s => s === 'ok'))                        blStatus = 'verifie';
+    else                                                              blStatus = 'en_attente';
+
+    // Embed _verif* fields so CampaignVerify can read them back
+    const itemsToSave = items.map(it => ({
+      ...(it._orig ?? it),
+      _verifStatus: it.status,
+      _verifEcart:  it.discrepancy,
+      _verifNote:   it.note,
+    }));
+
     await fetch('/api/bordereaux/' + slip.id, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ items }),
+      body: JSON.stringify({ status: blStatus, items: itemsToSave }),
     });
+    setSlip(s => ({ ...s, status: blStatus }));
     setSaving(false); setSaved(true);
     setTimeout(() => setSaved(false), 2000);
   };
 
   const validate = async () => {
-    if (!confirm('Valider ce bordereau ? Le colis passera au statut "Reçu".')) return;
+    if (!confirm('Valider ce bordereau ?')) return;
     setSaving(true);
+    const itemsToSave = items.map(it => ({
+      ...(it._orig ?? it),
+      _verifStatus: it.status,
+      _verifEcart:  it.discrepancy,
+      _verifNote:   it.note,
+    }));
     const res = await fetch('/api/bordereaux/' + slip.id, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ items, status: 'valide' }),
+      body: JSON.stringify({ items: itemsToSave, status: 'verifie' }),
     });
     const json = await res.json();
-    if (json.ok) setSlip(s => ({ ...s, status: 'valide' }));
+    if (json.ok) setSlip(s => ({ ...s, status: 'verifie' }));
     setSaving(false);
   };
 
@@ -130,7 +159,7 @@ export default function SlipDetailScreen({ id, onNav }) {
           <button className="btn btn--ghost" onClick={() => window.open('/admin/slips/' + slip.code + '/print', '_blank')}>
             <I.Print />Imprimer
           </button>
-          {slip.status !== 'valide' && slip.status !== 'libere' && (
+          {!['valide', 'libere', 'verifie', 'ecart'].includes(slip.status) && (
             <button className="btn btn--brand" onClick={validate} disabled={saving}>
               <I.Check />{saving ? '…' : 'Valider'}
             </button>
