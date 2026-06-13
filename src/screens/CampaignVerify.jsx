@@ -42,9 +42,14 @@ export default function CampaignVerifyPanel({ parcels, campaign, onExit, onSaveP
   const [saving,   setSavingMap]  = useState({});   // parcelId → true
 
   const initVerifRow = (r) => {
-    if (r.blStatus === 'verifie') return { status: 'ok',      ecart: 0,          note: r.blNotes || '' };
-    if (r.blStatus === 'ecart')   return { status: 'issue',   ecart: 0,          note: r.blNotes || '' };
-    return                               { status: 'pending', ecart: 0,          note: '' };
+    // Prefer per-item state saved in items JSON (_verifStatus et al.)
+    if (r.verifStatus) {
+      return { status: r.verifStatus, ecart: r.verifEcart ?? 0, note: r.verifNote ?? '' };
+    }
+    // Fallback to bordereau-level status (single row bordereaux)
+    if (r.blStatus === 'verifie') return { status: 'ok',    ecart: 0, note: r.verifNote || '' };
+    if (r.blStatus === 'ecart')   return { status: 'issue', ecart: 0, note: r.verifNote || '' };
+    return                               { status: 'pending', ecart: 0, note: '' };
   };
 
   const initVerifs = (p) =>

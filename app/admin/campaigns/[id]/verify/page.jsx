@@ -18,16 +18,20 @@ function mapParcel(p) {
     if (blItems) {
       blItems.forEach((it, idx) => {
         rows.push({
-          id:          `${bl.id}-${idx}`,
-          blId:        bl.id,
-          blCode:      bl.code,
-          blStatus:    bl.status,   // 'en_attente' | 'verifie' | 'ecart'
-          blNotes:     bl.notes,
-          designation: it.designation || bl.description || '—',
-          description: it.description || '—',
-          type:        capitalize(it.type),
-          nb:          Number(it.count) || 1,
-          pieces:      it.nbPieces != null ? Number(it.nbPieces) : null,
+          id:           `${bl.id}-${idx}`,
+          blId:         bl.id,
+          blCode:       bl.code,
+          blStatus:     bl.status,
+          origItem:     it,
+          // Per-item saved verification state (stored in items JSON)
+          verifStatus:  it._verifStatus ?? null,
+          verifEcart:   it._verifEcart  ?? 0,
+          verifNote:    it._verifNote   ?? '',
+          designation:  it.designation || bl.description || '—',
+          description:  it.description || '—',
+          type:         capitalize(it.type),
+          nb:           Number(it.count) || 1,
+          pieces:       it.nbPieces != null ? Number(it.nbPieces) : null,
         });
       });
     } else {
@@ -36,7 +40,10 @@ function mapParcel(p) {
         blId:        bl.id,
         blCode:      bl.code,
         blStatus:    bl.status,
-        blNotes:     bl.notes,
+        origItem:    null,
+        verifStatus: null,
+        verifEcart:  0,
+        verifNote:   '',
         designation: bl.description || '—',
         description: '—',
         type:        '—',
@@ -49,7 +56,8 @@ function mapParcel(p) {
   if (rows.length === 0) {
     rows = [{
       id: `${p.id}-fallback`,
-      blId: null, blCode: null,
+      blId: null, blCode: null, origItem: null,
+      verifStatus: null, verifEcart: 0, verifNote: '',
       designation: p.description || 'Colis',
       description: '—', type: '—', nb: 1, pieces: null,
     }];
@@ -86,29 +94,50 @@ export default function CampaignVerifyPage({ params }) {
       .catch(() => { setError('Impossible de charger la cargaison.'); setLoading(false); });
   }, [params.id]);
 
-  // Save one parcel's bordereau verifications
+  // Save one parcel's bordereau verifications.
+  // Groups rows by blId, determines worst-case status, stores per-item state in items JSON.
   async function saveParcel(parcel, verifs) {
-    const rows = parcel.rows.filter(r => r.blId);
-    const seen = new Set();
+    const byBl = {};
+    for (const r of parcel.rows) {
+      if (!r.blId) continue;
+      if (!byBl[r.blId]) byBl[r.blId] = [];
+      byBl[r.blId].push(r);
+    }
+
     await Promise.all(
-      rows
-        .filter(r => { if (seen.has(r.blId)) return false; seen.add(r.blId); return true; })
-        .map(r => {
-          const v = verifs[parcel.id]?.[r.id] ?? {};
-          const blStatus = v.status === 'ok' ? 'verifie' : v.status === 'pending' ? 'en_attente' : 'ecart';
-          return fetch(`/api/bordereaux/${r.blId}`, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              status: blStatus,
-              ...(v.note ? { notes: v.note } : {}),
-            }),
+      Object.entries(byBl).map(([blId, blRows]) => {
+        // Worst-case status across all items of this bordereau
+        const statuses = blRows.map(r => verifs[parcel.id]?.[r.id]?.status ?? 'pending');
+        let blStatus;
+        if (statuses.includes('missing') || statuses.includes('issue')) blStatus = 'ecart';
+        else if (statuses.every(s => s === 'ok'))                        blStatus = 'verifie';
+        else                                                              blStatus = 'en_attente';
+
+        // Build updated items array with per-item verif state embedded
+        const updatedItems = blRows
+          .filter(r => r.origItem)
+          .map(r => {
+            const v = verifs[parcel.id]?.[r.id] ?? { status: 'pending', ecart: 0, note: '' };
+            return {
+              ...r.origItem,
+              _verifStatus: v.status,
+              _verifEcart:  v.ecart  ?? 0,
+              _verifNote:   v.note   ?? '',
+            };
           });
-        })
+
+        return fetch(`/api/bordereaux/${blId}`, {
+          method:  'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body:    JSON.stringify({
+            status: blStatus,
+            ...(updatedItems.length > 0 ? { items: updatedItems } : {}),
+          }),
+        });
+      })
     );
   }
 
-  // Final campaign validation: update campaign → ard (cascades parcels)
   async function handleClose() {
     setClosing(true);
     try {
