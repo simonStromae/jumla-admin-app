@@ -208,14 +208,28 @@ function ClientDashboardInner() {
         </div>
       )}
 
-      {/* Welcome */}
-      <div style={{ marginBottom: 20 }}>
-        <h1 style={{ fontSize: 22, fontWeight: 800, margin: '0 0 2px', color: '#111827' }}>
-          Bonjour {session?.user?.name?.split(' ')[0]} 👋
-        </h1>
-        <p style={{ fontSize: 13.5, color: '#6b7280', margin: 0 }}>
-          {loading ? '…' : `${active.length} colis en cours · ${done.length} livré${done.length > 1 ? 's' : ''}`}
-        </p>
+      {/* Welcome + CTA */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, marginBottom: 20 }}>
+        <div>
+          <h1 style={{ fontSize: 22, fontWeight: 800, margin: '0 0 2px', color: '#111827' }}>
+            Bonjour {session?.user?.name?.split(' ')[0]} 👋
+          </h1>
+          <p style={{ fontSize: 13.5, color: '#6b7280', margin: 0 }}>
+            {loading ? '…' : `${active.length} colis en cours · ${done.length} livré${done.length > 1 ? 's' : ''}`}
+          </p>
+        </div>
+        {!suspended && (
+          <button onClick={() => router.push('/client/booking')} style={{
+            flexShrink: 0, padding: '10px 18px', borderRadius: 10, border: 'none',
+            background: 'linear-gradient(135deg, #F5A524, #D97706)',
+            color: 'white', fontWeight: 700, fontSize: 14, cursor: 'pointer',
+            display: 'flex', alignItems: 'center', gap: 7,
+            boxShadow: '0 3px 10px rgba(217,119,6,.3)',
+          }}>
+            <I.Plus style={{ width: 16, height: 16 }} />
+            Réserver
+          </button>
+        )}
       </div>
 
       {/* Action required banner */}
@@ -237,20 +251,6 @@ function ClientDashboardInner() {
             </div>
           </div>
         </div>
-      )}
-
-      {/* New booking CTA */}
-      {!suspended && (
-        <button onClick={() => router.push('/client/booking')} style={{
-          width: '100%', padding: '14px 20px', borderRadius: 12, border: 'none',
-          background: 'linear-gradient(135deg, #F5A524, #D97706)',
-          color: 'white', fontWeight: 700, fontSize: 15, cursor: 'pointer',
-          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-          marginBottom: 24, boxShadow: '0 4px 14px rgba(217,119,6,.3)',
-        }}>
-          <I.Plus style={{ width: 18, height: 18 }} />
-          Réserver un nouvel envoi
-        </button>
       )}
 
       {/* Tabs */}
