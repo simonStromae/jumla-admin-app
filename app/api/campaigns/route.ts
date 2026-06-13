@@ -22,7 +22,7 @@ export async function GET() {
   });
 
   const result = campaigns.map(c => {
-    const invoiced  = c.parcels.reduce((s, p) => s + (p.priceXaf ?? 0), 0);
+    const invoiced  = c.parcels.reduce((s, p) => s + (p.payment?.amount ?? p.priceXaf ?? 0), 0);
     const collected = c.parcels.reduce((s, p) =>
       s + (p.payment?.status === 'completed' ? p.payment.amount : 0), 0);
     const weight    = c.parcels.reduce((s, p) => s + (p.weightKg ?? 0), 0);

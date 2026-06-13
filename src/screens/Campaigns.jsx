@@ -16,8 +16,8 @@ const CAMPAIGN_STATUS = {
 
 export function CampaignCard({ c, onClick }) {
   const s   = CAMPAIGN_STATUS[c.status] ?? { label: c.status, dot: 'neutral' };
-  const pct = (c.invoiced ?? 0) > 0 ? Math.round((c.collected ?? 0) / c.invoiced * 100) : 0;
-  const outstanding = (c.invoiced ?? 0) - (c.collected ?? 0);
+  const pct = (c.invoiced ?? 0) > 0 ? Math.min(100, Math.round((c.collected ?? 0) / c.invoiced * 100)) : 0;
+  const outstanding = Math.max(0, (c.invoiced ?? 0) - (c.collected ?? 0));
 
   return (
     <div className="card" style={{ padding: 0, cursor: 'pointer', transition: 'all .15s', position: 'relative', overflow: 'hidden' }}
@@ -154,7 +154,7 @@ export default function CampaignsScreen({ onNav, onNewCampaign }) {
         <div className="kpi">
           <div className="kpi__label">Impayés en cours <span style={{ textTransform: 'none', color: 'var(--ink-300)' }}>/ Outstanding</span></div>
           <div className="kpi__value" style={{ color: outstanding > 0 ? 'var(--bad-600)' : 'var(--ok-600)' }}>
-            {(outstanding / 1000).toFixed(1)}k <span style={{ fontSize: 14, color: 'var(--ink-400)' }}>CAD</span>
+            {Math.max(0, outstanding / 1000).toFixed(1)}k <span style={{ fontSize: 14, color: 'var(--ink-400)' }}>CAD</span>
           </div>
         </div>
         <div className="kpi">
