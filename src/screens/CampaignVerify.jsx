@@ -42,9 +42,9 @@ export default function CampaignVerifyPanel({ parcels, campaign, onExit, onSaveP
   const [saving,   setSavingMap]  = useState({});   // parcelId → true
 
   const initVerifRow = (r) => {
-    if (r.blStatus === 'verifie') return { status: 'ok',    ecart: 0, note: r.blNotes || '' };
-    if (r.blStatus === 'ecart')   return { status: 'issue', ecart: 0, note: r.blNotes || '' };
-    return { status: 'pending', ecart: 0, note: '' };
+    if (r.blStatus === 'verifie') return { status: 'ok',      ecart: 0,          note: r.blNotes || '' };
+    if (r.blStatus === 'ecart')   return { status: 'issue',   ecart: 0,          note: r.blNotes || '' };
+    return                               { status: 'pending', ecart: 0,          note: '' };
   };
 
   const initVerifs = (p) =>
@@ -55,10 +55,18 @@ export default function CampaignVerifyPanel({ parcels, campaign, onExit, onSaveP
   );
 
   const setRowField = (pid, rid, field, value) => {
-    setVerifs(v => ({
-      ...v,
-      [pid]: { ...v[pid], [rid]: { ...v[pid][rid], [field]: value } },
-    }));
+    setVerifs(v => ({ ...v, [pid]: { ...v[pid], [rid]: { ...v[pid][rid], [field]: value } } }));
+    setSaved(s => ({ ...s, [pid]: false }));
+  };
+
+  const setRowStatus = (pid, rid, status) => {
+    setVerifs(v => {
+      const row = (parcels.find(p => p.id === pid)?.rows || []).find(r => r.id === rid);
+      const prev = v[pid]?.[rid] ?? { status: 'pending', ecart: 0, note: '' };
+      // Auto-fill écart with full nb when marking as missing
+      const ecart = status === 'missing' ? (row?.nb ?? 1) : prev.ecart;
+      return { ...v, [pid]: { ...v[pid], [rid]: { ...prev, status, ecart } } };
+    });
     setSaved(s => ({ ...s, [pid]: false }));
   };
 
@@ -151,10 +159,15 @@ export default function CampaignVerifyPanel({ parcels, campaign, onExit, onSaveP
           const rows      = p.rows || [];
           const checkedNb = rows.filter(r => (verifs[p.id]?.[r.id]?.status ?? 'pending') !== 'pending').length;
           const totalNb   = rows.reduce((s, r) => s + (r.nb || 1), 0);
-          const conformes = rows.filter(r => verifs[p.id]?.[r.id]?.status === 'ok').length;
+          const conformes = rows
+            .filter(r => verifs[p.id]?.[r.id]?.status === 'ok')
+            .reduce((s, r) => s + (r.nb || 1), 0);
           const ecarts    = rows
             .filter(r => ['issue', 'missing'].includes(verifs[p.id]?.[r.id]?.status ?? ''))
-            .reduce((s, r) => s + (Number(verifs[p.id]?.[r.id]?.ecart) || 0), 0);
+            .reduce((s, r) => {
+              const v = verifs[p.id]?.[r.id];
+              return s + (Number(v?.ecart) || (v?.status === 'missing' ? (r.nb || 1) : 0));
+            }, 0);
 
           const borderColor = isOk ? 'var(--ok-200)' : isIssue ? 'var(--warn-200)' : 'var(--border)';
           const bgColor     = isOk ? 'var(--ok-50)'  : isIssue ? 'var(--warn-50)'  : 'white';
@@ -288,7 +301,7 @@ export default function CampaignVerifyPanel({ parcels, campaign, onExit, onSaveP
                               <TD style={{ minWidth: 150 }}>
                                 <select
                                   value={rv.status}
-                                  onChange={e => setRowField(p.id, row.id, 'status', e.target.value)}
+                                  onChange={e => setRowStatus(p.id, row.id, e.target.value)}
                                   style={{
                                     appearance: 'none', WebkitAppearance: 'none',
                                     border: '1.5px solid var(--border)',
