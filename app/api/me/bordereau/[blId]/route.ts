@@ -16,7 +16,7 @@ export async function GET(_: NextRequest, { params }: { params: { blId: string }
         include: {
           client:   { select: { id: true, name: true, phone: true, city: true } },
           campaign: { include: { route: true } },
-          payment:  { select: { status: true, paidAt: true } },
+          payment:  { select: { status: true, paidAt: true, amount: true } },
         },
       },
     },
@@ -46,6 +46,7 @@ export async function GET(_: NextRequest, { params }: { params: { blId: string }
       trackingCode: bl.parcel.trackingCode,
       description:  bl.parcel.description,
       weightKg:     bl.parcel.weightKg,
+      items:        (bl.parcel as any).items ?? [],
     },
     client: {
       name:  bl.parcel.client.name,
@@ -53,12 +54,18 @@ export async function GET(_: NextRequest, { params }: { params: { blId: string }
       city:  bl.parcel.client.city,
     },
     campaign: {
-      code: bl.parcel.campaign.code,
-      from: bl.parcel.campaign.route.origin,
-      to:   bl.parcel.campaign.route.destination,
-      arrivalDate: bl.parcel.campaign.arrivalDate,
+      code:          bl.parcel.campaign.code,
+      from:          bl.parcel.campaign.route.origin,
+      to:            bl.parcel.campaign.route.destination,
+      departureDate: bl.parcel.campaign.departureDate,
+      arrivalDate:   bl.parcel.campaign.arrivalDate,
     },
-    paid: bl.parcel.payment?.status === 'completed',
+    payment: bl.parcel.payment ? {
+      amount: bl.parcel.payment.amount,
+      status: bl.parcel.payment.status,
+      paidAt: bl.parcel.payment.paidAt,
+    } : null,
+    paid:   bl.parcel.payment?.status === 'completed',
     paidAt: bl.parcel.payment?.paidAt ?? null,
   });
 }
