@@ -21,6 +21,8 @@ function mapParcel(p) {
           id:          `${bl.id}-${idx}`,
           blId:        bl.id,
           blCode:      bl.code,
+          blStatus:    bl.status,   // 'en_attente' | 'verifie' | 'ecart'
+          blNotes:     bl.notes,
           designation: it.designation || bl.description || '—',
           description: it.description || '—',
           type:        capitalize(it.type),
@@ -33,6 +35,8 @@ function mapParcel(p) {
         id:          `${bl.id}-0`,
         blId:        bl.id,
         blCode:      bl.code,
+        blStatus:    bl.status,
+        blNotes:     bl.notes,
         designation: bl.description || '—',
         description: '—',
         type:        '—',

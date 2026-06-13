@@ -31,11 +31,24 @@ const TD = ({ children, mono, right, muted, style: sx }) => (
 
 export default function CampaignVerifyPanel({ parcels, campaign, onExit, onSaveParcel, onClose, closing }) {
   const [expanded, setExpanded]   = useState({});
-  const [saved,    setSaved]      = useState({});   // parcelId → true
+  // A parcel is pre-saved if all its bordereaux already have a non-pending status
+  const [saved, setSaved] = useState(() =>
+    Object.fromEntries(parcels.map(p => {
+      const rows = p.rows || [];
+      const allDone = rows.length > 0 && rows.every(r => r.blStatus && r.blStatus !== 'en_attente');
+      return [p.id, allDone];
+    }))
+  );
   const [saving,   setSavingMap]  = useState({});   // parcelId → true
 
+  const initVerifRow = (r) => {
+    if (r.blStatus === 'verifie') return { status: 'ok',    ecart: 0, note: r.blNotes || '' };
+    if (r.blStatus === 'ecart')   return { status: 'issue', ecart: 0, note: r.blNotes || '' };
+    return { status: 'pending', ecart: 0, note: '' };
+  };
+
   const initVerifs = (p) =>
-    Object.fromEntries((p.rows || []).map(r => [r.id, { status: 'pending', ecart: 0, note: '' }]));
+    Object.fromEntries((p.rows || []).map(r => [r.id, initVerifRow(r)]));
 
   const [verifs, setVerifs] = useState(() =>
     Object.fromEntries(parcels.map(p => [p.id, initVerifs(p)]))
