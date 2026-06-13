@@ -4,25 +4,62 @@ import { useNav } from '@/src/lib/nav';
 import CampaignVerifyPanel from '@/src/screens/CampaignVerify';
 import I from '@/src/components/Icons';
 
+function capitalize(s) {
+  if (!s) return '—';
+  return s.charAt(0).toUpperCase() + s.slice(1);
+}
+
 function mapParcel(p) {
-  const rawItems = Array.isArray(p.items) ? p.items : [];
-  const items = rawItems.length > 0
-    ? rawItems.map((it, idx) => ({
-        id:   `${p.id}-${idx}`,
-        desc: it.description || it.productType || 'Article',
-        qty:  it.nbPieces   || 1,
-      }))
-    : [{ id: `${p.id}-0`, desc: p.description || 'Colis', qty: 1 }];
+  const bls = Array.isArray(p.bordereaux) ? p.bordereaux : [];
+
+  let rows = [];
+  bls.forEach(bl => {
+    const blItems = Array.isArray(bl.items) && bl.items.length > 0 ? bl.items : null;
+    if (blItems) {
+      blItems.forEach((it, idx) => {
+        rows.push({
+          id:          `${bl.id}-${idx}`,
+          blId:        bl.id,
+          blCode:      bl.code,
+          designation: it.designation || bl.description || '—',
+          description: it.description || '—',
+          type:        capitalize(it.type),
+          nb:          Number(it.count) || 1,
+          pieces:      it.nbPieces != null ? Number(it.nbPieces) : null,
+        });
+      });
+    } else {
+      rows.push({
+        id:          `${bl.id}-0`,
+        blId:        bl.id,
+        blCode:      bl.code,
+        designation: bl.description || '—',
+        description: '—',
+        type:        '—',
+        nb:          1,
+        pieces:      bl.nbPieces != null ? Number(bl.nbPieces) : null,
+      });
+    }
+  });
+
+  if (rows.length === 0) {
+    rows = [{
+      id: `${p.id}-fallback`,
+      blId: null, blCode: null,
+      designation: p.description || 'Colis',
+      description: '—', type: '—', nb: 1, pieces: null,
+    }];
+  }
 
   return {
-    id:         p.id,
-    code:       p.trackingCode,
-    senderName: p.client?.name ?? '—',
-    recipName:  p.recipientName ?? p.client?.name ?? '—',
-    recipCity:  p.client?.city  ?? '—',
-    actualKg:   p.weightKg ?? 0,
-    delivery:   'pickup',
-    items,
+    id:          p.id,
+    code:        p.trackingCode,
+    senderName:  p.client?.name  ?? '—',
+    senderPhone: p.client?.phone ?? '',
+    recipName:   p.client?.name  ?? '—',
+    recipCity:   p.client?.city  ?? '—',
+    actualKg:    p.weightKg      ?? 0,
+    rows,
   };
 }
 
@@ -31,7 +68,7 @@ export default function CampaignVerifyPage({ params }) {
   const [campaign, setCampaign] = useState(null);
   const [parcels,  setParcels]  = useState([]);
   const [loading,  setLoading]  = useState(true);
-  const [saving,   setSaving]   = useState(false);
+  const [closing,  setClosing]  = useState(false);
   const [error,    setError]    = useState(null);
 
   useEffect(() => {
@@ -45,34 +82,40 @@ export default function CampaignVerifyPage({ params }) {
       .catch(() => { setError('Impossible de charger la cargaison.'); setLoading(false); });
   }, [params.id]);
 
-  async function handleValidate({ itemVerifs, parcelObs, parcels: pList }) {
-    setSaving(true);
+  // Save one parcel's bordereau verifications
+  async function saveParcel(parcel, verifs) {
+    const rows = parcel.rows.filter(r => r.blId);
+    const seen = new Set();
+    await Promise.all(
+      rows
+        .filter(r => { if (seen.has(r.blId)) return false; seen.add(r.blId); return true; })
+        .map(r => {
+          const v = verifs[parcel.id]?.[r.id] ?? {};
+          const blStatus = v.status === 'ok' ? 'verifie' : v.status === 'pending' ? 'en_attente' : 'ecart';
+          return fetch(`/api/bordereaux/${r.blId}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              status: blStatus,
+              ...(v.note ? { notes: v.note } : {}),
+            }),
+          });
+        })
+    );
+  }
+
+  // Final campaign validation: update campaign → ard (cascades parcels)
+  async function handleClose() {
+    setClosing(true);
     try {
-      await Promise.all(pList.map(async p => {
-        const verifs = itemVerifs[p.id] || {};
-        const obs    = parcelObs[p.id] || '';
-        const itemNotes = Object.entries(verifs)
-          .filter(([, v]) => v.note)
-          .map(([, v]) => v.note)
-          .join('; ');
-        const notes = [obs, itemNotes].filter(Boolean).join(' | ') || undefined;
-
-        await fetch(`/api/parcels/${p.id}`, {
-          method:  'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body:    JSON.stringify({ status: 'arrive', ...(notes && { notes }) }),
-        });
-      }));
-
       await fetch(`/api/campaigns/${params.id}`, {
         method:  'PUT',
         headers: { 'Content-Type': 'application/json' },
         body:    JSON.stringify({ status: 'ard' }),
       });
-
       onNav('/admin/campaigns/' + params.id);
     } catch {
-      setSaving(false);
+      setClosing(false);
     }
   }
 
@@ -107,8 +150,9 @@ export default function CampaignVerifyPage({ params }) {
       <CampaignVerifyPanel
         parcels={parcels}
         campaign={campaign}
-        saving={saving}
-        onValidate={handleValidate}
+        closing={closing}
+        onSaveParcel={saveParcel}
+        onClose={handleClose}
         onExit={() => onNav('/admin/campaigns/' + params.id)}
       />
     </div>

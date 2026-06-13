@@ -17,6 +17,7 @@ export async function GET(_: NextRequest, { params }: { params: { id: string } }
           client: { select: { id: true, name: true, email: true, phone: true, city: true } },
           payment: true,
           trackingEvents: { orderBy: { createdAt: 'desc' } },
+          bordereaux: { orderBy: { createdAt: 'asc' } },
         },
       },
     },
