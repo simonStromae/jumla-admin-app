@@ -27,7 +27,7 @@ export async function GET(_: NextRequest, { params }: { params: { blId: string }
 
   const confirmed = await prisma.$queryRawUnsafe<any[]>(
     `SELECT "clientConfirmed", "clientConfirmedAt" FROM bordereaux WHERE id = $1`, bl.id,
-  );
+  ).catch(() => [{}]);
 
   return NextResponse.json({
     id:          bl.id,
