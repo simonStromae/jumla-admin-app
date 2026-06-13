@@ -495,7 +495,7 @@ export default function ParcelDetailScreen({ id, onNav }) {
             <div style={{ padding: '12px 0', borderTop: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 14 }}>
               <span style={{ fontWeight: 700 }}>Total dû</span>
               <span className="mono" style={{ fontSize: 22, fontWeight: 700 }}>
-                {parcel.priceXaf ?? '—'} <span style={{ fontSize: 12, color: 'var(--ink-400)' }}>CAD</span>
+                {(payment?.amount ?? parcel.priceXaf)?.toLocaleString('fr') ?? '—'} <span style={{ fontSize: 12, color: 'var(--ink-400)' }}>CAD</span>
               </span>
             </div>
 
@@ -794,7 +794,7 @@ function InteracModal({ parcel, onClose }) {
   return (
     <Modal width={680} onClose={onClose}
       title="Lien de paiement Interac"
-      sub={parcel.trackingCode + ' · ' + (parcel.priceXaf ?? '—') + ' CAD dû'}
+      sub={parcel.trackingCode + ' · ' + ((payment?.amount ?? parcel.priceXaf)?.toLocaleString('fr') ?? '—') + ' CAD dû'}
       footer={<><button className="btn btn--ghost" onClick={onClose}>Fermer</button></>}>
       <div style={{ display: 'grid', gap: 14 }}>
         <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.06em', color: 'var(--ink-400)', marginBottom: 4 }}>Lien de paiement</div>

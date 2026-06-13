@@ -97,8 +97,8 @@ export default function CampaignDetailScreen({ id, onNav }) {
 
   const parcels = campaign.parcels || [];
   const totalWeight = parcels.reduce((s, p) => s + (p.weightKg || 0), 0);
-  const invoiced = parcels.reduce((s, p) => s + (p.priceXaf || 0), 0);
-  const collected = parcels.reduce((s, p) => s + (p.payment?.status === 'completed' ? (p.payment.amount || 0) : 0), 0);
+  const invoiced    = parcels.reduce((s, p) => s + (p.payment?.amount ?? p.priceXaf ?? 0), 0);
+  const collected   = parcels.reduce((s, p) => s + (p.payment?.status === 'completed' ? (p.payment.amount || 0) : 0), 0);
   const outstanding = invoiced - collected;
   const pct = invoiced > 0 ? Math.round(collected / invoiced * 100) : 0;
 
@@ -204,9 +204,9 @@ export default function CampaignDetailScreen({ id, onNav }) {
         {[
           { l: 'Colis',             v: parcels.length,                          u: '' },
           { l: 'Poids total',       v: totalWeight.toLocaleString('fr'),         u: 'kg' },
-          { l: 'Facturé',           v: invoiced.toLocaleString('fr'),            u: 'XAF' },
-          { l: 'Perçu',             v: collected.toLocaleString('fr'),           u: 'XAF', col: 'var(--ok-600)' },
-          { l: 'Reste à percevoir', v: outstanding.toLocaleString('fr'),         u: 'XAF', col: outstanding > 0 ? 'var(--bad-600)' : 'var(--ok-600)' },
+          { l: 'Facturé',           v: invoiced.toLocaleString('fr'),            u: 'CAD' },
+          { l: 'Perçu',             v: collected.toLocaleString('fr'),           u: 'CAD', col: 'var(--ok-600)' },
+          { l: 'Reste à percevoir', v: outstanding.toLocaleString('fr'),         u: 'CAD', col: outstanding > 0 ? 'var(--bad-600)' : 'var(--ok-600)' },
           { l: 'Taux recouvrement', v: pct,                                      u: '%',   col: pct >= 95 ? 'var(--ok-600)' : 'var(--warn-700)' },
         ].map((k, i) => (
           <div key={i} style={{ padding: '14px 18px', borderRight: i < 5 ? '1px solid var(--border-soft)' : 'none' }}>
@@ -389,7 +389,7 @@ export default function CampaignDetailScreen({ id, onNav }) {
                   </td>
                   <td style={{ textAlign: 'right' }}>
                     <span className="mono" style={{ fontWeight: 700, color: 'var(--ink-900)' }}>
-                      {p.priceXaf != null ? p.priceXaf.toLocaleString('fr') : '—'}
+                      {(p.payment?.amount ?? p.priceXaf) != null ? (p.payment?.amount ?? p.priceXaf).toLocaleString('fr') : '—'}
                     </span>
                   </td>
                   <td>
