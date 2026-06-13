@@ -13,7 +13,10 @@ export async function GET() {
       route: true,
       costs: true,
       parcels: {
-        include: { payment: true },
+        include: {
+          payment: true,
+          bordereaux: { select: { status: true } },
+        },
       },
     },
   });
@@ -24,6 +27,12 @@ export async function GET() {
       s + (p.payment?.status === 'completed' ? p.payment.amount : 0), 0);
     const weight    = c.parcels.reduce((s, p) => s + (p.weightKg ?? 0), 0);
     const unpaid    = c.parcels.filter(p => !p.payment || p.payment.status !== 'completed').length;
+
+    const allBordereaux   = c.parcels.flatMap(p => (p as any).bordereaux ?? []);
+    const totalBordereaux = allBordereaux.length;
+    const verifiedBordereaux = allBordereaux.filter((b: any) =>
+      b.status === 'verifie' || b.status === 'ecart'
+    ).length;
 
     return {
       id:         c.id,
@@ -41,6 +50,8 @@ export async function GET() {
       invoiced,
       collected,
       alerts:     unpaid,
+      totalBordereaux,
+      verifiedBordereaux,
       costs:      c.costs ? {
         fret:        c.costs.fret,
         manutention: c.costs.manutention,

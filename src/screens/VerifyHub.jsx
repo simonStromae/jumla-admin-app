@@ -138,7 +138,12 @@ export default function VerifyHubScreen({ onNav }) {
                 className="btn btn--primary btn--sm"
                 onClick={() => onNav('/admin/campaigns/' + c.id + '/verify')}
               >
-                <I.Check />Lancer la vérification
+                <I.Check />
+                {c.verifiedBordereaux >= c.totalBordereaux && c.totalBordereaux > 0
+                  ? 'Voir la vérification'
+                  : c.verifiedBordereaux > 0
+                  ? 'Continuer la vérification'
+                  : 'Lancer la vérification'}
               </button>
             </div>
           ))}
