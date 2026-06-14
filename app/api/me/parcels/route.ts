@@ -20,17 +20,6 @@ export async function GET() {
     },
   });
 
-  // Fetch extra columns outside Prisma schema for bordereaux
-  const blIds = parcels.flatMap(p => p.bordereaux.map(b => b.id));
-  let blExtra: Record<string, { status: string; clientConfirmed: boolean }> = {};
-  if (blIds.length) {
-    const rows = await prisma.$queryRawUnsafe<any[]>(
-      `SELECT id, status, "clientConfirmed" FROM bordereaux WHERE id = ANY($1::text[])`,
-      blIds
-    ).catch(() => []);
-    for (const r of rows) blExtra[r.id] = { status: r.status, clientConfirmed: r.clientConfirmed ?? false };
-  }
-
   // Fetch allocated amounts for payments
   const paymentIds = parcels.map(p => p.payment?.id).filter(Boolean) as string[];
   let allocMap: Record<string, number> = {};
@@ -84,8 +73,8 @@ export async function GET() {
         id:              b.id,
         code:            b.code,
         nbPieces:        b.nbPieces,
-        status:          blExtra[b.id]?.status ?? 'enr',
-        clientConfirmed: blExtra[b.id]?.clientConfirmed ?? false,
+        status:          b.status,
+        clientConfirmed: b.clientConfirmed,
       })),
     };
   });

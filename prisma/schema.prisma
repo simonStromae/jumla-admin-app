@@ -174,17 +174,19 @@ model Message {
 }
 
 model Bordereau {
-  id          String   @id @default(cuid())
-  parcelId    String
-  parcel      Parcel   @relation(fields: [parcelId], references: [id], onDelete: Cascade)
-  code        String
-  description String?
-  weightKg    Float?
-  nbPieces    Int      @default(1)
-  items       Json?
-  status      String   @default("en_attente")
-  notes       String?
-  createdAt   DateTime @default(now())
+  id                String    @id @default(cuid())
+  parcelId          String
+  parcel            Parcel    @relation(fields: [parcelId], references: [id], onDelete: Cascade)
+  code              String
+  description       String?
+  weightKg          Float?
+  nbPieces          Int       @default(1)
+  items             Json?
+  status            String    @default("en_attente")
+  notes             String?
+  clientConfirmed   Boolean   @default(false)
+  clientConfirmedAt DateTime?
+  createdAt         DateTime  @default(now())
 
   @@map("bordereaux")
 }

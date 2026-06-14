@@ -25,10 +25,6 @@ export async function GET(_: NextRequest, { params }: { params: { blId: string }
   if (!bl) return NextResponse.json({ error: 'Bordereau introuvable' }, { status: 404 });
   if (bl.parcel.clientId !== userId) return NextResponse.json({ error: 'Accès refusé' }, { status: 403 });
 
-  const confirmed = await prisma.$queryRawUnsafe<any[]>(
-    `SELECT "clientConfirmed", "clientConfirmedAt" FROM bordereaux WHERE id = $1`, bl.id,
-  ).catch(() => [{}]);
-
   return NextResponse.json({
     id:          bl.id,
     code:        bl.code,
@@ -39,8 +35,8 @@ export async function GET(_: NextRequest, { params }: { params: { blId: string }
     status:      bl.status,
     items:       (bl as any).items ?? [],
     createdAt:   bl.createdAt,
-    clientConfirmed:   confirmed[0]?.clientConfirmed   ?? false,
-    clientConfirmedAt: confirmed[0]?.clientConfirmedAt ?? null,
+    clientConfirmed:   bl.clientConfirmed,
+    clientConfirmedAt: bl.clientConfirmedAt,
     parcel: {
       id:           bl.parcel.id,
       trackingCode: bl.parcel.trackingCode,
@@ -82,6 +78,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { blId: stri
       id: true,
       code: true,
       status: true,
+      clientConfirmed: true,
       parcel: { select: { clientId: true, id: true, trackingCode: true } },
     },
   });
@@ -89,21 +86,18 @@ export async function PATCH(req: NextRequest, { params }: { params: { blId: stri
   if (!bl) return NextResponse.json({ error: 'Bordereau introuvable' }, { status: 404 });
   if (bl.parcel.clientId !== userId) return NextResponse.json({ error: 'Accès refusé' }, { status: 403 });
 
-  const existing = await prisma.$queryRawUnsafe<any[]>(
-    `SELECT "clientConfirmed" FROM bordereaux WHERE id = $1`, bl.id,
-  ).catch(() => [{}]);
-  if (existing[0]?.clientConfirmed) {
+  if (bl.clientConfirmed) {
     return NextResponse.json({ error: 'Déjà confirmé.' }, { status: 400 });
   }
 
   try {
-    await prisma.$executeRawUnsafe(
-      `UPDATE bordereaux SET "clientConfirmed" = true, "clientConfirmedAt" = NOW() WHERE id = $1`,
-      bl.id,
-    );
+    await prisma.bordereau.update({
+      where: { id: bl.id },
+      data: { clientConfirmed: true, clientConfirmedAt: new Date() },
+    });
   } catch (e: any) {
     console.error('[bordereau PATCH]', e);
-    return NextResponse.json({ error: 'Erreur lors de la confirmation. La colonne clientConfirmed existe-t-elle ? (/api/migrate)' }, { status: 500 });
+    return NextResponse.json({ error: e?.message ?? 'Erreur serveur' }, { status: 500 });
   }
 
   return NextResponse.json({ ok: true });

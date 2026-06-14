@@ -23,18 +23,6 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
     return NextResponse.json({ error: 'Colis introuvable' }, { status: 404 });
   }
 
-  // Extra bordereau fields
-  const blIds = parcel.bordereaux.map(b => b.id);
-  let blExtra: Record<string, any> = {};
-  if (blIds.length) {
-    const rows = await prisma.$queryRawUnsafe<any[]>(
-      `SELECT id, status, "clientConfirmed", "clientConfirmedAt", items, description, "weightKg", "nbPieces", notes
-       FROM bordereaux WHERE id = ANY($1::text[])`,
-      blIds
-    ).catch(() => []);
-    for (const r of rows) blExtra[r.id] = r;
-  }
-
   // Allocated amount
   let allocated = 0;
   if (parcel.payment) {
@@ -93,21 +81,18 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
       createdAt:   e.createdAt,
       createdBy:   e.createdBy?.name ?? null,
     })),
-    bordereaux: parcel.bordereaux.map(b => {
-      const ex = blExtra[b.id] ?? {};
-      return {
-        id:              b.id,
-        code:            b.code,
-        status:          ex.status ?? 'enr',
-        clientConfirmed: ex.clientConfirmed ?? false,
-        clientConfirmedAt: ex.clientConfirmedAt ?? null,
-        description:     ex.description ?? null,
-        weightKg:        ex.weightKg ?? null,
-        nbPieces:        ex.nbPieces ?? null,
-        notes:           ex.notes ?? null,
-        items:           ex.items ?? [],
-      };
-    }),
+    bordereaux: parcel.bordereaux.map(b => ({
+      id:                b.id,
+      code:              b.code,
+      status:            b.status,
+      clientConfirmed:   b.clientConfirmed,
+      clientConfirmedAt: b.clientConfirmedAt,
+      description:       b.description,
+      weightKg:          b.weightKg,
+      nbPieces:          b.nbPieces,
+      notes:             b.notes,
+      items:             (b as any).items ?? [],
+    })),
   });
 }
 
