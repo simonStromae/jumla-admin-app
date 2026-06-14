@@ -261,7 +261,7 @@ export default function BordereauPage({ params }) {
                         <TD muted>{it.description}</TD>
                         <TD>{it.type || it.packaging}</TD>
                         <td style={{ padding: '9px 12px', border: '1px solid #e5e7eb', textAlign: 'center', fontFamily: 'monospace', fontSize: 13 }}>{qty != null ? qty : ''}</td>
-                        <td style={{ padding: '9px 12px', border: '1px solid #e5e7eb', textAlign: 'center', fontFamily: 'monospace', fontSize: 13 }}>{qty != null ? qty : ''}</td>
+                        <td style={{ padding: '9px 12px', border: '1px solid #e5e7eb', textAlign: 'center', fontFamily: 'monospace', fontSize: 13 }}></td>
                       </tr>
                     );
                   })}
@@ -270,7 +270,7 @@ export default function BordereauPage({ params }) {
                   <tr style={{ background: '#f9fafb' }}>
                     <td colSpan={4} style={{ padding: '9px 12px', border: '1px solid #e5e7eb', fontWeight: 700, fontSize: 13 }}>Total</td>
                     <td style={{ padding: '9px 12px', border: '1px solid #e5e7eb', textAlign: 'center', fontWeight: 700, fontFamily: 'monospace', fontSize: 13 }}>{totalNb > 0 ? totalNb : ''}</td>
-                    <td style={{ padding: '9px 12px', border: '1px solid #e5e7eb', textAlign: 'center', fontWeight: 700, fontFamily: 'monospace', fontSize: 13 }}>{totalNb > 0 ? totalNb : ''}</td>
+                    <td style={{ padding: '9px 12px', border: '1px solid #e5e7eb', textAlign: 'center', fontWeight: 700, fontFamily: 'monospace', fontSize: 13 }}></td>
                   </tr>
                 </tfoot>
               </table>

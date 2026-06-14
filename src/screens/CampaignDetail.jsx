@@ -2,41 +2,59 @@ import { useState, useEffect } from 'react';
 import I from '../components/Icons.jsx';
 import { RoutePill, Avatar, Modal } from '../components/Shell.jsx';
 
+// Main linear flow (shown in timeline)
 const STEPS = [
-  { id: 'enr', label: 'Ouverte',          color: 'var(--brand-500)' },
-  { id: 'exp', label: 'Expédiée',          color: 'var(--info-500)' },
-  { id: 'tra', label: 'En transit',        color: 'var(--warn-500)' },
-  { id: 'apd', label: 'Arrivée au pays',  color: 'var(--ok-400)' },
-  { id: 'dou', label: 'En douane',         color: '#b45309' },
-  { id: 'lib', label: 'Libérée douanes',  color: 'var(--ok-500)' },
-  { id: 'ard', label: 'Entrepôt dest.',   color: '#16a34a' },
-  { id: 'pdl', label: 'Prête livraison',  color: 'var(--info-600)' },
-  { id: 'ok',  label: 'Clôturée',         color: 'var(--ink-500)' },
+  { id: 'enr', label: 'Enregistré',               icon: '📝', color: '#6b7280' },
+  { id: 'rec', label: 'Reçu à l\'entrepôt',        icon: '📥', color: '#2563eb' },
+  { id: 'pre', label: 'Vérifié et préparé',        icon: '🔍', color: '#7c3aed' },
+  { id: 'exp', label: 'Expédié',                   icon: '🚀', color: '#0e7490' },
+  { id: 'tra', label: 'En transit',                icon: '✈️', color: '#0891b2' },
+  { id: 'apd', label: 'Arrivé au pays de dest.',   icon: '🛬', color: '#16a34a' },
+  { id: 'dou', label: 'Présenté aux douanes',      icon: '🛃', color: '#d97706' },
+  { id: 'ins', label: 'En inspection douanière',   icon: '🔎', color: '#c2410c' },
+  { id: 'ret', label: 'Retenu par les douanes',    icon: '⚠️', color: '#dc2626' },
+  { id: 'lib', label: 'Libéré par les douanes',    icon: '✅', color: '#16a34a' },
+  { id: 'ard', label: 'Arrivé entrepôt de dest.',  icon: '🏭', color: '#15803d' },
+  { id: 'ver', label: 'Vérification finale',       icon: '🔬', color: '#0e7490' },
+  { id: 'pdl', label: 'Prêt pour livraison',       icon: '📦', color: '#0891b2' },
+  { id: 'liv', label: 'En cours de livraison',     icon: '🚚', color: '#0891b2' },
+  { id: 'ok',  label: 'Livré',                     icon: '🎉', color: '#15803d' },
 ];
-const STEP_LABELS = {
-  enr: 'Ouverte',
-  exp: 'Expédiée',
-  tra: 'En transit',
-  apd: 'Arrivée au pays',
-  dou: 'En douane',
-  lib: 'Libérée douanes',
-  ard: 'Entrepôt dest.',
-  pdl: 'Prête livraison',
-  ok:  'Clôturée',
-};
 
-const STEP_ICONS = {
-  enr: '✏️', exp: '🚀', tra: '✈️', apd: '🛬', dou: '🔍', lib: '✅', ard: '🏭', pdl: '📦', ok: '🔒',
-};
+// Exceptional statuses (select only, not in main timeline)
+const EXCEPT_STEPS = [
+  { id: 'adr', label: 'Adresse incomplète',     icon: '📍', color: '#dc2626' },
+  { id: 'tdl', label: 'Tentative de livraison', icon: '🔔', color: '#d97706' },
+  { id: 'rte', label: 'Retour à l\'entrepôt',   icon: '↩️', color: '#7c3aed' },
+  { id: 'dom', label: 'Colis endommagé',         icon: '💥', color: '#dc2626' },
+  { id: 'cla', label: 'Réclamation ouverte',     icon: '📋', color: '#dc2626' },
+];
+
+const ALL_STEPS = [...STEPS, ...EXCEPT_STEPS];
+
+const STEP_LABELS = Object.fromEntries(ALL_STEPS.map(s => [s.id, s.label]));
+const STEP_ICONS  = Object.fromEntries(ALL_STEPS.map(s => [s.id, s.icon]));
+
 const STEP_EFFECTS = {
+  rec: 'Les colis enregistrés (ENR) seront considérés comme reçus à l\'entrepôt.',
+  pre: 'Les colis reçus (REC) sont vérifiés et prêts pour l\'expédition.',
   exp: 'Tous les colis reçus/préparés (REC, PRE) seront automatiquement passés à "Expédié" (EXP).',
   tra: 'La cargaison est en transit — second tronçon.',
   apd: 'La cargaison est arrivée au pays de destination.',
   dou: 'La cargaison est présentée aux douanes.',
+  ins: 'La cargaison est en inspection douanière.',
+  ret: 'La cargaison est retenue par les douanes.',
   lib: 'La cargaison a été libérée par les douanes.',
   ard: 'Tous les colis expédiés/en transit (EXP, TRA, APD) seront passés à "Arrivé entrepôt destination" (ARD).',
-  pdl: 'La cargaison est prête pour la livraison.',
+  ver: 'Vérification finale avant mise à disposition.',
+  pdl: 'La cargaison est prête pour la livraison ou le retrait.',
+  liv: 'La cargaison est en cours de livraison.',
   ok:  'La cargaison sera définitivement clôturée. Cette action est irréversible.',
+  adr: 'Adresse de livraison incomplète — action requise.',
+  tdl: 'Tentative de livraison effectuée sans succès.',
+  rte: 'La cargaison est retournée à l\'entrepôt.',
+  dom: 'Colis endommagé — ouverture de dossier.',
+  cla: 'Réclamation ouverte — en attente de traitement.',
 };
 
 const PAYMENT_STATUS = {
@@ -106,6 +124,7 @@ export default function CampaignDetailScreen({ id, onNav }) {
 
   const currentStepIdx = STEPS.findIndex(s => s.id === campaign.status);
   const nextStep = currentStepIdx >= 0 && currentStepIdx < STEPS.length - 1 ? STEPS[currentStepIdx + 1] : null;
+  const currentStepInfo = ALL_STEPS.find(s => s.id === campaign.status);
 
   const unpaidCount = parcels.filter(p => p.payment?.status !== 'completed').length;
 
@@ -167,9 +186,9 @@ export default function CampaignDetailScreen({ id, onNav }) {
             {campaign.status && (
               <span
                 className="badge badge--dot badge--neutral"
-                style={{ color: STEPS.find(s => s.id === campaign.status)?.color }}
+                style={{ color: currentStepInfo?.color }}
               >
-                {STEP_LABELS[campaign.status] || campaign.status}
+                {currentStepInfo?.icon} {STEP_LABELS[campaign.status] || campaign.status}
               </span>
             )}
           </div>
@@ -225,10 +244,10 @@ export default function CampaignDetailScreen({ id, onNav }) {
         <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--ink-500)', whiteSpace: 'nowrap' }}>Changer le statut :</span>
         <select
           className="input"
-          style={{ flex: 1, minWidth: 200, maxWidth: 320 }}
+          style={{ flex: 1, minWidth: 220, maxWidth: 360 }}
           value={campaign.status}
           onChange={e => {
-            const target = STEPS.find(s => s.id === e.target.value);
+            const target = ALL_STEPS.find(s => s.id === e.target.value);
             if (!target || target.id === campaign.status) return;
             if (target.id === 'exp' || target.id === 'tra') {
               setShowDepartureModal(target);
@@ -237,9 +256,34 @@ export default function CampaignDetailScreen({ id, onNav }) {
             }
           }}
         >
-          {STEPS.map(s => (
-            <option key={s.id} value={s.id}>{s.label}</option>
-          ))}
+          <optgroup label="Flux principal">
+            <option value="enr">📝 Enregistré</option>
+            <option value="rec">📥 Reçu à l'entrepôt</option>
+            <option value="pre">🔍 Vérifié et préparé</option>
+            <option value="exp">🚀 Expédié</option>
+            <option value="tra">✈️ En transit</option>
+            <option value="apd">🛬 Arrivé au pays de destination</option>
+          </optgroup>
+          <optgroup label="Douanes">
+            <option value="dou">🛃 Présenté aux douanes</option>
+            <option value="ins">🔎 En inspection douanière</option>
+            <option value="ret">⚠️ Retenu par les douanes</option>
+            <option value="lib">✅ Libéré par les douanes</option>
+          </optgroup>
+          <optgroup label="Livraison">
+            <option value="ard">🏭 Arrivé entrepôt de destination</option>
+            <option value="ver">🔬 Vérification finale</option>
+            <option value="pdl">📦 Prêt pour livraison/retrait</option>
+            <option value="liv">🚚 En cours de livraison</option>
+            <option value="ok">🎉 Livré</option>
+          </optgroup>
+          <optgroup label="Exceptionnels">
+            <option value="adr">📍 Adresse incomplète</option>
+            <option value="tdl">🔔 Tentative de livraison</option>
+            <option value="rte">↩️ Retour à l'entrepôt</option>
+            <option value="dom">💥 Colis endommagé</option>
+            <option value="cla">📋 Réclamation ouverte</option>
+          </optgroup>
         </select>
         {advanceError && (
           <span style={{ fontSize: 12, color: 'var(--bad-600)', fontWeight: 600 }}>✕ {advanceError}</span>
@@ -377,22 +421,24 @@ export default function CampaignDetailScreen({ id, onNav }) {
 
 /* ── Campaign Timeline ── */
 function CampaignTimeline({ campaign, route }) {
-  const currentIdx = STEPS.findIndex(s => s.id === campaign.status);
+  const isExceptional = EXCEPT_STEPS.some(s => s.id === campaign.status);
+  const exceptInfo    = isExceptional ? EXCEPT_STEPS.find(s => s.id === campaign.status) : null;
+  // For exceptional statuses, highlight the last main flow step reached
+  const currentIdx    = isExceptional
+    ? -1
+    : STEPS.findIndex(s => s.id === campaign.status);
   const notes = campaign.statusNotes ?? {};
 
   const fmtDate = (d) => d
     ? new Date(d).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })
     : null;
 
-  // Contextual location per step
   const stepLocation = (id) => {
-    if (['enr', 'exp'].includes(id))             return route.origin ?? null;
-    if (['tra'].includes(id))                     return null;
-    if (['apd', 'dou', 'lib', 'ard', 'pdl', 'ok'].includes(id)) return route.destination ?? null;
-    return null;
+    if (['enr', 'rec', 'pre', 'exp'].includes(id)) return route.origin ?? null;
+    if (['tra'].includes(id))                       return null;
+    return route.destination ?? null;
   };
 
-  // Contextual date per step
   const stepDate = (id) => {
     if (id === 'enr') return campaign.createdAt;
     if (id === 'exp') return campaign.departureDate;
@@ -405,15 +451,32 @@ function CampaignTimeline({ campaign, route }) {
       <div className="section-title" style={{ marginBottom: 18 }}>
         <I.History style={{ width: 14, height: 14, color: 'var(--brand-600)' }} /> Timeline de la cargaison
       </div>
+
+      {/* Exceptional status banner */}
+      {isExceptional && exceptInfo && (
+        <div style={{
+          marginBottom: 16, padding: '10px 14px', borderRadius: 8,
+          background: '#fef2f2', border: '1.5px solid #fca5a5',
+          display: 'flex', alignItems: 'center', gap: 10,
+          fontSize: 13, fontWeight: 700, color: exceptInfo.color,
+        }}>
+          <span style={{ fontSize: 18 }}>{exceptInfo.icon}</span>
+          <div>
+            <div>{exceptInfo.label}</div>
+            <div style={{ fontSize: 11.5, fontWeight: 400, color: '#6b7280', marginTop: 2 }}>Statut exceptionnel — la progression principale est suspendue</div>
+          </div>
+        </div>
+      )}
+
       <div>
         {STEPS.map((step, i) => {
-          const isDone    = i < currentIdx;
-          const isCurrent = i === currentIdx;
-          const isPending = i > currentIdx;
+          const isDone    = isExceptional ? false : i < currentIdx;
+          const isCurrent = !isExceptional && i === currentIdx;
+          const isPending = isExceptional ? true : i > currentIdx;
 
-          const bg     = isCurrent ? step.color : isDone ? 'var(--ok-50)'      : 'transparent';
-          const border = isCurrent ? step.color : isDone ? 'var(--ok-300)'     : 'var(--border)';
-          const txtCol = isCurrent ? step.color : isDone ? 'var(--ink-700)'    : 'var(--ink-300)';
+          const bg     = isCurrent ? step.color : isDone ? 'var(--ok-50)'   : 'transparent';
+          const border = isCurrent ? step.color : isDone ? 'var(--ok-300)'  : 'var(--border)';
+          const txtCol = isCurrent ? step.color : isDone ? 'var(--ink-700)' : 'var(--ink-300)';
           const lineCol= isDone ? 'var(--ok-200)' : 'var(--border)';
 
           const location = (isDone || isCurrent) ? stepLocation(step.id) : null;
@@ -421,7 +484,7 @@ function CampaignTimeline({ campaign, route }) {
           const note     = notes[step.id] ?? null;
 
           return (
-            <div key={step.id} style={{ display: 'flex', gap: 14, position: 'relative', paddingBottom: i < STEPS.length - 1 ? 20 : 0 }}>
+            <div key={step.id} style={{ display: 'flex', gap: 14, position: 'relative', paddingBottom: i < STEPS.length - 1 ? 18 : 0 }}>
               {i < STEPS.length - 1 && (
                 <div style={{ position: 'absolute', left: 15, top: 32, bottom: 0, width: 1.5, background: lineCol }} />
               )}
@@ -431,7 +494,7 @@ function CampaignTimeline({ campaign, route }) {
                 display: 'grid', placeItems: 'center', fontSize: 14,
                 color: isCurrent ? 'white' : isDone ? 'var(--ok-600)' : 'var(--ink-200)',
               }}>
-                {isCurrent ? STEP_ICONS[step.id] : isDone ? '✓' : ''}
+                {isCurrent ? step.icon : isDone ? '✓' : ''}
               </div>
               <div style={{ flex: 1, paddingTop: 5, opacity: isPending ? 0.3 : 1 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
@@ -465,17 +528,18 @@ function CampaignTimeline({ campaign, route }) {
 /* ── Confirmation modal for non-transit steps ── */
 function ConfirmAdvanceModal({ campaign, targetStep, unpaidCount, advancing, onClose, onConfirm }) {
   const isClosure = targetStep.id === 'ok';
+  const isExcept  = EXCEPT_STEPS.some(s => s.id === targetStep.id);
   const effect = STEP_EFFECTS[targetStep.id];
 
   return (
     <Modal
-      title={isClosure ? 'Clôturer la cargaison' : 'Confirmer l\'avancement'}
+      title={isClosure ? 'Clôturer la cargaison' : isExcept ? 'Statut exceptionnel' : 'Confirmer le changement de statut'}
       onClose={onClose}
       footer={
         <>
           <button className="btn btn--ghost" onClick={onClose} disabled={advancing}>Annuler</button>
           <button
-            className={isClosure ? 'btn btn--danger' : 'btn btn--primary'}
+            className={isClosure || isExcept ? 'btn btn--danger' : 'btn btn--primary'}
             onClick={onConfirm}
             disabled={advancing}
           >
