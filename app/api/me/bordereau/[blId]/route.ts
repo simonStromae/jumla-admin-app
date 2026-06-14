@@ -96,12 +96,15 @@ export async function PATCH(req: NextRequest, { params }: { params: { blId: stri
     return NextResponse.json({ error: 'Déjà confirmé.' }, { status: 400 });
   }
 
-  await prisma.$executeRawUnsafe(
-    `UPDATE bordereaux SET "clientConfirmed" = true, "clientConfirmedAt" = NOW() WHERE id = $1`,
-    bl.id,
-  );
+  try {
+    await prisma.$executeRawUnsafe(
+      `UPDATE bordereaux SET "clientConfirmed" = true, "clientConfirmedAt" = NOW() WHERE id = $1`,
+      bl.id,
+    );
+  } catch (e: any) {
+    console.error('[bordereau PATCH]', e);
+    return NextResponse.json({ error: 'Erreur lors de la confirmation. La colonne clientConfirmed existe-t-elle ? (/api/migrate)' }, { status: 500 });
+  }
 
-  // Notify admins via the notification system (optional — could be extended)
-  // For now just return success
   return NextResponse.json({ ok: true });
 }

@@ -155,13 +155,18 @@ export default function ParcelDetailPage({ params }) {
   };
 
   const confirmBl = async (blId) => {
-    setBlConfirm(c => ({ ...c, [blId]: { ...c[blId], confirming: true } }));
-    const res = await fetch('/api/me/bordereau/' + blId, { method: 'PATCH' });
-    if (res.ok) {
-      setBlConfirm(c => ({ ...c, [blId]: { checked: true, confirming: false, done: true } }));
-      setParcel(p => ({ ...p, bordereaux: p.bordereaux.map(b => b.id === blId ? { ...b, clientConfirmed: true } : b) }));
-    } else {
-      setBlConfirm(c => ({ ...c, [blId]: { ...c[blId], confirming: false } }));
+    setBlConfirm(c => ({ ...c, [blId]: { ...c[blId], confirming: true, error: null } }));
+    try {
+      const res  = await fetch('/api/me/bordereau/' + blId, { method: 'PATCH' });
+      const json = await res.json();
+      if (res.ok) {
+        setBlConfirm(c => ({ ...c, [blId]: { checked: true, confirming: false, done: true } }));
+        setParcel(p => ({ ...p, bordereaux: p.bordereaux.map(b => b.id === blId ? { ...b, clientConfirmed: true } : b) }));
+      } else {
+        setBlConfirm(c => ({ ...c, [blId]: { ...c[blId], confirming: false, error: json.error || 'Erreur' } }));
+      }
+    } catch {
+      setBlConfirm(c => ({ ...c, [blId]: { ...c[blId], confirming: false, error: 'Erreur réseau' } }));
     }
   };
 
@@ -232,6 +237,11 @@ export default function ParcelDetailPage({ params }) {
                 Je confirme avoir vérifié le contenu déclaré et atteste que les informations sont exactes. Cette confirmation vaut signature électronique.
               </span>
             </label>
+            {conf.error && (
+              <div style={{ marginBottom: 10, padding: '7px 12px', background: '#fee2e2', borderRadius: 7, fontSize: 12.5, color: '#dc2626', fontWeight: 600 }}>
+                ✕ {conf.error}
+              </div>
+            )}
             <div style={{ display: 'flex', gap: 8 }}>
               <button onClick={() => router.push('/client/bordereau/' + bl.id)} style={{ padding: '8px 14px', borderRadius: 8, border: '1px solid #d97706', background: 'white', color: '#92400e', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
                 Voir le bordereau

@@ -435,7 +435,7 @@ function CampaignTimeline({ campaign, route }) {
             return (
               <div key={step.id} style={{ display: 'flex', alignItems: 'flex-start' }}>
                 {/* Step cell */}
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: 68 }}>
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flexShrink: 0 }}>
                   <div style={{
                     width: 34, height: 34, borderRadius: '50%', flexShrink: 0,
                     background: circleBg, border: `2px solid ${border}`,
