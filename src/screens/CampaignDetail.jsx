@@ -418,8 +418,8 @@ function CampaignTimeline({ campaign, route }) {
 
       <div>
         {STEPS.map((step, i) => {
-          const isDone    = i < currentIdx;
-          const isCurrent = i === currentIdx;
+          const isDone    = i < currentIdx || step.id === 'enr';
+          const isCurrent = i === currentIdx && step.id !== 'enr';
           const isPending = i > currentIdx;
 
           const bg     = isCurrent ? step.color : isDone ? 'var(--ok-50)'   : 'transparent';
