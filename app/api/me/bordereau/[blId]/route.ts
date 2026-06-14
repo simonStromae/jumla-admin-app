@@ -92,7 +92,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { blId: stri
 
   const existing = await prisma.$queryRawUnsafe<any[]>(
     `SELECT "clientConfirmed" FROM bordereaux WHERE id = $1`, bl.id,
-  );
+  ).catch(() => [{}]);
   if (existing[0]?.clientConfirmed) {
     return NextResponse.json({ error: 'Déjà confirmé.' }, { status: 400 });
   }
