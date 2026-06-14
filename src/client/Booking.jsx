@@ -247,7 +247,7 @@ function Summary({ route, departure, items, price, form, step, isDone }) {
           <span>Route</span><span>{route?.label ?? '—'}</span>
         </div>
         <div className={`co-summary__row${departure ? '' : ' co-summary__row--muted'}`}>
-          <span>Départ</span><span>{departure?.departureDate ? new Date(departure.departureDate).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' }) : departure?.code ?? 'Non sélectionné'}</span>
+          <span>Départ</span><span>{departure?.departureDate ? new Date(departure.departureDate).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', timeZone: 'UTC' }) : departure?.code ?? 'Non sélectionné'}</span>
         </div>
         {route && <div className="co-summary__row co-summary__row--muted"><span>Transit estimé</span><span>~{route.transit} jours</span></div>}
       </div>
@@ -733,7 +733,7 @@ export default function BookingScreen({ onNav, embedded = false }) {
                         ) : (
                           <div className="co-dates">
                             {campaigns.map(c => {
-                              const dep = c.departureDate ? new Date(c.departureDate).toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' }) : c.code;
+                              const dep = c.departureDate ? new Date(c.departureDate).toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short', timeZone: 'UTC' }) : c.code;
                               const low = c.spotsKg !== null && c.spotsKg < 50;
                               return (
                                 <button key={c.id} className={`co-date${form.departure === c.id ? ' is-sel' : ''}`}
