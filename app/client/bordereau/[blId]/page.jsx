@@ -124,7 +124,7 @@ export default function BordereauPage({ params }) {
             transition: 'background .15s',
           }}>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M20 6 9 17l-5-5"/></svg>
-            {confirming ? 'Validation…' : 'Je valide ce bordereau'}
+            {confirming ? 'Validation…' : 'Je valide et autorise l\'expédition'}
           </button>
         ) : null}
       </div>
@@ -260,8 +260,8 @@ export default function BordereauPage({ params }) {
                         <TD bold>{it.designation || it.label}</TD>
                         <TD muted>{it.description}</TD>
                         <TD>{it.type || it.packaging}</TD>
-                        <TD center mono>{qty}</TD>
-                        <TD center mono>{qty}</TD>
+                        <td style={{ padding: '9px 12px', border: '1px solid #e5e7eb', textAlign: 'center', fontFamily: 'monospace', fontSize: 13 }}>{qty != null ? qty : ''}</td>
+                        <td style={{ padding: '9px 12px', border: '1px solid #e5e7eb', textAlign: 'center', fontFamily: 'monospace', fontSize: 13 }}>{qty != null ? qty : ''}</td>
                       </tr>
                     );
                   })}
@@ -326,21 +326,22 @@ export default function BordereauPage({ params }) {
             </div>
           ) : needsConf ? (
             <div style={{ padding: '20px 24px', borderRadius: 10, background: '#fefce8', border: '1.5px solid #fbbf24' }}>
-              <div style={{ fontWeight: 700, fontSize: 14, color: '#92400e', marginBottom: 4 }}>⚠️ Attestation requise</div>
-              <div style={{ fontSize: 13, color: '#78350f', lineHeight: 1.6, marginBottom: 16 }}>
-                Jumla Shipping a validé ce bordereau. Veuillez vérifier l&apos;ensemble des informations ci-dessus et confirmer votre accord avant l&apos;expédition de votre colis.
+              <div style={{ fontWeight: 700, fontSize: 15, color: '#92400e', marginBottom: 6 }}>✍️ Votre signature est requise avant l&apos;expédition</div>
+              <div style={{ fontSize: 13, color: '#78350f', lineHeight: 1.65, marginBottom: 18 }}>
+                Jumla Shipping a préparé votre bordereau. <strong>Votre colis ne sera pas expédié tant que vous n&apos;aurez pas validé ce document.</strong>
+                <br />Vérifiez les articles, quantités et informations ci-dessus, puis confirmez ci-dessous.
               </div>
-              <label style={{ display: 'flex', alignItems: 'flex-start', gap: 12, cursor: 'pointer', marginBottom: 18 }}>
+              <label style={{ display: 'flex', alignItems: 'flex-start', gap: 12, cursor: 'pointer', marginBottom: 20, padding: '14px 16px', background: 'white', borderRadius: 8, border: '1px solid #fde68a' }}>
                 <input type="checkbox" checked={checked} onChange={e => setChecked(e.target.checked)}
-                  style={{ marginTop: 3, width: 17, height: 17, accentColor: '#16a34a', flexShrink: 0, cursor: 'pointer' }} />
-                <span style={{ fontSize: 13.5, color: '#374151', lineHeight: 1.6, fontWeight: 500 }}>
-                  J&apos;atteste avoir pris connaissance du contenu de ce bordereau, vérifier que les articles, quantités et informations mentionnées sont exacts, et confirme que ce bordereau est conforme.
+                  style={{ marginTop: 2, width: 18, height: 18, accentColor: '#16a34a', flexShrink: 0, cursor: 'pointer' }} />
+                <span style={{ fontSize: 13.5, color: '#374151', lineHeight: 1.65, fontWeight: 500 }}>
+                  Je soussigné(e) <strong>{data.client.name}</strong> atteste avoir vérifié le contenu de ce bordereau et confirme que les articles et quantités mentionnés sont exacts et complets.
                   <br />
-                  <span style={{ fontSize: 12, color: '#9ca3af', fontWeight: 400 }}>Cette validation tient lieu de signature électronique et vaut acceptation formelle du bordereau.</span>
+                  <span style={{ fontSize: 12, color: '#9ca3af', fontWeight: 400 }}>Cette validation vaut signature électronique et autorise Jumla Shipping à procéder à l&apos;expédition.</span>
                 </span>
               </label>
               <button onClick={handleConfirm} disabled={!checked || confirming} style={{
-                padding: '11px 28px', borderRadius: 9, border: 'none',
+                padding: '12px 28px', borderRadius: 9, border: 'none',
                 background: checked ? '#16a34a' : '#d1d5db',
                 color: 'white', fontSize: 14, fontWeight: 700,
                 cursor: checked ? 'pointer' : 'not-allowed',
@@ -348,7 +349,7 @@ export default function BordereauPage({ params }) {
                 display: 'flex', alignItems: 'center', gap: 8,
               }}>
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M20 6 9 17l-5-5"/></svg>
-                {confirming ? 'Validation en cours…' : 'Je valide ce bordereau'}
+                {confirming ? 'Validation en cours…' : 'Je valide et autorise l\'expédition'}
               </button>
             </div>
           ) : (
