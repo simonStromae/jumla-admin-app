@@ -70,7 +70,7 @@ export default function BordereauPage({ params }) {
   if (loading) return <div style={{ padding: 80, textAlign: 'center', color: '#6b7280', fontFamily: 'system-ui' }}>Chargement…</div>;
   if (error || !data) return <div style={{ padding: 80, textAlign: 'center', color: '#dc2626', fontFamily: 'system-ui' }}>{error || 'Bordereau introuvable.'}</div>;
 
-  const needsConf   = data.status === 'valide' && !confirmed;
+  const needsConf   = !confirmed;
   const canSubmit   = checked && needsConf;
   const blItems     = Array.isArray(data.items)         ? data.items         : [];
   const parcelItems = Array.isArray(data.parcel?.items) ? data.parcel.items  : [];
@@ -328,8 +328,8 @@ export default function BordereauPage({ params }) {
             <div style={{ padding: '20px 24px', borderRadius: 10, background: '#fefce8', border: '1.5px solid #fbbf24' }}>
               <div style={{ fontWeight: 700, fontSize: 15, color: '#92400e', marginBottom: 6 }}>✍️ Votre signature est requise avant l&apos;expédition</div>
               <div style={{ fontSize: 13, color: '#78350f', lineHeight: 1.65, marginBottom: 18 }}>
-                Jumla Shipping a préparé votre bordereau. <strong>Votre colis ne sera pas expédié tant que vous n&apos;aurez pas validé ce document.</strong>
-                <br />Vérifiez les articles, quantités et informations ci-dessus, puis confirmez ci-dessous.
+                Jumla Shipping a établi ce bordereau à partir de votre déclaration de contenu. <strong>Votre colis ne partira pas tant que vous n&apos;aurez pas signé ce document.</strong>
+                <br />Vérifiez que les articles et quantités listés ci-dessus correspondent bien à ce que vous expédiez, puis confirmez.
               </div>
               <label style={{ display: 'flex', alignItems: 'flex-start', gap: 12, cursor: 'pointer', marginBottom: 20, padding: '14px 16px', background: 'white', borderRadius: 8, border: '1px solid #fde68a' }}>
                 <input type="checkbox" checked={checked} onChange={e => setChecked(e.target.checked)}

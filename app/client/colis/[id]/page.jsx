@@ -111,7 +111,7 @@ export default function ParcelDetailPage({ params }) {
   const paid          = parcel.payment?.status === 'completed';
   const partial       = parcel.payment?.status === 'partial';
   const canEdit       = ['enr', 'rec'].includes(parcel.status);
-  const unconfirmedBl = parcel.bordereaux?.filter(b => b.status === 'valide' && !b.clientConfirmed) ?? [];
+  const unconfirmedBl = parcel.bordereaux?.filter(b => !b.clientConfirmed) ?? [];
 
   const startEdit = () => {
     setEditForm({

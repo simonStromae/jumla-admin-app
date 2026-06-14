@@ -88,7 +88,6 @@ export async function PATCH(req: NextRequest, { params }: { params: { blId: stri
 
   if (!bl) return NextResponse.json({ error: 'Bordereau introuvable' }, { status: 404 });
   if (bl.parcel.clientId !== userId) return NextResponse.json({ error: 'Accès refusé' }, { status: 403 });
-  if (bl.status !== 'valide') return NextResponse.json({ error: 'Ce bordereau n\'est pas encore confirmé par Jumla.' }, { status: 400 });
 
   const existing = await prisma.$queryRawUnsafe<any[]>(
     `SELECT "clientConfirmed" FROM bordereaux WHERE id = $1`, bl.id,

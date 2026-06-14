@@ -55,7 +55,7 @@ function ParcelCard({ parcel, onClick }) {
   const s        = JOURNEY[getJourneyStep(parcel.status)] ?? JOURNEY[0];
   const paid     = parcel.payment?.status === 'completed';
   const partial  = parcel.payment?.status === 'partial';
-  const hasUnconfirmedBl = parcel.bordereaux?.some(b => b.status === 'valide' && !b.clientConfirmed);
+  const hasUnconfirmedBl = parcel.bordereaux?.some(b => !b.clientConfirmed);
   const hasBl    = parcel.bordereaux?.length > 0;
   const isLivré  = parcel.status === 'ok';
 
@@ -180,7 +180,7 @@ function ClientDashboardInner() {
   const active  = parcels.filter(p => p.status !== 'ok');
   const done    = parcels.filter(p => p.status === 'ok');
   const actions = active.filter(p =>
-    p.bordereaux?.some(b => b.status === 'valide' && !b.clientConfirmed) ||
+    p.bordereaux?.some(b => !b.clientConfirmed) ||
     (p.payment && p.payment.status !== 'completed')
   );
 
@@ -245,8 +245,8 @@ function ClientDashboardInner() {
               {actions.length} action{actions.length > 1 ? 's' : ''} requise{actions.length > 1 ? 's' : ''}
             </div>
             <div style={{ fontSize: 12.5, color: '#b45309', marginTop: 1 }}>
-              {actions.some(p => p.bordereaux?.some(b => b.status === 'valide' && !b.clientConfirmed))
-                ? 'Des bordereaux attendent votre confirmation avant expédition'
+              {actions.some(p => p.bordereaux?.some(b => !b.clientConfirmed))
+                ? 'Des bordereaux attendent votre signature avant expédition'
                 : 'Des paiements sont en attente de règlement'}
             </div>
           </div>
