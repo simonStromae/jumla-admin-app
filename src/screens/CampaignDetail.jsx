@@ -417,39 +417,51 @@ function CampaignTimeline({ campaign, route }) {
         <I.History style={{ width: 14, height: 14, color: 'var(--brand-600)' }} /> Timeline de la cargaison
       </div>
       <div style={{ overflowX: 'auto' }}>
-        <div style={{ display: 'flex', alignItems: 'flex-start', width: '100%' }}>
-          {STEPS.map((step, i) => {
-            const isDone    = i < currentIdx || step.id === 'enr';
-            const isCurrent = i === currentIdx && step.id !== 'enr';
-            const isPending = !isDone && !isCurrent;
+        <div style={{ position: 'relative' }}>
+          {/* Background line */}
+          <div style={{
+            position: 'absolute', top: 17, zIndex: 0,
+            left: 'calc(100% / 22)', right: 'calc(100% / 22)',
+            height: 2, background: '#e5e7eb', borderRadius: 1,
+          }} />
+          {/* Progress line */}
+          {currentIdx > 0 && (
+            <div style={{
+              position: 'absolute', top: 17, zIndex: 0,
+              left: 'calc(100% / 22)',
+              width: `calc(${currentIdx} * 100% / 11)`,
+              height: 2, background: '#86efac', borderRadius: 1,
+            }} />
+          )}
+          {/* Steps grid */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(11, 1fr)', position: 'relative', zIndex: 1 }}>
+            {STEPS.map((step, i) => {
+              const isDone    = i < currentIdx || step.id === 'enr';
+              const isCurrent = i === currentIdx && step.id !== 'enr';
+              const isPending = !isDone && !isCurrent;
 
-            const circleBg  = isCurrent ? step.color  : isDone ? '#f0fdf4' : 'white';
-            const border    = isCurrent ? step.color  : isDone ? '#86efac' : '#e5e7eb';
-            const iconColor = isCurrent ? 'white'     : isDone ? '#16a34a' : '#d1d5db';
-            const txtColor  = isCurrent ? step.color  : isDone ? '#374151' : '#d1d5db';
-            const lineColor = isDone ? '#86efac' : '#e5e7eb';
+              const circleBg  = isCurrent ? step.color  : isDone ? '#f0fdf4' : 'white';
+              const border    = isCurrent ? step.color  : isDone ? '#86efac' : '#e5e7eb';
+              const iconColor = isCurrent ? 'white'     : isDone ? '#16a34a' : '#d1d5db';
+              const txtColor  = isCurrent ? step.color  : isDone ? '#374151' : '#d1d5db';
 
-            const date = (isDone || isCurrent) ? fmtDate(stepDate(step.id)) : null;
-            const note = notes[step.id] ?? null;
+              const date = (isDone || isCurrent) ? fmtDate(stepDate(step.id)) : null;
+              const note = notes[step.id] ?? null;
 
-            return (
-              <div key={step.id} style={{ display: 'flex', alignItems: 'flex-start' }}>
-                {/* Step cell */}
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: 'calc(100% / 11)', flexShrink: 0 }}>
+              return (
+                <div key={step.id} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                   <div style={{
                     width: 34, height: 34, borderRadius: '50%', flexShrink: 0,
                     background: circleBg, border: `2px solid ${border}`,
                     display: 'grid', placeItems: 'center',
-                    fontSize: isCurrent ? 16 : 13,
-                    color: iconColor,
+                    fontSize: isCurrent ? 16 : 13, color: iconColor,
                     boxShadow: isCurrent ? `0 0 0 3px ${step.color}22` : 'none',
-                    transition: 'all .2s',
                   }}>
                     {isCurrent ? step.icon : isDone ? '✓' : ''}
                   </div>
-                  <div style={{ marginTop: 7, textAlign: 'center', maxWidth: 66, opacity: isPending ? 0.35 : 1 }}>
+                  <div style={{ marginTop: 7, textAlign: 'center', width: '100%', padding: '0 2px', opacity: isPending ? 0.35 : 1 }}>
                     <div style={{
-                      fontSize: 10.5, lineHeight: 1.3,
+                      fontSize: 10, lineHeight: 1.3,
                       fontWeight: isCurrent ? 700 : isDone ? 500 : 400,
                       color: txtColor,
                     }}>
@@ -457,9 +469,9 @@ function CampaignTimeline({ campaign, route }) {
                     </div>
                     {isCurrent && (
                       <div style={{
-                        marginTop: 3, fontSize: 8.5, fontWeight: 700, letterSpacing: '.05em',
+                        marginTop: 3, fontSize: 8, fontWeight: 700, letterSpacing: '.05em',
                         background: step.color, color: 'white',
-                        padding: '1px 5px', borderRadius: 3, display: 'inline-block',
+                        padding: '1px 4px', borderRadius: 3, display: 'inline-block',
                       }}>ACTUEL</div>
                     )}
                     {date && !isCurrent && (
@@ -470,18 +482,9 @@ function CampaignTimeline({ campaign, route }) {
                     )}
                   </div>
                 </div>
-                {/* Connector */}
-                {i < STEPS.length - 1 && (
-                  <div style={{
-                    flex: 1, minWidth: 8, height: 2,
-                    background: lineColor,
-                    marginTop: 16,
-                    borderRadius: 1,
-                  }} />
-                )}
-              </div>
-            );
-          })}
+              );
+            })}
+          </div>
         </div>
       </div>
     </div>
