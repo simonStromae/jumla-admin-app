@@ -210,7 +210,7 @@ export default function ClientLayout({ children }) {
         @media (max-width: 767px) {
           .desktop-sidebar { display: none !important; }
           .mobile-bottomnav { display: flex !important; }
-          .main-content { padding-bottom: 72px !important; }
+          .main-content { padding: 16px 14px 72px !important; }
           .topbar-greeting { display: none !important; }
         }
         @media (min-width: 768px) {
@@ -218,7 +218,7 @@ export default function ClientLayout({ children }) {
           .mobile-bottomnav { display: none !important; }
         }
       `}</style>
-      <div style={{ display: 'flex', minHeight: '100vh', background: 'var(--bg-soft)' }}>
+      <div style={{ display: 'flex', minHeight: '100vh', background: 'var(--bg-soft)', overflowX: 'hidden' }}>
         <div className="desktop-sidebar">{sidebarNav}</div>
 
         <main style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column' }}>

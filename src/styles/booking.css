@@ -461,3 +461,10 @@
   .co-split { grid-template-columns: 1fr; }
   .co-table-wrap { overflow-x: auto; }
 }
+@media (max-width: 560px) {
+  .co-step-label { display: none !important; }
+  .co-fields { grid-template-columns: 1fr; }
+  .co-opts--2 { grid-template-columns: 1fr; }
+  .co-dates { grid-template-columns: 1fr 1fr; }
+  .co-btn { padding: 11px 18px; font-size: 13px; }
+}

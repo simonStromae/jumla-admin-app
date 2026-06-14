@@ -652,7 +652,7 @@ export default function BookingScreen({ onNav, embedded = false }) {
                     color: done || current ? 'white' : '#6b7280',
                     border: `2px solid ${done ? '#16a34a' : current ? '#111827' : '#e5e7eb'}`,
                   }}>{done ? '✓' : i + 1}</div>
-                  <span style={{ fontSize: 12.5, fontWeight: current ? 700 : 500, color: current ? '#111827' : done ? '#16a34a' : '#9ca3af', whiteSpace: 'nowrap' }}>
+                  <span className="co-step-label" style={{ fontSize: 12.5, fontWeight: current ? 700 : 500, color: current ? '#111827' : done ? '#16a34a' : '#9ca3af', whiteSpace: 'nowrap' }}>
                     {s.label}
                   </span>
                 </div>
