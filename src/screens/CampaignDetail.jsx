@@ -388,20 +388,21 @@ export default function CampaignDetailScreen({ id, onNav }) {
   );
 }
 
-/* ── Campaign Timeline ── */
+/* ── Campaign Timeline (horizontal stepper) ── */
 function CampaignTimeline({ campaign, route }) {
   const currentIdx = STEPS.findIndex(s => s.id === campaign.status);
   const notes = campaign.statusNotes ?? {};
 
-  const fmtDate = (d) => d
-    ? new Date(d).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })
-    : null;
-
-  const stepLocation = (id) => {
-    if (['enr', 'exp'].includes(id)) return route.origin ?? null;
-    if (id === 'tra')                return null;
-    return route.destination ?? null;
+  const SHORT = {
+    enr: 'Enregistré', exp: 'Expédié',    tra: 'En transit',
+    apd: 'Arrivé pays', dou: 'Douanes',   ins: 'Inspection',
+    ret: 'Retenu',      lib: 'Libéré',    ard: 'Entrepôt',
+    pdl: 'Prêt livr.',  ok:  'Clôturée',
   };
+
+  const fmtDate = (d) => d
+    ? new Date(d).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })
+    : null;
 
   const stepDate = (id) => {
     if (id === 'enr') return campaign.createdAt;
@@ -412,62 +413,76 @@ function CampaignTimeline({ campaign, route }) {
 
   return (
     <div className="card" style={{ padding: '18px 22px', marginTop: 20 }}>
-      <div className="section-title" style={{ marginBottom: 18 }}>
+      <div className="section-title" style={{ marginBottom: 20 }}>
         <I.History style={{ width: 14, height: 14, color: 'var(--brand-600)' }} /> Timeline de la cargaison
       </div>
+      <div style={{ overflowX: 'auto', paddingBottom: 4 }}>
+        <div style={{ display: 'flex', alignItems: 'flex-start', minWidth: 'max-content' }}>
+          {STEPS.map((step, i) => {
+            const isDone    = i < currentIdx || step.id === 'enr';
+            const isCurrent = i === currentIdx && step.id !== 'enr';
+            const isPending = !isDone && !isCurrent;
 
-      <div>
-        {STEPS.map((step, i) => {
-          const isDone    = i < currentIdx || step.id === 'enr';
-          const isCurrent = i === currentIdx && step.id !== 'enr';
-          const isPending = i > currentIdx;
+            const circleBg  = isCurrent ? step.color  : isDone ? '#f0fdf4' : 'white';
+            const border    = isCurrent ? step.color  : isDone ? '#86efac' : '#e5e7eb';
+            const iconColor = isCurrent ? 'white'     : isDone ? '#16a34a' : '#d1d5db';
+            const txtColor  = isCurrent ? step.color  : isDone ? '#374151' : '#d1d5db';
+            const lineColor = isDone ? '#86efac' : '#e5e7eb';
 
-          const bg     = isCurrent ? step.color : isDone ? 'var(--ok-50)'   : 'transparent';
-          const border = isCurrent ? step.color : isDone ? 'var(--ok-300)'  : 'var(--border)';
-          const txtCol = isCurrent ? step.color : isDone ? 'var(--ink-700)' : 'var(--ink-300)';
-          const lineCol= isDone ? 'var(--ok-200)' : 'var(--border)';
+            const date = (isDone || isCurrent) ? fmtDate(stepDate(step.id)) : null;
+            const note = notes[step.id] ?? null;
 
-          const location = (isDone || isCurrent) ? stepLocation(step.id) : null;
-          const date     = (isDone || isCurrent) ? fmtDate(stepDate(step.id)) : null;
-          const note     = notes[step.id] ?? null;
-
-          return (
-            <div key={step.id} style={{ display: 'flex', gap: 14, position: 'relative', paddingBottom: i < STEPS.length - 1 ? 18 : 0 }}>
-              {i < STEPS.length - 1 && (
-                <div style={{ position: 'absolute', left: 15, top: 32, bottom: 0, width: 1.5, background: lineCol }} />
-              )}
-              <div style={{
-                width: 32, height: 32, borderRadius: '50%', flexShrink: 0,
-                background: bg, border: `2px solid ${border}`,
-                display: 'grid', placeItems: 'center', fontSize: 14,
-                color: isCurrent ? 'white' : isDone ? 'var(--ok-600)' : 'var(--ink-200)',
-              }}>
-                {isCurrent ? step.icon : isDone ? '✓' : ''}
-              </div>
-              <div style={{ flex: 1, paddingTop: 5, opacity: isPending ? 0.3 : 1 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                  <span style={{ fontSize: 13, fontWeight: isCurrent ? 700 : isDone ? 500 : 400, color: txtCol }}>
-                    {step.label}
-                  </span>
-                  {isCurrent && (
-                    <span style={{ fontSize: 9.5, fontWeight: 700, background: step.color, color: 'white', padding: '1px 6px', borderRadius: 2, letterSpacing: '.04em' }}>
-                      ACTUEL
-                    </span>
-                  )}
+            return (
+              <div key={step.id} style={{ display: 'flex', alignItems: 'flex-start' }}>
+                {/* Step cell */}
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: 68 }}>
+                  <div style={{
+                    width: 34, height: 34, borderRadius: '50%', flexShrink: 0,
+                    background: circleBg, border: `2px solid ${border}`,
+                    display: 'grid', placeItems: 'center',
+                    fontSize: isCurrent ? 16 : 13,
+                    color: iconColor,
+                    boxShadow: isCurrent ? `0 0 0 3px ${step.color}22` : 'none',
+                    transition: 'all .2s',
+                  }}>
+                    {isCurrent ? step.icon : isDone ? '✓' : ''}
+                  </div>
+                  <div style={{ marginTop: 7, textAlign: 'center', maxWidth: 66, opacity: isPending ? 0.35 : 1 }}>
+                    <div style={{
+                      fontSize: 10.5, lineHeight: 1.3,
+                      fontWeight: isCurrent ? 700 : isDone ? 500 : 400,
+                      color: txtColor,
+                    }}>
+                      {SHORT[step.id]}
+                    </div>
+                    {isCurrent && (
+                      <div style={{
+                        marginTop: 3, fontSize: 8.5, fontWeight: 700, letterSpacing: '.05em',
+                        background: step.color, color: 'white',
+                        padding: '1px 5px', borderRadius: 3, display: 'inline-block',
+                      }}>ACTUEL</div>
+                    )}
+                    {date && !isCurrent && (
+                      <div style={{ fontSize: 9, color: '#9ca3af', marginTop: 2 }}>{date}</div>
+                    )}
+                    {note && (
+                      <div style={{ fontSize: 9, color: '#6b7280', fontStyle: 'italic', marginTop: 1 }}>{note}</div>
+                    )}
+                  </div>
                 </div>
-                {location && (
-                  <div style={{ fontSize: 12, color: 'var(--ink-500)', marginTop: 2 }}>📍 {location}</div>
-                )}
-                {note && (
-                  <div style={{ fontSize: 12, color: 'var(--ink-500)', fontStyle: 'italic', marginTop: 2 }}>{note}</div>
-                )}
-                {date && (
-                  <div style={{ fontSize: 11, color: 'var(--ink-400)', marginTop: 2 }}>{date}</div>
+                {/* Connector */}
+                {i < STEPS.length - 1 && (
+                  <div style={{
+                    width: 16, height: 2, flexShrink: 0,
+                    background: lineColor,
+                    marginTop: 16,
+                    borderRadius: 1,
+                  }} />
                 )}
               </div>
-            </div>
-          );
-        })}
+            );
+          })}
+        </div>
       </div>
     </div>
   );
