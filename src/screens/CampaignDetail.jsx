@@ -416,8 +416,8 @@ function CampaignTimeline({ campaign, route }) {
       <div className="section-title" style={{ marginBottom: 20 }}>
         <I.History style={{ width: 14, height: 14, color: 'var(--brand-600)' }} /> Timeline de la cargaison
       </div>
-      <div style={{ overflowX: 'auto', paddingBottom: 4 }}>
-        <div style={{ display: 'flex', alignItems: 'flex-start', minWidth: 'max-content' }}>
+      <div style={{ overflowX: 'auto' }}>
+        <div style={{ display: 'flex', alignItems: 'flex-start', width: '100%' }}>
           {STEPS.map((step, i) => {
             const isDone    = i < currentIdx || step.id === 'enr';
             const isCurrent = i === currentIdx && step.id !== 'enr';
@@ -473,7 +473,7 @@ function CampaignTimeline({ campaign, route }) {
                 {/* Connector */}
                 {i < STEPS.length - 1 && (
                   <div style={{
-                    width: 16, height: 2, flexShrink: 0,
+                    flex: 1, minWidth: 8, height: 2,
                     background: lineColor,
                     marginTop: 16,
                     borderRadius: 1,
