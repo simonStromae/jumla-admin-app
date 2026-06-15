@@ -43,28 +43,26 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
   const { status, departureDate, arrivalDate, capacityKg, statusNote } = body;
 
   try {
-    // status is now a plain TEXT column — Prisma can write it directly
     const prismaStatus = status ? toPrismaStatus(status) : undefined;
 
-    // Update statusNotes for departure legs
-    if (prismaStatus && statusNote && (prismaStatus === 'exp' || prismaStatus === 'tra')) {
+    // Always record timestamp (+ optional note) for every status transition
+    const data: any = {};
+    if (prismaStatus !== undefined) {
+      data.status = prismaStatus;
+
       const existing = await prisma.campaign.findUnique({
         where: { id: params.id },
         select: { statusNotes: true },
       });
       const current = (existing?.statusNotes as any) ?? {};
-      await prisma.campaign.update({
-        where: { id: params.id },
-        data:  { statusNotes: { ...current, [prismaStatus]: statusNote } },
-      });
+      data.statusNotes = {
+        ...current,
+        [prismaStatus]: { at: new Date().toISOString(), ...(statusNote ? { note: statusNote } : {}) },
+      };
     }
-
-    // Regular Prisma update (status is now String — no casting needed)
-    const data: any = {};
-    if (prismaStatus !== undefined)    data.status        = prismaStatus;
-    if (departureDate !== undefined)   data.departureDate = departureDate ? new Date(departureDate) : null;
-    if (arrivalDate   !== undefined)   data.arrivalDate   = arrivalDate   ? new Date(arrivalDate)   : null;
-    if (capacityKg    !== undefined)   data.capacityKg    = capacityKg    ? Number(capacityKg)      : null;
+    if (departureDate !== undefined) data.departureDate = departureDate ? new Date(departureDate) : null;
+    if (arrivalDate   !== undefined) data.arrivalDate   = arrivalDate   ? new Date(arrivalDate)   : null;
+    if (capacityKg    !== undefined) data.capacityKg    = capacityKg    ? Number(capacityKg)      : null;
 
     if (Object.keys(data).length > 0) {
       await prisma.campaign.update({ where: { id: params.id }, data });

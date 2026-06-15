@@ -297,6 +297,9 @@ export default function CampaignDetailScreen({ id, onNav }) {
         />
       )}
 
+      {/* ── Campaign Timeline ── */}
+      <CampaignTimeline campaign={campaign} route={route} />
+
       {/* Parcel table */}
       {parcels.length === 0 ? (
         <div className="card" style={{ padding: '48px 24px', textAlign: 'center' }}>
@@ -378,75 +381,86 @@ export default function CampaignDetailScreen({ id, onNav }) {
         </table>
       )}
 
-      <div style={{ marginTop: 12, fontSize: 12, color: 'var(--ink-400)' }}>
+      <div style={{ marginTop: 12, fontSize: 12, color: 'var(--ink-400)', marginBottom: 8 }}>
         {parcels.length} colis · Capacité {campaign.capacityKg != null ? campaign.capacityKg + ' kg' : '—'}
       </div>
-
-      {/* ── Campaign Timeline ── */}
-      <CampaignTimeline campaign={campaign} route={route} />
     </div>
   );
 }
 
 /* ── Campaign Timeline (horizontal stepper) ── */
-function CampaignTimeline({ campaign, route }) {
-  const currentIdx = STEPS.findIndex(s => s.id === campaign.status);
-  const notes = campaign.statusNotes ?? {};
+// Steps that only appear if the campaign actually passed through them
+const OPTIONAL_STEPS = new Set(['ins', 'ret', 'lib']);
 
-  const SHORT = {
-    enr: 'Enregistré', exp: 'Expédié',    tra: 'En transit',
-    apd: 'Arrivé pays', dou: 'Douanes',   ins: 'Inspection',
-    ret: 'Retenu',      lib: 'Libéré',    ard: 'Entrepôt',
-    pdl: 'Prêt livr.',  ok:  'Clôturée',
+function CampaignTimeline({ campaign }) {
+  const rawNotes = campaign.statusNotes ?? {};
+
+  // Helper: get { at, note } from statusNotes entry (handles legacy string format)
+  const getNoteData = (id) => {
+    const v = rawNotes[id];
+    if (!v) return null;
+    if (typeof v === 'string') return { at: null, note: v };
+    return { at: v.at ?? null, note: v.note ?? null };
   };
 
+  // Only show optional steps if they were actually visited (recorded in statusNotes)
+  // or if the campaign is currently at that step
+  const visibleSteps = STEPS.filter(step => {
+    if (!OPTIONAL_STEPS.has(step.id)) return true;
+    return campaign.status === step.id || !!rawNotes[step.id];
+  });
+
+  const currentIdx = visibleSteps.findIndex(s => s.id === campaign.status);
+  const n = visibleSteps.length;
+
   const fmtDate = (d) => d
-    ? new Date(d).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })
+    ? new Date(d).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', timeZone: 'UTC' })
     : null;
 
-  const stepDate = (id) => {
-    if (id === 'enr') return campaign.createdAt;
-    if (id === 'exp') return campaign.departureDate;
-    if (id === 'ard') return campaign.arrivalDate;
+  const getStepDate = (step) => {
+    const nd = getNoteData(step.id);
+    if (nd?.at) return nd.at;
+    if (step.id === 'enr') return campaign.createdAt;
+    if (step.id === 'exp') return campaign.departureDate;
+    if (step.id === 'ard') return campaign.arrivalDate;
     return null;
   };
 
   return (
-    <div className="card" style={{ padding: '18px 22px', marginTop: 20 }}>
+    <div className="card" style={{ padding: '18px 22px', marginBottom: 16 }}>
       <div className="section-title" style={{ marginBottom: 20 }}>
         <I.History style={{ width: 14, height: 14, color: 'var(--brand-600)' }} /> Timeline de la cargaison
       </div>
       <div style={{ overflowX: 'auto' }}>
-        <div style={{ position: 'relative' }}>
+        <div style={{ position: 'relative', minWidth: n * 80 }}>
           {/* Background line */}
           <div style={{
             position: 'absolute', top: 17, zIndex: 0,
-            left: 'calc(100% / 22)', right: 'calc(100% / 22)',
+            left: `calc(100% / ${n * 2})`, right: `calc(100% / ${n * 2})`,
             height: 2, background: '#e5e7eb', borderRadius: 1,
           }} />
           {/* Progress line */}
           {currentIdx > 0 && (
             <div style={{
               position: 'absolute', top: 17, zIndex: 0,
-              left: 'calc(100% / 22)',
-              width: `calc(${currentIdx} * 100% / 11)`,
+              left: `calc(100% / ${n * 2})`,
+              width: `calc(${currentIdx} * 100% / ${n})`,
               height: 2, background: '#86efac', borderRadius: 1,
             }} />
           )}
           {/* Steps grid */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(11, 1fr)', position: 'relative', zIndex: 1 }}>
-            {STEPS.map((step, i) => {
+          <div style={{ display: 'grid', gridTemplateColumns: `repeat(${n}, 1fr)`, position: 'relative', zIndex: 1 }}>
+            {visibleSteps.map((step, i) => {
               const isDone    = i < currentIdx || step.id === 'enr';
               const isCurrent = i === currentIdx && step.id !== 'enr';
-              const isPending = !isDone && !isCurrent;
 
-              const circleBg  = isCurrent ? step.color  : isDone ? '#f0fdf4' : 'white';
-              const border    = isCurrent ? step.color  : isDone ? '#86efac' : '#e5e7eb';
-              const iconColor = isCurrent ? 'white'     : isDone ? '#16a34a' : '#d1d5db';
-              const txtColor  = isCurrent ? step.color  : isDone ? '#374151' : '#d1d5db';
+              const circleBg  = isCurrent ? step.color : isDone ? '#f0fdf4' : 'white';
+              const border    = isCurrent ? step.color : isDone ? '#86efac' : '#e5e7eb';
+              const iconColor = isCurrent ? 'white'    : isDone ? '#16a34a' : '#d1d5db';
+              const txtColor  = isCurrent ? step.color : isDone ? '#374151' : '#9ca3af';
 
-              const date = (isDone || isCurrent) ? fmtDate(stepDate(step.id)) : null;
-              const note = notes[step.id] ?? null;
+              const date = (isDone || isCurrent) ? fmtDate(getStepDate(step)) : null;
+              const note = getNoteData(step.id)?.note ?? null;
 
               return (
                 <div key={step.id} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
@@ -459,13 +473,13 @@ function CampaignTimeline({ campaign, route }) {
                   }}>
                     {isCurrent ? step.icon : isDone ? '✓' : ''}
                   </div>
-                  <div style={{ marginTop: 7, textAlign: 'center', width: '100%', padding: '0 2px', opacity: isPending ? 0.35 : 1 }}>
+                  <div style={{ marginTop: 6, textAlign: 'center', width: '100%', padding: '0 3px' }}>
                     <div style={{
                       fontSize: 10, lineHeight: 1.3,
                       fontWeight: isCurrent ? 700 : isDone ? 500 : 400,
                       color: txtColor,
                     }}>
-                      {SHORT[step.id]}
+                      {step.label}
                     </div>
                     {isCurrent && (
                       <div style={{
@@ -474,11 +488,11 @@ function CampaignTimeline({ campaign, route }) {
                         padding: '1px 4px', borderRadius: 3, display: 'inline-block',
                       }}>ACTUEL</div>
                     )}
-                    {date && !isCurrent && (
-                      <div style={{ fontSize: 9, color: '#9ca3af', marginTop: 2 }}>{date}</div>
+                    {date && (
+                      <div style={{ fontSize: 9, color: isCurrent ? step.color : '#9ca3af', marginTop: 2, fontWeight: isCurrent ? 600 : 400 }}>{date}</div>
                     )}
                     {note && (
-                      <div style={{ fontSize: 9, color: '#6b7280', fontStyle: 'italic', marginTop: 1 }}>{note}</div>
+                      <div style={{ fontSize: 9, color: '#6b7280', fontStyle: 'italic', marginTop: 1, lineHeight: 1.2 }}>{note}</div>
                     )}
                   </div>
                 </div>
