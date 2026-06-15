@@ -2,6 +2,7 @@ export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/src/lib/prisma';
 import { requireAdmin, requirePermission, mapCampaignStatus, toPrismaStatus } from '@/src/lib/api-auth';
+import { auth } from '@/auth';
 
 export async function GET(_: NextRequest, { params }: { params: { id: string } }) {
   const { error } = await requireAdmin();
@@ -69,13 +70,12 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
       await prisma.campaign.update({ where: { id: params.id }, data });
     }
 
-    // Cascade parcel statuses when campaign moves forward.
-    // Only parcels that are "behind" or at the same stage are moved.
+    // Cascade parcel statuses + create a tracking event per parcel.
+    // Only parcels "behind" the campaign stage are moved.
     // Parcels with individual exceptional statuses are never touched.
     if (prismaStatus) {
       const EXCEPTIONAL = ['adr', 'tdl', 'dom', 'cla', 'rte'];
 
-      // For each campaign status: which parcel statuses should be bumped up
       const CASCADE: Record<string, string[]> = {
         exp: ['enr', 'rec', 'pre'],
         tra: ['enr', 'rec', 'pre', 'exp'],
@@ -91,13 +91,37 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
 
       const fromStatuses = CASCADE[prismaStatus];
       if (fromStatuses) {
-        await prisma.parcel.updateMany({
+        const sess    = await auth();
+        const adminId = (sess?.user as any)?.id ?? null;
+
+        // Find parcels to cascade before updating
+        const toUpdate = await prisma.parcel.findMany({
           where: {
             campaignId: params.id,
             status:     { in: fromStatuses, notIn: EXCEPTIONAL },
           },
-          data: { status: prismaStatus },
+          select: { id: true },
         });
+
+        if (toUpdate.length > 0) {
+          const parcelIds = toUpdate.map(p => p.id);
+
+          // Bulk status update
+          await prisma.parcel.updateMany({
+            where: { id: { in: parcelIds } },
+            data:  { status: prismaStatus },
+          });
+
+          // Create a tracking event for every cascaded parcel
+          await prisma.trackingEvent.createMany({
+            data: parcelIds.map(parcelId => ({
+              parcelId,
+              status:      prismaStatus,
+              note:        statusNote ?? null,
+              createdById: adminId,
+            })),
+          });
+        }
       }
     }
 
