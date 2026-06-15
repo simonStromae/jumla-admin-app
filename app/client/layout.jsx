@@ -218,15 +218,14 @@ export default function ClientLayout({ children }) {
           .mobile-bottomnav { display: none !important; }
         }
       `}</style>
-      <div style={{ display: 'flex', minHeight: '100vh', background: 'var(--bg-soft)', overflowX: 'hidden' }}>
+      <div style={{ display: 'flex', height: '100vh', overflow: 'hidden', background: 'var(--bg-soft)' }}>
         <div className="desktop-sidebar">{sidebarNav}</div>
 
-        <main style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
+        <main style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
           {/* Topbar */}
           <header style={{
-            height: 52, background: 'white', borderBottom: '1px solid var(--border)',
-            display: 'flex', alignItems: 'center', padding: '0 20px', gap: 12,
-            position: 'sticky', top: 0, zIndex: 50,
+            height: 52, flexShrink: 0, background: 'white', borderBottom: '1px solid var(--border)',
+            display: 'flex', alignItems: 'center', padding: '0 20px', gap: 12, zIndex: 50,
           }}>
             {/* Mobile: logo */}
             <div className="mobile-logo" style={{ display: 'none' }}>
@@ -258,7 +257,7 @@ export default function ClientLayout({ children }) {
             </div>
           )}
 
-          <div className="main-content" style={{ flex: 1, padding: '24px 20px' }}>
+          <div className="main-content" style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: '24px 20px' }}>
             <div style={{ maxWidth: 1200, margin: '0 auto', width: '100%' }}>
               {children}
             </div>
