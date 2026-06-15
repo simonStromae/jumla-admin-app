@@ -389,8 +389,10 @@ export default function CampaignDetailScreen({ id, onNav }) {
 }
 
 /* ── Campaign Timeline (horizontal stepper) ── */
-// Steps that only appear if the campaign actually passed through them
-const OPTIONAL_STEPS = new Set(['ins', 'ret', 'lib']);
+// Steps that only appear if the campaign actually passed through them.
+// lib (Libéré par les douanes) is always shown — it's a normal milestone after dou.
+// Only ins and ret are truly exceptional (inspection, detention).
+const OPTIONAL_STEPS = new Set(['ins', 'ret']);
 
 function CampaignTimeline({ campaign }) {
   const rawNotes = campaign.statusNotes ?? {};
