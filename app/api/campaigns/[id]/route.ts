@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/src/lib/prisma';
 import { requireAdmin, requirePermission, mapCampaignStatus, toPrismaStatus } from '@/src/lib/api-auth';
 import { auth } from '@/auth';
+import { sendWhatsappNotification, CAMPAIGN_STATUS_LABELS } from '@/src/lib/twilio';
 
 export async function GET(_: NextRequest, { params }: { params: { id: string } }) {
   const { error } = await requireAdmin();
@@ -168,6 +169,31 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
       where: { id: params.id },
       include: { route: true },
     });
+
+    // WhatsApp to all unique clients of this campaign when status changes
+    if (prismaStatus && updated?.code) {
+      const campaignParcels = await prisma.parcel.findMany({
+        where:  { campaignId: params.id },
+        select: { id: true, trackingCode: true, client: { select: { name: true, phone: true } } },
+      });
+
+      // One message per client phone (may have multiple parcels)
+      const byPhone = new Map<string, { firstName: string; phone: string; codes: string[]; parcelId: string }>();
+      for (const p of campaignParcels) {
+        if (!p.client?.phone) continue;
+        const key = p.client.phone;
+        if (!byPhone.has(key)) {
+          byPhone.set(key, { firstName: (p.client.name ?? 'Client').split(' ')[0], phone: p.client.phone, codes: [], parcelId: p.id });
+        }
+        byPhone.get(key)!.codes.push(p.trackingCode);
+      }
+
+      const statusLabel = CAMPAIGN_STATUS_LABELS[prismaStatus] ?? prismaStatus;
+      for (const { firstName, phone, codes, parcelId } of byPhone.values()) {
+        const msg = `Bonjour ${firstName} 👋\n\nVotre cargaison *${updated.code}* a été mise à jour.\n\nNouveau statut : *${statusLabel}*\n\nColis : ${codes.join(', ')}\n\nConnectez-vous à votre espace client pour suivre l'avancement de votre envoi.`;
+        sendWhatsappNotification(phone, msg, parcelId).catch(() => {});
+      }
+    }
 
     return NextResponse.json({
       ok: true,

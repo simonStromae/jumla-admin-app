@@ -4,6 +4,7 @@ import { prisma } from '@/src/lib/prisma';
 import { requireAdmin, requirePermission } from '@/src/lib/api-auth';
 import { createNotification } from '@/src/lib/notifications';
 import { sendStatusEmail } from '@/src/lib/email';
+import { sendWhatsappNotification, PARCEL_STATUS_LABELS } from '@/src/lib/twilio';
 
 export async function GET(_: NextRequest, { params }: { params: { id: string } }) {
   const { error } = await requireAdmin();
@@ -38,7 +39,7 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
       clientId: true,
       trackingCode: true,
       campaign: { select: { status: true } },
-      client: { select: { name: true, email: true } },
+      client: { select: { name: true, email: true, phone: true } },
     },
   });
   // Content edits (weight, items, price) are locked once the campaign is in transit.
@@ -81,6 +82,12 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
         eventLocation || null,
         eventNote || null,
       ).catch(() => {});
+    }
+    if (existing?.client?.phone) {
+      const firstName   = (existing.client.name ?? 'Client').split(' ')[0];
+      const statusLabel = PARCEL_STATUS_LABELS[status] ?? status;
+      const msg = `Bonjour ${firstName} 👋\n\nLe statut de votre colis *${existing.trackingCode}* a été mis à jour.\n\nNouveau statut : *${statusLabel}*\n\nConnectez-vous à votre espace client pour suivre votre envoi.`;
+      sendWhatsappNotification(existing.client.phone, msg, params.id).catch(() => {});
     }
   }
 

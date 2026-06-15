@@ -4,7 +4,7 @@ import { prisma } from '@/src/lib/prisma';
 import { requireAdmin } from '@/src/lib/api-auth';
 import { auth } from '@/auth';
 import { createNotification } from '@/src/lib/notifications';
-import { getTwilioSettings, twilioSendWhatsapp, formatWhatsappNumber } from '@/src/lib/twilio';
+import { sendWhatsappNotification } from '@/src/lib/twilio';
 
 export async function GET(_: NextRequest, { params }: { params: { id: string } }) {
   const { error } = await requireAdmin();
@@ -156,20 +156,26 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
         bl.parcelId,
       ).catch(() => {});
 
-      // WhatsApp notification
       if (clientPhone) {
-        const twilio = await getTwilioSettings().catch(() => null);
-        if (twilio?.accountSid && twilio?.authToken && twilio?.fromNumber) {
-          const msg = `Bonjour ${clientName} 👋\n\nVotre bordereau *${blCode}* (colis ${trackingCode}) a été confirmé par Jumla Shipping.\n\nMerci de vous connecter à votre espace client pour vérifier et accepter le contenu déclaré avant l'expédition.`;
-          await twilioSendWhatsapp(
-            twilio.accountSid,
-            twilio.authToken,
-            twilio.fromNumber,
-            formatWhatsappNumber(clientPhone),
-            msg,
-          ).catch(() => {});
-        }
+        const msg = `Bonjour ${clientName} 👋\n\nVotre bordereau *${blCode}* (colis ${trackingCode}) a été confirmé par Jumla Shipping.\n\nMerci de vous connecter à votre espace client pour vérifier et accepter le contenu déclaré avant l'expédition.`;
+        sendWhatsappNotification(clientPhone, msg, bl.parcelId).catch(() => {});
       }
+    }
+  }
+
+  if (status === 'discordance') {
+    const bl = await prisma.bordereau.findUnique({
+      where: { id: params.id },
+      select: {
+        parcelId: true,
+        code: true,
+        parcel: { select: { trackingCode: true, client: { select: { name: true, phone: true } } } },
+      },
+    });
+    if (bl?.parcel?.client?.phone) {
+      const firstName = (bl.parcel.client.name ?? 'Client').split(' ')[0];
+      const msg = `Bonjour ${firstName} 👋\n\nUne discordance a été détectée sur votre bordereau *${bl.code}* (colis ${bl.parcel.trackingCode}).\n\nMerci de vous connecter à votre espace client pour consulter les détails et régulariser votre dossier.`;
+      sendWhatsappNotification(bl.parcel.client.phone, msg, bl.parcelId).catch(() => {});
     }
   }
 

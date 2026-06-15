@@ -15,7 +15,6 @@ export async function getTwilioSettings() {
 
 function basicAuth(accountSid: string, authToken: string): string {
   const raw = `${accountSid}:${authToken}`;
-  // btoa works in Node.js 16+ and all browsers; avoids Buffer encoding issues
   return 'Basic ' + btoa(raw);
 }
 
@@ -72,4 +71,65 @@ export function formatWhatsappNumber(phone: string): string {
   const digits = clean.replace(/\D/g, '');
   const e164 = digits.startsWith('1') ? '+' + digits : '+1' + digits;
   return 'whatsapp:' + e164;
+}
+
+// ─── Status label maps ─────────────────────────────────────────────────────
+
+export const CAMPAIGN_STATUS_LABELS: Record<string, string> = {
+  enr: 'Enregistrée',
+  exp: 'Expédiée',
+  tra: 'En transit',
+  apd: 'Arrivée au pays de destination',
+  dou: 'Présentée aux douanes',
+  ins: 'En inspection douanière',
+  ret: 'Retenue par les douanes',
+  lib: 'Libérée par les douanes',
+  ard: 'Arrivée à l\'entrepôt de destination',
+  pdl: 'Prête pour livraison / retrait',
+  ok:  'Terminée',
+};
+
+export const PARCEL_STATUS_LABELS: Record<string, string> = {
+  enr: 'Enregistré',
+  rec: 'Reçu à l\'entrepôt',
+  pre: 'Vérifié et préparé',
+  exp: 'Expédié',
+  tra: 'En transit',
+  apd: 'Arrivé au pays de destination',
+  dou: 'Présenté aux douanes',
+  ins: 'En inspection douanière',
+  ret: 'Retenu par les douanes',
+  lib: 'Libéré par les douanes',
+  ard: 'Arrivé à l\'entrepôt de destination',
+  ver: 'Vérification finale',
+  pdl: 'Prêt pour livraison / retrait',
+  liv: 'En cours de livraison',
+  ok:  'Livré',
+  adr: 'Avis de réception',
+  tdl: 'Tentative de livraison échouée',
+  dom: 'Problème de domicile',
+  cla: 'En cours de classement',
+  rte: 'Retour expéditeur',
+};
+
+// ─── Shared notification helper ────────────────────────────────────────────
+
+export async function sendWhatsappNotification(
+  phone: string,
+  message: string,
+  parcelId?: string | null,
+): Promise<void> {
+  const { accountSid, authToken, fromNumber } = await getTwilioSettings();
+  if (!accountSid || !authToken || !fromNumber) return;
+  const to = formatWhatsappNumber(phone);
+  try {
+    const result = await twilioSendWhatsapp(accountSid, authToken, fromNumber, to, message);
+    await prisma.whatsappLog.create({
+      data: { parcelId: parcelId ?? null, toPhone: to, body: message, status: 'sent', twilioSid: result.sid },
+    }).catch(() => {});
+  } catch (e: any) {
+    await prisma.whatsappLog.create({
+      data: { parcelId: parcelId ?? null, toPhone: to, body: message, status: 'failed', error: e?.message ?? 'Unknown' },
+    }).catch(() => {});
+  }
 }
