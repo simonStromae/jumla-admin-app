@@ -69,21 +69,34 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
       await prisma.campaign.update({ where: { id: params.id }, data });
     }
 
-    // Cascade parcel statuses — only update parcels in expected "normal flow" states.
-    // Parcels already individually set to exceptional statuses are left untouched.
+    // Cascade parcel statuses when campaign moves forward.
+    // Only parcels that are "behind" or at the same stage are moved.
+    // Parcels with individual exceptional statuses are never touched.
     if (prismaStatus) {
-      if (prismaStatus === 'exp') {
-        // Campaign departs: move parcels received/prepared at warehouse → shipped
+      const EXCEPTIONAL = ['adr', 'tdl', 'dom', 'cla', 'rte'];
+
+      // For each campaign status: which parcel statuses should be bumped up
+      const CASCADE: Record<string, string[]> = {
+        exp: ['enr', 'rec', 'pre'],
+        tra: ['enr', 'rec', 'pre', 'exp'],
+        apd: ['enr', 'rec', 'pre', 'exp', 'tra'],
+        dou: ['apd'],
+        ins: ['dou'],
+        ret: ['dou', 'ins'],
+        lib: ['dou', 'ins', 'ret'],
+        ard: ['exp', 'tra', 'apd', 'lib'],
+        pdl: ['ard'],
+        ok:  ['pdl'],
+      };
+
+      const fromStatuses = CASCADE[prismaStatus];
+      if (fromStatuses) {
         await prisma.parcel.updateMany({
-          where: { campaignId: params.id, status: { in: ['rec', 'pre'] } },
-          data:  { status: 'exp' },
-        });
-      } else if (prismaStatus === 'ard') {
-        // Campaign arrives at destination warehouse: move parcels still en route → ard
-        // Do NOT touch: dou/ins/ret (customs issues), ver/pdl/liv/ok (already ahead), exceptions
-        await prisma.parcel.updateMany({
-          where: { campaignId: params.id, status: { in: ['exp', 'tra', 'apd'] } },
-          data:  { status: 'ard' },
+          where: {
+            campaignId: params.id,
+            status:     { in: fromStatuses, notIn: EXCEPTIONAL },
+          },
+          data: { status: prismaStatus },
         });
       }
     }
