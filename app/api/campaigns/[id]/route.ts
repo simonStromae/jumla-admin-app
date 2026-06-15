@@ -45,15 +45,22 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
   try {
     const prismaStatus = status ? toPrismaStatus(status) : undefined;
 
+    // Campaign status order (for rollback detection)
+    const STEPS_ORDER = ['enr', 'exp', 'tra', 'apd', 'dou', 'ins', 'ret', 'lib', 'ard', 'pdl', 'ok'];
+    // Full parcel flow order (superset — includes individual steps)
+    const PARCEL_FLOW = ['enr', 'rec', 'pre', 'exp', 'tra', 'apd', 'dou', 'ins', 'ret', 'lib', 'ard', 'ver', 'pdl', 'liv', 'ok'];
+
     // Always record timestamp (+ optional note) for every status transition
     const data: any = {};
+    let oldStatus = 'enr';
     if (prismaStatus !== undefined) {
       data.status = prismaStatus;
 
       const existing = await prisma.campaign.findUnique({
         where: { id: params.id },
-        select: { statusNotes: true },
+        select: { statusNotes: true, status: true },
       });
+      oldStatus = existing?.status ?? 'enr';
       const current = (existing?.statusNotes as any) ?? {};
       data.statusNotes = {
         ...current,
@@ -69,56 +76,89 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
     }
 
     // Cascade parcel statuses + create a tracking event per parcel.
-    // Only parcels "behind" the campaign stage are moved.
     // Parcels with individual exceptional statuses are never touched.
     if (prismaStatus) {
       const EXCEPTIONAL = ['adr', 'tdl', 'dom', 'cla', 'rte'];
+      const sess    = await auth();
+      const adminId = (sess?.user as any)?.id ?? null;
 
-      const CASCADE: Record<string, string[]> = {
-        exp: ['enr', 'rec', 'pre'],
-        tra: ['enr', 'rec', 'pre', 'exp'],
-        apd: ['enr', 'rec', 'pre', 'exp', 'tra'],
-        dou: ['apd'],
-        ins: ['dou'],
-        ret: ['dou', 'ins'],
-        lib: ['dou', 'ins', 'ret'],
-        ard: ['exp', 'tra', 'apd', 'lib'],
-        pdl: ['ard'],
-        ok:  ['pdl'],
-      };
+      const oldIdx = STEPS_ORDER.indexOf(oldStatus);
+      const newIdx = STEPS_ORDER.indexOf(prismaStatus);
+      const isRollback = oldIdx >= 0 && newIdx >= 0 && newIdx < oldIdx;
 
-      const fromStatuses = CASCADE[prismaStatus];
-      if (fromStatuses) {
-        const sess    = await auth();
-        const adminId = (sess?.user as any)?.id ?? null;
+      if (isRollback) {
+        // Rollback: move parcels that are AHEAD of the new target back to it.
+        // "Ahead" means their status appears after prismaStatus in PARCEL_FLOW.
+        const targetPosInFlow = PARCEL_FLOW.indexOf(prismaStatus);
+        const aheadStatuses = targetPosInFlow >= 0
+          ? PARCEL_FLOW.slice(targetPosInFlow + 1)
+          : [];
 
-        // Find parcels to cascade before updating
-        const toUpdate = await prisma.parcel.findMany({
-          where: {
-            campaignId: params.id,
-            status:     { in: fromStatuses, notIn: EXCEPTIONAL },
-          },
-          select: { id: true },
-        });
-
-        if (toUpdate.length > 0) {
-          const parcelIds = toUpdate.map(p => p.id);
-
-          // Bulk status update
-          await prisma.parcel.updateMany({
-            where: { id: { in: parcelIds } },
-            data:  { status: prismaStatus },
+        if (aheadStatuses.length > 0) {
+          const toRollback = await prisma.parcel.findMany({
+            where: {
+              campaignId: params.id,
+              status:     { in: aheadStatuses, notIn: EXCEPTIONAL },
+            },
+            select: { id: true },
           });
 
-          // Create a tracking event for every cascaded parcel
-          await prisma.trackingEvent.createMany({
-            data: parcelIds.map(parcelId => ({
-              parcelId,
-              status:      prismaStatus,
-              note:        statusNote ?? null,
-              createdById: adminId,
-            })),
+          if (toRollback.length > 0) {
+            const parcelIds = toRollback.map(p => p.id);
+            await prisma.parcel.updateMany({
+              where: { id: { in: parcelIds } },
+              data:  { status: prismaStatus },
+            });
+            await prisma.trackingEvent.createMany({
+              data: parcelIds.map(parcelId => ({
+                parcelId,
+                status:      prismaStatus,
+                note:        statusNote ?? null,
+                createdById: adminId,
+              })),
+            });
+          }
+        }
+      } else {
+        // Forward cascade: move parcels that are BEHIND the new target up to it.
+        const CASCADE: Record<string, string[]> = {
+          exp: ['enr', 'rec', 'pre'],
+          tra: ['enr', 'rec', 'pre', 'exp'],
+          apd: ['enr', 'rec', 'pre', 'exp', 'tra'],
+          dou: ['apd'],
+          ins: ['dou'],
+          ret: ['dou', 'ins'],
+          lib: ['dou', 'ins', 'ret'],
+          ard: ['exp', 'tra', 'apd', 'lib'],
+          pdl: ['ard'],
+          ok:  ['pdl'],
+        };
+
+        const fromStatuses = CASCADE[prismaStatus];
+        if (fromStatuses) {
+          const toUpdate = await prisma.parcel.findMany({
+            where: {
+              campaignId: params.id,
+              status:     { in: fromStatuses, notIn: EXCEPTIONAL },
+            },
+            select: { id: true },
           });
+
+          if (toUpdate.length > 0) {
+            const parcelIds = toUpdate.map(p => p.id);
+            await prisma.parcel.updateMany({
+              where: { id: { in: parcelIds } },
+              data:  { status: prismaStatus },
+            });
+            await prisma.trackingEvent.createMany({
+              data: parcelIds.map(parcelId => ({
+                parcelId,
+                status:      prismaStatus,
+                note:        statusNote ?? null,
+                createdById: adminId,
+              })),
+            });
+          }
         }
       }
     }
