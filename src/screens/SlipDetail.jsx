@@ -268,6 +268,35 @@ export default function SlipDetailScreen({ id, onNav }) {
         </div>
 
         <div>
+          {/* Attestation client */}
+          <div className="card" style={{ padding: 14, marginBottom: 14, background: slip.clientConfirmed ? 'var(--ok-50)' : 'white', border: slip.clientConfirmed ? '1px solid var(--ok-200)' : '1px solid var(--border)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <div style={{
+                width: 32, height: 32, borderRadius: '50%', flexShrink: 0,
+                background: slip.clientConfirmed ? 'var(--ok-500)' : 'var(--bg-soft)',
+                border: `2px solid ${slip.clientConfirmed ? 'var(--ok-400)' : 'var(--border)'}`,
+                display: 'grid', placeItems: 'center', fontSize: 14,
+              }}>
+                {slip.clientConfirmed ? '✓' : '⏳'}
+              </div>
+              <div>
+                <div style={{ fontSize: 12.5, fontWeight: 700, color: slip.clientConfirmed ? 'var(--ok-800)' : 'var(--ink-700)' }}>
+                  {slip.clientConfirmed ? 'Contenu attesté par le client' : 'En attente d\'attestation client'}
+                </div>
+                {slip.clientConfirmed && slip.clientConfirmedAt && (
+                  <div style={{ fontSize: 11, color: 'var(--ok-600)', marginTop: 2 }}>
+                    {new Date(slip.clientConfirmedAt).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                  </div>
+                )}
+                {!slip.clientConfirmed && (
+                  <div style={{ fontSize: 11, color: 'var(--ink-400)', marginTop: 2 }}>
+                    Le client n'a pas encore validé le contenu
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+
           <div className="card" style={{ padding: 16, marginBottom: 14 }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
               <div className="section-title" style={{ margin: 0 }}>

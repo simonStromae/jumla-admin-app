@@ -350,6 +350,13 @@ export default function ParcelDetailScreen({ id, onNav }) {
                               onClick={() => onNav?.('/admin/slips/' + bl.code)}>
                               {bl.code}
                             </a>
+                            {bl.clientConfirmed && (
+                              <div style={{ marginTop: 3 }}>
+                                <span style={{ fontSize: 9.5, fontWeight: 700, background: 'var(--ok-100)', color: 'var(--ok-700)', border: '1px solid var(--ok-200)', borderRadius: 4, padding: '1px 5px', whiteSpace: 'nowrap' }}>
+                                  ✓ Attesté
+                                </span>
+                              </div>
+                            )}
                           </td>
                           <td style={{ padding: '8px 12px', color: 'var(--ink-700)', fontSize: 12 }}>
                             {bl.description || (itemCount > 0 ? `${itemCount} ligne${itemCount > 1 ? 's' : ''}` : '—')}

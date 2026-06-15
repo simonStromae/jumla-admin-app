@@ -32,15 +32,17 @@ export async function GET(_: NextRequest, { params }: { params: { id: string } }
   const delivery = addresses?.delivery ?? {};
 
   return NextResponse.json({
-    id:          bl.id,
-    code:        bl.code,
-    status:      bl.status,
-    description: bl.description,
-    weightKg:    bl.weightKg,
-    nbPieces:    bl.nbPieces,
-    items:       (bl as any).items ?? [],
-    notes:       bl.notes,
-    createdAt:   bl.createdAt,
+    id:                bl.id,
+    code:              bl.code,
+    status:            bl.status,
+    description:       bl.description,
+    weightKg:          bl.weightKg,
+    nbPieces:          bl.nbPieces,
+    items:             (bl as any).items ?? [],
+    notes:             bl.notes,
+    createdAt:         bl.createdAt,
+    clientConfirmed:   bl.clientConfirmed,
+    clientConfirmedAt: bl.clientConfirmedAt,
     client: {
       name:    parcel.client.name,
       phone:   parcel.client.phone,
