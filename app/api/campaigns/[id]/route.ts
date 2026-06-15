@@ -25,16 +25,10 @@ export async function GET(_: NextRequest, { params }: { params: { id: string } }
 
   if (!c) return NextResponse.json({ error: 'Cargaison introuvable' }, { status: 404 });
 
-  // statusNotes is not in Prisma schema — fetch via raw SQL
-  const rows = await prisma.$queryRawUnsafe<any[]>(
-    `SELECT "statusNotes" FROM campaigns WHERE id = $1`, params.id
-  ).catch(() => [{}]);
-  const statusNotes = rows[0]?.statusNotes ?? {};
-
   return NextResponse.json({
     ...c,
     status: mapCampaignStatus(c.status),
-    statusNotes,
+    statusNotes: (c.statusNotes as any) ?? {},
     collected: c.parcels.reduce((s, p) =>
       s + (p.payment?.status === 'completed' ? p.payment.amount : 0), 0),
   });
@@ -51,17 +45,17 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
     // status is now a plain TEXT column — Prisma can write it directly
     const prismaStatus = status ? toPrismaStatus(status) : undefined;
 
-    // Update statusNotes for departure legs (JSONB column outside schema — raw SQL)
+    // Update statusNotes for departure legs
     if (prismaStatus && statusNote && (prismaStatus === 'exp' || prismaStatus === 'tra')) {
-      const rows = await prisma.$queryRawUnsafe<any[]>(
-        `SELECT "statusNotes" FROM campaigns WHERE id = $1`, params.id
-      );
-      const current = (rows[0]?.statusNotes ?? {}) as any;
-      const updated = { ...current, [prismaStatus]: statusNote };
-      await prisma.$executeRawUnsafe(
-        `UPDATE campaigns SET "statusNotes" = $1::jsonb WHERE id = $2`,
-        JSON.stringify(updated), params.id,
-      );
+      const existing = await prisma.campaign.findUnique({
+        where: { id: params.id },
+        select: { statusNotes: true },
+      });
+      const current = (existing?.statusNotes as any) ?? {};
+      await prisma.campaign.update({
+        where: { id: params.id },
+        data:  { statusNotes: { ...current, [prismaStatus]: statusNote } },
+      });
     }
 
     // Regular Prisma update (status is now String — no casting needed)
@@ -99,16 +93,13 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
       where: { id: params.id },
       include: { route: true },
     });
-    const noteRows = await prisma.$queryRawUnsafe<any[]>(
-      `SELECT "statusNotes" FROM campaigns WHERE id = $1`, params.id
-    ).catch(() => [{}]);
 
     return NextResponse.json({
       ok: true,
       campaign: {
         ...updated,
-        status: mapCampaignStatus(updated!.status),
-        statusNotes: noteRows[0]?.statusNotes ?? {},
+        status:      mapCampaignStatus(updated!.status),
+        statusNotes: (updated?.statusNotes as any) ?? {},
       },
     });
   } catch (e: any) {
