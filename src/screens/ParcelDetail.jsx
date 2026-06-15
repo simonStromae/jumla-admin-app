@@ -131,7 +131,13 @@ export default function ParcelDetailScreen({ id, onNav }) {
   const client     = parcel.client     || {};
   const campaign   = parcel.campaign   || {};
   const payment    = parcel.payment;
-  const events     = parcel.trackingEvents || [];
+  const PARCEL_FLOW = ['enr','rec','pre','exp','tra','apd','dou','ins','ret','lib','ard','ver','pdl','liv','ok'];
+  const allEvents  = parcel.trackingEvents || [];
+  const curFlowPos = PARCEL_FLOW.indexOf(parcel.status);
+  const events     = allEvents.filter(ev => {
+    const pos = PARCEL_FLOW.indexOf(ev.status);
+    return pos === -1 || pos <= curFlowPos;
+  });
   const items      = Array.isArray(parcel.items) ? parcel.items : [];
   const pStatus    = PARCEL_STATUS[parcel.status]  || { label: parcel.status,  cls: 'neutral' };
   const payStatus  = payment ? (PAYMENT_STATUS[payment.status] || { label: payment.status, cls: 'neutral' }) : { label: 'Non créé', cls: 'neutral' };

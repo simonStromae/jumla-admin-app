@@ -109,6 +109,10 @@ export default function ParcelDetailPage({ params }) {
   );
 
   const currentStep   = JOURNEY.findIndex(s => s.key === parcel.status);
+  const visibleTracking = parcel.tracking.filter(e => {
+    const pos = JOURNEY.findIndex(s => s.key === e.status);
+    return pos === -1 || pos <= currentStep;
+  });
   const s             = JOURNEY[currentStep] ?? JOURNEY[0];
   const paid          = parcel.payment?.status === 'completed';
   const partial       = parcel.payment?.status === 'partial';
@@ -497,13 +501,13 @@ export default function ParcelDetailPage({ params }) {
 
         {/* ── Tracking ── */}
         <Section title="Timeline" col="1 / -1">
-          {parcel.tracking.length === 0 ? (
+          {visibleTracking.length === 0 ? (
             <div style={{ fontSize: 13, color: '#9ca3af', fontStyle: 'italic', textAlign: 'center', padding: '8px 0' }}>
               Aucun événement enregistré pour l&apos;instant.
             </div>
           ) : (
             <div>
-              {parcel.tracking.map((e, i, arr) => {
+              {visibleTracking.map((e, i, arr) => {
                 const step   = JOURNEY.find(st => st.key === e.status) ?? { icon: '📦', label: e.status };
                 const isLast = i === arr.length - 1;
                 return (
