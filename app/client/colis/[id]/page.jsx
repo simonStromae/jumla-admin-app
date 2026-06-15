@@ -3,19 +3,21 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 
 const JOURNEY = [
-  { key: 'enr', label: 'Enregistré',  icon: '📝', desc: 'Votre envoi a été enregistré dans notre système' },
-  { key: 'rec', label: 'Reçu',        icon: '📥', desc: 'Jumla a réceptionné votre colis à l\'entrepôt' },
-  { key: 'pre', label: 'Préparé',     icon: '🔍', desc: 'Votre colis a été vérifié, pesé et préparé' },
-  { key: 'exp', label: 'Expédié',     icon: '🚀', desc: 'Votre colis a quitté notre entrepôt' },
-  { key: 'tra', label: 'En transit',  icon: '✈️', desc: 'Votre colis est actuellement en transit' },
-  { key: 'apd', label: 'Arrivé',      icon: '🛬', desc: 'Votre colis est arrivé au pays de destination' },
-  { key: 'dou', label: 'Douanes',     icon: '🛃', desc: 'Votre colis est présenté aux autorités douanières' },
-  { key: 'lib', label: 'Dédouané',    icon: '✅', desc: 'Votre colis a été libéré par les douanes' },
-  { key: 'ard', label: 'Entrepôt dest.', icon: '🏭', desc: 'Votre colis est arrivé à notre entrepôt de destination' },
-  { key: 'ver', label: 'Vérification', icon: '🔬', desc: 'Vérification finale avant remise' },
-  { key: 'pdl', label: 'Prêt',         icon: '📦', desc: 'Votre colis est prêt pour livraison ou retrait' },
-  { key: 'liv', label: 'En livraison', icon: '🚚', desc: 'Le livreur est en route' },
-  { key: 'ok',  label: 'Livré',        icon: '🎉', desc: 'Votre colis a été remis au destinataire' },
+  { key: 'enr', label: 'Enregistré',                        icon: '📝', desc: 'Votre envoi a été enregistré dans notre système' },
+  { key: 'rec', label: 'Reçu à l\'entrepôt',               icon: '📥', desc: 'Jumla a réceptionné votre colis à l\'entrepôt' },
+  { key: 'pre', label: 'Vérifié et préparé',                icon: '🔍', desc: 'Votre colis a été vérifié, pesé et préparé' },
+  { key: 'exp', label: 'Expédié',                           icon: '🚀', desc: 'Votre colis a quitté notre entrepôt' },
+  { key: 'tra', label: 'En transit',                        icon: '✈️', desc: 'Votre colis est actuellement en transit' },
+  { key: 'apd', label: 'Arrivé au pays de destination',     icon: '🛬', desc: 'Votre colis est arrivé au pays de destination' },
+  { key: 'dou', label: 'Présenté aux douanes',              icon: '🛃', desc: 'Votre colis est présenté aux autorités douanières' },
+  { key: 'ins', label: 'En inspection douanière',           icon: '🔎', desc: 'Votre colis est en cours d\'inspection par les douanes' },
+  { key: 'ret', label: 'Retenu par les douanes',            icon: '⚠️', desc: 'Votre colis a été temporairement retenu par les douanes' },
+  { key: 'lib', label: 'Libéré par les douanes',            icon: '✅', desc: 'Votre colis a été dédouané et libéré' },
+  { key: 'ard', label: 'Arrivé à l\'entrepôt destination', icon: '🏭', desc: 'Votre colis est arrivé à notre entrepôt de destination' },
+  { key: 'ver', label: 'Vérification finale',               icon: '🔬', desc: 'Vérification finale avant remise' },
+  { key: 'pdl', label: 'Prêt pour livraison / retrait',    icon: '📦', desc: 'Votre colis est prêt — vous pouvez organiser la réception' },
+  { key: 'liv', label: 'En cours de livraison',             icon: '🚚', desc: 'Le livreur est en route avec votre colis' },
+  { key: 'ok',  label: 'Livré',                             icon: '🎉', desc: 'Votre colis a été remis au destinataire' },
 ];
 
 const PRODUCT_TYPES = [
