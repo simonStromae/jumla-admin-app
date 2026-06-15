@@ -506,7 +506,7 @@ export default function ParcelDetailPage({ params }) {
               Aucun événement enregistré pour l&apos;instant.
             </div>
           ) : (
-            <div>
+            <div style={{ maxHeight: 420, overflowY: 'auto', paddingRight: 4 }}>
               {visibleTracking.map((e, i, arr) => {
                 const step   = JOURNEY.find(st => st.key === e.status) ?? { icon: '📦', label: e.status };
                 const isLast = i === arr.length - 1;
