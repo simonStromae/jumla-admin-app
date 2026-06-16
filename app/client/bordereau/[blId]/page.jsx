@@ -74,7 +74,8 @@ export default function BordereauPage({ params }) {
   const canSubmit   = checked && needsConf;
   const blItems     = Array.isArray(data.items)         ? data.items         : [];
   const parcelItems = Array.isArray(data.parcel?.items) ? data.parcel.items  : [];
-  const totalNb     = blItems.reduce((s, it) => s + (Number(it.count) || Number(it.nbPieces) || 0), 0);
+  const totalNb     = blItems.reduce((s, it) => s + (Number(it.count) || 0), 0);
+  const totalPieces = blItems.reduce((s, it) => s + (Number(it.nbPieces ?? it.pieces) || 0), 0);
   const weight      = data.weightKg ?? data.parcel?.weightKg;
   const route       = `${data.campaign.from} → ${data.campaign.to}`;
 
@@ -261,7 +262,7 @@ export default function BordereauPage({ params }) {
                         <TD muted>{it.description}</TD>
                         <TD>{it.type || it.packaging}</TD>
                         <td style={{ padding: '9px 12px', border: '1px solid #e5e7eb', textAlign: 'center', fontFamily: 'monospace', fontSize: 13 }}>{qty != null ? qty : ''}</td>
-                        <td style={{ padding: '9px 12px', border: '1px solid #e5e7eb', textAlign: 'center', fontFamily: 'monospace', fontSize: 13 }}></td>
+                        <td style={{ padding: '9px 12px', border: '1px solid #e5e7eb', textAlign: 'center', fontFamily: 'monospace', fontSize: 13, color: '#6b7280' }}>{(it.nbPieces ?? it.pieces) || ''}</td>
                       </tr>
                     );
                   })}
@@ -270,7 +271,7 @@ export default function BordereauPage({ params }) {
                   <tr style={{ background: '#f9fafb' }}>
                     <td colSpan={4} style={{ padding: '9px 12px', border: '1px solid #e5e7eb', fontWeight: 700, fontSize: 13 }}>Total</td>
                     <td style={{ padding: '9px 12px', border: '1px solid #e5e7eb', textAlign: 'center', fontWeight: 700, fontFamily: 'monospace', fontSize: 13 }}>{totalNb > 0 ? totalNb : ''}</td>
-                    <td style={{ padding: '9px 12px', border: '1px solid #e5e7eb', textAlign: 'center', fontWeight: 700, fontFamily: 'monospace', fontSize: 13 }}></td>
+                    <td style={{ padding: '9px 12px', border: '1px solid #e5e7eb', textAlign: 'center', fontWeight: 700, fontFamily: 'monospace', fontSize: 13 }}>{totalPieces > 0 ? totalPieces : ''}</td>
                   </tr>
                 </tfoot>
               </table>
