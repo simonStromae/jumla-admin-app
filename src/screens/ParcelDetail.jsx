@@ -699,6 +699,7 @@ function WeightModal({ parcel, onClose, onSaved }) {
       body: JSON.stringify({
         weightKg: totalWeight,
         productType,
+        routeId:           parcel.campaign?.route?.id ?? undefined,
         nbCartons:         parcel.nbCartons         || 0,
         nbPetitsSacs:      parcel.nbPetitsSacs      || 0,
         nbSacsMoyens:      parcel.nbSacsMoyens       || 0,
