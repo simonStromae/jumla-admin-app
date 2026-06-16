@@ -199,7 +199,7 @@ function SectionRoutes({ routes, onEdit, onDetail }) {
   );
 }
 
-function SectionPricing({ routes }) {
+function SectionPricing({ routes, onEdit }) {
   return (
     <SettingsCard title="Grille tarifaire" sub="Résumé de la tarification par route active.">
       {routes.length === 0 ? (
@@ -226,9 +226,14 @@ function SectionPricing({ routes }) {
                 <td className="mono" style={{ fontSize: 12.5, fontWeight: 600 }}>{r.currency ?? 'CAD'}</td>
                 <td style={{ fontSize: 12.5 }}>{r.transitDays ?? 14} jours</td>
                 <td>
-                  {r.fees?.tiers?.length > 0
-                    ? <span style={{ fontSize: 12, color: 'var(--ok-700)', fontWeight: 600 }}>✓ {r.fees.tiers.length} tranche{r.fees.tiers.length > 1 ? 's' : ''}</span>
-                    : <span style={{ fontSize: 12, color: 'var(--ink-400)', fontStyle: 'italic' }}>À configurer</span>}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                    {r.fees?.tiers?.length > 0
+                      ? <span style={{ fontSize: 12, color: 'var(--ok-700)', fontWeight: 600 }}>✓ {r.fees.tiers.length} tranche{r.fees.tiers.length > 1 ? 's' : ''}</span>
+                      : <span style={{ fontSize: 12, color: 'var(--ink-400)', fontStyle: 'italic' }}>À configurer</span>}
+                    <button className="btn btn--ghost btn--sm" onClick={() => onEdit(r)} style={{ fontSize: 11.5 }}>
+                      {r.fees?.tiers?.length > 0 ? '· Voir / Modifier' : '+ Configurer'}
+                    </button>
+                  </div>
                 </td>
               </tr>
             ))}
@@ -862,7 +867,7 @@ export default function SettingsScreen({ onNav }) {
           {section === 'routes'    && (
             <>
               <SectionRoutes routes={routes} onEdit={setEditRoute} onDetail={setRouteDetail} />
-              <SectionPricing routes={routes} />
+              <SectionPricing routes={routes} onEdit={setEditRoute} />
             </>
           )}
           {section === 'whatsapp'  && <SectionWhatsapp />}
