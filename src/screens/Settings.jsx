@@ -116,20 +116,26 @@ function SectionCompany() {
 }
 
 /* ── Routes ──────────────────────────────────────────────── */
-function MigrationBanner() {
+function MigrationBanner({ onDone }) {
   const [status, setStatus] = useState('idle'); // idle | running | done | error
   const run = async () => {
     setStatus('running');
     try {
       const res = await fetch('/api/_migrate');
       const d   = await res.json();
-      setStatus(d.ok ? 'done' : 'error');
-      if (d.ok) setTimeout(() => window.location.reload(), 800);
+      if (d.ok) { setStatus('done'); onDone?.(); }
+      else setStatus('error');
     } catch { setStatus('error'); }
   };
   if (status === 'done') return (
     <div style={{ display: 'flex', gap: 10, alignItems: 'center', padding: '10px 14px', background: 'var(--ok-50)', border: '1px solid var(--ok-100)', borderRadius: 8, marginBottom: 14, fontSize: 13 }}>
-      <span style={{ color: 'var(--ok-600)', fontWeight: 700 }}>✓ Migration réussie — rechargement…</span>
+      <span style={{ color: 'var(--ok-600)', fontWeight: 700 }}>✓ Migration réussie — vous pouvez maintenant cliquer Enregistrer.</span>
+    </div>
+  );
+  if (status === 'error') return (
+    <div style={{ display: 'flex', gap: 10, alignItems: 'center', padding: '10px 14px', background: 'var(--bad-50)', border: '1px solid var(--bad-200)', borderRadius: 8, marginBottom: 14, fontSize: 13 }}>
+      <span style={{ color: 'var(--bad-700)', fontWeight: 700 }}>✕ Échec de la migration — contactez le support.</span>
+      <button className="btn btn--ghost btn--sm" onClick={run}>Réessayer</button>
     </div>
   );
   return (
@@ -631,7 +637,7 @@ function RouteEditModal({ editRoute, onClose, onSaved }) {
             <div style={{ fontSize: 12, color: 'var(--warn-700)', marginBottom: 10 }}>
               Les colonnes de tarification n'existent pas encore. Lancez la migration puis réessayez.
             </div>
-            <MigrationBanner />
+            <MigrationBanner onDone={() => setErr('')} />
           </div>
         ) : (
           <div style={{ padding: '8px 12px', background: 'var(--bad-50)', color: 'var(--bad-700)', borderRadius: 6, fontSize: 12.5, marginBottom: 12 }}>{err}</div>
