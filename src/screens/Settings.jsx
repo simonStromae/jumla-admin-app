@@ -121,7 +121,7 @@ function MigrationBanner({ onDone }) {
   const run = async () => {
     setStatus('running');
     try {
-      const res = await fetch('/api/_migrate');
+      const res = await fetch('/api/db-migrate');
       const d   = await res.json();
       if (d.ok) { setStatus('done'); onDone?.(); }
       else setStatus('error');

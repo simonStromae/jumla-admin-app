@@ -58,7 +58,7 @@ export async function POST(req: Request) {
   } catch (e: any) {
     if (e?.message?.includes('column') || e?.message?.includes('does not exist') || e?.code === '42703') {
       return NextResponse.json(
-        { error: 'Migration requise — visitez /api/_migrate puis réessayez.' },
+        { error: 'Migration requise — visitez /api/db-migrate puis réessayez.' },
         { status: 500 }
       );
     }

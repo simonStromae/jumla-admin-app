@@ -33,7 +33,7 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
     // If migration columns don't exist yet, return a clear error
     if (e?.message?.includes('column') || e?.message?.includes('does not exist') || e?.code === '42703') {
       return NextResponse.json(
-        { error: 'Migration requise — visitez /api/_migrate puis réessayez.' },
+        { error: 'Migration requise — visitez /api/db-migrate puis réessayez.' },
         { status: 500 }
       );
     }

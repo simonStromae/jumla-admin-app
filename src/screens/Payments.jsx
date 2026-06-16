@@ -114,7 +114,7 @@ function RecordPaymentModal({ preselectedClient, preselectedPaymentId, onClose, 
       if (res.ok && json.ok) {
         onSave();
       } else {
-        setErr(json.error || `Erreur ${res.status} — vérifiez que /api/_migrate a été lancé.`);
+        setErr(json.error || `Erreur ${res.status} — vérifiez que /api/db-migrate a été lancé.`);
         setSaving(false);
       }
     } catch {

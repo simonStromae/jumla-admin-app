@@ -46,7 +46,7 @@ export async function GET() {
       ORDER BY t."createdAt" DESC
     `) as any[];
   } catch {
-    // transactions table not yet created — run /api/_migrate
+    // transactions table not yet created — run /api/db-migrate
     rows = [];
   }
 
@@ -129,7 +129,7 @@ export async function POST(req: NextRequest) {
     console.error('[transactions POST]', e);
     const msg = e?.message ?? 'Erreur serveur';
     const hint = msg.includes('does not exist')
-      ? 'Tables non initialisées — visitez /api/_migrate pour créer les tables.'
+      ? 'Tables non initialisées — visitez /api/db-migrate pour créer les tables.'
       : msg;
     return NextResponse.json({ error: hint }, { status: 500 });
   }
