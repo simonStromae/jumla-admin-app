@@ -129,7 +129,7 @@ export const DEFAULT_ROUTE_FEES: RouteFees = {
     // 200–250 kg
     { from: 200,   to: 250,      transportPerKg: 8,   cartonPerUnit: 1.5,         manutentionPerUnit: 4,   manutentionMin: 40, douanePerKg: 1.5, formalitesPerKg: 1 },
     // 250.5+ kg
-    { from: 250.5, to: Infinity, transportPerKg: 7.5, cartonPerUnit: 1.5,         manutentionPerUnit: 3,   manutentionMin: 60, douanePerKg: 1.5, formalitesPerKg: 1 },
+    { from: 250.5, to: 99999, transportPerKg: 7.5, cartonPerUnit: 1.5,         manutentionPerUnit: 3,   manutentionMin: 60, douanePerKg: 1.5, formalitesPerKg: 1 },
   ],
   bags:        { small: 5, medium: 7.5, large: 10 },
   plastic:     0.6,
@@ -144,10 +144,17 @@ function r2(value: number): number {
   return Math.round(value * 100) / 100;
 }
 
-function findTier(tiers: RouteTier[], totalKg: number): RouteTier {
+function findTier(tiers: RouteTier[], totalKg: number): RouteTier | null {
+  if (!tiers || tiers.length === 0) return null;
+  // Exact match
   const match = tiers.find(t => totalKg >= t.from && totalKg <= t.to);
   if (match) return match;
+  // In a gap between tiers: use the next tier (round up)
+  const next = tiers.find(t => t.from > totalKg);
+  if (next) return next;
+  // Below minimum: use first tier
   if (totalKg < tiers[0].from) return tiers[0];
+  // Beyond all tiers: use last
   return tiers[tiers.length - 1];
 }
 
@@ -159,7 +166,7 @@ export function calculateFromFees(
   marginPctOverride?: number,
 ): PriceBreakdown {
   const totalKg = r2(items.reduce((s, it) => s + (it.weightKg || 0), 0));
-  const tier = fees.tiers.length > 0 ? findTier(fees.tiers, totalKg) : null;
+  const tier = findTier(fees.tiers, totalKg);
 
   // ── Transport ────────────────────────────────────────────────────────────
   let transport = 0;

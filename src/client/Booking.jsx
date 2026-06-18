@@ -26,7 +26,7 @@ const DEFAULT_TIERS = [
   { from: 70,    to: 115,      transportPerKg: 10,  cartonPerUnit: 1.5, manutentionPerUnit: 5,  manutentionMin: 20, douanePerKg: 2.5, formalitesPerKg: 1 },
   { from: 115.5, to: 199.5,    transportPerKg: 9,   cartonPerUnit: 1.5, manutentionPerUnit: 4.5, manutentionMin: 27, douanePerKg: 1.5, formalitesPerKg: 1 },
   { from: 200,   to: 250,      transportPerKg: 8,   cartonPerUnit: 1.5, manutentionPerUnit: 4,   manutentionMin: 40, douanePerKg: 1.5, formalitesPerKg: 1 },
-  { from: 250.5, to: Infinity, transportPerKg: 7.5, cartonPerUnit: 1.5, manutentionPerUnit: 3,   manutentionMin: 60, douanePerKg: 1.5, formalitesPerKg: 1 },
+  { from: 250.5, to: 99999, transportPerKg: 7.5, cartonPerUnit: 1.5, manutentionPerUnit: 3,   manutentionMin: 60, douanePerKg: 1.5, formalitesPerKg: 1 },
 ];
 
 const DEFAULT_FEES = {
@@ -93,9 +93,16 @@ function routeFeesToCalcFees(storedFees) {
 function r2(v) { return Math.round(v * 100) / 100; }
 
 function findTier(tiers, totalKg) {
+  if (!tiers || tiers.length === 0) return null;
+  // Exact match
   const match = tiers.find(t => totalKg >= t.from && totalKg <= t.to);
   if (match) return match;
+  // In a gap: use the next tier (round up to nearest tier)
+  const next = tiers.find(t => t.from > totalKg);
+  if (next) return next;
+  // Below minimum: first tier
   if (totalKg < tiers[0].from) return tiers[0];
+  // Beyond all tiers: last tier
   return tiers[tiers.length - 1];
 }
 
@@ -103,8 +110,9 @@ function calcPrice(items, fees, addons, delivery, cityZone) {
   const totalKg = r2(items.reduce((s, i) => s + (parseFloat(i.kg) || 0), 0));
   if (totalKg <= 0) return null;
 
-  const tiers = fees.tiers || DEFAULT_TIERS;
+  const tiers = (fees.tiers && fees.tiers.length > 0) ? fees.tiers : DEFAULT_TIERS;
   const tier  = findTier(tiers, totalKg);
+  if (!tier) return null;
 
   // Transport
   let transport = 0;

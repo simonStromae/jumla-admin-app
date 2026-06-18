@@ -25,7 +25,8 @@ function mergeRouteFees(base: RouteFees, override: Partial<RouteFees>): RouteFee
 
 function normalizeTier(raw: Record<string, unknown>): RouteTier {
   const from = parseFloat(raw.from as string) || 0;
-  const to   = parseFloat(raw.to   as string) || 0;
+  // null/undefined/empty = open-ended tier → 99999
+  const to   = raw.to == null || raw.to === '' ? 99999 : (parseFloat(raw.to as string) || 99999);
   // Old format used { flat } — treat as transportFlat only
   if (raw.flat !== undefined && raw.transportFlat === undefined && raw.transportPerKg === undefined) {
     return { from, to, transportFlat: parseFloat(raw.flat as string) || 0 };
