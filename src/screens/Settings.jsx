@@ -669,76 +669,135 @@ function SectionCodes() {
   );
 }
 
-/* ── Modal édition route ─────────────────────────────────── */
+/* ── Éditeur route plein écran ───────────────────────────── */
+function SectionTitle({ children }) {
+  return <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '.08em', textTransform: 'uppercase', color: 'var(--ink-400)', marginBottom: 10, marginTop: 4 }}>{children}</div>;
+}
+
+const DEFAULT_TIERS_EDITOR = [
+  { id:1, from:'0.5', to:'3',     transportType:'flat',  transportValue:'50',  cartonType:'flat',    cartonValue:'1',   manutentionType:'flat',    manutentionValue:'4',   manutentionMin:'',   douaneType:'flat',  douaneValue:'5',   formalitesType:'flat',  formalitesValue:'5'  },
+  { id:2, from:'3.5', to:'9.5',   transportType:'perKg', transportValue:'13',  cartonType:'perUnit', cartonValue:'1.5', manutentionType:'flat',    manutentionValue:'5',   manutentionMin:'',   douaneType:'perKg', douaneValue:'3',   formalitesType:'perKg', formalitesValue:'2'  },
+  { id:3, from:'10',  to:'22.5',  transportType:'perKg', transportValue:'12',  cartonType:'perUnit', cartonValue:'1.5', manutentionType:'flat',    manutentionValue:'10',  manutentionMin:'',   douaneType:'perKg', douaneValue:'3',   formalitesType:'perKg', formalitesValue:'2'  },
+  { id:4, from:'23.5',to:'69.5',  transportType:'perKg', transportValue:'11',  cartonType:'perUnit', cartonValue:'1.5', manutentionType:'flat',    manutentionValue:'15',  manutentionMin:'',   douaneType:'perKg', douaneValue:'2',   formalitesType:'perKg', formalitesValue:'1.5'},
+  { id:5, from:'70',  to:'115',   transportType:'perKg', transportValue:'10',  cartonType:'perUnit', cartonValue:'1.5', manutentionType:'perUnit', manutentionValue:'5',   manutentionMin:'20', douaneType:'perKg', douaneValue:'2.5', formalitesType:'perKg', formalitesValue:'1'  },
+  { id:6, from:'115.5',to:'199.5',transportType:'perKg', transportValue:'9',   cartonType:'perUnit', cartonValue:'1.5', manutentionType:'perUnit', manutentionValue:'4.5', manutentionMin:'27', douaneType:'perKg', douaneValue:'1.5', formalitesType:'perKg', formalitesValue:'1'  },
+  { id:7, from:'200', to:'250',   transportType:'perKg', transportValue:'8',   cartonType:'perUnit', cartonValue:'1.5', manutentionType:'perUnit', manutentionValue:'4',   manutentionMin:'40', douaneType:'perKg', douaneValue:'1.5', formalitesType:'perKg', formalitesValue:'1'  },
+  { id:8, from:'250.5',to:'',     transportType:'perKg', transportValue:'7.5', cartonType:'perUnit', cartonValue:'1.5', manutentionType:'perUnit', manutentionValue:'3',   manutentionMin:'60', douaneType:'perKg', douaneValue:'1.5', formalitesType:'perKg', formalitesValue:'1'  },
+];
+
+function initTiers(fees) {
+  if (!fees?.tiers?.length) return DEFAULT_TIERS_EDITOR.map(t => ({ ...t }));
+  return fees.tiers.map((t, i) => ({
+    id: i + 1,
+    from: String(t.from ?? ''),
+    to:   t.to >= 99999 ? '' : String(t.to ?? ''),
+    transportType:     t.transportFlat !== undefined ? 'flat'    : 'perKg',
+    transportValue:    String(t.transportFlat   ?? t.transportPerKg   ?? ''),
+    cartonType:        t.cartonFlat    !== undefined ? 'flat'    : 'perUnit',
+    cartonValue:       String(t.cartonFlat       ?? t.cartonPerUnit    ?? 1.5),
+    manutentionType:   t.manutentionFlat !== undefined ? 'flat'  : 'perUnit',
+    manutentionValue:  String(t.manutentionFlat  ?? t.manutentionPerUnit ?? ''),
+    manutentionMin:    String(t.manutentionMin   ?? ''),
+    douaneType:        t.douaneFlat    !== undefined ? 'flat'    : 'perKg',
+    douaneValue:       String(t.douaneFlat        ?? t.douanePerKg     ?? ''),
+    formalitesType:    t.formalitesFlat !== undefined ? 'flat'   : 'perKg',
+    formalitesValue:   String(t.formalitesFlat   ?? t.formalitesPerKg ?? ''),
+  }));
+}
+
+function tierToApi(t) {
+  const to = t.to === '' ? 99999 : parseFloat(t.to) || 0;
+  return {
+    from: parseFloat(t.from) || 0,
+    to,
+    ...(t.transportType === 'flat'
+      ? { transportFlat:   parseFloat(t.transportValue)   || 0 }
+      : { transportPerKg:  parseFloat(t.transportValue)   || 0 }),
+    ...(t.cartonType === 'flat'
+      ? { cartonFlat:      parseFloat(t.cartonValue)      || 0 }
+      : { cartonPerUnit:   parseFloat(t.cartonValue)      || 0 }),
+    ...(t.manutentionType === 'flat'
+      ? { manutentionFlat: parseFloat(t.manutentionValue) || 0 }
+      : { manutentionPerUnit: parseFloat(t.manutentionValue) || 0, manutentionMin: parseFloat(t.manutentionMin) || 0 }),
+    ...(t.douaneType === 'flat'
+      ? { douaneFlat:      parseFloat(t.douaneValue)      || 0 }
+      : { douanePerKg:     parseFloat(t.douaneValue)      || 0 }),
+    ...(t.formalitesType === 'flat'
+      ? { formalitesFlat:  parseFloat(t.formalitesValue)  || 0 }
+      : { formalitesPerKg: parseFloat(t.formalitesValue)  || 0 }),
+  };
+}
+
 function RouteEditModal({ editRoute, onClose, onSaved }) {
   const isNew = editRoute === 'new';
   const r = isNew ? null : editRoute;
   const [saving, setSaving] = useState(false);
   const [err, setErr]       = useState('');
+
+  // Informations de base
   const [origin, setOrigin]           = useState(r?.fromIATA || '');
-  const [destination, setDestination] = useState(r?.toIATA  || '');
-  const [label, setLabel]             = useState(r?.label   || '');
+  const [destination, setDestination] = useState(r?.toIATA || '');
+  const [label, setLabel]             = useState(r?.label || '');
   const [transitDays, setTransitDays] = useState(String(r?.transitDays ?? 14));
   const [currency, setCurrency]       = useState(r?.currency ?? 'CAD');
   const [active, setActive]           = useState(r?.active ?? true);
 
-  const defaultBreakdown = () => {
-    const base = Date.now();
-    return [
-      { id: base + 1, label: 'Frais de base',          amount: '50' },
-      { id: base + 2, label: 'Frais de douane',         amount: '5'  },
-      { id: base + 3, label: 'Carton / manutention',    amount: '1'  },
-      { id: base + 4, label: "Formalités d'expédition", amount: '4'  },
-      { id: base + 5, label: 'Frais de service',        amount: '5'  },
-    ];
-  };
+  // Paliers
+  const [tiers, setTiers] = useState(() => initTiers(r?.fees));
 
-  const [tiers, setTiers] = useState(() => {
-    if (r?.fees?.tiers?.length) {
-      return r.fees.tiers.map((t, i) => ({
-        ...t,
-        id:        i + 1,
-        expanded:  false,
-        breakdown: Array.isArray(t.breakdown) ? t.breakdown.map((b, j) => ({ ...b, id: b.id ?? j + 1 })) : defaultBreakdown(),
-      }));
-    }
-    return [{ id: 1, from: '0', to: '3', flat: '65', expanded: false, breakdown: defaultBreakdown() }];
-  });
+  // Emballages & conditionnement
+  const [bagSmall,   setBagSmall]   = useState(String(r?.fees?.bags?.small    ?? 5));
+  const [bagMedium,  setBagMedium]  = useState(String(r?.fees?.bags?.medium   ?? 7.5));
+  const [bagLarge,   setBagLarge]   = useState(String(r?.fees?.bags?.large    ?? 10));
+  const [plastic,    setPlastic]    = useState(String(r?.fees?.plastic        ?? 0.6));
 
-  const [deliveryFee,  setDeliveryFee]  = useState(String(r?.fees?.deliveryFee  ?? 25));
-  const [bagSmall,     setBagSmall]     = useState(String(r?.fees?.bags?.small   ?? 3));
-  const [bagMedium,    setBagMedium]    = useState(String(r?.fees?.bags?.medium  ?? 5));
-  const [bagLarge,     setBagLarge]     = useState(String(r?.fees?.bags?.large   ?? 10));
+  // SAQ
+  const [saq24x65,   setSaq24x65]   = useState(String(r?.fees?.saq?.casier24x65 ?? 24.50));
+  const [saq24x33,   setSaq24x33]   = useState(String(r?.fees?.saq?.casier24x33 ?? 35.83));
+  const [saq12x50,   setSaq12x50]   = useState(String(r?.fees?.saq?.casier12x50 ?? 21.34));
 
-  const toggleTier = id => setTiers(ts => ts.map(t => t.id === id ? { ...t, expanded: !t.expanded } : t));
-  const delTier    = id => setTiers(ts => ts.filter(t => t.id !== id));
-  const updTier    = (id, k, v) => setTiers(ts => ts.map(t => t.id === id ? { ...t, [k]: v } : t));
-  const addTier    = () => setTiers(ts => [...ts, { id: Date.now(), from: '', to: '', flat: '', expanded: true, breakdown: defaultBreakdown() }]);
-  const addBRow    = tid => setTiers(ts => ts.map(t => t.id === tid ? { ...t, breakdown: [...(t.breakdown ?? []), { id: Date.now(), label: '', amount: '' }] } : t));
-  const delBRow    = (tid, rid) => setTiers(ts => ts.map(t => t.id === tid ? { ...t, breakdown: (t.breakdown ?? []).filter(b => b.id !== rid) } : t));
-  const updBRow    = (tid, rid, k, v) => setTiers(ts => ts.map(t => t.id === tid ? { ...t, breakdown: (t.breakdown ?? []).map(b => b.id === rid ? { ...b, [k]: v } : b) } : t));
+  // Suppléments
+  const [suppVetements,    setSuppVetements]    = useState(String(r?.fees?.supplements?.vetements   ?? 2));
+  const [suppCosmetique,   setSuppCosmetique]   = useState(String(r?.fees?.supplements?.cosmetique  ?? 3));
+  const [suppBiere,        setSuppBiere]        = useState(String(r?.fees?.supplements?.biere        ?? 6));
+  const [suppElectronique, setSuppElectronique] = useState(String(r?.fees?.supplements?.electronique ?? 5));
+  const [suppDocuments,    setSuppDocuments]    = useState(String(r?.fees?.supplements?.documents    ?? -2));
 
-  const tierTotal = tier => (tier.breakdown?.length || 0) > 0
-    ? tier.breakdown.reduce((s, b) => s + (parseFloat(b.amount) || 0), 0)
-    : parseFloat(tier.flat) || 0;
+  // Marge & livraison
+  const [marginPct,      setMarginPct]      = useState(String(r?.fees?.marginPct  ?? 30));
+  const [deliveryFeeIle, setDeliveryFeeIle] = useState(String(r?.fees?.deliveryFee ?? 25));
+
+  // Helpers paliers
+  const updTier = (id, k, v) => setTiers(ts => ts.map(t => t.id === id ? { ...t, [k]: v } : t));
+  const delTier = (id) => setTiers(ts => ts.filter(t => t.id !== id));
+  const addTier = () => setTiers(ts => [...ts, {
+    id: Date.now(), from: '', to: '',
+    transportType: 'perKg', transportValue: '',
+    cartonType: 'perUnit', cartonValue: '1.5',
+    manutentionType: 'flat', manutentionValue: '', manutentionMin: '',
+    douaneType: 'perKg', douaneValue: '',
+    formalitesType: 'perKg', formalitesValue: '',
+  }]);
 
   const handleSave = async () => {
     if (!origin.trim() || !destination.trim()) { setErr('Codes IATA obligatoires'); return; }
     setSaving(true); setErr('');
     try {
       const fees = {
-        tiers:       tiers.map(({ id: _id, expanded: _exp, ...t }) => t),
-        deliveryFee: parseFloat(deliveryFee) || 0,
-        bags:        { small: parseFloat(bagSmall) || 0, medium: parseFloat(bagMedium) || 0, large: parseFloat(bagLarge) || 0 },
+        tiers:       tiers.map(tierToApi),
+        bags:        { small: parseFloat(bagSmall)||5, medium: parseFloat(bagMedium)||7.5, large: parseFloat(bagLarge)||10 },
+        plastic:     parseFloat(plastic) || 0.6,
+        saq:         { casier24x65: parseFloat(saq24x65)||24.5, casier24x33: parseFloat(saq24x33)||35.83, casier12x50: parseFloat(saq12x50)||21.34 },
+        supplements: { vetements: parseFloat(suppVetements)||2, cosmetique: parseFloat(suppCosmetique)||3, biere: parseFloat(suppBiere)||6, electronique: parseFloat(suppElectronique)||5, documents: parseFloat(suppDocuments)||-2 },
+        marginPct:   parseFloat(marginPct) || 30,
+        deliveryFee: parseFloat(deliveryFeeIle) || 25,
       };
       const payload = {
-        origin:      origin.toUpperCase().trim(),
+        origin: origin.toUpperCase().trim(),
         destination: destination.toUpperCase().trim(),
-        label:       label.trim() || `${origin.toUpperCase()} → ${destination.toUpperCase()}`,
+        label: label.trim() || `${origin.toUpperCase()} → ${destination.toUpperCase()}`,
         transitDays: parseInt(transitDays) || 14,
-        currency,
-        active,
-        fees,
+        currency, active, fees,
       };
       const url    = isNew ? '/api/routes' : `/api/routes/${r.id}`;
       const method = isNew ? 'POST' : 'PUT';
@@ -750,176 +809,235 @@ function RouteEditModal({ editRoute, onClose, onSaved }) {
   };
 
   return (
-    <Modal width={740} onClose={onClose} title={isNew ? 'Nouvelle route' : `Modifier — ${r?.label ?? r?.code ?? ''}`}>
-      <div style={{ fontSize: 10.5, fontWeight: 700, letterSpacing: '.08em', textTransform: 'uppercase', color: 'var(--ink-400)', marginBottom: 10 }}>Informations générales</div>
-      {err && (
-        err.includes('Migration requise') ? (
-          <div style={{ padding: '12px 14px', background: 'var(--warn-50)', border: '1px solid var(--warn-200)', borderRadius: 8, marginBottom: 14 }}>
-            <div style={{ fontWeight: 700, color: 'var(--warn-800)', fontSize: 13, marginBottom: 6 }}>⚠️ Migration de base de données requise</div>
-            <div style={{ fontSize: 12, color: 'var(--warn-700)', marginBottom: 10 }}>
-              Les colonnes de tarification n'existent pas encore. Lancez la migration puis réessayez.
-            </div>
-            <MigrationBanner onDone={() => setErr('')} />
-          </div>
-        ) : (
-          <div style={{ padding: '8px 12px', background: 'var(--bad-50)', color: 'var(--bad-700)', borderRadius: 6, fontSize: 12.5, marginBottom: 12 }}>{err}</div>
-        )
-      )}
-      <div className="field-row field-row--2">
-        <div className="field"><label className="label">Code IATA départ</label><input className="input mono" value={origin} onChange={e => setOrigin(e.target.value.toUpperCase())} placeholder="DLA" maxLength={3} /></div>
-        <div className="field"><label className="label">Code IATA arrivée</label><input className="input mono" value={destination} onChange={e => setDestination(e.target.value.toUpperCase())} placeholder="YUL" maxLength={3} /></div>
+    <div style={{ position: 'fixed', inset: 0, zIndex: 1000, background: 'white', overflowY: 'auto', display: 'flex', flexDirection: 'column' }}>
+      {/* Header sticky */}
+      <div style={{ position: 'sticky', top: 0, zIndex: 10, background: 'white', borderBottom: '1px solid var(--border)', padding: '0 24px', height: 56, display: 'flex', alignItems: 'center', gap: 16, flexShrink: 0 }}>
+        <button className="btn btn--ghost btn--sm" onClick={onClose}><I.ChevronLeft />Retour</button>
+        <div style={{ flex: 1, fontSize: 15, fontWeight: 700 }}>{isNew ? 'Nouvelle route' : `Modifier — ${r?.label ?? r?.code ?? ''}`}</div>
+        {err && <span style={{ fontSize: 12, color: 'var(--bad-700)' }}>{err}</span>}
+        <button className="btn btn--brand" onClick={handleSave} disabled={saving}><I.Check />{saving ? 'Enregistrement…' : 'Enregistrer'}</button>
       </div>
-      <div className="field">
-        <label className="label">Libellé <span className="opt">/ optionnel</span></label>
-        <input className="input" value={label} onChange={e => setLabel(e.target.value)} placeholder="ex: Douala → Montréal" />
-      </div>
-      <div className="field-row field-row--2">
-        <div className="field">
-          <label className="label">Transit (jours)</label>
-          <input className="input" type="number" value={transitDays} onChange={e => setTransitDays(e.target.value)} min="1" />
-        </div>
-        <div className="field">
-          <label className="label">Devise</label>
-          <select className="select" value={currency} onChange={e => setCurrency(e.target.value)}>
-            <option value="CAD">CAD</option><option value="EUR">EUR</option><option value="XAF">XAF</option>
-          </select>
-        </div>
-      </div>
-      {!isNew && (
-        <div className="field-row field-row--2">
-          <div className="field">
-            <label className="label">Statut</label>
-            <select className="select" value={active ? 'active' : 'archived'} onChange={e => setActive(e.target.value === 'active')}>
-              <option value="active">Active</option><option value="archived">Archivée</option>
-            </select>
-          </div>
-        </div>
-      )}
 
-      {/* Grille tarifaire */}
-      <div style={{ borderTop: '1px solid var(--border-soft)', margin: '18px 0 14px', paddingTop: 18 }}>
-        <div style={{ fontSize: 10.5, fontWeight: 700, letterSpacing: '.08em', textTransform: 'uppercase', color: 'var(--ink-400)', marginBottom: 14 }}>Grille tarifaire</div>
-        <table className="tbl" style={{ marginBottom: 0 }}>
-          <thead>
-            <tr>
-              <th style={{ width: 90 }}>De (kg)</th>
-              <th style={{ width: 90 }}>À (kg)</th>
-              <th>Forfait ({currency})</th>
-              <th style={{ textAlign: 'right', width: 130 }}>Total calculé</th>
-              <th style={{ textAlign: 'center', width: 100 }}>Détail</th>
-              <th style={{ width: 40 }}></th>
-            </tr>
-          </thead>
-          <tbody>
-            {tiers.map(tier => (
-              <Fragment key={tier.id}>
-                <tr>
-                  <td><input className="input input--sm mono" type="number" value={tier.from} onChange={e => updTier(tier.id, 'from', e.target.value)} style={{ width: 60 }} /></td>
-                  <td><input className="input input--sm mono" type="number" value={tier.to} onChange={e => updTier(tier.id, 'to', e.target.value)} style={{ width: 60 }} /></td>
-                  <td>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                      <input className="input input--sm mono" type="number" value={tier.flat} onChange={e => updTier(tier.id, 'flat', e.target.value)} style={{ width: 80 }} />
-                      <span style={{ fontSize: 11.5, color: 'var(--ink-400)' }}>{currency}</span>
-                    </div>
-                  </td>
-                  <td style={{ textAlign: 'right' }}>
-                    <span className="mono" style={{ fontWeight: 700, color: tierTotal(tier) > 0 ? 'var(--ok-600)' : 'var(--ink-300)' }}>{tierTotal(tier)} {currency}</span>
-                  </td>
-                  <td style={{ textAlign: 'center' }}>
-                    <button className="btn btn--ghost btn--sm" onClick={() => toggleTier(tier.id)} style={{ fontSize: 11.5, padding: '3px 8px' }}>
-                      {tier.expanded ? '▴ Masquer' : '▾ Voir'}
-                    </button>
-                  </td>
-                  <td>
-                    <button className="icon-btn" onClick={() => delTier(tier.id)} disabled={tiers.length === 1} style={{ color: tiers.length === 1 ? 'var(--ink-200)' : 'var(--bad-400)' }}>
-                      <I.Trash />
-                    </button>
-                  </td>
+      {/* Content */}
+      <div style={{ maxWidth: 960, margin: '0 auto', padding: '28px 24px', width: '100%' }}>
+
+        {/* Section 1 — Infos de base */}
+        <SectionTitle>Informations de base</SectionTitle>
+        <div className="card" style={{ padding: 20, marginBottom: 20 }}>
+          <div className="field-row field-row--2">
+            <div className="field"><label className="label">Code IATA départ</label><input className="input mono" value={origin} onChange={e => setOrigin(e.target.value.toUpperCase())} placeholder="DLA" maxLength={3} /></div>
+            <div className="field"><label className="label">Code IATA arrivée</label><input className="input mono" value={destination} onChange={e => setDestination(e.target.value.toUpperCase())} placeholder="YUL" maxLength={3} /></div>
+          </div>
+          <div className="field">
+            <label className="label">Libellé <span className="opt">/ optionnel</span></label>
+            <input className="input" value={label} onChange={e => setLabel(e.target.value)} placeholder="ex: Douala → Montréal" />
+          </div>
+          <div className="field-row field-row--2">
+            <div className="field">
+              <label className="label">Transit (jours)</label>
+              <input className="input" type="number" value={transitDays} onChange={e => setTransitDays(e.target.value)} min="1" />
+            </div>
+            <div className="field">
+              <label className="label">Devise</label>
+              <select className="select" value={currency} onChange={e => setCurrency(e.target.value)}>
+                <option value="CAD">CAD</option><option value="EUR">EUR</option><option value="XAF">XAF</option>
+              </select>
+            </div>
+          </div>
+          {!isNew && (
+            <div className="field-row field-row--2">
+              <div className="field">
+                <label className="label">Statut</label>
+                <select className="select" value={active ? 'active' : 'archived'} onChange={e => setActive(e.target.value === 'active')}>
+                  <option value="active">Active</option><option value="archived">Archivée</option>
+                </select>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Section 2 — Paliers de poids */}
+        <SectionTitle>Paliers de poids</SectionTitle>
+        <div className="card" style={{ padding: 20, marginBottom: 20 }}>
+          <p style={{ fontSize: 12, color: 'var(--ink-400)', marginBottom: 14 }}>
+            Le palier est sélectionné en fonction du poids total du colis. Les taux s'appliquent aux composantes de prix correspondantes.
+          </p>
+          <div style={{ overflowX: 'auto' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12.5, minWidth: 900 }}>
+              <thead>
+                <tr style={{ background: 'var(--bg-soft)' }}>
+                  <th style={{ padding: '8px 10px', textAlign: 'left', fontWeight: 700, color: 'var(--ink-500)', fontSize: 11, textTransform: 'uppercase' }}>De (kg)</th>
+                  <th style={{ padding: '8px 10px', textAlign: 'left', fontWeight: 700, color: 'var(--ink-500)', fontSize: 11, textTransform: 'uppercase' }}>À (kg)</th>
+                  <th style={{ padding: '8px 10px', textAlign: 'left', fontWeight: 700, color: 'var(--ink-500)', fontSize: 11, textTransform: 'uppercase' }}>Transport</th>
+                  <th style={{ padding: '8px 10px', textAlign: 'left', fontWeight: 700, color: 'var(--ink-500)', fontSize: 11, textTransform: 'uppercase' }}>Carton</th>
+                  <th style={{ padding: '8px 10px', textAlign: 'left', fontWeight: 700, color: 'var(--ink-500)', fontSize: 11, textTransform: 'uppercase' }}>Manutention</th>
+                  <th style={{ padding: '8px 10px', textAlign: 'left', fontWeight: 700, color: 'var(--ink-500)', fontSize: 11, textTransform: 'uppercase' }}>Douane/Terminal</th>
+                  <th style={{ padding: '8px 10px', textAlign: 'left', fontWeight: 700, color: 'var(--ink-500)', fontSize: 11, textTransform: 'uppercase' }}>Formalités</th>
+                  <th style={{ width: 40 }}></th>
                 </tr>
-                {tier.expanded && (
-                  <tr>
-                    <td colSpan={6} style={{ padding: '8px 0 12px 24px', background: 'var(--bg-soft)' }}>
-                      <div style={{ fontSize: 11.5, fontWeight: 700, color: 'var(--ink-500)', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '.06em' }}>
-                        Composition — {tier.from}–{tier.to} kg
+              </thead>
+              <tbody>
+                {tiers.map((tier) => (
+                  <tr key={tier.id} style={{ borderBottom: '1px solid var(--border-soft)' }}>
+                    <td style={{ padding: '6px 8px' }}><input className="input input--sm mono" type="number" value={tier.from} onChange={e => updTier(tier.id, 'from', e.target.value)} style={{ width: 65 }} /></td>
+                    <td style={{ padding: '6px 8px' }}><input className="input input--sm mono" type="number" value={tier.to} onChange={e => updTier(tier.id, 'to', e.target.value)} placeholder="∞" style={{ width: 65 }} /></td>
+                    <td style={{ padding: '6px 8px' }}>
+                      <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
+                        <select className="select input--sm" value={tier.transportType} onChange={e => updTier(tier.id, 'transportType', e.target.value)} style={{ fontSize: 11, padding: '2px 4px', width: 70 }}>
+                          <option value="flat">Forfait</option>
+                          <option value="perKg">$/kg</option>
+                        </select>
+                        <input className="input input--sm mono" type="number" value={tier.transportValue} onChange={e => updTier(tier.id, 'transportValue', e.target.value)} style={{ width: 55 }} />
                       </div>
-                      <table className="tbl" style={{ marginBottom: 0, background: 'white' }}>
-                        <thead>
-                          <tr>
-                            <th style={{ borderRadius: 0 }}>Libellé du frais</th>
-                            <th style={{ textAlign: 'right', width: 130 }}>Montant ({currency})</th>
-                            <th style={{ width: 40, borderRadius: 0 }}></th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {(tier.breakdown?.length || 0) === 0 && (
-                            <tr><td colSpan={3} style={{ fontSize: 12, color: 'var(--ink-400)', textAlign: 'center', padding: '10px 0' }}>Cliquez « + Ajouter » pour décomposer ce forfait.</td></tr>
-                          )}
-                          {(tier.breakdown ?? []).map(row => (
-                            <tr key={row.id}>
-                              <td>
-                                <input className="input input--sm" value={row.label} onChange={e => updBRow(tier.id, row.id, 'label', e.target.value)} placeholder="Libellé…" style={{ border: 'none', background: 'transparent', width: '100%' }} />
-                              </td>
-                              <td style={{ textAlign: 'right' }}>
-                                <input className="input input--sm mono" type="number" value={row.amount} onChange={e => updBRow(tier.id, row.id, 'amount', e.target.value)} style={{ width: 80, textAlign: 'right' }} />
-                              </td>
-                              <td>
-                                <button className="icon-btn" onClick={() => delBRow(tier.id, row.id)} style={{ color: 'var(--bad-400)' }}><I.Trash /></button>
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '7px 12px', border: '1px solid var(--border)', borderTop: 'none', background: 'white' }}>
-                        <button className="btn btn--ghost btn--sm" onClick={() => addBRow(tier.id)}><I.Plus />Ajouter une ligne</button>
-                        {tier.breakdown.length > 0 && (
-                          <div style={{ fontSize: 12, fontWeight: 700 }}>
-                            Total :&nbsp;<span className="mono" style={{ color: 'var(--ok-600)' }}>{tier.breakdown.reduce((s, b) => s + (parseFloat(b.amount) || 0), 0)} {currency}</span>
-                          </div>
+                    </td>
+                    <td style={{ padding: '6px 8px' }}>
+                      <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
+                        <select className="select input--sm" value={tier.cartonType} onChange={e => updTier(tier.id, 'cartonType', e.target.value)} style={{ fontSize: 11, padding: '2px 4px', width: 70 }}>
+                          <option value="flat">Forfait</option>
+                          <option value="perUnit">$/carton</option>
+                        </select>
+                        <input className="input input--sm mono" type="number" value={tier.cartonValue} onChange={e => updTier(tier.id, 'cartonValue', e.target.value)} style={{ width: 55 }} />
+                      </div>
+                    </td>
+                    <td style={{ padding: '6px 8px' }}>
+                      <div style={{ display: 'flex', gap: 4, alignItems: 'center', flexWrap: 'wrap' }}>
+                        <select className="select input--sm" value={tier.manutentionType} onChange={e => updTier(tier.id, 'manutentionType', e.target.value)} style={{ fontSize: 11, padding: '2px 4px', width: 80 }}>
+                          <option value="flat">Forfait</option>
+                          <option value="perUnit">$/unité</option>
+                        </select>
+                        <input className="input input--sm mono" type="number" value={tier.manutentionValue} onChange={e => updTier(tier.id, 'manutentionValue', e.target.value)} style={{ width: 50 }} />
+                        {tier.manutentionType === 'perUnit' && (
+                          <><span style={{ fontSize: 11, color: 'var(--ink-400)' }}>min</span>
+                          <input className="input input--sm mono" type="number" value={tier.manutentionMin} onChange={e => updTier(tier.id, 'manutentionMin', e.target.value)} style={{ width: 45 }} /></>
                         )}
                       </div>
                     </td>
+                    <td style={{ padding: '6px 8px' }}>
+                      <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
+                        <select className="select input--sm" value={tier.douaneType} onChange={e => updTier(tier.id, 'douaneType', e.target.value)} style={{ fontSize: 11, padding: '2px 4px', width: 70 }}>
+                          <option value="flat">Forfait</option>
+                          <option value="perKg">$/kg</option>
+                        </select>
+                        <input className="input input--sm mono" type="number" value={tier.douaneValue} onChange={e => updTier(tier.id, 'douaneValue', e.target.value)} style={{ width: 55 }} />
+                      </div>
+                    </td>
+                    <td style={{ padding: '6px 8px' }}>
+                      <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
+                        <select className="select input--sm" value={tier.formalitesType} onChange={e => updTier(tier.id, 'formalitesType', e.target.value)} style={{ fontSize: 11, padding: '2px 4px', width: 70 }}>
+                          <option value="flat">Forfait</option>
+                          <option value="perKg">$/kg</option>
+                        </select>
+                        <input className="input input--sm mono" type="number" value={tier.formalitesValue} onChange={e => updTier(tier.id, 'formalitesValue', e.target.value)} style={{ width: 55 }} />
+                      </div>
+                    </td>
+                    <td style={{ padding: '6px 8px', textAlign: 'center' }}>
+                      <button className="icon-btn" onClick={() => delTier(tier.id)} disabled={tiers.length === 1} style={{ color: tiers.length === 1 ? 'var(--ink-200)' : 'var(--bad-400)' }}><I.Trash /></button>
+                    </td>
                   </tr>
-                )}
-              </Fragment>
-            ))}
-          </tbody>
-        </table>
-        <button className="btn btn--ghost btn--sm" style={{ marginTop: 8 }} onClick={addTier}><I.Plus />Ajouter une tranche</button>
-
-        <div style={{ marginTop: 20 }}>
-          <div className="field-row field-row--2">
-            <div className="field">
-              <label className="label">Livraison Grand Montréal</label>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <input className="input mono" type="number" value={deliveryFee} onChange={e => setDeliveryFee(e.target.value)} style={{ flex: 1 }} />
-                <span style={{ fontSize: 12, color: 'var(--ink-400)', whiteSpace: 'nowrap' }}>{currency}</span>
-              </div>
-            </div>
+                ))}
+              </tbody>
+            </table>
           </div>
-          <div style={{ fontSize: 12.5, fontWeight: 700, color: 'var(--ink-700)', marginBottom: 8 }}>Prix des sacs</div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8 }}>
+          <button className="btn btn--ghost btn--sm" style={{ marginTop: 10 }} onClick={addTier}><I.Plus />Ajouter un palier</button>
+        </div>
+
+        {/* Section 3 — Emballages & conditionnement */}
+        <SectionTitle>Emballages & conditionnement</SectionTitle>
+        <div className="card" style={{ padding: 20, marginBottom: 20 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 12 }}>
             {[
-              { label: 'Petit sac',  val: bagSmall,  set: setBagSmall  },
+              { label: 'Carton', sub: '(1er palier : forfait)', val: '1', readOnly: true },
+              { label: 'Petit sac', val: bagSmall, set: setBagSmall },
               { label: 'Moyen sac', val: bagMedium, set: setBagMedium },
-              { label: 'Grand sac', val: bagLarge,  set: setBagLarge  },
-            ].map(s => (
-              <div key={s.label} className="field" style={{ marginBottom: 0 }}>
-                <label className="label">{s.label}</label>
+              { label: 'Grand sac', val: bagLarge, set: setBagLarge },
+              { label: 'Plastique', sub: '$/unité (conditionnement)', val: plastic, set: setPlastic },
+            ].map(f => (
+              <div key={f.label} className="field" style={{ marginBottom: 0 }}>
+                <label className="label">{f.label}{f.sub && <span className="opt"> {f.sub}</span>}</label>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                  <input className="input mono" type="number" value={s.val} onChange={e => s.set(e.target.value)} style={{ flex: 1 }} />
+                  <input className="input mono" type="number" step="0.1" value={f.val} onChange={f.set ? e => f.set(e.target.value) : undefined} readOnly={f.readOnly} style={{ flex: 1, background: f.readOnly ? 'var(--bg-soft)' : undefined }} />
+                  <span style={{ fontSize: 12, color: 'var(--ink-400)', whiteSpace: 'nowrap' }}>{currency}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+          <div style={{ marginTop: 12, fontSize: 12, color: 'var(--ink-400)' }}>
+            Le carton est configuré par palier (forfait sur le 1er palier, 1,50 {currency}/carton sur les suivants par défaut).
+          </div>
+        </div>
+
+        {/* Section 4 — Frais SAQ */}
+        <SectionTitle>Frais SAQ (bière)</SectionTitle>
+        <div className="card" style={{ padding: 20, marginBottom: 20 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12 }}>
+            {[
+              { label: 'Casier 24 × 65cl', val: saq24x65, set: setSaq24x65 },
+              { label: 'Casier 24 × 33cl', val: saq24x33, set: setSaq24x33 },
+              { label: 'Casier 12 × 50cl', val: saq12x50, set: setSaq12x50 },
+            ].map(f => (
+              <div key={f.label} className="field" style={{ marginBottom: 0 }}>
+                <label className="label">{f.label}</label>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <input className="input mono" type="number" step="0.01" value={f.val} onChange={e => f.set(e.target.value)} style={{ flex: 1 }} />
                   <span style={{ fontSize: 12, color: 'var(--ink-400)' }}>{currency}</span>
                 </div>
               </div>
             ))}
           </div>
         </div>
-      </div>
 
-      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 8 }}>
-        <button className="btn btn--ghost" onClick={onClose}>Annuler</button>
-        <button className="btn btn--brand" onClick={handleSave} disabled={saving}><I.Check />{saving ? 'Enregistrement…' : 'Enregistrer'}</button>
+        {/* Section 5 — Suppléments */}
+        <SectionTitle>Suppléments par catégorie</SectionTitle>
+        <div className="card" style={{ padding: 20, marginBottom: 20 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 12 }}>
+            {[
+              { label: 'Vêtements',    icon: '👗', val: suppVetements,    set: setSuppVetements    },
+              { label: 'Cosmétiques',  icon: '💄', val: suppCosmetique,   set: setSuppCosmetique   },
+              { label: 'Bière',        icon: '🍺', val: suppBiere,        set: setSuppBiere        },
+              { label: 'Électronique', icon: '📱', val: suppElectronique, set: setSuppElectronique },
+              { label: 'Documents',    icon: '📄', val: suppDocuments,    set: setSuppDocuments    },
+            ].map(f => (
+              <div key={f.label} className="field" style={{ marginBottom: 0 }}>
+                <label className="label">{f.icon} {f.label}</label>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <input className="input mono" type="number" step="0.5" value={f.val} onChange={e => f.set(e.target.value)} style={{ flex: 1 }} />
+                  <span style={{ fontSize: 12, color: 'var(--ink-400)', whiteSpace: 'nowrap' }}>{currency}/kg</span>
+                </div>
+              </div>
+            ))}
+          </div>
+          <div style={{ marginTop: 10, fontSize: 12, color: 'var(--ink-400)' }}>
+            Les suppléments s'ajoutent au transport pour chaque ligne de colis de cette catégorie. Un montant négatif est une réduction.
+          </div>
+        </div>
+
+        {/* Section 6 — Marge & livraison */}
+        <SectionTitle>Marge & livraison</SectionTitle>
+        <div className="card" style={{ padding: 20, marginBottom: 20 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12 }}>
+            <div className="field" style={{ marginBottom: 0 }}>
+              <label className="label">Marge par défaut (%)</label>
+              <input className="input mono" type="number" step="1" value={marginPct} onChange={e => setMarginPct(e.target.value)} />
+            </div>
+            <div className="field" style={{ marginBottom: 0 }}>
+              <label className="label">Livraison île de Montréal</label>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <input className="input mono" type="number" step="1" value={deliveryFeeIle} onChange={e => setDeliveryFeeIle(e.target.value)} style={{ flex: 1 }} />
+                <span style={{ fontSize: 12, color: 'var(--ink-400)' }}>{currency}</span>
+              </div>
+            </div>
+            <div className="field" style={{ marginBottom: 0 }}>
+              <label className="label">Livraison Grand Montréal</label>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <input className="input mono" type="number" step="1" value={String(Math.round((parseFloat(deliveryFeeIle) || 25) * 1.2))} readOnly style={{ flex: 1, background: 'var(--bg-soft)' }} />
+                <span style={{ fontSize: 12, color: 'var(--ink-400)' }}>{currency} <span style={{ fontSize: 11, color: 'var(--ink-300)' }}>(auto)</span></span>
+              </div>
+            </div>
+          </div>
+        </div>
+
       </div>
-    </Modal>
+    </div>
   );
 }
 
@@ -932,6 +1050,7 @@ export default function SettingsScreen({ onNav }) {
   const [editRoute, setEditRoute]     = useState(null);
   const [routeDetail, setRouteDetail] = useState(null);
   const [routes, setRoutes]           = useState([]);
+  const [openGroup, setOpenGroup]     = useState(initialTab === 'whatsapp' || initialTab === 'auto' ? 'messagerie' : null);
 
   const loadRoutes = () =>
     fetch('/api/routes').then(r => r.json()).then(data => setRoutes(Array.isArray(data) ? data : [])).catch(() => {});
@@ -939,13 +1058,43 @@ export default function SettingsScreen({ onNav }) {
   useEffect(() => { loadRoutes(); }, []);
 
   const nav = [
-    { id: 'company',   l: 'Entreprise',         icon: I.Building },
-    { id: 'routes',    l: 'Routes & tarifs',    icon: I.Route },
-    { id: 'whatsapp',  l: 'WhatsApp',           icon: I.Chat },
-    { id: 'auto',      l: 'Auto-notifications', icon: I.Bell, badge: 'Nouveau' },
-    { id: 'campaigns', l: 'Cargaisons',         icon: I.Plane },
-    { id: 'codes',     l: 'Codes & numérotation', icon: I.Tag },
+    { id: 'company',   l: 'Entreprise',           icon: I.Building },
+    { id: 'routes',    l: 'Routes & tarifs',       icon: I.Route },
+    { id: 'whatsapp',  l: 'WhatsApp',              icon: I.Chat },
+    { id: 'auto',      l: 'Auto-notifications',    icon: I.Bell, badge: 'Nouveau' },
+    { id: 'campaigns', l: 'Cargaisons',            icon: I.Plane },
+    { id: 'codes',     l: 'Codes & numérotation',  icon: I.Tag },
   ];
+
+  const navItemStyle = (id) => ({
+    display: 'flex', alignItems: 'center', gap: 10,
+    padding: '8px 10px', borderRadius: 6, cursor: 'pointer',
+    background: section === id ? 'var(--brand-50)' : 'transparent',
+    color: section === id ? 'var(--brand-700)' : 'var(--ink-600)',
+    fontWeight: section === id ? 600 : 500,
+    fontSize: 13, marginBottom: 2,
+  });
+
+  const subItemStyle = (id) => ({
+    display: 'flex', alignItems: 'center', gap: 10,
+    padding: '7px 10px 7px 30px', borderRadius: 6, cursor: 'pointer',
+    background: section === id ? 'var(--brand-50)' : 'transparent',
+    color: section === id ? 'var(--brand-700)' : 'var(--ink-500)',
+    fontWeight: section === id ? 600 : 400,
+    fontSize: 12.5, marginBottom: 1,
+  });
+
+  const messageriGroupOpen = openGroup === 'messagerie' || section === 'whatsapp' || section === 'auto';
+
+  const handleNavFlat = (id) => {
+    setSection(id);
+    setOpenGroup(null);
+  };
+
+  const handleNavSub = (id) => {
+    setSection(id);
+    setOpenGroup('messagerie');
+  };
 
   return (
     <div className="page">
@@ -959,23 +1108,54 @@ export default function SettingsScreen({ onNav }) {
       <div style={{ display: 'grid', gridTemplateColumns: '220px 1fr', gap: 18 }}>
         {/* Side nav */}
         <div className="card" style={{ padding: 8, height: 'fit-content', position: 'sticky', top: 76 }}>
-          {nav.map(n => {
-            const Ic = n.icon;
-            return (
-              <a key={n.id} onClick={() => setSection(n.id)} style={{
-                display: 'flex', alignItems: 'center', gap: 10,
-                padding: '8px 10px', borderRadius: 6, cursor: 'pointer',
-                background: section === n.id ? 'var(--brand-50)' : 'transparent',
-                color: section === n.id ? 'var(--brand-700)' : 'var(--ink-600)',
-                fontWeight: section === n.id ? 600 : 500,
-                fontSize: 13, marginBottom: 2,
-              }}>
-                <Ic style={{ width: 15, height: 15, opacity: .85 }} />
-                <span style={{ flex: 1 }}>{n.l}</span>
-                {n.badge && <span style={{ fontSize: 9.5, padding: '1px 6px', borderRadius: 999, background: 'var(--brand-500)', color: 'white', fontWeight: 700 }}>{n.badge}</span>}
-              </a>
-            );
-          })}
+          {/* Entreprise */}
+          <a onClick={() => handleNavFlat('company')} style={navItemStyle('company')}>
+            <I.Building style={{ width: 15, height: 15, opacity: .85 }} />
+            <span style={{ flex: 1 }}>Entreprise</span>
+          </a>
+          {/* Routes & tarifs */}
+          <a onClick={() => handleNavFlat('routes')} style={navItemStyle('routes')}>
+            <I.Route style={{ width: 15, height: 15, opacity: .85 }} />
+            <span style={{ flex: 1 }}>Routes & tarifs</span>
+          </a>
+          {/* Groupe dépliable : Messagerie & alertes */}
+          <div style={{ marginBottom: 2 }}>
+            <a onClick={() => setOpenGroup(messageriGroupOpen ? null : 'messagerie')} style={{
+              display: 'flex', alignItems: 'center', gap: 10,
+              padding: '8px 10px', borderRadius: 6, cursor: 'pointer',
+              background: (section === 'whatsapp' || section === 'auto') ? 'var(--brand-50)' : 'transparent',
+              color: (section === 'whatsapp' || section === 'auto') ? 'var(--brand-700)' : 'var(--ink-600)',
+              fontWeight: (section === 'whatsapp' || section === 'auto') ? 600 : 500,
+              fontSize: 13,
+            }}>
+              <I.Chat style={{ width: 15, height: 15, opacity: .85 }} />
+              <span style={{ flex: 1 }}>Messagerie & alertes</span>
+              <span style={{ fontSize: 10, color: 'var(--ink-400)', transition: 'transform .15s', display: 'inline-block', transform: messageriGroupOpen ? 'rotate(180deg)' : 'rotate(0deg)' }}>▾</span>
+            </a>
+            {messageriGroupOpen && (
+              <div style={{ marginTop: 2 }}>
+                <a onClick={() => handleNavSub('whatsapp')} style={subItemStyle('whatsapp')}>
+                  <I.Chat style={{ width: 13, height: 13, opacity: .75 }} />
+                  <span style={{ flex: 1 }}>WhatsApp</span>
+                </a>
+                <a onClick={() => handleNavSub('auto')} style={subItemStyle('auto')}>
+                  <I.Bell style={{ width: 13, height: 13, opacity: .75 }} />
+                  <span style={{ flex: 1 }}>Auto-notifications</span>
+                  <span style={{ fontSize: 9.5, padding: '1px 6px', borderRadius: 999, background: 'var(--brand-500)', color: 'white', fontWeight: 700 }}>Nouveau</span>
+                </a>
+              </div>
+            )}
+          </div>
+          {/* Cargaisons */}
+          <a onClick={() => handleNavFlat('campaigns')} style={navItemStyle('campaigns')}>
+            <I.Plane style={{ width: 15, height: 15, opacity: .85 }} />
+            <span style={{ flex: 1 }}>Cargaisons</span>
+          </a>
+          {/* Codes & numérotation */}
+          <a onClick={() => handleNavFlat('codes')} style={navItemStyle('codes')}>
+            <I.Tag style={{ width: 15, height: 15, opacity: .85 }} />
+            <span style={{ flex: 1 }}>Codes & numérotation</span>
+          </a>
         </div>
 
         {/* Content */}
