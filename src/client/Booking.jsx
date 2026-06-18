@@ -17,75 +17,206 @@ const ITEM_CATEGORIES = [
   { id: 'documents',    label: 'Documents',                     icon: '📄', extraPerKg: -2, hint: 'Papiers administratifs, courrier officiel…' },
 ];
 
-// ── Tarifs par défaut (règles d'affaires) ──
+// ── Tarifs par défaut (règles d'affaires) — 8 paliers ──
+const DEFAULT_TIERS = [
+  { from: 0.5,   to: 3,        transportFlat: 50,   cartonFlat: 1,    manutentionFlat: 4,                    douaneFlat: 5,      formalitesFlat: 5 },
+  { from: 3.5,   to: 9.5,      transportPerKg: 13,  cartonPerUnit: 1.5, manutentionFlat: 5,                  douanePerKg: 3,     formalitesPerKg: 2 },
+  { from: 10,    to: 22.5,     transportPerKg: 12,  cartonPerUnit: 1.5, manutentionFlat: 10,                 douanePerKg: 3,     formalitesPerKg: 2 },
+  { from: 23.5,  to: 69.5,     transportPerKg: 11,  cartonPerUnit: 1.5, manutentionFlat: 15,                 douanePerKg: 2,     formalitesPerKg: 1.5 },
+  { from: 70,    to: 115,      transportPerKg: 10,  cartonPerUnit: 1.5, manutentionPerUnit: 5,  manutentionMin: 20, douanePerKg: 2.5, formalitesPerKg: 1 },
+  { from: 115.5, to: 199.5,    transportPerKg: 9,   cartonPerUnit: 1.5, manutentionPerUnit: 4.5, manutentionMin: 27, douanePerKg: 1.5, formalitesPerKg: 1 },
+  { from: 200,   to: 250,      transportPerKg: 8,   cartonPerUnit: 1.5, manutentionPerUnit: 4,   manutentionMin: 40, douanePerKg: 1.5, formalitesPerKg: 1 },
+  { from: 250.5, to: Infinity, transportPerKg: 7.5, cartonPerUnit: 1.5, manutentionPerUnit: 3,   manutentionMin: 60, douanePerKg: 1.5, formalitesPerKg: 1 },
+];
+
 const DEFAULT_FEES = {
-  base: 50, customs: 5, carton: 1, formality: 4, service: 5,
-  flatUpTo3kg: 65, perHalfKgRate: 9,
-  cartonBase: 1, cartonPerUnit: 1.5,
-  addons: { smallBag: 3, mediumBag: 5, largeBag: 10 },
+  tiers: DEFAULT_TIERS,
+  bags: { small: 5, medium: 7.5, large: 10 },
+  plastic: 0.6,
+  saq: { casier24x65: 24.50, casier24x33: 35.83, casier12x50: 21.34 },
+  supplements: { vetements: 2, cosmetique: 3, biere: 6, electronique: 5, documents: -2 },
+  marginPct: 30,
   montrealIleDelivery: 25,
   montrealGrandDelivery: 30,
+  // legacy compat
+  flatUpTo3kg: 65, perHalfKgRate: 9,
+  cartonBase: 1, cartonPerUnit: 1.5,
+  addons: { smallBag: 5, mediumBag: 7.5, largeBag: 10 },
 };
 
 // Convert stored route fees (admin grille tarifaire) → calcPrice-compatible format
 function routeFeesToCalcFees(storedFees) {
-  if (!storedFees?.tiers?.length) return DEFAULT_FEES;
+  if (!storedFees) return DEFAULT_FEES;
 
-  const bags = storedFees.bags ?? {};
+  const bags        = storedFees.bags        ?? {};
+  const supplements = storedFees.supplements ?? {};
+  const saq         = storedFees.saq         ?? {};
   const deliveryFee = storedFees.deliveryFee ?? DEFAULT_FEES.montrealIleDelivery;
 
-  // Normalize and sort tiers
-  const tiers = [...storedFees.tiers]
-    .map(t => ({ from: parseFloat(t.from) || 0, to: parseFloat(t.to) || 0, flat: parseFloat(t.flat) || 0 }))
-    .filter(t => t.to >= t.from)
-    .sort((a, b) => a.from - b.from);
-
-  const firstTier = tiers[0];
-
-  // Estimate perHalfKgRate from the MARGINAL cost between last two tiers (display only)
-  let perHalfKgRate = DEFAULT_FEES.perHalfKgRate;
-  if (tiers.length >= 2) {
-    const last = tiers[tiers.length - 1];
-    const prev = tiers[tiers.length - 2];
-    const rangeKg   = last.to - last.from;
-    const deltaFlat = last.flat - prev.flat;
-    if (rangeKg > 0 && deltaFlat > 0) {
-      perHalfKgRate = Math.round((deltaFlat / rangeKg / 2) * 10) / 10;
-    }
+  let tiers = DEFAULT_FEES.tiers;
+  if (Array.isArray(storedFees.tiers) && storedFees.tiers.length > 0) {
+    tiers = storedFees.tiers
+      .map(t => {
+        const from = parseFloat(t.from) || 0;
+        const to   = parseFloat(t.to)   || 0;
+        // Old flat-only format
+        if (t.flat !== undefined && t.transportFlat === undefined && t.transportPerKg === undefined) {
+          return { from, to, transportFlat: parseFloat(t.flat) || 0 };
+        }
+        return { from, to, ...t, from: undefined, to: undefined, ...{ from, to } };
+      })
+      .filter(t => t.to >= t.from)
+      .sort((a, b) => a.from - b.from);
   }
 
   return {
     ...DEFAULT_FEES,
     tiers,
-    flatUpTo3kg:          firstTier?.flat || DEFAULT_FEES.flatUpTo3kg,
-    perHalfKgRate,
-    addons: {
-      smallBag:  bags.small  ?? DEFAULT_FEES.addons.smallBag,
-      mediumBag: bags.medium ?? DEFAULT_FEES.addons.mediumBag,
-      largeBag:  bags.large  ?? DEFAULT_FEES.addons.largeBag,
+    bags: {
+      small:  bags.small  ?? DEFAULT_FEES.bags.small,
+      medium: bags.medium ?? DEFAULT_FEES.bags.medium,
+      large:  bags.large  ?? DEFAULT_FEES.bags.large,
     },
+    supplements: { ...DEFAULT_FEES.supplements, ...supplements },
+    saq: { ...DEFAULT_FEES.saq, ...saq },
     montrealIleDelivery:   deliveryFee,
-    montrealGrandDelivery: Math.round(deliveryFee * 1.2),
+    montrealGrandDelivery: storedFees.montrealGrandDelivery ?? Math.round(deliveryFee * 1.2),
+    addons: {
+      smallBag:  bags.small  ?? DEFAULT_FEES.bags.small,
+      mediumBag: bags.medium ?? DEFAULT_FEES.bags.medium,
+      largeBag:  bags.large  ?? DEFAULT_FEES.bags.large,
+    },
   };
 }
 
-// Lookup base shipping from tiers (flat per weight range) or fall back to linear formula
-function calcBaseShipping(fees, billedKg) {
-  if (fees.tiers?.length) {
-    const tier = fees.tiers.find(t => billedKg >= t.from && billedKg <= t.to);
-    if (tier) return tier.flat;
-    // Weight exceeds all defined tiers — extrapolate from the last tier's marginal rate
-    const last = fees.tiers[fees.tiers.length - 1];
-    const prev = fees.tiers[fees.tiers.length - 2];
-    const ratePerHalfKg = prev && (last.to - last.from) > 0
-      ? Math.max(1, (last.flat - prev.flat) / ((last.to - last.from) / 0.5))
-      : fees.perHalfKgRate;
-    const extraIncrements = Math.ceil((billedKg - last.to) / 0.5);
-    return last.flat + extraIncrements * ratePerHalfKg;
+// ── Pure-JS unified pricing engine (mirrors calculateFromFees in pricing.ts) ──
+function r2(v) { return Math.round(v * 100) / 100; }
+
+function findTier(tiers, totalKg) {
+  const match = tiers.find(t => totalKg >= t.from && totalKg <= t.to);
+  if (match) return match;
+  if (totalKg < tiers[0].from) return tiers[0];
+  return tiers[tiers.length - 1];
+}
+
+function calcPrice(items, fees, addons, delivery, cityZone) {
+  const totalKg = r2(items.reduce((s, i) => s + (parseFloat(i.kg) || 0), 0));
+  if (totalKg <= 0) return null;
+
+  const tiers = fees.tiers || DEFAULT_TIERS;
+  const tier  = findTier(tiers, totalKg);
+
+  // Transport
+  let transport = 0;
+  if (tier.transportFlat !== undefined) {
+    transport = tier.transportFlat;
+  } else if (tier.transportPerKg !== undefined) {
+    transport = r2(tier.transportPerKg * totalKg);
   }
-  // No tiers — original linear formula
-  const surplusIncrements = billedKg > 3 ? (billedKg - 3) / 0.5 : 0;
-  return fees.flatUpTo3kg + surplusIncrements * fees.perHalfKgRate;
+
+  // Supplements grouped by category
+  const catKgMap = {};
+  items.forEach(item => {
+    const kg = parseFloat(item.kg) || 0;
+    if (kg <= 0) return;
+    const cat = item.cat || 'standard';
+    catKgMap[cat] = (catKgMap[cat] || 0) + kg;
+  });
+
+  const suppRates = fees.supplements || DEFAULT_FEES.supplements;
+  const catSurchargeLines = Object.entries(catKgMap).map(([catId, kg]) => {
+    const def   = ITEM_CATEGORIES.find(c => c.id === catId);
+    const rate  = suppRates[catId] ?? def?.extraPerKg ?? 0;
+    return { catId, label: def?.label || catId, kg, rate, amount: r2(kg * rate) };
+  }).filter(l => l.rate !== 0);
+  const catSurchargeTotal = r2(catSurchargeLines.reduce((s, l) => s + l.amount, 0));
+
+  // SAQ (beer items)
+  const saqRates = fees.saq || DEFAULT_FEES.saq;
+  const saqLines = items
+    .filter(item => item.cat === 'biere' && item.beerFormat && Number(item.nbCasiers) > 0)
+    .map(item => {
+      const key  = 'casier' + item.beerFormat;
+      const rate = saqRates[key] ?? 0;
+      const nb   = Number(item.nbCasiers);
+      return { format: item.beerFormat, nbCasiers: nb, rate, amount: r2(rate * nb) };
+    });
+  const saqTotal = r2(saqLines.reduce((s, l) => s + l.amount, 0));
+
+  // Carton
+  const nbCartons = addons.cartons || 0;
+  let carton = 0;
+  if (tier.cartonFlat !== undefined) {
+    carton = tier.cartonFlat;
+  } else if (tier.cartonPerUnit !== undefined) {
+    carton = r2(tier.cartonPerUnit * nbCartons);
+  }
+
+  // Sacs
+  const bagRates = fees.bags || DEFAULT_FEES.bags;
+  const addonSmall  = (addons.smallBag  || 0) * bagRates.small;
+  const addonMedium = (addons.mediumBag || 0) * bagRates.medium;
+  const addonLarge  = (addons.largeBag  || 0) * bagRates.large;
+  const sacs = r2(addonSmall + addonMedium + addonLarge);
+
+  // Manutention
+  const totalSacs = (addons.smallBag || 0) + (addons.mediumBag || 0) + (addons.largeBag || 0);
+  let manutention = 0;
+  if (tier.manutentionFlat !== undefined) {
+    manutention = tier.manutentionFlat;
+  } else if (tier.manutentionPerUnit !== undefined) {
+    const nbEmballages = nbCartons + totalSacs;
+    manutention = r2(Math.max(tier.manutentionMin || 0, tier.manutentionPerUnit * nbEmballages));
+  }
+
+  // Douane
+  let douane = 0;
+  if (tier.douaneFlat !== undefined) {
+    douane = tier.douaneFlat;
+  } else if (tier.douanePerKg !== undefined) {
+    douane = r2(tier.douanePerKg * totalKg);
+  }
+
+  // Formalites
+  let formalites = 0;
+  if (tier.formalitesFlat !== undefined) {
+    formalites = tier.formalitesFlat;
+  } else if (tier.formalitesPerKg !== undefined) {
+    formalites = r2(tier.formalitesPerKg * totalKg);
+  }
+
+  const addonTotal = r2(sacs + carton);
+
+  // Delivery
+  const isExpedition      = delivery === 'expedition';
+  const isMontrealIle     = !isExpedition && delivery === 'home' && cityZone === 'montreal-ile';
+  const isMontrealGrand   = !isExpedition && delivery === 'home' && cityZone === 'montreal-grand';
+  const isOutsideDelivery = !isExpedition && delivery === 'home' && cityZone === 'other';
+  const deliveryFee       = isMontrealIle   ? (fees.montrealIleDelivery   || 25)
+                          : isMontrealGrand ? (fees.montrealGrandDelivery || 30) : 0;
+
+  const sousTotal  = r2(transport + catSurchargeTotal + carton + sacs + manutention + douane + formalites + saqTotal);
+  const marginPct  = fees.marginPct || DEFAULT_FEES.marginPct;
+  const marge      = r2(sousTotal * (marginPct / 100));
+  const prixClient = r2(sousTotal + marge);
+
+  const total = r2(prixClient + (isExpedition || isOutsideDelivery ? 0 : deliveryFee));
+
+  return {
+    totalKg, tier,
+    transport,
+    catSurchargeLines, catSurchargeTotal,
+    saqLines, saqTotal,
+    carton, cartonRate: tier.cartonFlat !== undefined ? tier.cartonFlat : (tier.cartonPerUnit || 1.5),
+    addonSmall, addonMedium, addonLarge, addonTotal, sacs,
+    manutention, douane, formalites,
+    sousTotal, marginPct, marge, prixClient,
+    deliveryFee, isExpedition, isMontrealIle, isMontrealGrand, isOutsideDelivery,
+    total,
+    // legacy compat
+    billedKg: totalKg,
+    baseShipping: transport,
+  };
 }
 
 // ── Villes avec 3 zones ──
@@ -258,8 +389,8 @@ function Summary({ route, departure, items, price, form, step, isDone }) {
           {price ? (
             <>
               <div className="co-summary__row">
-                <span>Transport {price.billedKg} kg{price.billedKg !== price.totalKg ? ` (déclaré ${price.totalKg} kg)` : ''}</span>
-                <span>{price.baseShipping.toFixed(0)} {route.currency}</span>
+                <span>Transport {price.totalKg} kg</span>
+                <span>{price.transport.toFixed(0)} {route.currency}</span>
               </div>
               {price.catSurchargeLines.map(l => (
                 <div key={l.catId} className="co-summary__row">
@@ -267,7 +398,13 @@ function Summary({ route, departure, items, price, form, step, isDone }) {
                   <span>{l.amount >= 0 ? '+' : ''}{l.amount.toFixed(0)} {route.currency}</span>
                 </div>
               ))}
-              {price.addonTotal > 0 && <div className="co-summary__row"><span>Accessoires</span><span>+{price.addonTotal} {route.currency}</span></div>}
+              {price.saqLines?.length > 0 && (
+                <div className="co-summary__row">
+                  <span>Frais SAQ</span>
+                  <span>+{price.saqTotal.toFixed(2)} {route.currency}</span>
+                </div>
+              )}
+              {price.addonTotal > 0 && <div className="co-summary__row"><span>Accessoires</span><span>+{price.addonTotal.toFixed(0)} {route.currency}</span></div>}
               {step >= 2 && (
                 price.isExpedition ? (
                   <div className="co-summary__row co-summary__row--muted"><span>Expédition</span><span>À évaluer</span></div>
@@ -297,6 +434,7 @@ function Summary({ route, departure, items, price, form, step, isDone }) {
         <div style={{ textAlign: 'right' }}>
           {route && <div style={{ fontSize: 11, color: 'var(--ink-400)', marginBottom: 2 }}>{route.currency}</div>}
           <span className="co-summary__total-price">{price ? `${price.total.toFixed(0)}` : '—'}</span>
+
         </div>
       </div>
     </div>
@@ -463,7 +601,7 @@ export default function BookingScreen({ onNav, embedded = false }) {
     payMethod: 'card',
   });
   const [items, setItems] = useState([
-    { id: 1, cat: 'standard', desc: '', pieces: 1, kg: '' },
+    { id: 1, cat: 'standard', desc: '', pieces: 1, kg: '', beerFormat: '24x65', nbCasiers: '' },
   ]);
   const [showBreakdown, setShowBreakdown] = useState(false);
   const [createAccount, setCreateAccount] = useState(false);
@@ -520,7 +658,7 @@ export default function BookingScreen({ onNav, embedded = false }) {
 
   const upd      = (k, v) => setForm(f => ({ ...f, [k]: v }));
   const updAddon = (k, v) => setForm(f => ({ ...f, addons: { ...f.addons, [k]: v } }));
-  const addItem    = () => setItems(is => [...is, { id: Date.now(), cat: 'standard', desc: '', pieces: 1, kg: '' }]);
+  const addItem    = () => setItems(is => [...is, { id: Date.now(), cat: 'standard', desc: '', pieces: 1, kg: '', beerFormat: '24x65', nbCasiers: '' }]);
   const removeItem = id => setItems(is => is.filter(i => i.id !== id));
   const updItem    = (id, k, v) => setItems(is => is.map(i => i.id === id ? { ...i, [k]: v } : i));
 
@@ -779,38 +917,55 @@ export default function BookingScreen({ onNav, embedded = false }) {
                       <div></div>
                     </div>
                     {items.map((item, idx) => {
-                      const isStd = item.cat === 'standard';
+                      const isStd  = item.cat === 'standard';
+                      const isBeer = item.cat === 'biere';
+                      const isLast = idx === items.length - 1;
                       return (
-                        <div key={item.id} style={{
-                          display: 'grid', gridTemplateColumns: '180px 1fr 80px 100px 36px', gap: 0,
-                          padding: '8px 12px', borderBottom: idx < items.length - 1 ? '1px solid var(--border-soft)' : 'none',
-                          alignItems: 'center', background: 'white',
-                        }}>
-                          <select
-                            className="co-input"
-                            value={item.cat}
-                            onChange={e => updItem(item.id, 'cat', e.target.value)}
-                            style={{ fontSize: 12.5, marginRight: 6 }}
-                          >
-                            {ITEM_CATEGORIES.map(c => (
-                              <option key={c.id} value={c.id}>{c.icon} {c.label}</option>
-                            ))}
-                          </select>
-                          <input className="co-input" value={item.desc}
-                            onChange={e => updItem(item.id, 'desc', e.target.value)}
-                            placeholder={ITEM_CATEGORIES.find(c => c.id === item.cat)?.hint || 'Description…'}
-                            style={{ marginRight: 6 }} />
-                          <input className="co-input" type="number" min="1" value={item.pieces}
-                            disabled={isStd}
-                            onChange={e => updItem(item.id, 'pieces', e.target.value)}
-                            style={{ opacity: isStd ? .35 : 1, cursor: isStd ? 'not-allowed' : 'text', marginRight: 6 }}
-                            title={isStd ? 'Non requis pour Standard' : ''} />
-                          <input className="co-input" type="number" min="0" step="0.5" value={item.kg}
-                            onChange={e => updItem(item.id, 'kg', e.target.value)} placeholder="0"
-                            style={{ marginRight: 6 }} />
-                          <button style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--ink-300)', fontSize: 20, display: 'grid', placeItems: 'center', opacity: items.length === 1 ? .25 : 1 }}
-                            disabled={items.length === 1}
-                            onClick={() => removeItem(item.id)}>×</button>
+                        <div key={item.id}>
+                          <div style={{
+                            display: 'grid', gridTemplateColumns: '180px 1fr 80px 100px 36px', gap: 0,
+                            padding: '8px 12px', borderBottom: (!isBeer && !isLast) ? '1px solid var(--border-soft)' : 'none',
+                            alignItems: 'center', background: 'white',
+                          }}>
+                            <select
+                              className="co-input"
+                              value={item.cat}
+                              onChange={e => updItem(item.id, 'cat', e.target.value)}
+                              style={{ fontSize: 12.5, marginRight: 6 }}
+                            >
+                              {ITEM_CATEGORIES.map(c => (
+                                <option key={c.id} value={c.id}>{c.icon} {c.label}</option>
+                              ))}
+                            </select>
+                            <input className="co-input" value={item.desc}
+                              onChange={e => updItem(item.id, 'desc', e.target.value)}
+                              placeholder={ITEM_CATEGORIES.find(c => c.id === item.cat)?.hint || 'Description…'}
+                              style={{ marginRight: 6 }} />
+                            <input className="co-input" type="number" min="1" value={item.pieces}
+                              disabled={isStd}
+                              onChange={e => updItem(item.id, 'pieces', e.target.value)}
+                              style={{ opacity: isStd ? .35 : 1, cursor: isStd ? 'not-allowed' : 'text', marginRight: 6 }}
+                              title={isStd ? 'Non requis pour Standard' : ''} />
+                            <input className="co-input" type="number" min="0" step="0.5" value={item.kg}
+                              onChange={e => updItem(item.id, 'kg', e.target.value)} placeholder="0"
+                              style={{ marginRight: 6 }} />
+                            <button style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--ink-300)', fontSize: 20, display: 'grid', placeItems: 'center', opacity: items.length === 1 ? .25 : 1 }}
+                              disabled={items.length === 1}
+                              onClick={() => removeItem(item.id)}>×</button>
+                          </div>
+                          {isBeer && (
+                            <div style={{ background: '#fffbeb', borderBottom: isLast ? 'none' : '1px solid var(--border-soft)', padding: '6px 12px 8px 28px', display: 'flex', gap: 10, alignItems: 'center' }}>
+                              <span style={{ fontSize: 11.5, color: '#92400e', fontWeight: 600, whiteSpace: 'nowrap' }}>🍺 Frais SAQ :</span>
+                              <select className="co-input" value={item.beerFormat} onChange={e => updItem(item.id, 'beerFormat', e.target.value)} style={{ fontSize: 12, flex: '0 0 auto', width: 190 }}>
+                                <option value="24x65">Casier 24×65 cl (24.50$)</option>
+                                <option value="24x33">Casier 24×33 cl (35.83$)</option>
+                                <option value="12x50">Casier 12×50 cl (21.34$)</option>
+                              </select>
+                              <input className="co-input" type="number" min="0" step="1" value={item.nbCasiers}
+                                onChange={e => updItem(item.id, 'nbCasiers', e.target.value)}
+                                placeholder="Nb casiers" style={{ width: 100 }} />
+                            </div>
+                          )}
                         </div>
                       );
                     })}
@@ -834,7 +989,7 @@ export default function BookingScreen({ onNav, embedded = false }) {
                       )}
                       {totalKg <= 3 && (
                         <span style={{ color: 'var(--ok-600)', fontSize: 12, fontWeight: 600 }}>
-                          ≤ 3 kg — forfait {route.fees.flatUpTo3kg} {route.currency}
+                          ≤ 3 kg — forfait {(route.fees.tiers?.[0]?.transportFlat ?? route.fees.flatUpTo3kg ?? 50)} {route.currency}
                         </span>
                       )}
                     </div>
@@ -845,11 +1000,11 @@ export default function BookingScreen({ onNav, embedded = false }) {
                     <div className="co-label" style={{ marginBottom: 10 }}>Accessoires (optionnel)</div>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                       {[
-                        { key: 'smallBag',  label: 'Petit sac',   unitPrice: route.fees.addons.smallBag,  icon: '🛍️' },
-                        { key: 'mediumBag', label: 'Moyen sac',   unitPrice: route.fees.addons.mediumBag, icon: '🛍️' },
-                        { key: 'largeBag',  label: 'Grand sac',   unitPrice: route.fees.addons.largeBag,  icon: '🛍️' },
-                        { key: 'cartons',   label: 'Carton',      unitPrice: totalKg <= 3 ? route.fees.cartonBase : route.fees.cartonPerUnit, icon: '📦',
-                          sub: totalKg <= 3 ? `${route.fees.cartonBase} ${route.currency} / carton` : `${route.fees.cartonPerUnit} ${route.currency} / carton (> 3 kg)` },
+                        { key: 'smallBag',  label: 'Petit sac',   unitPrice: route.fees.bags?.small  ?? route.fees.addons?.smallBag  ?? 5,   icon: '🛍️' },
+                        { key: 'mediumBag', label: 'Moyen sac',   unitPrice: route.fees.bags?.medium ?? route.fees.addons?.mediumBag ?? 7.5, icon: '🛍️' },
+                        { key: 'largeBag',  label: 'Grand sac',   unitPrice: route.fees.bags?.large  ?? route.fees.addons?.largeBag  ?? 10,  icon: '🛍️' },
+                        { key: 'cartons',   label: 'Carton',      unitPrice: totalKg <= 3 ? (route.fees.tiers?.[0]?.cartonFlat ?? 1) : (route.fees.tiers?.[1]?.cartonPerUnit ?? 1.5), icon: '📦',
+                          sub: totalKg <= 3 ? `${route.fees.tiers?.[0]?.cartonFlat ?? 1} ${route.currency} / carton` : `${route.fees.tiers?.[1]?.cartonPerUnit ?? 1.5} ${route.currency} / carton (> 3 kg)` },
                       ].map(({ key, label, unitPrice, icon, sub }) => (
                         <div key={key} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', background: 'var(--bg-soft)', border: '1.5px solid var(--border)', borderRadius: 'var(--radius)' }}>
                           <div>
@@ -869,7 +1024,7 @@ export default function BookingScreen({ onNav, embedded = false }) {
                     <div style={{ background: 'var(--brand-50)', border: '1.5px solid var(--brand-100)', borderRadius: 'var(--radius)', padding: '14px 16px' }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: showBreakdown ? 12 : 0 }}>
                         <span style={{ fontSize: 13.5, fontWeight: 700, color: 'var(--brand-700)' }}>
-                          Estimation : {price.total.toFixed(0)} {route.currency}
+                          Estimation : {price.prixClient.toFixed(0)} {route.currency}
                         </span>
                         <button onClick={() => setShowBreakdown(b => !b)}
                           style={{ fontSize: 11.5, color: 'var(--brand-600)', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 600 }}>
@@ -878,32 +1033,36 @@ export default function BookingScreen({ onNav, embedded = false }) {
                       </div>
                       {showBreakdown && (
                         <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-                          {/* Base forfait */}
-                          <div style={{ fontSize: 10.5, fontWeight: 700, letterSpacing: '.08em', textTransform: 'uppercase', color: 'var(--brand-500)', marginBottom: 4 }}>
-                            Transport — {price.billedKg} kg — {price.baseShipping.toFixed(0)} {route.currency}
+                          {/* Transport */}
+                          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12.5, color: 'var(--ink-700)', fontWeight: 600 }}>
+                            <span>Transport ({price.totalKg} kg)</span><span>{price.transport.toFixed(0)} {route.currency}</span>
                           </div>
-                          {[
-                            ['Frais de base',           price.breakdown.base],
-                            ['Frais de douane',          price.breakdown.customs],
-                            ['Carton / manutention',     price.breakdown.carton],
-                            ['Formalités',               price.breakdown.formality],
-                            ['Frais de service',         price.breakdown.service],
-                          ].map(([k, v]) => (
-                            <div key={k} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: 'var(--ink-600)', paddingLeft: 10 }}>
-                              <span>{k}</span><span>{v} {route.currency}</span>
-                            </div>
-                          ))}
 
                           {/* Surcharges catégories */}
                           {price.catSurchargeLines.length > 0 && (
                             <>
-                              <div style={{ fontSize: 10.5, fontWeight: 700, letterSpacing: '.08em', textTransform: 'uppercase', color: 'var(--brand-500)', marginTop: 6, marginBottom: 2 }}>
-                                Suppléments catégories — {price.catSurchargeTotal >= 0 ? '+' : ''}{price.catSurchargeTotal.toFixed(0)} {route.currency}
+                              <div style={{ fontSize: 10.5, fontWeight: 700, letterSpacing: '.08em', textTransform: 'uppercase', color: 'var(--brand-500)', marginTop: 4, marginBottom: 2 }}>
+                                Suppléments
                               </div>
                               {price.catSurchargeLines.map(l => (
                                 <div key={l.catId} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: 'var(--ink-600)', paddingLeft: 10 }}>
-                                  <span>{l.label} ({l.kg} kg × {l.extra >= 0 ? '+' : ''}{l.extra} {route.currency}/kg)</span>
+                                  <span>{l.label} ({l.kg} kg × {l.rate >= 0 ? '+' : ''}{l.rate} {route.currency}/kg)</span>
                                   <span>{l.amount >= 0 ? '+' : ''}{l.amount.toFixed(0)} {route.currency}</span>
+                                </div>
+                              ))}
+                            </>
+                          )}
+
+                          {/* SAQ */}
+                          {price.saqLines?.length > 0 && (
+                            <>
+                              <div style={{ fontSize: 10.5, fontWeight: 700, letterSpacing: '.08em', textTransform: 'uppercase', color: 'var(--brand-500)', marginTop: 4, marginBottom: 2 }}>
+                                Frais SAQ
+                              </div>
+                              {price.saqLines.map((l, i) => (
+                                <div key={i} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: 'var(--ink-600)', paddingLeft: 10 }}>
+                                  <span>Casier {l.format} × {l.nbCasiers}</span>
+                                  <span>+{l.amount.toFixed(2)} {route.currency}</span>
                                 </div>
                               ))}
                             </>
@@ -912,17 +1071,37 @@ export default function BookingScreen({ onNav, embedded = false }) {
                           {/* Accessoires */}
                           {price.addonTotal > 0 && (
                             <>
-                              <div style={{ fontSize: 10.5, fontWeight: 700, letterSpacing: '.08em', textTransform: 'uppercase', color: 'var(--brand-500)', marginTop: 6, marginBottom: 2 }}>
-                                Accessoires — {price.addonTotal} {route.currency}
+                              <div style={{ fontSize: 10.5, fontWeight: 700, letterSpacing: '.08em', textTransform: 'uppercase', color: 'var(--brand-500)', marginTop: 4, marginBottom: 2 }}>
+                                Accessoires
                               </div>
-                              {price.addonSmall  > 0 && <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: 'var(--ink-600)', paddingLeft: 10 }}><span>Petits sacs × {form.addons.smallBag}</span><span>{price.addonSmall} {route.currency}</span></div>}
-                              {price.addonMedium > 0 && <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: 'var(--ink-600)', paddingLeft: 10 }}><span>Moyens sacs × {form.addons.mediumBag}</span><span>{price.addonMedium} {route.currency}</span></div>}
-                              {price.addonLarge  > 0 && <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: 'var(--ink-600)', paddingLeft: 10 }}><span>Grands sacs × {form.addons.largeBag}</span><span>{price.addonLarge} {route.currency}</span></div>}
-                              {price.cartonFee  > 0 && <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: 'var(--ink-600)', paddingLeft: 10 }}><span>Cartons × {form.addons.cartons} ({price.cartonRate} {route.currency}/u)</span><span>{price.cartonFee.toFixed(2)} {route.currency}</span></div>}
+                              {price.addonSmall  > 0 && <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: 'var(--ink-600)', paddingLeft: 10 }}><span>Petits sacs × {form.addons.smallBag}</span><span>{price.addonSmall.toFixed(0)} {route.currency}</span></div>}
+                              {price.addonMedium > 0 && <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: 'var(--ink-600)', paddingLeft: 10 }}><span>Moyens sacs × {form.addons.mediumBag}</span><span>{price.addonMedium.toFixed(0)} {route.currency}</span></div>}
+                              {price.addonLarge  > 0 && <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: 'var(--ink-600)', paddingLeft: 10 }}><span>Grands sacs × {form.addons.largeBag}</span><span>{price.addonLarge.toFixed(0)} {route.currency}</span></div>}
+                              {price.carton > 0 && <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: 'var(--ink-600)', paddingLeft: 10 }}><span>Cartons × {form.addons.cartons} ({price.cartonRate} {route.currency}/u)</span><span>{price.carton.toFixed(2)} {route.currency}</span></div>}
                             </>
+                          )}
+
+                          {/* Manutention / Douane / Formalités */}
+                          {price.manutention > 0 && (
+                            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: 'var(--ink-600)' }}>
+                              <span>Manutention</span><span>{price.manutention.toFixed(2)} {route.currency}</span>
+                            </div>
+                          )}
+                          {price.douane > 0 && (
+                            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: 'var(--ink-600)' }}>
+                              <span>Douane</span><span>{price.douane.toFixed(2)} {route.currency}</span>
+                            </div>
+                          )}
+                          {price.formalites > 0 && (
+                            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: 'var(--ink-600)' }}>
+                              <span>Formalités</span><span>{price.formalites.toFixed(2)} {route.currency}</span>
+                            </div>
                           )}
                         </div>
                       )}
+                      <div style={{ marginTop: 10, fontSize: 11.5, color: 'var(--brand-600)', fontStyle: 'italic' }}>
+                        Prix indicatif — le montant final sera calculé après réception et pesage réel en entrepôt.
+                      </div>
                     </div>
                   )}
                 </div>
@@ -1007,8 +1186,8 @@ export default function BookingScreen({ onNav, embedded = false }) {
                           </div>
                         </div>
                         <span className="co-opt__badge">
-                          {cityZone === 'montreal-ile'   ? `+${route.fees.montrealIleDelivery} ${route.currency}`   :
-                           cityZone === 'montreal-grand' ? `+${route.fees.montrealGrandDelivery} ${route.currency}` : 'À évaluer'}
+                          {cityZone === 'montreal-ile'   ? `+${route.fees.montrealIleDelivery   ?? 25} ${route.currency}`   :
+                           cityZone === 'montreal-grand' ? `+${route.fees.montrealGrandDelivery ?? 30} ${route.currency}` : 'À évaluer'}
                         </span>
                       </button>
 
@@ -1105,20 +1284,24 @@ export default function BookingScreen({ onNav, embedded = false }) {
                       {/* Transport */}
                       <div style={{ marginBottom: 14 }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13.5, fontWeight: 700, color: 'var(--ink-800)', marginBottom: 6 }}>
-                          <span>Frais de transport — {price.billedKg} kg</span>
-                          <span>{price.baseShipping.toFixed(0)} {route.currency}</span>
+                          <span>Transport — {price.totalKg} kg</span>
+                          <span>{price.transport.toFixed(0)} {route.currency}</span>
                         </div>
-                        {[
-                          ['Frais de base',           price.breakdown.base],
-                          ['Frais de douane',          price.breakdown.customs],
-                          ['Carton / manutention',     price.breakdown.carton],
-                          ["Formalités d'expédition",  price.breakdown.formality],
-                          ['Frais de service',         price.breakdown.service],
-                        ].map(([k, v]) => (
-                          <div key={k} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: 'var(--ink-500)', paddingLeft: 14, marginBottom: 2 }}>
-                            <span>{k}</span><span>{v} {route.currency}</span>
+                        {price.manutention > 0 && (
+                          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: 'var(--ink-500)', paddingLeft: 14, marginBottom: 2 }}>
+                            <span>Manutention</span><span>{price.manutention.toFixed(2)} {route.currency}</span>
                           </div>
-                        ))}
+                        )}
+                        {price.douane > 0 && (
+                          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: 'var(--ink-500)', paddingLeft: 14, marginBottom: 2 }}>
+                            <span>Douane</span><span>{price.douane.toFixed(2)} {route.currency}</span>
+                          </div>
+                        )}
+                        {price.formalites > 0 && (
+                          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: 'var(--ink-500)', paddingLeft: 14, marginBottom: 2 }}>
+                            <span>Formalités</span><span>{price.formalites.toFixed(2)} {route.currency}</span>
+                          </div>
+                        )}
                       </div>
 
                       {/* Suppléments catégories */}
@@ -1130,8 +1313,24 @@ export default function BookingScreen({ onNav, embedded = false }) {
                           </div>
                           {price.catSurchargeLines.map(l => (
                             <div key={l.catId} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: 'var(--ink-500)', paddingLeft: 14, marginBottom: 2 }}>
-                              <span>{l.label} — {l.kg} kg × {l.extra >= 0 ? '+' : ''}{l.extra} {route.currency}/kg</span>
+                              <span>{l.label} — {l.kg} kg × {l.rate >= 0 ? '+' : ''}{l.rate} {route.currency}/kg</span>
                               <span>{l.amount >= 0 ? '+' : ''}{l.amount.toFixed(0)} {route.currency}</span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+
+                      {/* Frais SAQ */}
+                      {price.saqLines?.length > 0 && (
+                        <div style={{ borderTop: '1px solid var(--border-soft)', paddingTop: 12, marginBottom: 14 }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13.5, fontWeight: 700, color: 'var(--ink-800)', marginBottom: 4 }}>
+                            <span>Frais SAQ</span>
+                            <span>+{price.saqTotal.toFixed(2)} {route.currency}</span>
+                          </div>
+                          {price.saqLines.map((l, i) => (
+                            <div key={i} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: 'var(--ink-500)', paddingLeft: 14, marginBottom: 2 }}>
+                              <span>Casier {l.format} × {l.nbCasiers}</span>
+                              <span>+{l.amount.toFixed(2)} {route.currency}</span>
                             </div>
                           ))}
                         </div>
@@ -1143,10 +1342,10 @@ export default function BookingScreen({ onNav, embedded = false }) {
                           <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13.5, fontWeight: 700, color: 'var(--ink-800)', marginBottom: 4 }}>
                             <span>Accessoires</span><span>{price.addonTotal.toFixed(2)} {route.currency}</span>
                           </div>
-                          {price.addonSmall  > 0 && <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: 'var(--ink-500)', paddingLeft: 14, marginBottom: 2 }}><span>Petits sacs × {form.addons.smallBag}</span><span>{price.addonSmall} {route.currency}</span></div>}
-                          {price.addonMedium > 0 && <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: 'var(--ink-500)', paddingLeft: 14, marginBottom: 2 }}><span>Moyens sacs × {form.addons.mediumBag}</span><span>{price.addonMedium} {route.currency}</span></div>}
-                          {price.addonLarge  > 0 && <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: 'var(--ink-500)', paddingLeft: 14, marginBottom: 2 }}><span>Grands sacs × {form.addons.largeBag}</span><span>{price.addonLarge} {route.currency}</span></div>}
-                          {price.cartonFee   > 0 && <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: 'var(--ink-500)', paddingLeft: 14 }}><span>Cartons × {form.addons.cartons} ({price.cartonRate} {route.currency}/u)</span><span>{price.cartonFee.toFixed(2)} {route.currency}</span></div>}
+                          {price.addonSmall  > 0 && <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: 'var(--ink-500)', paddingLeft: 14, marginBottom: 2 }}><span>Petits sacs × {form.addons.smallBag}</span><span>{price.addonSmall.toFixed(0)} {route.currency}</span></div>}
+                          {price.addonMedium > 0 && <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: 'var(--ink-500)', paddingLeft: 14, marginBottom: 2 }}><span>Moyens sacs × {form.addons.mediumBag}</span><span>{price.addonMedium.toFixed(0)} {route.currency}</span></div>}
+                          {price.addonLarge  > 0 && <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: 'var(--ink-500)', paddingLeft: 14, marginBottom: 2 }}><span>Grands sacs × {form.addons.largeBag}</span><span>{price.addonLarge.toFixed(0)} {route.currency}</span></div>}
+                          {price.carton > 0 && <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: 'var(--ink-500)', paddingLeft: 14 }}><span>Cartons × {form.addons.cartons} ({price.cartonRate} {route.currency}/u)</span><span>{price.carton.toFixed(2)} {route.currency}</span></div>}
                         </div>
                       )}
 
@@ -1204,7 +1403,7 @@ export default function BookingScreen({ onNav, embedded = false }) {
                     {[
                       ['Envoyer à',            'paiement@jumla.cargo',             false],
                       ['Depuis votre adresse', effectiveUser?.email ?? '',            true ],
-                      ['Montant',              `${price?.total.toFixed(0)} ${route?.currency}`, false],
+                      ['Montant',              `${price?.total?.toFixed(0)} ${route?.currency}`, false],
                       ['Message / Référence',  refCode,                             false],
                     ].map(([k, v, highlight], idx) => (
                       <div key={k} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '11px 16px', borderBottom: idx < 3 ? '1px solid var(--border-soft)' : 'none', background: highlight ? 'var(--brand-50)' : 'transparent' }}>
@@ -1254,6 +1453,7 @@ export default function BookingScreen({ onNav, embedded = false }) {
                     {step === STEPS.length - 1
                       ? `Payer ${price ? price.total.toFixed(0) + ' ' + route.currency : ''} →`
                       : 'Continuer →'}
+
                   </button>
                 </div>
               )}

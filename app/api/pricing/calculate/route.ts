@@ -1,48 +1,49 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { calculatePrice, PricingInput, ProductType } from '@/src/lib/pricing';
+import {
+  calculatePrice, calculateFromFees,
+  DEFAULT_ROUTE_FEES,
+  PricingInput, ProductType,
+  LineItem, Addons, RouteFees, RouteTier,
+} from '@/src/lib/pricing';
 import { prisma } from '@/src/lib/prisma';
 
 export const dynamic = 'force-dynamic';
 
-const VALID_PRODUCT_TYPES: ProductType[] = [
-  'standard',
-  'biere',
-  'manioc_huile',
-  'cosmetique',
-  'vetements',
-];
+const VALID_LEGACY_TYPES: ProductType[] = ['standard', 'biere', 'manioc_huile', 'cosmetique', 'vetements'];
 
-// Extra per kg by product type (matches Booking.jsx ITEM_CATEGORIES)
-const EXTRA_PER_KG: Record<string, number> = {
-  standard:    0,
-  vetements:   2,
-  cosmetique:  3,
-  alimentaire: 0,
-  biere:       6,
-  manioc_huile: 0,
-  electronique: 5,
-  documents:   -2,
-};
-
-function roundUpToHalfKg(kg: number): number {
-  return Math.ceil(kg * 2) / 2;
+function mergeRouteFees(base: RouteFees, override: Partial<RouteFees>): RouteFees {
+  return {
+    tiers:       override.tiers?.length        ? override.tiers       : base.tiers,
+    bags:        override.bags                  ? { ...base.bags,        ...override.bags }        : base.bags,
+    plastic:     override.plastic    !== undefined ? override.plastic    : base.plastic,
+    saq:         override.saq                   ? { ...base.saq,         ...override.saq }         : base.saq,
+    supplements: override.supplements           ? { ...base.supplements, ...override.supplements } : base.supplements,
+    marginPct:   override.marginPct  !== undefined ? override.marginPct  : base.marginPct,
+    deliveryFee: override.deliveryFee !== undefined ? override.deliveryFee : base.deliveryFee,
+  };
 }
 
-function calcBaseShipping(tiers: { from: number; to: number; flat: number }[], billedKg: number): number {
-  const tier = tiers.find(t => billedKg >= t.from && billedKg <= t.to);
-  if (tier) return tier.flat;
-  // Weight exceeds all defined tiers — extrapolate from marginal rate of last two tiers
-  const last = tiers[tiers.length - 1];
-  const prev = tiers[tiers.length - 2];
-  const ratePerHalfKg = prev && (last.to - last.from) > 0
-    ? Math.max(1, (last.flat - prev.flat) / ((last.to - last.from) / 0.5))
-    : 9;
-  const extraIncrements = Math.ceil((billedKg - last.to) / 0.5);
-  return last.flat + extraIncrements * ratePerHalfKg;
-}
-
-function r2(n: number): number {
-  return Math.round(n * 100) / 100;
+function normalizeTier(raw: Record<string, unknown>): RouteTier {
+  const from = parseFloat(raw.from as string) || 0;
+  const to   = parseFloat(raw.to   as string) || 0;
+  // Old format used { flat } — treat as transportFlat only
+  if (raw.flat !== undefined && raw.transportFlat === undefined && raw.transportPerKg === undefined) {
+    return { from, to, transportFlat: parseFloat(raw.flat as string) || 0 };
+  }
+  return {
+    from, to,
+    ...(raw.transportFlat      !== undefined ? { transportFlat:      Number(raw.transportFlat)      } : {}),
+    ...(raw.transportPerKg     !== undefined ? { transportPerKg:     Number(raw.transportPerKg)     } : {}),
+    ...(raw.cartonFlat         !== undefined ? { cartonFlat:         Number(raw.cartonFlat)         } : {}),
+    ...(raw.cartonPerUnit      !== undefined ? { cartonPerUnit:      Number(raw.cartonPerUnit)      } : {}),
+    ...(raw.manutentionFlat    !== undefined ? { manutentionFlat:    Number(raw.manutentionFlat)    } : {}),
+    ...(raw.manutentionPerUnit !== undefined ? { manutentionPerUnit: Number(raw.manutentionPerUnit) } : {}),
+    ...(raw.manutentionMin     !== undefined ? { manutentionMin:     Number(raw.manutentionMin)     } : {}),
+    ...(raw.douaneFlat         !== undefined ? { douaneFlat:         Number(raw.douaneFlat)         } : {}),
+    ...(raw.douanePerKg        !== undefined ? { douanePerKg:        Number(raw.douanePerKg)        } : {}),
+    ...(raw.formalitesFlat     !== undefined ? { formalitesFlat:     Number(raw.formalitesFlat)     } : {}),
+    ...(raw.formalitesPerKg    !== undefined ? { formalitesPerKg:    Number(raw.formalitesPerKg)    } : {}),
+  };
 }
 
 export async function POST(req: NextRequest) {
@@ -55,8 +56,71 @@ export async function POST(req: NextRequest) {
 
   const data = body as Record<string, unknown>;
 
+  const routeId         = data.routeId    as string | undefined;
+  const campaignId      = data.campaignId as string | undefined;
+  const marginPctInput  = data.marginPct !== undefined ? Number(data.marginPct) : undefined;
+
+  // ── Fetch route fees ─────────────────────────────────────────────────────
+  let rawRouteFees: Record<string, unknown> | null = null;
+  if (routeId || campaignId) {
+    try {
+      let rows: { fees: unknown }[] = [];
+      if (routeId) {
+        rows = await prisma.$queryRawUnsafe<{ fees: unknown }[]>(
+          `SELECT fees FROM routes WHERE id = $1`, routeId,
+        );
+      } else if (campaignId) {
+        rows = await prisma.$queryRawUnsafe<{ fees: unknown }[]>(
+          `SELECT r.fees FROM campaigns c JOIN routes r ON r.id = c."routeId" WHERE c.id = $1`, campaignId,
+        );
+      }
+      if (rows[0]?.fees) {
+        rawRouteFees = typeof rows[0].fees === 'string'
+          ? JSON.parse(rows[0].fees)
+          : rows[0].fees as Record<string, unknown>;
+      }
+    } catch {
+      // Column not yet migrated — fall back to defaults
+    }
+  }
+
+  // ── Merge route fees over defaults ───────────────────────────────────────
+  let effectiveFees: RouteFees = DEFAULT_ROUTE_FEES;
+  if (rawRouteFees) {
+    const partial: Partial<RouteFees> = {};
+    if (Array.isArray(rawRouteFees.tiers) && rawRouteFees.tiers.length > 0) {
+      partial.tiers = (rawRouteFees.tiers as Record<string, unknown>[])
+        .map(normalizeTier)
+        .filter(t => t.to >= t.from)
+        .sort((a, b) => a.from - b.from);
+    }
+    if (rawRouteFees.bags)         partial.bags         = rawRouteFees.bags as RouteFees['bags'];
+    if (rawRouteFees.supplements)  partial.supplements  = rawRouteFees.supplements as RouteFees['supplements'];
+    if (rawRouteFees.saq)          partial.saq          = rawRouteFees.saq as RouteFees['saq'];
+    if (rawRouteFees.plastic    !== undefined) partial.plastic    = Number(rawRouteFees.plastic);
+    if (rawRouteFees.marginPct  !== undefined) partial.marginPct  = Number(rawRouteFees.marginPct);
+    if (rawRouteFees.deliveryFee !== undefined) partial.deliveryFee = Number(rawRouteFees.deliveryFee);
+    effectiveFees = mergeRouteFees(DEFAULT_ROUTE_FEES, partial);
+  }
+
+  // ── New API: items[] ─────────────────────────────────────────────────────
+  if (Array.isArray(data.items) && data.items.length > 0) {
+    const items = data.items as LineItem[];
+    const addonsRaw = (data.addons as Record<string, unknown>) ?? {};
+    const addons: Addons = {
+      nbCartons:    Number(addonsRaw.nbCartons    ?? data.nbCartons    ?? 0),
+      nbPetitsSacs: Number(addonsRaw.nbPetitsSacs ?? data.nbPetitsSacs ?? 0),
+      nbSacsMoyens: Number(addonsRaw.nbSacsMoyens ?? data.nbSacsMoyens ?? 0),
+      nbGrandsSacs: Number(addonsRaw.nbGrandsSacs ?? data.nbGrandsSacs ?? 0),
+      nbPlastiques: Number(addonsRaw.nbPlastiques ?? data.nbPlastiques ?? 0),
+    };
+    const breakdown = calculateFromFees(items, effectiveFees, addons, marginPctInput);
+    return NextResponse.json(breakdown);
+  }
+
+  // ── Legacy API: weightKg + productType ───────────────────────────────────
   if (data.weightKg === undefined || data.weightKg === null) {
-    return NextResponse.json({ error: 'weightKg is required' }, { status: 400 });
+    return NextResponse.json({ error: 'items[] or weightKg is required' }, { status: 400 });
   }
 
   const weightKg = Number(data.weightKg);
@@ -64,115 +128,58 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'weightKg must be a positive number' }, { status: 400 });
   }
 
-  if (!data.productType) {
-    return NextResponse.json({ error: 'productType is required' }, { status: 400 });
+  const productType = (data.productType as string) || 'standard';
+
+  // Convert legacy type to new category
+  const legacyCatMap: Record<string, LineItem['category']> = {
+    standard: 'standard', biere: 'biere', manioc_huile: 'manioc_huile',
+    cosmetique: 'cosmetique', vetements: 'vetements',
+    alimentaire: 'standard', electronique: 'electronique', documents: 'documents',
+  };
+  const mappedCat = legacyCatMap[productType] ?? 'standard';
+
+  const legacyItem: LineItem = {
+    category:   mappedCat,
+    weightKg,
+    beerFormat: data.beerFormat as LineItem['beerFormat'] | undefined,
+    nbCasiers:  data.nbCasiers ? Number(data.nbCasiers) : undefined,
+  };
+
+  const addons: Addons = {
+    nbCartons:    Number(data.nbCartons    ?? 0),
+    nbPetitsSacs: Number(data.nbPetitsSacs ?? 0),
+    nbSacsMoyens: Number(data.nbSacsMoyens ?? 0),
+    nbGrandsSacs: Number(data.nbGrandsSacs ?? 0),
+    nbPlastiques: Number(data.nbPlastiques ?? 0),
+  };
+
+  // If route fees were found, always use new engine
+  if (rawRouteFees) {
+    const breakdown = calculateFromFees([legacyItem], effectiveFees, addons, marginPctInput);
+    return NextResponse.json(breakdown);
   }
 
-  const productType = data.productType as string;
-  const marginPct   = Number(data.marginPct ?? 0);
-
-  // Try to fetch route fees if routeId or campaignId provided
-  let routeFees: any = null;
-  const routeId    = data.routeId    as string | undefined;
-  const campaignId = data.campaignId as string | undefined;
-
-  if (routeId || campaignId) {
-    try {
-      let rows: any[] = [];
-      if (routeId) {
-        rows = await prisma.$queryRawUnsafe<any[]>(
-          `SELECT fees FROM routes WHERE id = $1`,
-          routeId,
-        );
-      } else if (campaignId) {
-        rows = await prisma.$queryRawUnsafe<any[]>(
-          `SELECT r.fees FROM campaigns c JOIN routes r ON r.id = c."routeId" WHERE c.id = $1`,
-          campaignId,
-        );
-      }
-      if (rows[0]?.fees) {
-        routeFees = typeof rows[0].fees === 'string' ? JSON.parse(rows[0].fees) : rows[0].fees;
-      }
-    } catch {
-      // Column not yet migrated — fall back to hardcoded pricing
-    }
-  }
-
-  // ── Route-fee-based calculation ──
-  if (routeFees?.tiers?.length) {
-    const tiers = [...routeFees.tiers]
-      .map((t: any) => ({ from: parseFloat(t.from) || 0, to: parseFloat(t.to) || 0, flat: parseFloat(t.flat) || 0 }))
-      .filter((t: any) => t.to >= t.from)
-      .sort((a: any, b: any) => a.from - b.from);
-
-    const bags        = routeFees.bags ?? {};
-    const billedKg    = weightKg <= 3 ? weightKg : roundUpToHalfKg(weightKg);
-    const baseShip    = r2(calcBaseShipping(tiers, billedKg));
-    const catExtra    = r2((EXTRA_PER_KG[productType] ?? 0) * weightKg);
-    const transport   = r2(baseShip + catExtra);
-
-    const nbPetitsSacs  = Number(data.nbPetitsSacs  ?? 0);
-    const nbSacsMoyens  = Number(data.nbSacsMoyens  ?? 0);
-    const nbGrandsSacs  = Number(data.nbGrandsSacs  ?? 0);
-    const nbCartons     = Number(data.nbCartons     ?? 0);
-
-    const smallRate  = bags.small  ?? 5;
-    const mediumRate = bags.medium ?? 7.5;
-    const largeRate  = bags.large  ?? 10;
-    const cartonRate = weightKg <= 3 ? 1 : 1.5;
-
-    const sacs    = r2(nbPetitsSacs * smallRate + nbSacsMoyens * mediumRate + nbGrandsSacs * largeRate);
-    const cartons = r2(nbCartons * cartonRate);
-
-    // Keep beer/plastic fees from hardcoded system (not in route fees grid)
-    const nbPlastiques      = Number(data.nbPlastiques      ?? 0);
-    const nbPlastiquesBiere = Number(data.nbPlastiquesBiere ?? 0);
-    const nbCasiers24x65    = Number(data.nbCasiers24x65    ?? 0);
-    const nbCasiers24x33    = Number(data.nbCasiers24x33    ?? 0);
-    const nbCasiers12x50    = Number(data.nbCasiers12x50    ?? 0);
-    const conditionnement   = r2(0.6 * nbPlastiques + 1.5 * nbPlastiquesBiere);
-    const fraisSAQ          = r2(24.5 * nbCasiers24x65 + 35.83 * nbCasiers24x33 + 21.34 * nbCasiers12x50);
-
-    const sousTotal  = r2(transport + cartons + sacs + conditionnement + fraisSAQ);
-    const marge      = r2(sousTotal * (marginPct / 100));
-    const prixClient = r2(sousTotal + marge);
-
-    return NextResponse.json({
-      transport,
-      cartons,
-      sacs,
-      manutention:    0,
-      douane:         0,
-      formalites:     0,
-      conditionnement,
-      fraisSAQ,
-      sousTotal,
-      marge,
-      prixClient,
-    });
-  }
-
-  // ── Fallback: hardcoded pricing system ──
-  if (!VALID_PRODUCT_TYPES.includes(productType as ProductType)) {
+  // Pure legacy fallback
+  if (!VALID_LEGACY_TYPES.includes(productType as ProductType)) {
     return NextResponse.json(
-      { error: `productType must be one of: ${VALID_PRODUCT_TYPES.join(', ')}` },
-      { status: 400 }
+      { error: `productType must be one of: ${VALID_LEGACY_TYPES.join(', ')}` },
+      { status: 400 },
     );
   }
 
   const input: PricingInput = {
     weightKg,
     productType: productType as ProductType,
-    nbCartons:          Number(data.nbCartons         ?? 0),
-    nbPetitsSacs:       Number(data.nbPetitsSacs      ?? 0),
-    nbSacsMoyens:       Number(data.nbSacsMoyens      ?? 0),
-    nbGrandsSacs:       Number(data.nbGrandsSacs      ?? 0),
-    nbPlastiques:       Number(data.nbPlastiques      ?? 0),
-    nbPlastiquesBiere:  Number(data.nbPlastiquesBiere ?? 0),
-    nbCasiers24x65:     Number(data.nbCasiers24x65    ?? 0),
-    nbCasiers24x33:     Number(data.nbCasiers24x33    ?? 0),
-    nbCasiers12x50:     Number(data.nbCasiers12x50    ?? 0),
-    marginPct,
+    nbCartons:         Number(data.nbCartons         ?? 0),
+    nbPetitsSacs:      Number(data.nbPetitsSacs      ?? 0),
+    nbSacsMoyens:      Number(data.nbSacsMoyens      ?? 0),
+    nbGrandsSacs:      Number(data.nbGrandsSacs      ?? 0),
+    nbPlastiques:      Number(data.nbPlastiques      ?? 0),
+    nbPlastiquesBiere: Number(data.nbPlastiquesBiere ?? 0),
+    nbCasiers24x65:    Number(data.nbCasiers24x65    ?? 0),
+    nbCasiers24x33:    Number(data.nbCasiers24x33    ?? 0),
+    nbCasiers12x50:    Number(data.nbCasiers12x50    ?? 0),
+    marginPct:         marginPctInput ?? 30,
   };
 
   return NextResponse.json(calculatePrice(input));

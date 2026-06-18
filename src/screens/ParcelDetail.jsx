@@ -678,55 +678,99 @@ function BlItemsEditor({ items, onChange, onSave, onCancel }) {
   );
 }
 
+const WEIGHT_CATEGORIES = [
+  { id: 'standard',    label: 'Standard',         icon: '📦' },
+  { id: 'vetements',   label: 'Vêtements',         icon: '👗' },
+  { id: 'cosmetique',  label: 'Cosmétique',        icon: '💄' },
+  { id: 'alimentaire', label: 'Alimentaire',       icon: '🥘' },
+  { id: 'biere',       label: 'Bière',             icon: '🍺' },
+  { id: 'manioc_huile',label: 'Manioc/Huile',      icon: '🌿' },
+  { id: 'electronique',label: 'Électronique',      icon: '📱' },
+  { id: 'documents',   label: 'Documents',         icon: '📄' },
+];
+
+const BEER_FORMATS = [
+  { id: '24x65', label: '24×65 cl — 24.50$' },
+  { id: '24x33', label: '24×33 cl — 35.83$' },
+  { id: '12x50', label: '12×50 cl — 21.34$' },
+];
+
 function WeightModal({ parcel, onClose, onSaved }) {
-  const [items, setItems] = useState(() =>
-    Array.isArray(parcel.items) && parcel.items.length > 0
-      ? parcel.items.map(it => ({ ...it }))
-      : [{ description: parcel.description || '', productType: parcel.productType || 'standard', weightKg: parcel.weightKg || '' }]
-  );
-  const [saving,    setSaving]    = useState(false);
-  const [calcPrice, setCalcPrice] = useState(null);
+  const initItems = () => {
+    if (Array.isArray(parcel.items) && parcel.items.length > 0) {
+      return parcel.items.map(it => ({
+        description: it.description || '',
+        category: it.category || it.productType || 'standard',
+        weightKg: it.weightKg || '',
+        beerFormat: it.beerFormat || '24x65',
+        nbCasiers: it.nbCasiers || '',
+      }));
+    }
+    return [{ description: parcel.description || '', category: parcel.productType || 'standard', weightKg: parcel.weightKg || '', beerFormat: '24x65', nbCasiers: '' }];
+  };
 
-  const totalWeight = items.reduce((s, it) => s + (Number(it.weightKg) || 0), 0);
+  const [items,      setItems]      = useState(initItems);
+  const [addons,     setAddons]     = useState({
+    nbCartons:    parcel.nbCartons    || 0,
+    nbPetitsSacs: parcel.nbPetitsSacs || 0,
+    nbSacsMoyens: parcel.nbSacsMoyens || 0,
+    nbGrandsSacs: parcel.nbGrandsSacs || 0,
+    nbPlastiques: parcel.nbPlastiques || 0,
+  });
+  const [marginPct,  setMarginPct]  = useState(parcel.marginPct ?? 30);
+  const [breakdown,  setBreakdown]  = useState(null);
+  const [saving,     setSaving]     = useState(false);
 
-  // Auto-calculate price when weight changes
+  const updItem   = (idx, k, v) => setItems(its => its.map((it, i) => i === idx ? { ...it, [k]: v } : it));
+  const addItem   = () => setItems(its => [...its, { description: '', category: 'standard', weightKg: '', beerFormat: '24x65', nbCasiers: '' }]);
+  const delItem   = (idx) => setItems(its => its.filter((_, i) => i !== idx));
+  const updAddon  = (k, v) => setAddons(a => ({ ...a, [k]: Number(v) || 0 }));
+
+  // Auto-recalculate on any change
   useEffect(() => {
-    if (!totalWeight) return;
-    const productType = parcel.productType || items[0]?.productType || 'standard';
+    const validItems = items.filter(it => Number(it.weightKg) > 0).map(it => ({
+      description: it.description,
+      category: it.category,
+      weightKg: Number(it.weightKg),
+      beerFormat: it.category === 'biere' ? it.beerFormat : undefined,
+      nbCasiers:  it.category === 'biere' && Number(it.nbCasiers) > 0 ? Number(it.nbCasiers) : undefined,
+    }));
+    if (validItems.length === 0) { setBreakdown(null); return; }
+
+    const ctrl = new AbortController();
     fetch('/api/pricing/calculate', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
+      signal: ctrl.signal,
       body: JSON.stringify({
-        weightKg: totalWeight,
-        productType,
-        routeId:           parcel.campaign?.route?.id ?? undefined,
-        nbCartons:         parcel.nbCartons         || 0,
-        nbPetitsSacs:      parcel.nbPetitsSacs      || 0,
-        nbSacsMoyens:      parcel.nbSacsMoyens       || 0,
-        nbGrandsSacs:      parcel.nbGrandsSacs       || 0,
-        nbPlastiques:      parcel.nbPlastiques       || 0,
-        nbPlastiquesBiere: parcel.nbPlastiquesBiere  || 0,
-        nbCasiers24x65:    parcel.nbCasiers24x65     || 0,
-        nbCasiers24x33:    parcel.nbCasiers24x33     || 0,
-        nbCasiers12x50:    parcel.nbCasiers12x50     || 0,
-        marginPct:         parcel.marginPct ?? 30,
+        items: validItems,
+        addons,
+        routeId: parcel.campaign?.route?.id ?? undefined,
+        marginPct: Number(marginPct) || 0,
       }),
-    }).then(r => r.json()).then(d => setCalcPrice(d.prixClient ? Math.round(d.prixClient) : null)).catch(() => {});
-  }, [totalWeight]);
-
-  const updItem = (idx, k, v) => setItems(its => its.map((it, i) => i === idx ? { ...it, [k]: v } : it));
-  const addItem = () => setItems(its => [...its, { description: '', productType: parcel.productType || 'standard', weightKg: '' }]);
-  const delItem = (idx) => setItems(its => its.filter((_, i) => i !== idx));
+    })
+      .then(r => r.json())
+      .then(d => { if (!ctrl.signal.aborted) setBreakdown(d); })
+      .catch(() => {});
+    return () => ctrl.abort();
+  }, [items, addons, marginPct]);
 
   const handleSave = async () => {
     setSaving(true);
+    const validItems = items.filter(it => Number(it.weightKg) > 0);
     const res = await fetch('/api/parcels/' + parcel.id, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        weightKg: totalWeight || undefined,
-        priceXaf: calcPrice || undefined,
-        items,
+        weightKg: breakdown?.totalKg || undefined,
+        priceXaf: breakdown?.prixClient ? Math.round(breakdown.prixClient) : undefined,
+        items: validItems,
+        marginPct: Number(marginPct) || 0,
+        nbCartons:    addons.nbCartons,
+        nbPetitsSacs: addons.nbPetitsSacs,
+        nbSacsMoyens: addons.nbSacsMoyens,
+        nbGrandsSacs: addons.nbGrandsSacs,
+        nbPlastiques: addons.nbPlastiques,
       }),
     });
     const json = await res.json();
@@ -734,72 +778,199 @@ function WeightModal({ parcel, onClose, onSaved }) {
     if (json.ok) onSaved(json.parcel);
   };
 
-  return (
-    <Modal width={560} onClose={onClose}
-      title="Modifier le contenu déclaré"
-      sub={`${parcel.trackingCode} — Poids total : ${totalWeight.toFixed(2)} kg`}
-      footer={
-        <>
-          <button className="btn btn--ghost" onClick={onClose}>Annuler</button>
-          <button className="btn btn--brand" onClick={handleSave} disabled={saving}>
-            {saving ? 'Enregistrement…' : 'Enregistrer'}
-          </button>
-        </>
-      }>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12.5 }}>
-          <thead>
-            <tr style={{ background: 'var(--bg-soft)' }}>
-              {['Description', 'Type produit', 'Poids (kg)', ''].map(h => (
-                <th key={h} style={{ padding: '6px 8px', textAlign: 'left', fontSize: 10.5, fontWeight: 700, color: 'var(--ink-400)', textTransform: 'uppercase', letterSpacing: '.04em' }}>{h}</th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {items.map((it, idx) => (
-              <tr key={idx} style={{ borderBottom: '1px solid var(--border-soft)' }}>
-                <td style={{ padding: '4px 6px' }}>
-                  <input className="input input--sm" value={it.description ?? ''} onChange={e => updItem(idx, 'description', e.target.value)} placeholder="Ex: Vêtements" />
-                </td>
-                <td style={{ padding: '4px 6px', width: 130 }}>
-                  <select className="select input--sm" value={it.productType ?? 'standard'} onChange={e => updItem(idx, 'productType', e.target.value)}>
-                    <option value="standard">Standard</option>
-                    <option value="biere">Bière</option>
-                    <option value="manioc_huile">Manioc/Huile</option>
-                    <option value="cosmetique">Cosmétique</option>
-                    <option value="vetements">Vêtements</option>
-                  </select>
-                </td>
-                <td style={{ padding: '4px 6px', width: 90 }}>
-                  <input className="input input--sm mono" type="number" min="0" step="0.1" value={it.weightKg ?? ''} onChange={e => updItem(idx, 'weightKg', e.target.value)} placeholder="0.0" />
-                </td>
-                <td style={{ padding: '4px 6px', width: 28 }}>
-                  <button onClick={() => delItem(idx)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--ink-400)', fontSize: 16, lineHeight: 1, padding: '0 4px' }}>×</button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-        <button className="btn btn--ghost btn--sm" onClick={addItem} style={{ alignSelf: 'flex-start' }}>+ Ajouter une ligne</button>
+  const bd = breakdown;
+  const labelCat = (cat) => WEIGHT_CATEGORIES.find(c => c.id === cat)?.label || cat;
 
-        {/* Summary */}
-        <div style={{ background: 'var(--bg-soft)', borderRadius: 8, padding: '12px 14px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+  return (
+    <div style={{ position: 'fixed', inset: 0, zIndex: 1000, background: 'white', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+      {/* Header */}
+      <div style={{ padding: '14px 20px', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
+        <div>
+          <div style={{ fontSize: 16, fontWeight: 700 }}>Poids &amp; Prix — {parcel.trackingCode}</div>
+          <div style={{ fontSize: 12, color: 'var(--ink-400)', marginTop: 2 }}>Calculateur de prix détaillé</div>
+        </div>
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+          <button className="btn btn--ghost" onClick={onClose}>Annuler</button>
+          <button className="btn btn--brand" onClick={handleSave} disabled={saving || !bd}>
+            {saving ? 'Enregistrement…' : 'Appliquer'}
+          </button>
+        </div>
+      </div>
+
+      {/* Body — 2 colonnes */}
+      <div style={{ flex: 1, display: 'grid', gridTemplateColumns: '1fr 340px', overflow: 'hidden' }}>
+
+        {/* Colonne gauche — saisie */}
+        <div style={{ overflowY: 'auto', padding: '20px 24px', display: 'flex', flexDirection: 'column', gap: 20 }}>
+
+          {/* Table articles */}
           <div>
-            <div style={{ fontSize: 10.5, color: 'var(--ink-400)', fontWeight: 700, textTransform: 'uppercase', marginBottom: 4 }}>Poids total</div>
-            <div className="mono" style={{ fontSize: 18, fontWeight: 700 }}>{totalWeight.toFixed(2)} <span style={{ fontSize: 12, color: 'var(--ink-400)' }}>kg</span></div>
+            <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.06em', color: 'var(--ink-400)', marginBottom: 8 }}>Articles</div>
+            <div style={{ border: '1px solid var(--border)', borderRadius: 6, overflow: 'hidden' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12.5 }}>
+                <thead>
+                  <tr style={{ background: 'var(--bg-soft)' }}>
+                    {['Description', 'Catégorie', 'Poids (kg)', ''].map(h => (
+                      <th key={h} style={{ padding: '7px 10px', textAlign: 'left', fontSize: 10.5, fontWeight: 700, color: 'var(--ink-400)', textTransform: 'uppercase', letterSpacing: '.04em', borderBottom: '1px solid var(--border)' }}>{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {items.map((it, idx) => (
+                    <>
+                      <tr key={idx} style={{ borderBottom: it.category === 'biere' ? 'none' : '1px solid var(--border-soft)' }}>
+                        <td style={{ padding: '6px 8px' }}>
+                          <input className="input input--sm" value={it.description} onChange={e => updItem(idx, 'description', e.target.value)} placeholder="Ex: Robes, Bière 33cl…" style={{ width: '100%' }} />
+                        </td>
+                        <td style={{ padding: '6px 8px', width: 165 }}>
+                          <select className="select input--sm" value={it.category} onChange={e => updItem(idx, 'category', e.target.value)} style={{ width: '100%' }}>
+                            {WEIGHT_CATEGORIES.map(c => (
+                              <option key={c.id} value={c.id}>{c.icon} {c.label}</option>
+                            ))}
+                          </select>
+                        </td>
+                        <td style={{ padding: '6px 8px', width: 90 }}>
+                          <input className="input input--sm mono" type="number" min="0" step="0.1" value={it.weightKg} onChange={e => updItem(idx, 'weightKg', e.target.value)} placeholder="0.0" style={{ width: '100%' }} />
+                        </td>
+                        <td style={{ padding: '6px 8px', width: 32 }}>
+                          <button onClick={() => delItem(idx)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--ink-300)', fontSize: 18, lineHeight: 1, padding: '0 4px' }}>×</button>
+                        </td>
+                      </tr>
+                      {it.category === 'biere' && (
+                        <tr key={idx + '-beer'} style={{ borderBottom: '1px solid var(--border-soft)', background: 'var(--warn-50)' }}>
+                          <td colSpan={4} style={{ padding: '6px 8px 8px 24px' }}>
+                            <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+                              <span style={{ fontSize: 11, color: 'var(--warn-700)', fontWeight: 600 }}>🍺 Frais SAQ :</span>
+                              <select className="select input--sm" value={it.beerFormat} onChange={e => updItem(idx, 'beerFormat', e.target.value)} style={{ width: 200 }}>
+                                {BEER_FORMATS.map(f => <option key={f.id} value={f.id}>{f.label}</option>)}
+                              </select>
+                              <input className="input input--sm mono" type="number" min="0" step="1" value={it.nbCasiers} onChange={e => updItem(idx, 'nbCasiers', e.target.value)} placeholder="Nb casiers" style={{ width: 90 }} />
+                            </div>
+                          </td>
+                        </tr>
+                      )}
+                    </>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <button className="btn btn--ghost btn--sm" onClick={addItem} style={{ marginTop: 8 }}>+ Ajouter une ligne</button>
           </div>
+
+          {/* Emballages */}
           <div>
-            <div style={{ fontSize: 10.5, color: 'var(--ink-400)', fontWeight: 700, textTransform: 'uppercase', marginBottom: 4 }}>Prix calculé</div>
-            <div className="mono" style={{ fontSize: 18, fontWeight: 700, color: calcPrice ? 'var(--ok-700)' : 'var(--ink-300)' }}>
-              {calcPrice ? calcPrice.toLocaleString('fr') : '—'} <span style={{ fontSize: 12, color: 'var(--ink-400)' }}>CAD</span>
+            <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.06em', color: 'var(--ink-400)', marginBottom: 8 }}>Emballages</div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10 }}>
+              {[
+                { key: 'nbCartons',    label: 'Cartons',      icon: '📦' },
+                { key: 'nbPetitsSacs', label: 'Petits sacs',  icon: '🛍️' },
+                { key: 'nbSacsMoyens', label: 'Moyens sacs',  icon: '🛍️' },
+                { key: 'nbGrandsSacs', label: 'Grands sacs',  icon: '🛍️' },
+                { key: 'nbPlastiques', label: 'Plastiques',   icon: '📦' },
+              ].map(({ key, label, icon }) => (
+                <div key={key} style={{ background: 'var(--bg-soft)', border: '1px solid var(--border)', borderRadius: 6, padding: '10px 12px' }}>
+                  <div style={{ fontSize: 11, color: 'var(--ink-500)', marginBottom: 6 }}>{icon} {label}</div>
+                  <input className="input input--sm mono" type="number" min="0" value={addons[key]} onChange={e => updAddon(key, e.target.value)} style={{ width: '100%' }} />
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Marge */}
+          <div>
+            <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.06em', color: 'var(--ink-400)', marginBottom: 8 }}>Marge</div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <input className="input mono" type="number" min="0" max="200" step="1" value={marginPct} onChange={e => setMarginPct(e.target.value)} style={{ width: 90 }} />
+              <span style={{ fontSize: 13, color: 'var(--ink-500)' }}>%</span>
             </div>
           </div>
         </div>
-        <div style={{ fontSize: 11.5, color: 'var(--info-600)', background: 'var(--info-50)', padding: '8px 12px', borderRadius: 6 }}>
-          Le prix est recalculé automatiquement à partir du poids total et du type de produit.
+
+        {/* Colonne droite — breakdown sticky */}
+        <div style={{ background: '#f8f9fa', borderLeft: '1px solid var(--border)', overflowY: 'auto', padding: '20px 18px', display: 'flex', flexDirection: 'column', gap: 0 }}>
+          <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.06em', color: 'var(--ink-400)', marginBottom: 14 }}>Détail du prix</div>
+
+          {!bd ? (
+            <div style={{ fontSize: 13, color: 'var(--ink-400)', fontStyle: 'italic' }}>Saisir les poids pour voir le calcul.</div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
+              {/* Ligne helper */}
+              {[
+                ['Transport', bd.transport],
+              ].map(([label, val]) => (
+                <div key={label} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12.5, padding: '5px 0', color: 'var(--ink-700)' }}>
+                  <span>{label} ({bd.totalKg} kg)</span><span className="mono">{val?.toFixed(2)} $</span>
+                </div>
+              ))}
+
+              {/* Supplements */}
+              {bd.supplements?.map(s => (
+                <div key={s.category} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, padding: '4px 0', color: 'var(--ink-600)', paddingLeft: 10 }}>
+                  <span>Suppl. {labelCat(s.category)} ({s.kg} kg × {s.rate >= 0 ? '+' : ''}{s.rate}$/kg)</span>
+                  <span className="mono">{s.amount >= 0 ? '+' : ''}{s.amount?.toFixed(2)} $</span>
+                </div>
+              ))}
+
+              {/* SAQ */}
+              {bd.saqLines?.map((l, i) => (
+                <div key={i} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, padding: '4px 0', color: 'var(--warn-700)', paddingLeft: 10 }}>
+                  <span>SAQ {l.format} × {l.nbCasiers} casiers</span>
+                  <span className="mono">+{l.amount?.toFixed(2)} $</span>
+                </div>
+              ))}
+
+              {bd.carton > 0 && (
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, padding: '4px 0', color: 'var(--ink-600)' }}>
+                  <span>Carton</span><span className="mono">{bd.carton?.toFixed(2)} $</span>
+                </div>
+              )}
+              {bd.sacs > 0 && (
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, padding: '4px 0', color: 'var(--ink-600)' }}>
+                  <span>Sacs</span><span className="mono">{bd.sacs?.toFixed(2)} $</span>
+                </div>
+              )}
+              {bd.manutention > 0 && (
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, padding: '4px 0', color: 'var(--ink-600)' }}>
+                  <span>Manutention</span><span className="mono">{bd.manutention?.toFixed(2)} $</span>
+                </div>
+              )}
+              {bd.douane > 0 && (
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, padding: '4px 0', color: 'var(--ink-600)' }}>
+                  <span>Douane</span><span className="mono">{bd.douane?.toFixed(2)} $</span>
+                </div>
+              )}
+              {bd.formalites > 0 && (
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, padding: '4px 0', color: 'var(--ink-600)' }}>
+                  <span>Formalités</span><span className="mono">{bd.formalites?.toFixed(2)} $</span>
+                </div>
+              )}
+              {bd.plastic > 0 && (
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, padding: '4px 0', color: 'var(--ink-600)' }}>
+                  <span>Conditionnement</span><span className="mono">{bd.plastic?.toFixed(2)} $</span>
+                </div>
+              )}
+
+              {/* Séparateur */}
+              <div style={{ borderTop: '1.5px solid var(--border)', margin: '10px 0' }} />
+
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, padding: '4px 0', color: 'var(--ink-700)' }}>
+                <span>Sous-total</span><span className="mono">{bd.sousTotal?.toFixed(2)} $</span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, padding: '4px 0', color: 'var(--ink-600)' }}>
+                <span>Marge ({bd.marginPct}%)</span><span className="mono">+{bd.marge?.toFixed(2)} $</span>
+              </div>
+
+              <div style={{ borderTop: '2px solid var(--ink-900)', margin: '10px 0' }} />
+
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 16, fontWeight: 800, color: 'var(--ink-900)', padding: '4px 0' }}>
+                <span>Prix client</span>
+                <span className="mono">{bd.prixClient?.toFixed(2)} $</span>
+              </div>
+            </div>
+          )}
         </div>
       </div>
-    </Modal>
+    </div>
   );
 }
 
