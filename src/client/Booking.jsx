@@ -939,7 +939,7 @@ export default function BookingScreen({ onNav, embedded = false }) {
                       <strong style={{ color: 'var(--ink-900)' }}>{totalKg} kg</strong>
                       {totalKg > 3 && (
                         <span style={{ color: 'var(--ink-400)', fontSize: 12 }}>
-                          → facturé {roundUpToHalfKg(totalKg)} kg
+                          → facturé {Math.ceil(totalKg * 2) / 2} kg
                         </span>
                       )}
                       {totalKg <= 3 && (
