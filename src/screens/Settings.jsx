@@ -812,7 +812,7 @@ function RouteEditModal({ editRoute, onClose, onSaved }) {
     <div style={{ position: 'fixed', inset: 0, zIndex: 1000, background: 'white', overflowY: 'auto', display: 'flex', flexDirection: 'column' }}>
       {/* Header sticky */}
       <div style={{ position: 'sticky', top: 0, zIndex: 10, background: 'white', borderBottom: '1px solid var(--border)', padding: '0 24px', height: 56, display: 'flex', alignItems: 'center', gap: 16, flexShrink: 0 }}>
-        <button className="btn btn--ghost btn--sm" onClick={onClose}><I.ChevronLeft />Retour</button>
+        <button className="btn btn--ghost btn--sm" onClick={onClose}><I.ArrowLeft />Retour</button>
         <div style={{ flex: 1, fontSize: 15, fontWeight: 700 }}>{isNew ? 'Nouvelle route' : `Modifier — ${r?.label ?? r?.code ?? ''}`}</div>
         {err && <span style={{ fontSize: 12, color: 'var(--bad-700)' }}>{err}</span>}
         <button className="btn btn--brand" onClick={handleSave} disabled={saving}><I.Check />{saving ? 'Enregistrement…' : 'Enregistrer'}</button>
@@ -1086,14 +1086,28 @@ export default function SettingsScreen({ onNav }) {
 
   const messageriGroupOpen = openGroup === 'messagerie' || section === 'whatsapp' || section === 'auto';
 
+  useEffect(() => {
+    const handler = (e) => {
+      const id = e.detail;
+      setSection(id);
+      setOpenGroup(['whatsapp', 'auto'].includes(id) ? 'messagerie' : null);
+    };
+    window.addEventListener('jumla:nav-settings', handler);
+    return () => window.removeEventListener('jumla:nav-settings', handler);
+  }, []);
+
   const handleNavFlat = (id) => {
     setSection(id);
     setOpenGroup(null);
+    history.pushState({}, '', `/admin/settings?tab=${id}`);
+    window.dispatchEvent(new CustomEvent('jumla:nav-settings', { detail: id }));
   };
 
   const handleNavSub = (id) => {
     setSection(id);
     setOpenGroup('messagerie');
+    history.pushState({}, '', `/admin/settings?tab=${id}`);
+    window.dispatchEvent(new CustomEvent('jumla:nav-settings', { detail: id }));
   };
 
   return (

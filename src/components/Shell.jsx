@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, Fragment } from 'react';
 import { useSession, signOut } from 'next-auth/react';
 import I from './Icons.jsx';
 
@@ -105,6 +105,27 @@ export function Sidebar({ route, onNav }) {
   ];
 
   const isActive = (r) => route === r || route.startsWith(r + '/');
+  const onSettings = isActive('/admin/settings');
+
+  const [settingsTab, setSettingsTab] = useState(() =>
+    typeof window !== 'undefined' ? (new URLSearchParams(window.location.search).get('tab') ?? 'company') : 'company'
+  );
+
+  useEffect(() => {
+    const handler = (e) => setSettingsTab(e.detail ?? 'company');
+    window.addEventListener('jumla:nav-settings', handler);
+    return () => window.removeEventListener('jumla:nav-settings', handler);
+  }, []);
+
+  const settingsSubs = [
+    { id: 'company',   label: 'Entreprise',          icon: I.Building },
+    { id: 'routes',    label: 'Routes & tarifs',     icon: I.Route },
+    { id: 'whatsapp',  label: 'WhatsApp',            icon: I.Chat },
+    { id: 'auto',      label: 'Auto-notifications',  icon: I.Bell },
+    { id: 'campaigns', label: 'Cargaisons',          icon: I.Plane },
+    { id: 'codes',     label: 'Codes',               icon: I.Tag },
+  ];
+
   return (
     <aside className="sidebar">
       <div className="sidebar__brand">
@@ -134,6 +155,37 @@ export function Sidebar({ route, onNav }) {
           <div className="sidebar__section">Administration</div>
           {admin.map(it => {
             const Ic = it.icon;
+            if (it.id === 'settings') {
+              return (
+                <Fragment key={it.id}>
+                  <a className={'sidebar__link' + (onSettings ? ' is-active' : '')} onClick={() => onNav(it.route)}>
+                    <Ic /> <span style={{ flex: 1 }}>Paramètres</span>
+                    <span style={{ fontSize: 10, color: 'var(--ink-400)', transition: 'transform .2s', display: 'inline-block', transform: onSettings ? 'rotate(180deg)' : 'rotate(0deg)' }}>▾</span>
+                  </a>
+                  {onSettings && settingsSubs.map(sub => {
+                    const SubIc = sub.icon;
+                    const active = settingsTab === sub.id;
+                    return (
+                      <a key={sub.id}
+                         className={'sidebar__link' + (active ? ' is-active' : '')}
+                         style={{ paddingLeft: 30, fontSize: 12.5 }}
+                         onClick={() => {
+                           if (onSettings) {
+                             setSettingsTab(sub.id);
+                             window.dispatchEvent(new CustomEvent('jumla:nav-settings', { detail: sub.id }));
+                             history.pushState({}, '', `/admin/settings?tab=${sub.id}`);
+                           } else {
+                             onNav(`/admin/settings?tab=${sub.id}`);
+                           }
+                         }}>
+                        <SubIc style={{ width: 14, height: 14 }} />
+                        <span>{sub.label}</span>
+                      </a>
+                    );
+                  })}
+                </Fragment>
+              );
+            }
             return (
               <a key={it.id} className={'sidebar__link' + (isActive(it.route) ? ' is-active' : '')} onClick={() => onNav(it.route)}>
                 <Ic /> <span>{it.label}</span>
