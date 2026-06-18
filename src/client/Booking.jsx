@@ -72,6 +72,7 @@ function routeFeesToCalcFees(storedFees) {
   return {
     ...DEFAULT_FEES,
     tiers,
+    marginPct: storedFees.marginPct ?? DEFAULT_FEES.marginPct,
     bags: {
       small:  bags.small  ?? DEFAULT_FEES.bags.small,
       medium: bags.medium ?? DEFAULT_FEES.bags.medium,
