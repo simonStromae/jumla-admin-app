@@ -583,7 +583,12 @@ function RouteEditModal({ editRoute, onClose, onSaved }) {
 
   const [tiers, setTiers] = useState(() => {
     if (r?.fees?.tiers?.length) {
-      return r.fees.tiers.map((t, i) => ({ ...t, id: i + 1, expanded: false }));
+      return r.fees.tiers.map((t, i) => ({
+        ...t,
+        id:        i + 1,
+        expanded:  false,
+        breakdown: Array.isArray(t.breakdown) ? t.breakdown.map((b, j) => ({ ...b, id: b.id ?? j + 1 })) : defaultBreakdown(),
+      }));
     }
     return [{ id: 1, from: '0', to: '3', flat: '65', expanded: false, breakdown: defaultBreakdown() }];
   });
@@ -597,11 +602,11 @@ function RouteEditModal({ editRoute, onClose, onSaved }) {
   const delTier    = id => setTiers(ts => ts.filter(t => t.id !== id));
   const updTier    = (id, k, v) => setTiers(ts => ts.map(t => t.id === id ? { ...t, [k]: v } : t));
   const addTier    = () => setTiers(ts => [...ts, { id: Date.now(), from: '', to: '', flat: '', expanded: true, breakdown: defaultBreakdown() }]);
-  const addBRow    = tid => setTiers(ts => ts.map(t => t.id === tid ? { ...t, breakdown: [...t.breakdown, { id: Date.now(), label: '', amount: '' }] } : t));
-  const delBRow    = (tid, rid) => setTiers(ts => ts.map(t => t.id === tid ? { ...t, breakdown: t.breakdown.filter(b => b.id !== rid) } : t));
-  const updBRow    = (tid, rid, k, v) => setTiers(ts => ts.map(t => t.id === tid ? { ...t, breakdown: t.breakdown.map(b => b.id === rid ? { ...b, [k]: v } : b) } : t));
+  const addBRow    = tid => setTiers(ts => ts.map(t => t.id === tid ? { ...t, breakdown: [...(t.breakdown ?? []), { id: Date.now(), label: '', amount: '' }] } : t));
+  const delBRow    = (tid, rid) => setTiers(ts => ts.map(t => t.id === tid ? { ...t, breakdown: (t.breakdown ?? []).filter(b => b.id !== rid) } : t));
+  const updBRow    = (tid, rid, k, v) => setTiers(ts => ts.map(t => t.id === tid ? { ...t, breakdown: (t.breakdown ?? []).map(b => b.id === rid ? { ...b, [k]: v } : b) } : t));
 
-  const tierTotal = tier => tier.breakdown.length > 0
+  const tierTotal = tier => (tier.breakdown?.length || 0) > 0
     ? tier.breakdown.reduce((s, b) => s + (parseFloat(b.amount) || 0), 0)
     : parseFloat(tier.flat) || 0;
 
@@ -734,10 +739,10 @@ function RouteEditModal({ editRoute, onClose, onSaved }) {
                           </tr>
                         </thead>
                         <tbody>
-                          {tier.breakdown.length === 0 && (
+                          {(tier.breakdown?.length || 0) === 0 && (
                             <tr><td colSpan={3} style={{ fontSize: 12, color: 'var(--ink-400)', textAlign: 'center', padding: '10px 0' }}>Cliquez « + Ajouter » pour décomposer ce forfait.</td></tr>
                           )}
-                          {tier.breakdown.map(row => (
+                          {(tier.breakdown ?? []).map(row => (
                             <tr key={row.id}>
                               <td>
                                 <input className="input input--sm" value={row.label} onChange={e => updBRow(tier.id, row.id, 'label', e.target.value)} placeholder="Libellé…" style={{ border: 'none', background: 'transparent', width: '100%' }} />

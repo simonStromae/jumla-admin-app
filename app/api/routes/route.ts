@@ -12,10 +12,19 @@ export async function GET() {
     routes = await prisma.$queryRawUnsafe<any[]>(
       `SELECT id, origin, destination, label, active, "transitDays", currency, fees FROM routes ORDER BY origin`
     );
-  } catch {
-    // columns not yet migrated — fall back to basic fields
+  } catch (e: any) {
+    // Only fall back for missing-column errors (pre-migration environments)
+    if (e?.code !== '42703' && !e?.message?.includes('does not exist') && !e?.message?.includes('column')) {
+      return NextResponse.json({ error: e?.message ?? 'Erreur serveur' }, { status: 500 });
+    }
     routes = await prisma.route.findMany({ orderBy: { origin: 'asc' } });
   }
+
+  const parseFees = (raw: any) => {
+    if (!raw) return null;
+    if (typeof raw === 'string') { try { return JSON.parse(raw); } catch { return null; } }
+    return raw;
+  };
 
   return NextResponse.json(routes.map(r => ({
     id:          r.id,
@@ -26,7 +35,7 @@ export async function GET() {
     active:      r.active,
     transitDays: r.transitDays ?? 14,
     currency:    r.currency ?? 'CAD',
-    fees:        r.fees ?? null,
+    fees:        parseFees(r.fees),
   })));
 }
 

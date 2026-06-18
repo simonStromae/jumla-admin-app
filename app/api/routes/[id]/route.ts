@@ -51,6 +51,12 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
     r = await prisma.route.findUnique({ where: { id: params.id } });
   }
 
+  const parseFees = (raw: any) => {
+    if (!raw) return null;
+    if (typeof raw === 'string') { try { return JSON.parse(raw); } catch { return null; } }
+    return raw;
+  };
+
   return NextResponse.json({
     id:          r.id,
     fromIATA:    r.origin,
@@ -59,7 +65,7 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
     active:      r.active,
     transitDays: r.transitDays ?? 14,
     currency:    r.currency ?? 'CAD',
-    fees:        r.fees ?? null,
+    fees:        parseFees(r.fees),
   });
 }
 
