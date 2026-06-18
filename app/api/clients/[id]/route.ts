@@ -22,7 +22,8 @@ export async function GET(_: NextRequest, { params }: { params: { id: string } }
 
   if (!client) return NextResponse.json({ error: 'Client introuvable' }, { status: 404 });
 
-  const addresses = (client.addresses as any) ?? {};
+  const rawAddr  = client.addresses;
+  const addresses = (Array.isArray(rawAddr) ? { saved: rawAddr } : ((rawAddr as any) ?? {}));
   const delivery  = addresses.delivery ?? {};
 
   return NextResponse.json({
@@ -35,6 +36,7 @@ export async function GET(_: NextRequest, { params }: { params: { id: string } }
     deliveryName:     delivery.name    ?? '',
     deliveryAddress:  delivery.address ?? '',
     deliveryPhone:    delivery.phone   ?? '',
+    savedAddresses:   Array.isArray(addresses.saved) ? addresses.saved : [],
     createdAt:        client.createdAt,
     parcels: client.parcels.map(p => ({
       id:           p.id,

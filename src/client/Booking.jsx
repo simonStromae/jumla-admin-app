@@ -560,6 +560,8 @@ export default function BookingScreen({ onNav, embedded = false }) {
   ]);
   const [showBreakdown, setShowBreakdown] = useState(false);
   const [createAccount, setCreateAccount] = useState(false);
+  const [savedAddresses, setSavedAddresses] = useState([]);
+  const [saveAddr, setSaveAddr] = useState(false);
   // 'idle' | 'interac' | 'processing' | 'pending' | 'error'
   const [payStatus, setPayStatus]   = useState('idle');
   const [bookingRef, setBookingRef] = useState('');
@@ -581,7 +583,7 @@ export default function BookingScreen({ onNav, embedded = false }) {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [embedded, effectiveUser?.name, effectiveUser?.email]);
 
-  // Pre-fill sender phone from profile API when embedded
+  // Pre-fill sender phone + load saved addresses from profile API when embedded
   useEffect(() => {
     if (!embedded) return;
     fetch('/api/me/profile')
@@ -589,6 +591,9 @@ export default function BookingScreen({ onNav, embedded = false }) {
       .then(profile => {
         if (profile?.phone) {
           setForm(f => ({ ...f, senderPhone: f.senderPhone || profile.phone }));
+        }
+        if (Array.isArray(profile?.savedAddresses) && profile.savedAddresses.length > 0) {
+          setSavedAddresses(profile.savedAddresses);
         }
       })
       .catch(() => {});
@@ -655,6 +660,27 @@ export default function BookingScreen({ onNav, embedded = false }) {
   const confirmInterac = async () => {
     setPayStatus('processing');
     setBookingErr('');
+
+    // Save address to profile if checkbox is checked
+    if (saveAddr && embedded && form.recipAddress) {
+      const newAddr = {
+        id: Date.now().toString(),
+        label: '',
+        address: form.recipAddress,
+        apt:      form.recipApt || '',
+        city:     form.recipCity === 'Hors région' ? (form.recipCityCustom || '') : form.recipCity,
+        province: form.recipProvince,
+        postal:   form.recipPostal,
+      };
+      const updated = [...savedAddresses, newAddr];
+      setSavedAddresses(updated);
+      fetch('/api/me/profile', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ savedAddresses: updated }),
+      }).catch(() => {});
+    }
+
     try {
       const res = await fetch('/api/client/book', {
         method: 'POST',
@@ -1164,6 +1190,27 @@ export default function BookingScreen({ onNav, embedded = false }) {
                       <div className="co-label" style={{ marginBottom: 14 }}>
                         {form.delivery === 'expedition' ? 'Adresse d\'expédition' : 'Adresse de livraison'}
                       </div>
+                      {savedAddresses.length > 0 && (
+                        <div className="co-field" style={{ marginBottom: 12 }}>
+                          <label className="co-label">Utiliser une adresse sauvegardée</label>
+                          <select className="co-select" defaultValue="" onChange={e => {
+                            const addr = savedAddresses.find(a => a.id === e.target.value);
+                            if (addr) {
+                              upd('recipAddress', addr.address || '');
+                              upd('recipApt', addr.apt || '');
+                              upd('recipProvince', addr.province || 'QC');
+                              upd('recipPostal', addr.postal || '');
+                            }
+                          }}>
+                            <option value="">Choisir une adresse…</option>
+                            {savedAddresses.map(a => (
+                              <option key={a.id} value={a.id}>
+                                {a.label ? `${a.label} — ` : ''}{a.address}{a.city ? `, ${a.city}` : ''}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                      )}
                       <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                         <div className="co-field" style={{ marginBottom: 0 }}>
                           <label className="co-label">Adresse (numéro et rue)</label>
@@ -1206,10 +1253,12 @@ export default function BookingScreen({ onNav, embedded = false }) {
                         </div>
                       )}
 
-                      <label style={{ display: 'flex', alignItems: 'flex-start', gap: 10, marginTop: 14, cursor: 'pointer', fontSize: 12.5 }}>
-                        <input type="checkbox" style={{ marginTop: 2, flexShrink: 0 }} />
-                        <span style={{ color: 'var(--ink-600)' }}>Enregistrer cette adresse pour mes prochaines réservations</span>
-                      </label>
+                      {embedded && (
+                        <label style={{ display: 'flex', alignItems: 'flex-start', gap: 10, marginTop: 14, cursor: 'pointer', fontSize: 12.5 }}>
+                          <input type="checkbox" style={{ marginTop: 2, flexShrink: 0 }} checked={saveAddr} onChange={e => setSaveAddr(e.target.checked)} />
+                          <span style={{ color: 'var(--ink-600)' }}>Enregistrer cette adresse pour mes prochaines réservations</span>
+                        </label>
+                      )}
                     </div>
                   )}
 

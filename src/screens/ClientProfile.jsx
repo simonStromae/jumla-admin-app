@@ -142,7 +142,7 @@ export default function ClientProfile() {
       .then(r => r.json())
       .then(d => {
         setProfile({ name: d.name ?? '', email: d.email ?? '', phone: d.phone ?? '', city: d.city ?? '' });
-        setAddresses(Array.isArray(d.addresses) ? d.addresses : []);
+        setAddresses(Array.isArray(d.savedAddresses) ? d.savedAddresses : []);
         setProfileLoading(false);
       })
       .catch(() => setProfileLoading(false));
@@ -181,7 +181,7 @@ export default function ClientProfile() {
       await fetch('/api/me/profile', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ addresses: list }),
+        body: JSON.stringify({ savedAddresses: list }),
       });
     } catch {}
   };

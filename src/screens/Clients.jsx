@@ -365,17 +365,37 @@ function ClientDrawer({ cl, onClose, onEdit, onNav, onStatusChange }) {
           </div>
         </div>
 
-        {(detail?.deliveryAddress || detail?.deliveryPhone) && (
+        {(detail?.deliveryAddress || detail?.deliveryPhone || (detail?.savedAddresses?.length > 0)) && (
           <div style={{ padding: '16px 22px', borderBottom: '1px solid var(--border-soft)' }}>
             <div className="section-title" style={{ marginBottom: 10 }}>
               <I.Truck style={{ width: 13, height: 13, color: 'var(--brand-600)', marginRight: 4 }} />
-              Livraison
+              Adresses de livraison
             </div>
-            <div style={{ fontSize: 13, color: 'var(--ink-700)', lineHeight: 1.6 }}>
-              {detail.deliveryName && <div style={{ fontWeight: 600 }}>{detail.deliveryName}</div>}
-              {detail.deliveryAddress && <div>{detail.deliveryAddress}</div>}
-              {detail.deliveryPhone  && <div className="mono" style={{ fontSize: 12, color: 'var(--ink-500)' }}>{detail.deliveryPhone}</div>}
-            </div>
+            {(detail?.deliveryAddress || detail?.deliveryPhone) && (
+              <div style={{ fontSize: 13, color: 'var(--ink-700)', lineHeight: 1.6, marginBottom: detail?.savedAddresses?.length > 0 ? 10 : 0 }}>
+                {detail.deliveryName && <div style={{ fontWeight: 600 }}>{detail.deliveryName}</div>}
+                {detail.deliveryAddress && <div>{detail.deliveryAddress}</div>}
+                {detail.deliveryPhone  && <div className="mono" style={{ fontSize: 12, color: 'var(--ink-500)' }}>{detail.deliveryPhone}</div>}
+              </div>
+            )}
+            {detail?.savedAddresses?.length > 0 && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                {detail.savedAddresses.map((a, i) => (
+                  <div key={a.id ?? i} style={{
+                    padding: '8px 12px', background: 'var(--bg-soft)',
+                    borderRadius: 8, border: '1px solid var(--border-soft)',
+                  }}>
+                    {a.label && <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--ink-500)', textTransform: 'uppercase', letterSpacing: '.04em', marginBottom: 2 }}>{a.label}</div>}
+                    <div style={{ fontSize: 12.5, color: 'var(--ink-800)' }}>
+                      {a.address}{a.apt ? `, apt. ${a.apt}` : ''}
+                    </div>
+                    <div style={{ fontSize: 11.5, color: 'var(--ink-400)', marginTop: 1 }}>
+                      {[a.city, a.province, a.postal].filter(Boolean).join(', ')}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
 
