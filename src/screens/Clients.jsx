@@ -365,6 +365,29 @@ function ClientDrawer({ cl, onClose, onEdit, onNav, onStatusChange }) {
           </div>
         </div>
 
+        {detail?.savedRecipients?.length > 0 && (
+          <div style={{ padding: '16px 22px', borderBottom: '1px solid var(--border-soft)' }}>
+            <div className="section-title" style={{ marginBottom: 10 }}>
+              <I.Users style={{ width: 13, height: 13, color: 'var(--brand-600)', marginRight: 4 }} />
+              Destinataires fréquents
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+              {detail.savedRecipients.map((r, i) => (
+                <div key={r.id ?? i} style={{
+                  padding: '8px 12px', background: 'var(--bg-soft)',
+                  borderRadius: 8, border: '1px solid var(--border-soft)',
+                }}>
+                  {r.label && <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--ink-500)', textTransform: 'uppercase', letterSpacing: '.04em', marginBottom: 2 }}>{r.label}</div>}
+                  <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--ink-800)' }}>{r.name}</div>
+                  <div style={{ fontSize: 12, color: 'var(--ink-400)', marginTop: 1 }}>
+                    {[r.phone, r.city].filter(Boolean).join(' · ')}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         {(detail?.deliveryAddress || detail?.deliveryPhone || (detail?.savedAddresses?.length > 0)) && (
           <div style={{ padding: '16px 22px', borderBottom: '1px solid var(--border-soft)' }}>
             <div className="section-title" style={{ marginBottom: 10 }}>

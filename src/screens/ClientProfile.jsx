@@ -143,6 +143,7 @@ export default function ClientProfile() {
       .then(d => {
         setProfile({ name: d.name ?? '', email: d.email ?? '', phone: d.phone ?? '', city: d.city ?? '' });
         setAddresses(Array.isArray(d.savedAddresses) ? d.savedAddresses : []);
+        setRecipients(Array.isArray(d.savedRecipients) ? d.savedRecipients : []);
         setProfileLoading(false);
       })
       .catch(() => setProfileLoading(false));
@@ -176,6 +177,11 @@ export default function ClientProfile() {
   const [showAddrForm, setShowAddrForm] = useState(false);
   const [newAddr, setNewAddr] = useState({ label: '', address: '', apt: '', city: '', province: '', postal: '' });
 
+  // --- Recipients (stored in DB) ---
+  const [recipients, setRecipients] = useState([]);
+  const [showRecipForm, setShowRecipForm] = useState(false);
+  const [newRecip, setNewRecip] = useState({ label: '', name: '', phone: '', city: '' });
+
   const saveAddressesToDB = async (list) => {
     try {
       await fetch('/api/me/profile', {
@@ -200,6 +206,32 @@ export default function ClientProfile() {
     const updated = addresses.filter(a => a.id !== id);
     setAddresses(updated);
     await saveAddressesToDB(updated);
+  };
+
+  const saveRecipientsToDB = async (list) => {
+    try {
+      await fetch('/api/me/profile', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ savedRecipients: list }),
+      });
+    } catch {}
+  };
+
+  const handleAddRecipient = async () => {
+    if (!newRecip.name.trim()) return;
+    const entry = { ...newRecip, id: Date.now().toString() };
+    const updated = [...recipients, entry];
+    setRecipients(updated);
+    await saveRecipientsToDB(updated);
+    setNewRecip({ label: '', name: '', phone: '', city: '' });
+    setShowRecipForm(false);
+  };
+
+  const handleDeleteRecipient = async (id) => {
+    const updated = recipients.filter(r => r.id !== id);
+    setRecipients(updated);
+    await saveRecipientsToDB(updated);
   };
 
   // --- Password ---
@@ -420,7 +452,95 @@ export default function ClientProfile() {
         )}
       </div>
 
-      {/* Card 3 — Sécurité */}
+      {/* Card 3 — Destinataires fréquents */}
+      <div style={card}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+          <div style={cardTitle}>Destinataires fréquents</div>
+          <button
+            type="button"
+            style={{ ...btnGhost, height: 30, fontSize: 12 }}
+            onClick={() => setShowRecipForm(v => !v)}
+          >
+            <I.Plus style={{ width: 12, height: 12 }} />
+            Ajouter
+          </button>
+        </div>
+
+        {recipients.length === 0 && !showRecipForm && (
+          <div style={{ fontSize: 13, color: 'var(--ink-400)', padding: '12px 0' }}>
+            Aucun destinataire enregistré.
+          </div>
+        )}
+
+        {recipients.map(r => (
+          <div key={r.id} style={{
+            display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between',
+            padding: '10px 14px', marginBottom: 8,
+            background: 'var(--bg-soft)', borderRadius: 8,
+            border: '1px solid var(--border-soft)',
+          }}>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              {r.label && (
+                <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--ink-500)', textTransform: 'uppercase', letterSpacing: '.04em', marginBottom: 2 }}>{r.label}</div>
+              )}
+              <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--ink-800)' }}>{r.name}</div>
+              <div style={{ fontSize: 12, color: 'var(--ink-400)', marginTop: 1 }}>
+                {[r.phone, r.city].filter(Boolean).join(' · ')}
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => handleDeleteRecipient(r.id)}
+              style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--ink-400)', padding: 4, marginLeft: 8, flexShrink: 0 }}
+              title="Supprimer"
+            >
+              <I.Trash style={{ width: 14, height: 14 }} />
+            </button>
+          </div>
+        ))}
+
+        {showRecipForm && (
+          <div style={{ padding: 16, marginTop: 12, background: 'var(--bg-soft)', borderRadius: 10, border: '1px solid var(--border)' }}>
+            <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--ink-800)', marginBottom: 12 }}>Nouveau destinataire</div>
+            <div style={fieldStyle}>
+              <label style={label}>Étiquette <span style={{ fontWeight: 400, color: 'var(--ink-400)' }}>(optionnel)</span></label>
+              <input style={inputStyle} type="text" placeholder="ex: Maman, Bureau Douala…"
+                value={newRecip.label} onChange={e => setNewRecip(r => ({ ...r, label: e.target.value }))} />
+            </div>
+            <div style={fieldStyle}>
+              <label style={label}>Nom complet</label>
+              <input style={inputStyle} type="text" placeholder="Jean Mbarga"
+                value={newRecip.name} onChange={e => setNewRecip(r => ({ ...r, name: e.target.value }))} />
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 14 }}>
+              <div>
+                <label style={label}>Téléphone</label>
+                <input style={inputStyle} type="tel" placeholder="+237 6XX XXX XXX"
+                  value={newRecip.phone} onChange={e => setNewRecip(r => ({ ...r, phone: e.target.value }))} />
+              </div>
+              <div>
+                <label style={label}>Ville</label>
+                <input style={inputStyle} type="text" placeholder="Douala, Yaoundé…"
+                  value={newRecip.city} onChange={e => setNewRecip(r => ({ ...r, city: e.target.value }))} />
+              </div>
+            </div>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <button type="button" style={btnBrand} onClick={handleAddRecipient} disabled={!newRecip.name.trim()}>
+                <I.Check style={{ width: 13, height: 13 }} />
+                Ajouter le destinataire
+              </button>
+              <button type="button" style={btnGhost} onClick={() => {
+                setShowRecipForm(false);
+                setNewRecip({ label: '', name: '', phone: '', city: '' });
+              }}>
+                Annuler
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Card 4 — Sécurité */}
       <div style={card}>
         <div style={cardTitle}>Sécurité</div>
         <form onSubmit={handlePasswordChange}>

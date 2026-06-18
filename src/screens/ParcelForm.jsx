@@ -46,6 +46,7 @@ export default function ParcelFormPage({ mode = 'create', parcel, campaign, onNa
   const [clients, setClients]       = useState([]);
   const [clientSearch, setClientSearch] = useState('');
   const [clientAddresses, setClientAddresses] = useState([]);
+  const [clientRecipients, setClientRecipients] = useState([]);
   const [loading, setLoading]       = useState(true);
   const [saving, setSaving]         = useState(false);
   const [err, setErr]               = useState('');
@@ -90,15 +91,16 @@ export default function ParcelFormPage({ mode = 'create', parcel, campaign, onNa
 
   const upd = (k, v) => setData(d => ({ ...d, [k]: v }));
 
-  // Load saved addresses when client changes
+  // Load saved addresses + recipients when client changes
   useEffect(() => {
-    if (!data.clientId) { setClientAddresses([]); return; }
+    if (!data.clientId) { setClientAddresses([]); setClientRecipients([]); return; }
     fetch('/api/clients/' + data.clientId)
       .then(r => r.ok ? r.json() : null)
       .then(d => {
-        setClientAddresses(Array.isArray(d?.savedAddresses) ? d.savedAddresses : []);
+        setClientAddresses(Array.isArray(d?.savedAddresses)  ? d.savedAddresses  : []);
+        setClientRecipients(Array.isArray(d?.savedRecipients) ? d.savedRecipients : []);
       })
-      .catch(() => setClientAddresses([]));
+      .catch(() => { setClientAddresses([]); setClientRecipients([]); });
   }, [data.clientId]);
 
   useEffect(() => {
@@ -437,6 +439,27 @@ export default function ParcelFormPage({ mode = 'create', parcel, campaign, onNa
                       {clientAddresses.map(a => (
                         <option key={a.id} value={a.id}>
                           {a.label ? `${a.label} — ` : ''}{a.address}{a.city ? `, ${a.city}` : ''}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+
+                {clientRecipients.length > 0 && (
+                  <div className="field" style={{ marginBottom: 10 }}>
+                    <label className="label">Destinataire fréquent</label>
+                    <select className="select" defaultValue="" onChange={e => {
+                      const r = clientRecipients.find(x => x.id === e.target.value);
+                      if (r) {
+                        upd('recipName',  r.name  || '');
+                        upd('recipPhone', r.phone || '');
+                        if (r.city) upd('recipCity', r.city);
+                      }
+                    }}>
+                      <option value="">Choisir un destinataire fréquent…</option>
+                      {clientRecipients.map(r => (
+                        <option key={r.id} value={r.id}>
+                          {r.label ? `${r.label} — ` : ''}{r.name}{r.city ? ` (${r.city})` : ''}
                         </option>
                       ))}
                     </select>

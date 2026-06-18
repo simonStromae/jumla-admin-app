@@ -561,6 +561,7 @@ export default function BookingScreen({ onNav, embedded = false }) {
   const [showBreakdown, setShowBreakdown] = useState(false);
   const [createAccount, setCreateAccount] = useState(false);
   const [savedAddresses, setSavedAddresses] = useState([]);
+  const [savedRecipients, setSavedRecipients] = useState([]);
   const [saveAddr, setSaveAddr] = useState(false);
   // 'idle' | 'interac' | 'processing' | 'pending' | 'error'
   const [payStatus, setPayStatus]   = useState('idle');
@@ -592,8 +593,11 @@ export default function BookingScreen({ onNav, embedded = false }) {
         if (profile?.phone) {
           setForm(f => ({ ...f, senderPhone: f.senderPhone || profile.phone }));
         }
-        if (Array.isArray(profile?.savedAddresses) && profile.savedAddresses.length > 0) {
+        if (Array.isArray(profile?.savedAddresses)  && profile.savedAddresses.length  > 0) {
           setSavedAddresses(profile.savedAddresses);
+        }
+        if (Array.isArray(profile?.savedRecipients) && profile.savedRecipients.length > 0) {
+          setSavedRecipients(profile.savedRecipients);
         }
       })
       .catch(() => {});
@@ -1109,6 +1113,25 @@ export default function BookingScreen({ onNav, embedded = false }) {
 
                     <div className="co-split-block">
                       <div className="co-split-block__title">Destinataire</div>
+                      {savedRecipients.length > 0 && (
+                        <Field label="Destinataire fréquent">
+                          <select className="co-select" defaultValue="" onChange={e => {
+                            const r = savedRecipients.find(x => x.id === e.target.value);
+                            if (r) {
+                              upd('recipName',  r.name  || '');
+                              upd('recipPhone', r.phone || '');
+                              if (r.city) upd('recipCity', r.city);
+                            }
+                          }}>
+                            <option value="">Choisir un destinataire…</option>
+                            {savedRecipients.map(r => (
+                              <option key={r.id} value={r.id}>
+                                {r.label ? `${r.label} — ` : ''}{r.name}{r.city ? ` (${r.city})` : ''}
+                              </option>
+                            ))}
+                          </select>
+                        </Field>
+                      )}
                       <Field label="Nom complet">
                         <input className="co-input" value={form.recipName} onChange={e => upd('recipName', e.target.value)} placeholder="Jean Mbarga" />
                       </Field>

@@ -36,7 +36,8 @@ export async function GET(_: NextRequest, { params }: { params: { id: string } }
     deliveryName:     delivery.name    ?? '',
     deliveryAddress:  delivery.address ?? '',
     deliveryPhone:    delivery.phone   ?? '',
-    savedAddresses:   Array.isArray(addresses.saved) ? addresses.saved : [],
+    savedAddresses:   Array.isArray(addresses.saved)      ? addresses.saved      : [],
+    savedRecipients:  Array.isArray(addresses.recipients) ? addresses.recipients : [],
     createdAt:        client.createdAt,
     parcels: client.parcels.map(p => ({
       id:           p.id,
