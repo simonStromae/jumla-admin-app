@@ -30,6 +30,8 @@ model User {
   emailVerified      Boolean   @default(false)
   verifyToken        String?
   mustChangePassword Boolean   @default(false)
+  resetToken         String?
+  resetExpiry        DateTime?
   permissions        Json      @default("{}")
   city               String?
   country            String    @default("CM")
@@ -53,6 +55,9 @@ model Route {
   destination String
   label       String?
   active      Boolean    @default(true)
+  transitDays Int        @default(14)
+  currency    String     @default("CAD")
+  fees        Json?
   campaigns   Campaign[]
 
   @@map("routes")
