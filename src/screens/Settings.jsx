@@ -1050,65 +1050,17 @@ export default function SettingsScreen({ onNav }) {
   const [editRoute, setEditRoute]     = useState(null);
   const [routeDetail, setRouteDetail] = useState(null);
   const [routes, setRoutes]           = useState([]);
-  const [openGroup, setOpenGroup]     = useState(initialTab === 'whatsapp' || initialTab === 'auto' ? 'messagerie' : null);
 
   const loadRoutes = () =>
     fetch('/api/routes').then(r => r.json()).then(data => setRoutes(Array.isArray(data) ? data : [])).catch(() => {});
 
   useEffect(() => { loadRoutes(); }, []);
 
-  const nav = [
-    { id: 'company',   l: 'Entreprise',           icon: I.Building },
-    { id: 'routes',    l: 'Routes & tarifs',       icon: I.Route },
-    { id: 'whatsapp',  l: 'WhatsApp',              icon: I.Chat },
-    { id: 'auto',      l: 'Auto-notifications',    icon: I.Bell, badge: 'Nouveau' },
-    { id: 'campaigns', l: 'Cargaisons',            icon: I.Plane },
-    { id: 'codes',     l: 'Codes & numérotation',  icon: I.Tag },
-  ];
-
-  const navItemStyle = (id) => ({
-    display: 'flex', alignItems: 'center', gap: 10,
-    padding: '8px 10px', borderRadius: 6, cursor: 'pointer',
-    background: section === id ? 'var(--brand-50)' : 'transparent',
-    color: section === id ? 'var(--brand-700)' : 'var(--ink-600)',
-    fontWeight: section === id ? 600 : 500,
-    fontSize: 13, marginBottom: 2,
-  });
-
-  const subItemStyle = (id) => ({
-    display: 'flex', alignItems: 'center', gap: 10,
-    padding: '7px 10px 7px 30px', borderRadius: 6, cursor: 'pointer',
-    background: section === id ? 'var(--brand-50)' : 'transparent',
-    color: section === id ? 'var(--brand-700)' : 'var(--ink-500)',
-    fontWeight: section === id ? 600 : 400,
-    fontSize: 12.5, marginBottom: 1,
-  });
-
-  const messageriGroupOpen = openGroup === 'messagerie' || section === 'whatsapp' || section === 'auto';
-
   useEffect(() => {
-    const handler = (e) => {
-      const id = e.detail;
-      setSection(id);
-      setOpenGroup(['whatsapp', 'auto'].includes(id) ? 'messagerie' : null);
-    };
+    const handler = (e) => setSection(e.detail ?? 'company');
     window.addEventListener('jumla:nav-settings', handler);
     return () => window.removeEventListener('jumla:nav-settings', handler);
   }, []);
-
-  const handleNavFlat = (id) => {
-    setSection(id);
-    setOpenGroup(null);
-    history.pushState({}, '', `/admin/settings?tab=${id}`);
-    window.dispatchEvent(new CustomEvent('jumla:nav-settings', { detail: id }));
-  };
-
-  const handleNavSub = (id) => {
-    setSection(id);
-    setOpenGroup('messagerie');
-    history.pushState({}, '', `/admin/settings?tab=${id}`);
-    window.dispatchEvent(new CustomEvent('jumla:nav-settings', { detail: id }));
-  };
 
   return (
     <div className="page">
@@ -1119,59 +1071,7 @@ export default function SettingsScreen({ onNav }) {
         </div>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '220px 1fr', gap: 18 }}>
-        {/* Side nav */}
-        <div className="card" style={{ padding: 8, height: 'fit-content', position: 'sticky', top: 76 }}>
-          {/* Entreprise */}
-          <a onClick={() => handleNavFlat('company')} style={navItemStyle('company')}>
-            <I.Building style={{ width: 15, height: 15, opacity: .85 }} />
-            <span style={{ flex: 1 }}>Entreprise</span>
-          </a>
-          {/* Routes & tarifs */}
-          <a onClick={() => handleNavFlat('routes')} style={navItemStyle('routes')}>
-            <I.Route style={{ width: 15, height: 15, opacity: .85 }} />
-            <span style={{ flex: 1 }}>Routes & tarifs</span>
-          </a>
-          {/* Groupe dépliable : Messagerie & alertes */}
-          <div style={{ marginBottom: 2 }}>
-            <a onClick={() => setOpenGroup(messageriGroupOpen ? null : 'messagerie')} style={{
-              display: 'flex', alignItems: 'center', gap: 10,
-              padding: '8px 10px', borderRadius: 6, cursor: 'pointer',
-              background: (section === 'whatsapp' || section === 'auto') ? 'var(--brand-50)' : 'transparent',
-              color: (section === 'whatsapp' || section === 'auto') ? 'var(--brand-700)' : 'var(--ink-600)',
-              fontWeight: (section === 'whatsapp' || section === 'auto') ? 600 : 500,
-              fontSize: 13,
-            }}>
-              <I.Chat style={{ width: 15, height: 15, opacity: .85 }} />
-              <span style={{ flex: 1 }}>Messagerie & alertes</span>
-              <span style={{ fontSize: 10, color: 'var(--ink-400)', transition: 'transform .15s', display: 'inline-block', transform: messageriGroupOpen ? 'rotate(180deg)' : 'rotate(0deg)' }}>▾</span>
-            </a>
-            {messageriGroupOpen && (
-              <div style={{ marginTop: 2 }}>
-                <a onClick={() => handleNavSub('whatsapp')} style={subItemStyle('whatsapp')}>
-                  <I.Chat style={{ width: 13, height: 13, opacity: .75 }} />
-                  <span style={{ flex: 1 }}>WhatsApp</span>
-                </a>
-                <a onClick={() => handleNavSub('auto')} style={subItemStyle('auto')}>
-                  <I.Bell style={{ width: 13, height: 13, opacity: .75 }} />
-                  <span style={{ flex: 1 }}>Auto-notifications</span>
-                  <span style={{ fontSize: 9.5, padding: '1px 6px', borderRadius: 999, background: 'var(--brand-500)', color: 'white', fontWeight: 700 }}>Nouveau</span>
-                </a>
-              </div>
-            )}
-          </div>
-          {/* Cargaisons */}
-          <a onClick={() => handleNavFlat('campaigns')} style={navItemStyle('campaigns')}>
-            <I.Plane style={{ width: 15, height: 15, opacity: .85 }} />
-            <span style={{ flex: 1 }}>Cargaisons</span>
-          </a>
-          {/* Codes & numérotation */}
-          <a onClick={() => handleNavFlat('codes')} style={navItemStyle('codes')}>
-            <I.Tag style={{ width: 15, height: 15, opacity: .85 }} />
-            <span style={{ flex: 1 }}>Codes & numérotation</span>
-          </a>
-        </div>
-
+      <div>
         {/* Content */}
         <div>
           {section === 'company'   && <SectionCompany />}
