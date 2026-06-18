@@ -32,6 +32,9 @@ export async function GET() {
 
   // ── Parcels ────────────────────────────────────────────────────────────────
   await run('parcels.status_to_text', `ALTER TABLE parcels ALTER COLUMN status TYPE TEXT USING status::TEXT`);
+  await run('parcels.recipName',  `ALTER TABLE parcels ADD COLUMN IF NOT EXISTS "recipName" TEXT`);
+  await run('parcels.recipPhone', `ALTER TABLE parcels ADD COLUMN IF NOT EXISTS "recipPhone" TEXT`);
+  await run('parcels.recipCity',  `ALTER TABLE parcels ADD COLUMN IF NOT EXISTS "recipCity" TEXT`);
 
   // ── Tracking events ────────────────────────────────────────────────────────
   await run('tracking_events.status_to_text', `ALTER TABLE tracking_events ALTER COLUMN status TYPE TEXT USING status::TEXT`);

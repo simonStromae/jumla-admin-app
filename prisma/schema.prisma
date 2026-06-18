@@ -124,6 +124,9 @@ model Parcel {
   marginPct         Float?   @default(30)
   pricingDetails    Json?
   items             Json?
+  recipName         String?
+  recipPhone        String?
+  recipCity         String?
   bordereaux        Bordereau[]
   status        String       @default("enr")
   confirmed     Boolean      @default(false)

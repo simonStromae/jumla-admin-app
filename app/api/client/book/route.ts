@@ -116,6 +116,9 @@ export async function POST(req: NextRequest) {
       marginPct:    30,
       items:        mappedItems.length > 0 ? mappedItems : undefined,
       notes:        finalNotes,
+      recipName:    recipName  || null,
+      recipPhone:   recipPhone || null,
+      recipCity:    finalCity  || null,
     },
     include: { campaign: { select: { code: true } } },
   });
