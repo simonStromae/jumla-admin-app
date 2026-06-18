@@ -338,6 +338,7 @@ export default function MessagingScreen({ onNav, campaignId }) {
                 <div style={{ fontSize: 13 }}>Aucun message envoyé pour l'instant.</div>
               </div>
             ) : (
+              <div style={{ overflowY: 'auto', maxHeight: 480 }}>
               <table className="tbl">
                 <thead>
                   <tr>
@@ -377,6 +378,7 @@ export default function MessagingScreen({ onNav, campaignId }) {
                   })}
                 </tbody>
               </table>
+              </div>
             )}
           </div>
         </div>
