@@ -205,7 +205,7 @@ function calcPrice(items, fees, addons, delivery, cityZone) {
                           : isMontrealGrand ? (fees.montrealGrandDelivery || 30) : 0;
 
   const sousTotal  = r2(transport + catSurchargeTotal + carton + sacs + manutention + douane + formalites + saqTotal);
-  const marginPct  = fees.marginPct || DEFAULT_FEES.marginPct;
+  const marginPct  = fees.marginPct ?? DEFAULT_FEES.marginPct;
   const marge      = r2(sousTotal * (marginPct / 100));
   const prixClient = r2(sousTotal + marge);
 
