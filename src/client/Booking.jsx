@@ -252,60 +252,6 @@ const STEPS = [
   { label: 'Paiement' },
 ];
 
-// ── Helpers ──
-function roundUpToHalfKg(kg) { return Math.ceil(kg * 2) / 2; }
-
-function calcPrice(items, fees, addons, delivery, cityZone) {
-  const totalKg = items.reduce((s, i) => s + (parseFloat(i.kg) || 0), 0);
-  if (totalKg <= 0) return null;
-
-  const billedKg = totalKg <= 3 ? totalKg : roundUpToHalfKg(totalKg);
-  const surplusIncrements = billedKg > 3 ? (billedKg - 3) / 0.5 : 0;
-  const baseShipping = calcBaseShipping(fees, billedKg);
-
-  // Group kg by category
-  const catGroups = {};
-  items.forEach(item => {
-    const kg = parseFloat(item.kg) || 0;
-    if (kg <= 0) return;
-    const cat = item.cat || 'standard';
-    catGroups[cat] = (catGroups[cat] || 0) + kg;
-  });
-
-  // Surcharge par catégorie (extraPerKg × kg de la catégorie)
-  const catSurchargeLines = Object.entries(catGroups).map(([catId, kg]) => {
-    const def = ITEM_CATEGORIES.find(c => c.id === catId);
-    const extra = def?.extraPerKg || 0;
-    return { catId, label: def?.label || catId, kg, extra, amount: kg * extra };
-  }).filter(l => l.extra !== 0);
-  const catSurchargeTotal = catSurchargeLines.reduce((s, l) => s + l.amount, 0);
-
-  const addonSmall  = (addons.smallBag  || 0) * fees.addons.smallBag;
-  const addonMedium = (addons.mediumBag || 0) * fees.addons.mediumBag;
-  const addonLarge  = (addons.largeBag  || 0) * fees.addons.largeBag;
-  const cartonRate  = totalKg <= 3 ? (fees.cartonBase || 1) : (fees.cartonPerUnit || 1.5);
-  const cartonFee   = (addons.cartons || 0) * cartonRate;
-  const addonTotal  = addonSmall + addonMedium + addonLarge + cartonFee;
-
-  const isExpedition      = delivery === 'expedition';
-  const isMontrealIle     = !isExpedition && delivery === 'home' && cityZone === 'montreal-ile';
-  const isMontrealGrand   = !isExpedition && delivery === 'home' && cityZone === 'montreal-grand';
-  const isOutsideDelivery = !isExpedition && delivery === 'home' && cityZone === 'other';
-  const deliveryFee       = isMontrealIle   ? (fees.montrealIleDelivery   || 25)
-                          : isMontrealGrand ? (fees.montrealGrandDelivery || 30) : 0;
-
-  const shipping = baseShipping + catSurchargeTotal;
-
-  return {
-    totalKg, billedKg, surplusIncrements,
-    baseShipping, catSurchargeLines, catSurchargeTotal, catGroups,
-    breakdown: { base: fees.base, customs: fees.customs, carton: fees.carton, formality: fees.formality, service: fees.service },
-    shipping, addonSmall, addonMedium, addonLarge, cartonFee, cartonRate, addonTotal,
-    deliveryFee, isExpedition, isMontrealIle, isMontrealGrand, isOutsideDelivery,
-    total: shipping + addonTotal + (isExpedition || isOutsideDelivery ? 0 : deliveryFee),
-  };
-}
-
 // ── Atoms ──
 function Field({ label, children }) {
   return (
