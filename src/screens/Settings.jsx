@@ -2,6 +2,118 @@ import { useState, useEffect, Fragment } from 'react';
 import I from '../components/Icons.jsx';
 import { Bi, RoutePill, Modal, Drawer } from '../components/Shell.jsx';
 
+// Grille tarifaire par défaut (miroir de DEFAULT_ROUTE_FEES dans pricing.ts)
+const DEFAULT_TIERS = [
+  { from: 0.5,  to: 3,     transportFlat: 50,  cartonFlat: 1,    manutentionFlat: 4,                   douaneFlat: 5,    formalitesFlat: 5 },
+  { from: 3.5,  to: 9.5,   transportPerKg: 13, cartonPerUnit: 1.5, manutentionFlat: 5,                 douanePerKg: 3,   formalitesPerKg: 2 },
+  { from: 10,   to: 22.5,  transportPerKg: 12, cartonPerUnit: 1.5, manutentionFlat: 10,                douanePerKg: 3,   formalitesPerKg: 2 },
+  { from: 23.5, to: 69.5,  transportPerKg: 11, cartonPerUnit: 1.5, manutentionFlat: 15,                douanePerKg: 2,   formalitesPerKg: 1.5 },
+  { from: 70,   to: 115,   transportPerKg: 10, cartonPerUnit: 1.5, manutentionPerUnit: 5,  manutentionMin: 20, douanePerKg: 2.5, formalitesPerKg: 1 },
+  { from: 115.5,to: 199.5, transportPerKg: 9,  cartonPerUnit: 1.5, manutentionPerUnit: 4.5,manutentionMin: 27, douanePerKg: 1.5, formalitesPerKg: 1 },
+  { from: 200,  to: 250,   transportPerKg: 8,  cartonPerUnit: 1.5, manutentionPerUnit: 4,  manutentionMin: 40, douanePerKg: 1.5, formalitesPerKg: 1 },
+  { from: 250.5,to: 99999, transportPerKg: 7.5, cartonPerUnit: 1.5, manutentionPerUnit: 3, manutentionMin: 60, douanePerKg: 1.5, formalitesPerKg: 1 },
+];
+const DEFAULT_FEES_META = {
+  bags: { small: 5, medium: 7.5, large: 10 },
+  saq:  { casier24x65: 24.50, casier24x33: 35.83, casier12x50: 21.34 },
+  supplements: { vetements: 2, cosmetique: 3, biere: 6, electronique: 5, documents: -2 },
+  marginPct: 30,
+  deliveryFee: 25,
+};
+
+function fmtTransport(t) {
+  if (t.transportFlat  !== undefined) return `${t.transportFlat} $ (forfait)`;
+  if (t.transportPerKg !== undefined) return `${t.transportPerKg} $/kg`;
+  return '—';
+}
+function fmtManut(t) {
+  if (t.manutentionFlat !== undefined) return `${t.manutentionFlat} $ (forfait)`;
+  if (t.manutentionPerUnit !== undefined) return `${t.manutentionPerUnit} $/unité · min ${t.manutentionMin ?? 0} $`;
+  return '—';
+}
+function fmtRate(flat, perKg) {
+  if (flat   !== undefined) return `${flat} $ (forfait)`;
+  if (perKg  !== undefined) return `${perKg} $/kg`;
+  return '—';
+}
+
+function TarifGrid({ tiers, fees, currency = 'CAD', isDefault = false }) {
+  const cur = currency;
+  return (
+    <div>
+      {isDefault && (
+        <div style={{ fontSize: 11.5, color: 'var(--ink-400)', background: 'var(--bg-soft)', padding: '6px 10px', borderRadius: 6, marginBottom: 12, fontStyle: 'italic' }}>
+          Grille par défaut — aucune personnalisation configurée pour cette route
+        </div>
+      )}
+      <div style={{ overflowX: 'auto' }}>
+        <table className="tbl" style={{ marginBottom: 12, fontSize: 12 }}>
+          <thead>
+            <tr>
+              <th>Tranche</th>
+              <th>Transport</th>
+              <th>Manutention</th>
+              <th>Douane/Term.</th>
+              <th>Formalités</th>
+            </tr>
+          </thead>
+          <tbody>
+            {tiers.map((t, i) => (
+              <tr key={i}>
+                <td className="mono" style={{ fontWeight: 700, whiteSpace: 'nowrap' }}>
+                  {t.to >= 99999 ? `> ${t.from} kg` : `${t.from} – ${t.to} kg`}
+                </td>
+                <td style={{ whiteSpace: 'nowrap' }}>{fmtTransport(t)}</td>
+                <td style={{ whiteSpace: 'nowrap' }}>{fmtManut(t)}</td>
+                <td style={{ whiteSpace: 'nowrap' }}>{fmtRate(t.douaneFlat, t.douanePerKg)}</td>
+                <td style={{ whiteSpace: 'nowrap' }}>{fmtRate(t.formalitesFlat, t.formalitesPerKg)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, fontSize: 12 }}>
+        <div style={{ background: 'var(--bg-soft)', borderRadius: 6, padding: '10px 12px' }}>
+          <div style={{ fontWeight: 700, color: 'var(--ink-600)', marginBottom: 6, fontSize: 11, textTransform: 'uppercase', letterSpacing: '.04em' }}>Emballages</div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 3, color: 'var(--ink-700)' }}>
+            <span>Carton : <strong>1,50 {cur}/carton</strong></span>
+            <span>Petit sac : <strong>{fees.bags?.small ?? 5} {cur}</strong></span>
+            <span>Moyen sac : <strong>{fees.bags?.medium ?? 7.5} {cur}</strong></span>
+            <span>Grand sac : <strong>{fees.bags?.large ?? 10} {cur}</strong></span>
+          </div>
+        </div>
+        <div style={{ background: 'var(--bg-soft)', borderRadius: 6, padding: '10px 12px' }}>
+          <div style={{ fontWeight: 700, color: 'var(--ink-600)', marginBottom: 6, fontSize: 11, textTransform: 'uppercase', letterSpacing: '.04em' }}>Frais SAQ (bière)</div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 3, color: 'var(--ink-700)' }}>
+            <span>Casier 24×65cl : <strong>{fees.saq?.casier24x65 ?? 24.5} {cur}</strong></span>
+            <span>Casier 24×33cl : <strong>{fees.saq?.casier24x33 ?? 35.83} {cur}</strong></span>
+            <span>Casier 12×50cl : <strong>{fees.saq?.casier12x50 ?? 21.34} {cur}</strong></span>
+          </div>
+        </div>
+        <div style={{ background: 'var(--bg-soft)', borderRadius: 6, padding: '10px 12px' }}>
+          <div style={{ fontWeight: 700, color: 'var(--ink-600)', marginBottom: 6, fontSize: 11, textTransform: 'uppercase', letterSpacing: '.04em' }}>Suppléments catégorie</div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 3, color: 'var(--ink-700)' }}>
+            <span>Vêtements : <strong>+{fees.supplements?.vetements ?? 2} {cur}/kg</strong></span>
+            <span>Cosmétiques : <strong>+{fees.supplements?.cosmetique ?? 3} {cur}/kg</strong></span>
+            <span>Bière : <strong>+{fees.supplements?.biere ?? 6} {cur}/kg</strong></span>
+            <span>Électronique : <strong>+{fees.supplements?.electronique ?? 5} {cur}/kg</strong></span>
+            <span>Documents : <strong>{fees.supplements?.documents ?? -2} {cur}/kg</strong></span>
+          </div>
+        </div>
+        <div style={{ background: 'var(--bg-soft)', borderRadius: 6, padding: '10px 12px' }}>
+          <div style={{ fontWeight: 700, color: 'var(--ink-600)', marginBottom: 6, fontSize: 11, textTransform: 'uppercase', letterSpacing: '.04em' }}>Autres frais</div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 3, color: 'var(--ink-700)' }}>
+            <span>Conditionnement : <strong>0,60 {cur}/plastique</strong></span>
+            <span>Livraison Mtl île : <strong>{fees.deliveryFee ?? 25} {cur}</strong></span>
+            <span>Livraison Grand Mtl : <strong>{Math.round((fees.deliveryFee ?? 25) * 1.2)} {cur}</strong></span>
+            <span>Marge par défaut : <strong>{fees.marginPct ?? 30} %</strong></span>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function SettingsCard({ title, sub, children, actions }) {
   return (
     <div className="card" style={{ marginBottom: 14 }}>
@@ -904,36 +1016,21 @@ export default function SettingsScreen({ onNav }) {
             <button className="btn btn--ghost btn--sm" onClick={() => { setRouteDetail(null); setEditRoute(routeDetail); }}><I.Edit />Modifier</button>
           </div>
           <div className="drawer__body" style={{ padding: 22 }}>
+            <div className="section-title" style={{ marginBottom: 12 }}>Grille tarifaire</div>
             {routeDetail.fees?.tiers?.length > 0 ? (
-              <>
-                <div className="section-title">Grille tarifaire</div>
-                <table className="tbl" style={{ marginBottom: 16 }}>
-                  <thead>
-                    <tr>
-                      <th>Tranche</th>
-                      <th style={{ textAlign: 'right' }}>Forfait</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {routeDetail.fees.tiers.map((t, i) => (
-                      <tr key={i}>
-                        <td style={{ fontSize: 12.5 }}>{t.from} – {t.to} kg</td>
-                        <td className="mono" style={{ textAlign: 'right', fontWeight: 700 }}>{t.flat} {routeDetail.currency ?? 'CAD'}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-                {routeDetail.fees.deliveryFee > 0 && (
-                  <div style={{ fontSize: 12.5, color: 'var(--ink-600)', marginBottom: 8 }}>
-                    Livraison Grand Montréal : <strong>{routeDetail.fees.deliveryFee} {routeDetail.currency ?? 'CAD'}</strong>
-                  </div>
-                )}
-              </>
+              <TarifGrid
+                tiers={routeDetail.fees.tiers}
+                fees={{ ...DEFAULT_FEES_META, ...routeDetail.fees }}
+                currency={routeDetail.currency ?? 'CAD'}
+                isDefault={false}
+              />
             ) : (
-              <>
-                <div className="section-title">Grille tarifaire</div>
-                <p style={{ fontSize: 12, color: 'var(--ink-400)' }}>Aucune tarification configurée.</p>
-              </>
+              <TarifGrid
+                tiers={DEFAULT_TIERS}
+                fees={DEFAULT_FEES_META}
+                currency={routeDetail.currency ?? 'CAD'}
+                isDefault={true}
+              />
             )}
           </div>
         </Drawer>
