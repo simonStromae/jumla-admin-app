@@ -45,6 +45,7 @@ export default function ParcelFormPage({ mode = 'create', parcel, campaign, onNa
   const [campaigns, setCampaigns]   = useState([]);
   const [clients, setClients]       = useState([]);
   const [clientSearch, setClientSearch] = useState('');
+  const [clientAddresses, setClientAddresses] = useState([]);
   const [loading, setLoading]       = useState(true);
   const [saving, setSaving]         = useState(false);
   const [err, setErr]               = useState('');
@@ -78,9 +79,27 @@ export default function ParcelFormPage({ mode = 'create', parcel, campaign, onNa
     marginPct:        parcel?.marginPct   || 30,
     delivery:         'pickup',
     notes:            parcel?.notes       || '',
+    recipName:        parcel?.recipName   || '',
+    recipPhone:       parcel?.recipPhone  || '',
+    recipCity:        parcel?.recipCity   || '',
+    recipAddress:     '',
+    recipApt:         '',
+    recipProvince:    'QC',
+    recipPostal:      '',
   });
 
   const upd = (k, v) => setData(d => ({ ...d, [k]: v }));
+
+  // Load saved addresses when client changes
+  useEffect(() => {
+    if (!data.clientId) { setClientAddresses([]); return; }
+    fetch('/api/clients/' + data.clientId)
+      .then(r => r.ok ? r.json() : null)
+      .then(d => {
+        setClientAddresses(Array.isArray(d?.savedAddresses) ? d.savedAddresses : []);
+      })
+      .catch(() => setClientAddresses([]));
+  }, [data.clientId]);
 
   useEffect(() => {
     Promise.all([
@@ -166,6 +185,14 @@ export default function ParcelFormPage({ mode = 'create', parcel, campaign, onNa
           nbCasiers12x50:    data.nbCasiers12x50,
           marginPct:         Number(data.marginPct),
           pricingDetails:    pricing || null,
+          recipName:         data.recipName  || null,
+          recipPhone:        data.recipPhone || null,
+          recipCity:         data.recipCity  || null,
+          recipAddress:      data.recipAddress || null,
+          recipApt:          data.recipApt    || null,
+          recipProvince:     data.recipProvince || null,
+          recipPostal:       data.recipPostal   || null,
+          delivery:          data.delivery,
         }),
       });
       const json = await res.json();
@@ -389,6 +416,64 @@ export default function ParcelFormPage({ mode = 'create', parcel, campaign, onNa
                 </label>
               ))}
             </div>
+            {data.delivery === 'home' && (
+              <div style={{ marginTop: 12, padding: 14, background: 'var(--bg-soft)', borderRadius: 8, border: '1px solid var(--border-soft)', marginBottom: 14 }}>
+                <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.06em', color: 'var(--ink-500)', marginBottom: 12 }}>Destinataire &amp; Adresse de livraison</div>
+
+                {clientAddresses.length > 0 && (
+                  <div className="field" style={{ marginBottom: 10 }}>
+                    <label className="label">Adresse sauvegardée du client</label>
+                    <select className="select" defaultValue="" onChange={e => {
+                      const addr = clientAddresses.find(a => a.id === e.target.value);
+                      if (addr) {
+                        upd('recipAddress',  addr.address  || '');
+                        upd('recipApt',      addr.apt      || '');
+                        upd('recipCity',     addr.city     || '');
+                        upd('recipProvince', addr.province || 'QC');
+                        upd('recipPostal',   addr.postal   || '');
+                      }
+                    }}>
+                      <option value="">Choisir une adresse sauvegardée…</option>
+                      {clientAddresses.map(a => (
+                        <option key={a.id} value={a.id}>
+                          {a.label ? `${a.label} — ` : ''}{a.address}{a.city ? `, ${a.city}` : ''}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 8 }}>
+                  <div className="field" style={{ marginBottom: 0 }}>
+                    <label className="label">Nom destinataire</label>
+                    <input className="input input--sm" value={data.recipName} onChange={e => upd('recipName', e.target.value)} placeholder="Nom complet" />
+                  </div>
+                  <div className="field" style={{ marginBottom: 0 }}>
+                    <label className="label">Téléphone destinataire</label>
+                    <input className="input input--sm" value={data.recipPhone} onChange={e => upd('recipPhone', e.target.value)} placeholder="+237 6XX XXX XXX" />
+                  </div>
+                </div>
+                <div className="field" style={{ marginBottom: 8 }}>
+                  <label className="label">Adresse (numéro et rue)</label>
+                  <input className="input input--sm" value={data.recipAddress} onChange={e => upd('recipAddress', e.target.value)} placeholder="123 rue Sainte-Catherine" />
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 60px 140px', gap: 8 }}>
+                  <div className="field" style={{ marginBottom: 0 }}>
+                    <label className="label">Ville</label>
+                    <input className="input input--sm" value={data.recipCity} onChange={e => upd('recipCity', e.target.value)} placeholder="Montréal" />
+                  </div>
+                  <div className="field" style={{ marginBottom: 0 }}>
+                    <label className="label">Province</label>
+                    <input className="input input--sm" value={data.recipProvince} onChange={e => upd('recipProvince', e.target.value)} placeholder="QC" />
+                  </div>
+                  <div className="field" style={{ marginBottom: 0 }}>
+                    <label className="label">Code postal</label>
+                    <input className="input input--sm" value={data.recipPostal} onChange={e => upd('recipPostal', e.target.value)} placeholder="H3H 1A1" />
+                  </div>
+                </div>
+              </div>
+            )}
+
             <div className="field" style={{ marginBottom: 0 }}>
               <label className="label">Notes internes <span className="opt">/ optionnel</span></label>
               <textarea className="textarea" rows={2} value={data.notes} onChange={e => upd('notes', e.target.value)} placeholder="Instructions, précautions…" />

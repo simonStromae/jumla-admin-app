@@ -81,7 +81,15 @@ export async function POST(req: NextRequest) {
     productType, nbCartons, nbPetitsSacs, nbSacsMoyens, nbGrandsSacs,
     nbPlastiques, nbPlastiquesBiere, nbCasiers24x65, nbCasiers24x33, nbCasiers12x50,
     marginPct, pricingDetails, items,
+    recipName, recipPhone, recipCity, recipAddress, recipApt, recipProvince, recipPostal, delivery,
   } = body;
+
+  // Build delivery address note
+  let deliveryNote = '';
+  if (delivery === 'home' && recipAddress) {
+    deliveryNote = `Livraison: ${recipAddress}${recipApt ? ` apt ${recipApt}` : ''}, ${recipCity || ''}, ${recipProvince || ''} ${recipPostal || ''}`.trim();
+  }
+  const finalNotes = [notes, deliveryNote].filter(Boolean).join('\n') || null;
 
   if (!clientId || !campaignId) {
     return NextResponse.json({ error: 'Champs obligatoires manquants' }, { status: 400 });
@@ -105,7 +113,10 @@ export async function POST(req: NextRequest) {
       weightKg:         finalWeightKg,
       priceXaf:         priceXaf ? Number(priceXaf) : null,
       declaredValue:    declaredValue ? Number(declaredValue) : null,
-      notes,
+      notes:            finalNotes,
+      recipName:        recipName  || null,
+      recipPhone:       recipPhone || null,
+      recipCity:        recipCity  || null,
       productType:      productType      ?? 'standard',
       nbCartons:        nbCartons        ? Number(nbCartons)        : 0,
       nbPetitsSacs:     nbPetitsSacs     ? Number(nbPetitsSacs)     : 0,
