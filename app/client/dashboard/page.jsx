@@ -6,17 +6,17 @@ import I from '@/src/components/Icons.jsx';
 
 const JOURNEY = [
   { key: 'enr', label: 'Enregistré',   icon: '📝', color: '#6b7280' },
-  { key: 'rec', label: 'Reçu',         icon: '📥', color: '#2563eb' },
-  { key: 'pre', label: 'Préparé',      icon: '🔍', color: '#7c3aed' },
-  { key: 'exp', label: 'Expédié',      icon: '🚀', color: '#0e7490' },
-  { key: 'tra', label: 'En transit',   icon: '✈️', color: '#0891b2' },
-  { key: 'apd', label: 'Arrivé pays',  icon: '🛬', color: '#16a34a' },
-  { key: 'dou', label: 'Douanes',      icon: '🛃', color: '#d97706' },
-  { key: 'lib', label: 'Libéré',       icon: '✅', color: '#16a34a' },
-  { key: 'ard', label: 'Entrepôt',    icon: '🏭', color: '#16a34a' },
-  { key: 'pdl', label: 'Prêt',        icon: '📦', color: '#0e7490' },
-  { key: 'liv', label: 'En chemin',   icon: '🚚', color: '#0891b2' },
-  { key: 'ok',  label: 'Livré',       icon: '🎉', color: '#15803d' },
+  { key: 'rec', label: 'Reçu',         icon: '📥', color: '#D97706' },
+  { key: 'pre', label: 'Préparé',      icon: '🔍', color: '#D97706' },
+  { key: 'exp', label: 'Expédié',      icon: '🚀', color: '#D97706' },
+  { key: 'tra', label: 'En transit',   icon: '✈️', color: '#D97706' },
+  { key: 'apd', label: 'Arrivé pays',  icon: '🛬', color: '#B45309' },
+  { key: 'dou', label: 'Douanes',      icon: '🛃', color: '#B45309' },
+  { key: 'lib', label: 'Libéré',       icon: '✅', color: '#B45309' },
+  { key: 'ard', label: 'Entrepôt',    icon: '🏭', color: '#B45309' },
+  { key: 'pdl', label: 'Prêt',        icon: '📦', color: '#92400e' },
+  { key: 'liv', label: 'En chemin',   icon: '🚚', color: '#92400e' },
+  { key: 'ok',  label: 'Livré',       icon: '🎉', color: '#111827' },
 ];
 
 function getJourneyStep(status) {
@@ -34,11 +34,11 @@ function ProgressDots({ status }) {
             width: i === current ? 8 : 6,
             height: i === current ? 8 : 6,
             borderRadius: '50%',
-            background: i <= current ? (i === current ? s.color : '#86efac') : '#e5e7eb',
+            background: i <= current ? (i === current ? s.color : '#fcd34d') : '#e5e7eb',
             transition: 'all .2s',
           }} />
           {i < JOURNEY.length - 2 && (
-            <div style={{ width: 12, height: 2, background: i < current ? '#86efac' : '#e5e7eb', borderRadius: 1 }} />
+            <div style={{ width: 12, height: 2, background: i < current ? '#fcd34d' : '#e5e7eb', borderRadius: 1 }} />
           )}
         </div>
       ))}
@@ -78,7 +78,7 @@ function ParcelCard({ parcel, onClick }) {
       {/* Left accent bar */}
       <div style={{
         position: 'absolute', left: 0, top: 0, bottom: 0, width: 4,
-        background: isLivré ? '#16a34a' : s.color,
+        background: s.color,
         borderRadius: '14px 0 0 14px',
       }} />
 
@@ -192,19 +192,19 @@ function ClientDashboardInner() {
       {showBooked && bookedCode && (
         <div style={{
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          background: '#f0fdf4', border: '1px solid #86efac',
+          background: '#fffbeb', border: '1px solid #fbbf24',
           padding: '14px 18px', marginBottom: 20,
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            <span style={{ fontSize: 22 }}>✅</span>
+            <span style={{ fontSize: 22 }}>🎉</span>
             <div>
-              <div style={{ fontWeight: 700, fontSize: 14, color: '#15803d' }}>Réservation enregistrée !</div>
-              <div style={{ fontSize: 12.5, color: '#166534', marginTop: 1 }}>
+              <div style={{ fontWeight: 700, fontSize: 14, color: '#92400e' }}>Réservation enregistrée !</div>
+              <div style={{ fontSize: 12.5, color: '#b45309', marginTop: 1 }}>
                 Numéro de suivi : <span style={{ fontFamily: 'monospace', fontWeight: 700 }}>{bookedCode}</span> · En attente de confirmation du paiement.
               </div>
             </div>
           </div>
-          <button onClick={() => setShowBooked(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 18, color: '#16a34a', lineHeight: 1 }}>×</button>
+          <button onClick={() => setShowBooked(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 18, color: '#b45309', lineHeight: 1 }}>×</button>
         </div>
       )}
 

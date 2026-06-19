@@ -104,7 +104,7 @@ export default function ClientInvoices() {
           <div style={{ fontSize: 11.5, color: 'var(--ink-400)', textTransform: 'uppercase', letterSpacing: '.05em', fontWeight: 600, marginBottom: 8 }}>
             Montant dû
           </div>
-          <div style={{ fontSize: 28, fontWeight: 800, color: totalDue > 0 ? 'var(--bad-500)' : 'var(--ok-600)', fontFamily: 'var(--font-mono)' }}>
+          <div style={{ fontSize: 28, fontWeight: 800, color: totalDue > 0 ? 'var(--bad-500)' : 'var(--ink-900)', fontFamily: 'var(--font-mono)' }}>
             {totalDue.toLocaleString('fr')}
             <span style={{ fontSize: 14, fontWeight: 400, color: 'var(--ink-400)', marginLeft: 6 }}>CAD</span>
           </div>
@@ -121,7 +121,7 @@ export default function ClientInvoices() {
           <div style={{ fontSize: 11.5, color: 'var(--ink-400)', textTransform: 'uppercase', letterSpacing: '.05em', fontWeight: 600, marginBottom: 8 }}>
             Total payé
           </div>
-          <div style={{ fontSize: 28, fontWeight: 800, color: 'var(--ok-600)', fontFamily: 'var(--font-mono)' }}>
+          <div style={{ fontSize: 28, fontWeight: 800, color: 'var(--ink-900)', fontFamily: 'var(--font-mono)' }}>
             {totalPaid.toLocaleString('fr')}
             <span style={{ fontSize: 14, fontWeight: 400, color: 'var(--ink-400)', marginLeft: 6 }}>CAD</span>
           </div>
@@ -134,11 +134,11 @@ export default function ClientInvoices() {
       {/* Interac info box */}
       {totalDue > 0 && (
         <div style={{
-          background: 'var(--info-50)', border: '1px solid var(--info-200)',
+          background: '#fffbeb', border: '1px solid #fde68a',
           borderRadius: 10, padding: '14px 18px', marginBottom: 20, fontSize: 13,
         }}>
-          <div style={{ fontWeight: 700, color: 'var(--info-700)', marginBottom: 6 }}>Comment payer ?</div>
-          <div style={{ color: 'var(--info-600)', lineHeight: 1.6 }}>
+          <div style={{ fontWeight: 700, color: '#92400e', marginBottom: 6 }}>Comment payer ?</div>
+          <div style={{ color: '#b45309', lineHeight: 1.6 }}>
             Envoyez votre virement Interac à <strong>paiement@jumlashipping.ca</strong>.<br />
             Indiquez votre numéro de colis dans le message. Notre équipe confirmera votre paiement sous 24h.
           </div>
