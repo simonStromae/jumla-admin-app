@@ -305,6 +305,21 @@ export default function ParcelDetailPage({ params }) {
                 <InfoCell label="Arrivée prévue" value={fmt(parcel.campaign?.arrivalDate)} />
               </div>
 
+              {/* Recipient / delivery info */}
+              <div style={{ marginBottom: 14 }}>
+                <div style={{ fontSize: 10.5, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.06em', color: '#9ca3af', marginBottom: 8 }}>Destinataire &amp; livraison</div>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 16 }}>
+                  <InfoCell label="Mode" value={
+                    parcel.delivery === 'home' ? '🚚 Livraison domicile' :
+                    parcel.delivery === 'ship' ? '🚢 Expédition' :
+                    '🏭 Retrait entrepôt'
+                  } />
+                  {parcel.recipName  && <InfoCell label="Nom"       value={parcel.recipName} />}
+                  {parcel.recipPhone && <InfoCell label="Téléphone" value={parcel.recipPhone} />}
+                  {parcel.recipCity  && <InfoCell label="Ville"     value={parcel.recipCity} />}
+                </div>
+              </div>
+
               {/* Packaging counts */}
               {packagingFields.some(f => (parcel[f.key] ?? 0) > 0) && (
                 <>
@@ -486,42 +501,70 @@ export default function ParcelDetailPage({ params }) {
         })()}
 
         {/* ── Payment ── */}
-        <Section title="Paiement" col="1 / -1" badge={
-          <span style={{ fontSize: 12, fontWeight: 700, padding: '3px 8px', borderRadius: 99, background: paid ? '#dcfce7' : partial ? '#fef3c7' : '#fee2e2', color: paid ? '#16a34a' : partial ? '#92400e' : '#dc2626' }}>
-            {paid ? '✓ Payé' : partial ? 'Partiel' : 'En attente'}
-          </span>
-        }>
-          {parcel.payment ? (
-            <div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
-                <span style={{ fontSize: 13, color: '#6b7280' }}>Montant total</span>
-                <span style={{ fontWeight: 700, fontSize: 15, fontFamily: 'monospace' }}>{parcel.payment.amount.toLocaleString('fr')} CAD</span>
-              </div>
-              {(partial || !paid) && parcel.payment.allocated > 0 && (
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
-                  <span style={{ fontSize: 13, color: '#6b7280' }}>Déjà reçu</span>
-                  <span style={{ fontWeight: 600, fontSize: 14, color: '#16a34a', fontFamily: 'monospace' }}>{parcel.payment.allocated.toLocaleString('fr')} CAD</span>
+        {(() => {
+          const adjPending = parcel.adjustmentStatus === 'pending' && parcel.confirmedPriceXaf != null;
+          const supplement = adjPending ? Math.max(0, parcel.confirmedPriceXaf - (parcel.priceXaf ?? 0)) : 0;
+          const badge = paid && adjPending
+            ? <span style={{ fontSize: 12, fontWeight: 700, padding: '3px 8px', borderRadius: 99, background: '#fef3c7', color: '#92400e' }}>Payé · Suppl. dû</span>
+            : <span style={{ fontSize: 12, fontWeight: 700, padding: '3px 8px', borderRadius: 99, background: paid ? '#dcfce7' : partial ? '#fef3c7' : '#fee2e2', color: paid ? '#16a34a' : partial ? '#92400e' : '#dc2626' }}>
+                {paid ? '✓ Payé' : partial ? 'Partiel' : 'En attente'}
+              </span>;
+          return (
+            <Section title="Paiement" col="1 / -1" badge={badge}>
+              {parcel.payment ? (
+                <div>
+                  {paid && adjPending ? (
+                    <>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+                        <span style={{ fontSize: 13, color: '#6b7280' }}>Facture initiale</span>
+                        <div style={{ textAlign: 'right' }}>
+                          <div style={{ fontWeight: 700, fontSize: 15, fontFamily: 'monospace', color: '#16a34a' }}>✓ {parcel.payment.amount.toLocaleString('fr')} CAD</div>
+                          {parcel.payment.paidAt && <div style={{ fontSize: 11, color: '#9ca3af' }}>Payé le {fmt(parcel.payment.paidAt)}</div>}
+                        </div>
+                      </div>
+                      {supplement > 0 && (
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 14px', background: '#fffbeb', border: '1.5px solid #fbbf24', borderRadius: 9, marginBottom: 10 }}>
+                          <span style={{ fontSize: 13, color: '#92400e', fontWeight: 600 }}>⚠️ Supplément dû</span>
+                          <span style={{ fontWeight: 800, fontSize: 15, fontFamily: 'monospace', color: '#92400e' }}>+{supplement.toLocaleString('fr')} CAD</span>
+                        </div>
+                      )}
+                      <div style={{ fontSize: 12, color: '#6b7280', fontStyle: 'italic' }}>Voir la section &laquo;&nbsp;Ajustement de prix&nbsp;&raquo; ci-dessus pour régler le supplément.</div>
+                    </>
+                  ) : (
+                    <>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
+                        <span style={{ fontSize: 13, color: '#6b7280' }}>Montant total</span>
+                        <span style={{ fontWeight: 700, fontSize: 15, fontFamily: 'monospace' }}>{parcel.payment.amount.toLocaleString('fr')} CAD</span>
+                      </div>
+                      {(partial || !paid) && parcel.payment.allocated > 0 && (
+                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
+                          <span style={{ fontSize: 13, color: '#6b7280' }}>Déjà reçu</span>
+                          <span style={{ fontWeight: 600, fontSize: 14, color: '#16a34a', fontFamily: 'monospace' }}>{parcel.payment.allocated.toLocaleString('fr')} CAD</span>
+                        </div>
+                      )}
+                      {!paid && (
+                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 12 }}>
+                          <span style={{ fontSize: 13, color: '#6b7280' }}>Reste à régler</span>
+                          <span style={{ fontWeight: 700, fontSize: 15, color: '#dc2626', fontFamily: 'monospace' }}>{parcel.payment.remaining.toLocaleString('fr')} CAD</span>
+                        </div>
+                      )}
+                      {paid && parcel.payment.paidAt && (
+                        <div style={{ fontSize: 12.5, color: '#6b7280' }}>Payé le {fmt(parcel.payment.paidAt)}</div>
+                      )}
+                      {!paid && (
+                        <div style={{ padding: '10px 14px', borderRadius: 8, background: '#fef3c7', border: '1px solid #fde68a', fontSize: 12.5, color: '#92400e', marginTop: 8 }}>
+                          💸 Envoyez <strong>{parcel.payment.remaining.toLocaleString('fr')} CAD</strong> par Virement Interac — référence : <strong>{parcel.trackingCode}</strong>
+                        </div>
+                      )}
+                    </>
+                  )}
                 </div>
+              ) : (
+                <div style={{ fontSize: 13, color: '#9ca3af', fontStyle: 'italic' }}>Aucune facture générée pour l&apos;instant.</div>
               )}
-              {!paid && (
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 12 }}>
-                  <span style={{ fontSize: 13, color: '#6b7280' }}>Reste à régler</span>
-                  <span style={{ fontWeight: 700, fontSize: 15, color: '#dc2626', fontFamily: 'monospace' }}>{parcel.payment.remaining.toLocaleString('fr')} CAD</span>
-                </div>
-              )}
-              {paid && parcel.payment.paidAt && (
-                <div style={{ fontSize: 12.5, color: '#6b7280' }}>Payé le {fmt(parcel.payment.paidAt)}</div>
-              )}
-              {!paid && (
-                <div style={{ padding: '10px 14px', borderRadius: 8, background: '#fef3c7', border: '1px solid #fde68a', fontSize: 12.5, color: '#92400e', marginTop: 8 }}>
-                  💸 Envoyez <strong>{parcel.payment.remaining.toLocaleString('fr')} CAD</strong> par Virement Interac — référence : <strong>{parcel.trackingCode}</strong>
-                </div>
-              )}
-            </div>
-          ) : (
-            <div style={{ fontSize: 13, color: '#9ca3af', fontStyle: 'italic' }}>Aucune facture générée pour l&apos;instant.</div>
-          )}
-        </Section>
+            </Section>
+          );
+        })()}
 
         {/* ── Bordereaux ── */}
         {parcel.bordereaux?.length > 0 && (
