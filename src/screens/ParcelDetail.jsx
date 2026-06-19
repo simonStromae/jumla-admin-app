@@ -50,18 +50,11 @@ export default function ParcelDetailScreen({ id, onNav }) {
   const [addingBl, setAddingBl] = useState(false);
   const [editingBlId,    setEditingBlId]    = useState(null);
   const [editingBlItems, setEditingBlItems] = useState([]);
-  const [billing, setBilling] = useState({ confirmedPrice: '', saving: false, err: '', saved: false });
 
   useEffect(() => {
     fetch('/api/parcels/' + id)
       .then(r => r.json())
-      .then(data => {
-        setParcel(data);
-        setLoading(false);
-        if (data.confirmedPriceXaf != null) {
-          setBilling(b => ({ ...b, confirmedPrice: String(data.confirmedPriceXaf) }));
-        }
-      })
+      .then(data => { setParcel(data); setLoading(false); })
       .catch(() => setLoading(false));
   }, [id]);
 
@@ -548,91 +541,58 @@ export default function ParcelDetailScreen({ id, onNav }) {
             )}
           </div>
 
-          {/* Billing / Adjustment */}
+          {/* Billing — read-only summary, updated via Poids/Prix modal */}
           <div className="card" style={{ padding: 16 }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
               <div className="section-title" style={{ margin: 0 }}>
-                <I.Edit style={{ width: 14, height: 14, color: 'var(--brand-600)' }} /> Facturation
+                <I.Wallet style={{ width: 14, height: 14, color: 'var(--brand-600)' }} /> Facturation
               </div>
               {parcel.adjustmentStatus === 'pending' && (
-                <span className="badge badge--dot badge--warn">Ajustement en attente</span>
+                <span className="badge badge--dot badge--warn">Supplément dû</span>
               )}
               {parcel.adjustmentStatus === 'paid' && (
-                <span className="badge badge--dot badge--ok">Ajustement réglé</span>
+                <span className="badge badge--dot badge--ok">Réglé</span>
               )}
             </div>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 12 }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13 }}>
-                <span style={{ color: 'var(--ink-500)' }}>Estimation client</span>
-                <span className="mono" style={{ fontWeight: 600 }}>{parcel.priceXaf ? parcel.priceXaf.toLocaleString('fr') + ' CAD' : '—'}</span>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, padding: '5px 8px', background: 'var(--bg-soft)', borderRadius: 5 }}>
+                <span style={{ color: 'var(--ink-500)' }}>Estimation réservation</span>
+                <span className="mono" style={{ color: parcel.confirmedPriceXaf != null ? 'var(--ink-400)' : 'var(--ink-700)', fontWeight: 600, textDecoration: parcel.confirmedPriceXaf != null ? 'line-through' : 'none' }}>
+                  {parcel.priceXaf ? parcel.priceXaf.toLocaleString('fr') + ' CAD' : '—'}
+                </span>
               </div>
-              {parcel.confirmedPriceXaf != null && (
+
+              {parcel.confirmedPriceXaf != null ? (
                 <>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13 }}>
-                    <span style={{ color: 'var(--ink-500)' }}>Prix réel (après pesée)</span>
-                    <span className="mono" style={{ fontWeight: 700, color: 'var(--ink-800)' }}>{parcel.confirmedPriceXaf.toLocaleString('fr')} CAD</span>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, padding: '5px 8px', background: 'var(--brand-50)', borderRadius: 5 }}>
+                    <span style={{ color: 'var(--ink-700)', fontWeight: 600 }}>Prix réel (pesée)</span>
+                    <span className="mono" style={{ fontWeight: 700, fontSize: 14, color: 'var(--ink-900)' }}>
+                      {parcel.confirmedPriceXaf.toLocaleString('fr')} CAD
+                    </span>
                   </div>
                   {(() => {
                     const diff = parcel.confirmedPriceXaf - (parcel.priceXaf ?? 0);
-                    return diff !== 0 ? (
-                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, borderTop: '1px solid var(--border)', paddingTop: 8 }}>
-                        <span style={{ color: diff > 0 ? 'var(--warn-700)' : 'var(--ok-700)', fontWeight: 600 }}>
+                    if (diff === 0) return (
+                      <div style={{ fontSize: 12, color: 'var(--ok-700)', textAlign: 'center', padding: '4px 0' }}>✓ Identique à l'estimation</div>
+                    );
+                    return (
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, padding: '6px 8px', background: diff > 0 ? 'var(--warn-50)' : 'var(--ok-50)', border: `1px solid ${diff > 0 ? 'var(--warn-200)' : 'var(--ok-100)'}`, borderRadius: 6 }}>
+                        <span style={{ fontWeight: 700, color: diff > 0 ? 'var(--warn-700)' : 'var(--ok-700)' }}>
                           {diff > 0 ? '↑ Supplément' : '↓ Remise'}
                         </span>
                         <span className="mono" style={{ fontWeight: 700, color: diff > 0 ? 'var(--warn-700)' : 'var(--ok-700)' }}>
                           {diff > 0 ? '+' : ''}{diff.toLocaleString('fr')} CAD
                         </span>
                       </div>
-                    ) : null;
+                    );
                   })()}
                 </>
+              ) : (
+                <div style={{ fontSize: 12, color: 'var(--ink-400)', fontStyle: 'italic', padding: '6px 8px' }}>
+                  Ouvrez <strong>Poids / Prix</strong> pour saisir le poids réel et confirmer le prix.
+                </div>
               )}
-            </div>
-
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-              <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--ink-500)' }}>Prix réel après pesée (CAD)</div>
-              <input
-                className="input mono"
-                type="number"
-                min="0"
-                step="1"
-                placeholder={parcel.priceXaf ? String(parcel.priceXaf) : 'Montant CAD…'}
-                value={billing.confirmedPrice}
-                onChange={e => setBilling(b => ({ ...b, confirmedPrice: e.target.value, saved: false, err: '' }))}
-              />
-              {billing.err && (
-                <div style={{ fontSize: 12, color: 'var(--bad-600)' }}>{billing.err}</div>
-              )}
-              {billing.saved && (
-                <div style={{ fontSize: 12, color: 'var(--ok-700)' }}>✓ Enregistré — notification envoyée</div>
-              )}
-              <button
-                className="btn btn--brand"
-                style={{ justifyContent: 'center' }}
-                disabled={billing.saving || !billing.confirmedPrice}
-                onClick={async () => {
-                  setBilling(b => ({ ...b, saving: true, err: '', saved: false }));
-                  const res = await fetch('/api/parcels/' + parcel.id, {
-                    method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ confirmedPriceXaf: Number(billing.confirmedPrice) }),
-                  });
-                  const json = await res.json();
-                  if (res.ok) {
-                    setParcel(p => ({
-                      ...p,
-                      confirmedPriceXaf: Number(billing.confirmedPrice),
-                      adjustmentStatus:  json.parcel?.adjustmentStatus ?? p.adjustmentStatus,
-                    }));
-                    setBilling(b => ({ ...b, saving: false, saved: true }));
-                  } else {
-                    setBilling(b => ({ ...b, saving: false, err: json.error || 'Erreur' }));
-                  }
-                }}
-              >
-                {billing.saving ? 'Enregistrement…' : 'Enregistrer & Notifier'}
-              </button>
             </div>
           </div>
 
@@ -727,7 +687,14 @@ export default function ParcelDetailScreen({ id, onNav }) {
           parcel={parcel}
           onClose={() => setShowWeightModal(false)}
           onSaved={(updated) => {
-            setParcel(p => ({ ...p, weightKg: updated.weightKg, priceXaf: updated.priceXaf, items: updated.items || p.items }));
+            setParcel(p => ({
+              ...p,
+              weightKg:          updated.weightKg,
+              priceXaf:          updated.priceXaf,
+              confirmedPriceXaf: updated.confirmedPriceXaf ?? p.confirmedPriceXaf,
+              adjustmentStatus:  updated.adjustmentStatus  ?? p.adjustmentStatus,
+              items:             updated.items || p.items,
+            }));
             setShowWeightModal(false);
           }}
         />
@@ -871,19 +838,21 @@ function WeightModal({ parcel, onClose, onSaved }) {
   const handleSave = async () => {
     setSaving(true);
     const validItems = items.filter(it => Number(it.weightKg) > 0);
+    const realPrice  = breakdown?.prixClient ? Math.round(breakdown.prixClient) : undefined;
     const res = await fetch('/api/parcels/' + parcel.id, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        weightKg: breakdown?.totalKg || undefined,
-        priceXaf: breakdown?.prixClient ? Math.round(breakdown.prixClient) : undefined,
-        items: validItems,
-        marginPct: Number(marginPct) || 0,
-        nbCartons:    addons.nbCartons,
-        nbPetitsSacs: addons.nbPetitsSacs,
-        nbSacsMoyens: addons.nbSacsMoyens,
-        nbGrandsSacs: addons.nbGrandsSacs,
-        nbPlastiques: addons.nbPlastiques,
+        weightKg:          breakdown?.totalKg || undefined,
+        // priceXaf intentionally NOT sent — keeps the original booking estimate for comparison
+        confirmedPriceXaf: realPrice,
+        items:             validItems,
+        marginPct:         Number(marginPct) || 0,
+        nbCartons:         addons.nbCartons,
+        nbPetitsSacs:      addons.nbPetitsSacs,
+        nbSacsMoyens:      addons.nbSacsMoyens,
+        nbGrandsSacs:      addons.nbGrandsSacs,
+        nbPlastiques:      addons.nbPlastiques,
       }),
     });
     const json = await res.json();
@@ -1079,6 +1048,48 @@ function WeightModal({ parcel, onClose, onSaved }) {
                 <span>Prix client</span>
                 <span className="mono">{bd.prixClient?.toFixed(2)} $</span>
               </div>
+
+              {/* ── Comparaison vs estimation réservation ── */}
+              {parcel.priceXaf != null && (() => {
+                const estimated = parcel.priceXaf;
+                const real      = Math.round(bd.prixClient ?? 0);
+                const diff      = real - estimated;
+                return (
+                  <>
+                    <div style={{ borderTop: '1.5px dashed var(--border)', margin: '14px 0 10px' }} />
+                    <div style={{ fontSize: 10.5, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.06em', color: 'var(--ink-400)', marginBottom: 8 }}>
+                      Comparaison
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, padding: '4px 8px', background: 'var(--bg-soft)', borderRadius: 4 }}>
+                        <span style={{ color: 'var(--ink-400)' }}>Estimation réservation</span>
+                        <span className="mono" style={{ color: 'var(--ink-400)', textDecoration: 'line-through' }}>{estimated.toLocaleString('fr')} CAD</span>
+                      </div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12.5, padding: '4px 8px', background: 'var(--brand-50)', borderRadius: 4 }}>
+                        <span style={{ color: 'var(--ink-700)', fontWeight: 600 }}>Prix réel (pesée)</span>
+                        <span className="mono" style={{ fontWeight: 700, color: 'var(--ink-900)' }}>{real.toLocaleString('fr')} CAD</span>
+                      </div>
+                      {diff === 0 ? (
+                        <div style={{ fontSize: 11.5, color: 'var(--ok-700)', textAlign: 'center', padding: '4px 0' }}>✓ Identique à l'estimation</div>
+                      ) : (
+                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, padding: '6px 8px', background: diff > 0 ? 'var(--warn-50)' : 'var(--ok-50)', border: `1px solid ${diff > 0 ? 'var(--warn-200)' : 'var(--ok-100)'}`, borderRadius: 6 }}>
+                          <span style={{ fontWeight: 700, color: diff > 0 ? 'var(--warn-700)' : 'var(--ok-700)' }}>
+                            {diff > 0 ? '↑ Supplément' : '↓ Remise'}
+                          </span>
+                          <span className="mono" style={{ fontWeight: 700, color: diff > 0 ? 'var(--warn-700)' : 'var(--ok-700)' }}>
+                            {diff > 0 ? '+' : ''}{diff.toLocaleString('fr')} CAD
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                    {diff !== 0 && (
+                      <div style={{ marginTop: 8, fontSize: 11, color: 'var(--ink-400)', fontStyle: 'italic', lineHeight: 1.5 }}>
+                        En cliquant "Appliquer", le client sera notifié par WhatsApp si un supplément est dû.
+                      </div>
+                    )}
+                  </>
+                );
+              })()}
             </div>
           )}
         </div>
