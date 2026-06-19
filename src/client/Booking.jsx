@@ -549,7 +549,7 @@ function getUTCDateKey(dateStr) {
   return `${d.getUTCFullYear()}-${String(d.getUTCMonth()+1).padStart(2,'0')}-${String(d.getUTCDate()).padStart(2,'0')}`;
 }
 
-function CampaignCalendar({ campaigns, selected, onSelect }) {
+function CampaignCalendar({ campaigns, selected, onSelect, routeLabel }) {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
@@ -583,9 +583,14 @@ function CampaignCalendar({ campaigns, selected, onSelect }) {
 
   const selectedCampaign = campaigns.find(c => c.id === selected);
 
+  const fmtShort = (dateStr) => {
+    if (!dateStr) return null;
+    return new Date(dateStr).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', timeZone: 'UTC' });
+  };
+
   return (
     <div>
-      {/* Calendar card */}
+      {/* Calendar */}
       <div style={{ background: 'white', border: '1.5px solid var(--border)', borderRadius: 16, overflow: 'hidden' }}>
         {/* Header */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 20px', borderBottom: '1px solid var(--border-soft)' }}>
@@ -595,67 +600,114 @@ function CampaignCalendar({ campaigns, selected, onSelect }) {
         </div>
 
         {/* Day headers */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', padding: '8px 12px 4px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', borderBottom: '1px solid var(--border-soft)' }}>
           {DAY_LABELS_FR.map(d => (
-            <div key={d} style={{ textAlign: 'center', fontSize: 11, fontWeight: 700, color: 'var(--ink-400)', textTransform: 'uppercase', letterSpacing: '.05em', padding: '4px 0' }}>{d}</div>
+            <div key={d} style={{ textAlign: 'center', fontSize: 10.5, fontWeight: 700, color: 'var(--ink-400)', textTransform: 'uppercase', letterSpacing: '.05em', padding: '8px 0' }}>{d}</div>
           ))}
         </div>
 
-        {/* Days */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 3, padding: '2px 12px 14px' }}>
+        {/* Days grid */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gridAutoRows: '1fr' }}>
           {cells.map((day, i) => {
-            if (!day) return <div key={i} />;
+            if (!day) return (
+              <div key={i} style={{ borderRight: '1px solid var(--border-soft)', borderBottom: '1px solid var(--border-soft)', minHeight: 80 }} />
+            );
             const dateStr  = `${viewYear}-${String(viewMonth + 1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
             const dayCamps = campaignsByDate[dateStr] ?? [];
+            const c        = dayCamps[0];
             const has      = dayCamps.length > 0;
             const isPast   = new Date(viewYear, viewMonth, day) < today;
-            const isSel    = dayCamps.some(c => c.id === selected);
-            const isLow    = dayCamps.some(c => c.spotsKg !== null && c.spotsKg < 50);
+            const isSel    = has && c.id === selected;
+            const isLow    = has && c.spotsKg !== null && c.spotsKg < 50;
+            const isFull   = has && c.spotsKg !== null && c.spotsKg === 0;
 
             return (
               <button
                 key={i}
-                disabled={!has || isPast}
-                onClick={() => has && !isPast && onSelect(dayCamps[0].id)}
+                disabled={!has || isPast || isFull}
+                onClick={() => has && !isPast && !isFull && onSelect(c.id)}
                 style={{
-                  position: 'relative',
-                  border: isSel ? '2px solid var(--brand-600)' : '2px solid transparent',
-                  borderRadius: 10,
-                  background: isSel ? 'var(--brand-600)' : has && !isPast ? 'var(--brand-50)' : 'transparent',
-                  color: isSel ? 'white' : isPast ? 'var(--ink-200)' : has ? 'var(--brand-800)' : 'var(--ink-700)',
-                  cursor: has && !isPast ? 'pointer' : 'default',
-                  fontSize: 14,
-                  fontWeight: has ? 700 : 400,
-                  padding: '10px 4px 8px',
+                  border: 'none',
+                  borderRight: '1px solid var(--border-soft)',
+                  borderBottom: '1px solid var(--border-soft)',
+                  borderRadius: 0,
+                  background: isSel
+                    ? 'var(--brand-600)'
+                    : has && !isPast && !isFull
+                      ? isLow ? 'var(--warn-50)' : 'var(--brand-50)'
+                      : 'white',
+                  cursor: has && !isPast && !isFull ? 'pointer' : 'default',
+                  padding: '8px 6px',
+                  minHeight: 80,
                   display: 'flex',
                   flexDirection: 'column',
-                  alignItems: 'center',
+                  alignItems: 'flex-start',
                   gap: 4,
-                  transition: 'background .1s',
+                  transition: 'background .12s',
+                  textAlign: 'left',
+                  outline: isSel ? '2px solid var(--brand-700)' : 'none',
+                  outlineOffset: -2,
+                  position: 'relative',
                 }}
               >
-                <span>{day}</span>
-                {has && !isPast && (
-                  <div style={{
-                    width: 6, height: 6, borderRadius: '50%', flexShrink: 0,
-                    background: isSel ? 'rgba(255,255,255,.75)' : isLow ? 'var(--warn-500)' : 'var(--brand-400)',
-                  }} />
+                {/* Day number */}
+                <span style={{
+                  fontSize: 13,
+                  fontWeight: has && !isPast ? 700 : 400,
+                  color: isSel ? 'white' : isPast ? 'var(--ink-200)' : has ? (isLow ? 'var(--warn-800)' : 'var(--brand-800)') : 'var(--ink-600)',
+                  lineHeight: 1,
+                }}>
+                  {day}
+                </span>
+
+                {/* Departure info */}
+                {has && !isPast && !isFull && (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 2, width: '100%' }}>
+                    {/* Route */}
+                    {routeLabel && (
+                      <span style={{
+                        fontSize: 9, fontWeight: 700, lineHeight: 1,
+                        color: isSel ? 'rgba(255,255,255,.85)' : isLow ? 'var(--warn-700)' : 'var(--brand-600)',
+                        textTransform: 'uppercase', letterSpacing: '.03em',
+                        overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                      }}>✈ {routeLabel}</span>
+                    )}
+                    {/* Arrival */}
+                    {c.arrivalDate && (
+                      <span style={{
+                        fontSize: 9, lineHeight: 1,
+                        color: isSel ? 'rgba(255,255,255,.75)' : 'var(--ink-400)',
+                        whiteSpace: 'nowrap',
+                      }}>→ {fmtShort(c.arrivalDate)}</span>
+                    )}
+                    {/* Capacity badge */}
+                    {c.spotsKg !== null && (
+                      <span style={{
+                        marginTop: 2,
+                        display: 'inline-block',
+                        fontSize: 9, fontWeight: 700, lineHeight: 1,
+                        padding: '2px 5px', borderRadius: 4,
+                        background: isSel
+                          ? 'rgba(255,255,255,.2)'
+                          : isLow ? 'var(--warn-100)' : 'var(--brand-100)',
+                        color: isSel
+                          ? 'white'
+                          : isLow ? 'var(--warn-800)' : 'var(--brand-700)',
+                        whiteSpace: 'nowrap',
+                      }}>
+                        {isLow ? `⚠ ${c.spotsKg} kg` : `${c.spotsKg} kg`}
+                      </span>
+                    )}
+                  </div>
+                )}
+
+                {/* Complet */}
+                {isFull && (
+                  <span style={{ fontSize: 9, color: 'var(--ink-300)', fontWeight: 600 }}>Complet</span>
                 )}
               </button>
             );
           })}
-        </div>
-      </div>
-
-      {/* Legend */}
-      <div style={{ display: 'flex', gap: 16, marginTop: 8, fontSize: 11.5, color: 'var(--ink-500)' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-          <div style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--brand-400)', flexShrink: 0 }} />
-          Départ disponible
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-          <div style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--warn-500)', flexShrink: 0 }} />
-          Places limitées
         </div>
       </div>
 
@@ -683,7 +735,7 @@ function CampaignCalendar({ campaigns, selected, onSelect }) {
               <div style={{ fontWeight: 700, fontSize: 13, color: 'var(--ink-900)' }}>
                 {selectedCampaign.arrivalDate
                   ? new Date(selectedCampaign.arrivalDate).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', timeZone: 'UTC' })
-                  : '~14 jours'}
+                  : '~14 jours après départ'}
               </div>
             </div>
           </div>
@@ -1059,6 +1111,7 @@ export default function BookingScreen({ onNav, embedded = false }) {
                             campaigns={campaigns}
                             selected={form.departure}
                             onSelect={(id) => upd('departure', id)}
+                            routeLabel={routeData ? `${routeData.origin} → ${routeData.destination}` : null}
                           />
                         )}
                         {!form.departure && campaigns.length > 0 && (
