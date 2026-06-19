@@ -44,7 +44,7 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
     recipName:         (parcel as any).recipName  ?? null,
     recipPhone:        (parcel as any).recipPhone ?? null,
     recipCity:         (parcel as any).recipCity  ?? null,
-    delivery:          (parcel as any).delivery   ?? 'pickup',
+    delivery:          (parcel as any).delivery ?? 'pickup',
     status:            parcel.status,
     confirmed:         parcel.confirmed,
     notes:             (parcel as any).notes ?? null,

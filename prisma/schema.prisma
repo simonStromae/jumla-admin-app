@@ -129,6 +129,7 @@ model Parcel {
   recipCity         String?
   confirmedPriceXaf Int?
   adjustmentStatus  String?  @default("none")
+  delivery          String?  @default("pickup")
   bordereaux        Bordereau[]
   status        String       @default("enr")
   confirmed     Boolean      @default(false)

@@ -64,7 +64,7 @@ export async function GET(req: NextRequest) {
     status:       p.status,
     confirmed:    p.confirmed,
     notes:        p.notes,
-    delivery:     (p as any).delivery ?? 'pickup',
+    delivery:     p.delivery ?? 'pickup',
     createdAt:    p.createdAt,
     payment:      p.payment,
     lastWhatsapp: lastWhatsappMap[p.id] ?? null,
