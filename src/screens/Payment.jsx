@@ -71,6 +71,12 @@ export default function PaymentScreen({ token }) {
 
 function PaymentView({ data, onConfirm }) {
   const [acknowledged, setAcknowledged] = useState(false);
+  const [paymentEmail, setPaymentEmail] = useState('paiement@jumla.cargo');
+  useEffect(() => {
+    fetch('/api/public/config').then(r => r.json()).then(d => {
+      if (d.paymentEmail) setPaymentEmail(d.paymentEmail);
+    }).catch(() => {});
+  }, []);
 
   return (
     <div className="pay-grid">
@@ -104,7 +110,7 @@ function PaymentView({ data, onConfirm }) {
 
           <div className="pay-interac-box">
             <div className="pay-interac-box__title">Envoyez votre Interac à</div>
-            <div className="pay-interac-box__contact">paiement@jumla.cargo</div>
+            <div className="pay-interac-box__contact">{paymentEmail}</div>
             <div className="pay-interac-box__or">ou</div>
             <div className="pay-interac-box__contact">+1 514 000 0000</div>
           </div>

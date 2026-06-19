@@ -77,11 +77,18 @@ export default function ParcelDetailPage({ params }) {
   const [parcel,    setParcel]    = useState(null);
   const [loading,   setLoading]   = useState(true);
   const [error,     setError]     = useState('');
+  const [paymentEmail, setPaymentEmail] = useState('paiement@jumla.cargo');
   const [editing,   setEditing]   = useState(false);
   const [editForm,  setEditForm]  = useState({});
   const [saving,    setSaving]    = useState(false);
   const [saveErr,   setSaveErr]   = useState('');
   const [blConfirm, setBlConfirm] = useState({});
+
+  useEffect(() => {
+    fetch('/api/public/config').then(r => r.json()).then(d => {
+      if (d.paymentEmail) setPaymentEmail(d.paymentEmail);
+    }).catch(() => {});
+  }, []);
 
   useEffect(() => {
     fetch('/api/me/parcels/' + params.id)
@@ -468,7 +475,7 @@ export default function ParcelDetailPage({ params }) {
                 <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12, padding: '12px 16px', background: 'white', border: '1px solid #e5e7eb', borderLeft: '3px solid #F5A524', borderRadius: 10 }}>
                   <span style={{ fontSize: 18, flexShrink: 0, marginTop: 1 }}>💸</span>
                   <div style={{ fontSize: 12.5, color: '#374151', lineHeight: 1.6 }}>
-                    Virement Interac à <strong>paiement@jumlashipping.ca</strong><br />
+                    Virement Interac à <strong>{paymentEmail}</strong><br />
                     Montant : <strong style={{ color: '#92400e' }}>{supplement.toLocaleString('fr')} CAD</strong>
                     {' '}· Référence : <strong style={{ fontFamily: 'monospace' }}>{parcel.trackingCode}</strong>
                   </div>

@@ -73,6 +73,13 @@ function Row({ parcel }) {
 export default function ClientInvoices() {
   const [parcels, setParcels] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [paymentEmail, setPaymentEmail] = useState('paiement@jumla.cargo');
+
+  useEffect(() => {
+    fetch('/api/public/config').then(r => r.json()).then(d => {
+      if (d.paymentEmail) setPaymentEmail(d.paymentEmail);
+    }).catch(() => {});
+  }, []);
 
   useEffect(() => {
     fetch('/api/me/parcels').then(r => r.json()).then(data => {
@@ -139,7 +146,7 @@ export default function ClientInvoices() {
         }}>
           <div style={{ fontWeight: 700, color: '#92400e', marginBottom: 6 }}>Comment payer ?</div>
           <div style={{ color: '#b45309', lineHeight: 1.6 }}>
-            Envoyez votre virement Interac à <strong>paiement@jumlashipping.ca</strong>.<br />
+            Envoyez votre virement Interac à <strong>{paymentEmail}</strong>.<br />
             Indiquez votre numéro de colis dans le message. Notre équipe confirmera votre paiement sous 24h.
           </div>
         </div>

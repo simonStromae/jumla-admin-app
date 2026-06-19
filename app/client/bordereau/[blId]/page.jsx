@@ -43,6 +43,13 @@ export default function BordereauPage({ params }) {
   const [checked,    setChecked]    = useState(false);
   const [confirming, setConfirming] = useState(false);
   const [confirmed,  setConfirmed]  = useState(false);
+  const [paymentEmail, setPaymentEmail] = useState('paiement@jumla.cargo');
+
+  useEffect(() => {
+    fetch('/api/public/config').then(r => r.json()).then(d => {
+      if (d.paymentEmail) setPaymentEmail(d.paymentEmail);
+    }).catch(() => {});
+  }, []);
 
   useEffect(() => {
     fetch('/api/me/bordereau/' + params.blId)
@@ -197,7 +204,7 @@ export default function BordereauPage({ params }) {
                 <div>
                   <div style={{ fontSize: 15, fontWeight: 700, color: '#111827', marginBottom: 4 }}>Jumla Shipping — {data.campaign.to}</div>
                   <div style={{ fontSize: 12.5, color: '#4b5563' }}>{data.campaign.to}, Canada</div>
-                  <div style={{ fontSize: 12.5, color: '#4b5563' }}>paiement@jumla.cargo</div>
+                  <div style={{ fontSize: 12.5, color: '#4b5563' }}>{paymentEmail}</div>
                 </div>
               )},
             ].map((col, i) => (

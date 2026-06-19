@@ -503,6 +503,13 @@ function InvoicePreviewModal({ parcelId, onClose }) {
   const [data, setData]       = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError]     = useState('');
+  const [paymentEmail, setPaymentEmail] = useState('paiement@jumla.cargo');
+
+  useEffect(() => {
+    fetch('/api/public/config').then(r => r.json()).then(d => {
+      if (d.paymentEmail) setPaymentEmail(d.paymentEmail);
+    }).catch(() => {});
+  }, []);
 
   useEffect(() => {
     fetch('/api/admin/invoice/' + parcelId)
@@ -635,7 +642,7 @@ function InvoicePreviewModal({ parcelId, onClose }) {
                 <div style={{ background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 8, padding: '14px 18px', marginBottom: 20 }}>
                   <div style={{ fontWeight: 700, color: '#92400e', marginBottom: 5, fontSize: 13 }}>Modalités de paiement</div>
                   <div style={{ fontSize: 12, color: '#78350f', lineHeight: 1.6 }}>
-                    Effectuez un virement Interac e-Transfert à <strong>paiement@jumla.cargo</strong> pour le montant exact de <strong>{data.amount.toLocaleString('fr')} CAD</strong>.
+                    Effectuez un virement Interac e-Transfert à <strong>{paymentEmail}</strong> pour le montant exact de <strong>{data.amount.toLocaleString('fr')} CAD</strong>.
                     Indiquez le code <strong style={{ fontFamily: 'monospace' }}>{data.trackingCode}</strong> en message.
                   </div>
                 </div>

@@ -782,11 +782,18 @@ export default function BookingScreen({ onNav, embedded = false }) {
   const [payStatus, setPayStatus]   = useState('idle');
   const [bookingRef, setBookingRef] = useState('');
   const [bookingErr, setBookingErr] = useState('');
+  const [paymentEmail, setPaymentEmail] = useState('paiement@jumla.cargo');
   const [user, setUser] = useState(() => {
     try { return JSON.parse(localStorage.getItem('jumla_user')); } catch { return null; }
   });
   // When embedded in client layout, fall back to NextAuth session data
   const effectiveUser = user ?? (embedded && sessionData?.user ? { name: sessionData.user.name ?? '', email: sessionData.user.email ?? '' } : null);
+
+  useEffect(() => {
+    fetch('/api/public/config').then(r => r.json()).then(d => {
+      if (d.paymentEmail) setPaymentEmail(d.paymentEmail);
+    }).catch(() => {});
+  }, []);
 
   // Pre-fill sender name + email from session when embedded
   useEffect(() => {
@@ -1041,7 +1048,7 @@ export default function BookingScreen({ onNav, embedded = false }) {
                 </div>
                 <div style={{ background: 'var(--bg-soft)', border: '1.5px solid var(--border)', borderRadius: 'var(--radius)', overflow: 'hidden', marginBottom: 10 }}>
                   {[
-                    ['Envoyer à',            'paiement@jumla.cargo',                                          false],
+                    ['Envoyer à',            paymentEmail,                                                    false],
                     ['Depuis votre adresse', effectiveUser?.email ?? '',                                       true ],
                     ['Montant estimé',       `${price?.total?.toFixed(0) ?? '—'} ${route?.currency ?? 'CAD'}`, false],
                     ['Message / Référence',  refCode,                                                          false],

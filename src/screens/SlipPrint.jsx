@@ -15,6 +15,13 @@ export default function SlipPrintScreen({ code, onNav }) {
   const [data,    setData]    = useState(null);
   const [loading, setLoading] = useState(true);
   const [error,   setError]   = useState('');
+  const [paymentEmail, setPaymentEmail] = useState('paiement@jumla.cargo');
+
+  useEffect(() => {
+    fetch('/api/public/config').then(r => r.json()).then(d => {
+      if (d.paymentEmail) setPaymentEmail(d.paymentEmail);
+    }).catch(() => {});
+  }, []);
 
   useEffect(() => {
     if (!code) { setError('Code manquant'); setLoading(false); return; }
@@ -138,7 +145,7 @@ export default function SlipPrintScreen({ code, onNav }) {
               {
                 kind: 'DESTINATION',
                 name: 'Jumla Shipping — ' + data.campaign.to,
-                phone: 'paiement@jumla.cargo',
+                phone: paymentEmail,
                 addr: data.campaign.to + ', Canada',
               },
             ].map((p, i) => (
