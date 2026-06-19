@@ -34,8 +34,11 @@ export default function InvoicePage({ params }) {
     </div>
   );
 
-  const paid = data.payment?.status === 'completed';
-  const details = data.pricingDetails;
+  const paid       = data.payment?.status === 'completed';
+  const hasAdj     = data.confirmedPriceXaf != null && data.adjustmentStatus !== 'none';
+  const supplement = hasAdj ? (data.confirmedPriceXaf - (data.priceXaf ?? 0)) : 0;
+  const totalAmt   = hasAdj ? data.confirmedPriceXaf : data.amount;
+  const hasRecip   = data.recipient?.name || data.recipient?.phone || data.recipient?.city;
 
   return (
     <>
@@ -80,21 +83,30 @@ export default function InvoicePage({ params }) {
         </div>
 
         <div style={{ padding: '32px 40px' }}>
-          {/* Bill to */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 40, marginBottom: 32 }}>
+          {/* Bill to / Destinataire / Cargaison */}
+          <div style={{ display: 'grid', gridTemplateColumns: hasRecip ? '1fr 1fr 1fr' : '1fr 1fr', gap: 32, marginBottom: 32 }}>
             <div>
               <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.08em', color: '#6b7280', marginBottom: 8 }}>Facturé à</div>
-              <div style={{ fontSize: 16, fontWeight: 700, color: '#111827' }}>{data.client.name}</div>
+              <div style={{ fontSize: 15, fontWeight: 700, color: '#111827' }}>{data.client.name}</div>
               {data.client.city  && <div style={{ fontSize: 13, color: '#4b5563', marginTop: 3 }}>{data.client.city}</div>}
               {data.client.phone && <div style={{ fontSize: 13, color: '#4b5563', fontFamily: 'monospace' }}>{data.client.phone}</div>}
               {data.client.email && <div style={{ fontSize: 13, color: '#4b5563' }}>{data.client.email}</div>}
+              {data.notes && <div style={{ fontSize: 12, color: '#9ca3af', marginTop: 6, lineHeight: 1.4 }}>{data.notes}</div>}
             </div>
+            {hasRecip && (
+              <div>
+                <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.08em', color: '#6b7280', marginBottom: 8 }}>Destinataire</div>
+                {data.recipient.name  && <div style={{ fontSize: 15, fontWeight: 700, color: '#111827' }}>{data.recipient.name}</div>}
+                {data.recipient.city  && <div style={{ fontSize: 13, color: '#4b5563', marginTop: 3 }}>{data.recipient.city}</div>}
+                {data.recipient.phone && <div style={{ fontSize: 13, color: '#4b5563', fontFamily: 'monospace' }}>{data.recipient.phone}</div>}
+              </div>
+            )}
             <div>
               <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.08em', color: '#6b7280', marginBottom: 8 }}>Cargaison</div>
               <div style={{ fontSize: 14, fontWeight: 700, color: '#111827', fontFamily: 'monospace' }}>{data.campaign.code}</div>
               <div style={{ fontSize: 13, color: '#4b5563', marginTop: 3 }}>{data.campaign.from} → {data.campaign.to}</div>
               <div style={{ fontSize: 12, color: '#6b7280', marginTop: 3 }}>Départ : {fmt(data.campaign.departureDate)}</div>
-              <div style={{ fontSize: 12, color: '#6b7280' }}>Arrivée : {fmt(data.campaign.arrivalDate)}</div>
+              <div style={{ fontSize: 12, color: '#6b7280' }}>Arrivée estimée : {fmt(data.campaign.arrivalDate)}</div>
             </div>
           </div>
 
@@ -121,10 +133,22 @@ export default function InvoicePage({ params }) {
                 <td style={{ padding: '14px', borderBottom: '1px solid #f3f4f6', color: '#374151', fontFamily: 'monospace', fontSize: 14 }}>
                   {data.weightKg ? data.weightKg + ' kg' : '—'}
                 </td>
-                <td style={{ padding: '14px', borderBottom: '1px solid #f3f4f6', textAlign: 'right', fontFamily: 'monospace', fontSize: 14, fontWeight: 700, color: '#111827' }}>
-                  {data.amount.toLocaleString('fr')} CAD
+                <td style={{ padding: '14px', borderBottom: '1px solid #f3f4f6', textAlign: 'right', fontFamily: 'monospace', fontSize: 14, fontWeight: 700, color: hasAdj ? '#9ca3af' : '#111827', textDecoration: hasAdj ? 'line-through' : 'none' }}>
+                  {(data.priceXaf ?? data.amount).toLocaleString('fr')} CAD
                 </td>
               </tr>
+              {hasAdj && supplement > 0 && (
+                <tr style={{ background: '#fffbeb' }}>
+                  <td style={{ padding: '14px', borderBottom: '1px solid #f3f4f6', color: '#92400e', fontSize: 14 }}>
+                    <div style={{ fontWeight: 600 }}>Ajustement de prix</div>
+                    <div style={{ fontSize: 12, color: '#b45309', marginTop: 2 }}>Poids réel mesuré à l&apos;entrepôt</div>
+                  </td>
+                  <td style={{ padding: '14px', borderBottom: '1px solid #f3f4f6', color: '#b45309', fontFamily: 'monospace', fontSize: 14 }}>—</td>
+                  <td style={{ padding: '14px', borderBottom: '1px solid #f3f4f6', textAlign: 'right', fontFamily: 'monospace', fontSize: 14, fontWeight: 700, color: '#92400e' }}>
+                    +{supplement.toLocaleString('fr')} CAD
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
 
@@ -132,8 +156,8 @@ export default function InvoicePage({ params }) {
           <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 32 }}>
             <div style={{ minWidth: 260 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', padding: '12px 16px', background: '#1e3a5f', borderRadius: 8, color: 'white' }}>
-                <span style={{ fontWeight: 700 }}>Total</span>
-                <span style={{ fontFamily: 'monospace', fontWeight: 800, fontSize: 18 }}>{data.amount.toLocaleString('fr')} CAD</span>
+                <span style={{ fontWeight: 700 }}>Total{hasAdj ? ' ajusté' : ''}</span>
+                <span style={{ fontFamily: 'monospace', fontWeight: 800, fontSize: 18 }}>{totalAmt.toLocaleString('fr')} CAD</span>
               </div>
               {paid && data.payment?.paidAt && (
                 <div style={{ textAlign: 'right', fontSize: 12, color: '#16a34a', marginTop: 6, fontWeight: 600 }}>
@@ -149,7 +173,7 @@ export default function InvoicePage({ params }) {
             <div style={{ background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 8, padding: '16px 20px', marginBottom: 24 }}>
               <div style={{ fontWeight: 700, color: '#92400e', marginBottom: 6 }}>Modalités de paiement</div>
               <div style={{ fontSize: 13, color: '#78350f', lineHeight: 1.6 }}>
-                Effectuez un virement Interac e-Transfert à <strong>paiement@jumla.cargo</strong> pour le montant exact de <strong>{data.amount.toLocaleString('fr')} CAD</strong>.
+                Effectuez un virement Interac e-Transfert à <strong>paiement@jumla.cargo</strong> pour le montant exact de <strong>{totalAmt.toLocaleString('fr')} CAD</strong>.
                 Indiquez le code <strong style={{ fontFamily: 'monospace' }}>{data.trackingCode}</strong> en message.
               </div>
             </div>

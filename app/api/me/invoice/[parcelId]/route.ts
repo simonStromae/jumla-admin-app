@@ -22,19 +22,32 @@ export async function GET(_: NextRequest, { params }: { params: { parcelId: stri
   if (!parcel) return NextResponse.json({ error: 'Introuvable' }, { status: 404 });
   if (parcel.clientId !== userId) return NextResponse.json({ error: 'Accès refusé' }, { status: 403 });
 
+  const confirmedPriceXaf = (parcel as any).confirmedPriceXaf ?? null;
+  const adjustmentStatus  = (parcel as any).adjustmentStatus  ?? 'none';
+  const priceXaf          = parcel.priceXaf ?? null;
+
   return NextResponse.json({
-    invoiceNumber: 'FAC-' + parcel.trackingCode,
-    issueDate:     parcel.createdAt,
-    trackingCode:  parcel.trackingCode,
-    description:   parcel.description,
-    weightKg:      parcel.weightKg,
-    amount:        parcel.payment?.amount ?? parcel.priceXaf ?? 0,
-    pricingDetails: parcel.pricingDetails,
+    invoiceNumber:     'FAC-' + parcel.trackingCode,
+    issueDate:         parcel.createdAt,
+    trackingCode:      parcel.trackingCode,
+    description:       parcel.description,
+    weightKg:          parcel.weightKg,
+    notes:             (parcel as any).notes ?? null,
+    priceXaf,
+    confirmedPriceXaf,
+    adjustmentStatus,
+    amount:            parcel.payment?.amount ?? priceXaf ?? 0,
+    pricingDetails:    parcel.pricingDetails,
     client: {
       name:  parcel.client.name,
       phone: parcel.client.phone,
       email: parcel.client.email,
       city:  parcel.client.city,
+    },
+    recipient: {
+      name:  (parcel as any).recipName  ?? null,
+      phone: (parcel as any).recipPhone ?? null,
+      city:  (parcel as any).recipCity  ?? null,
     },
     campaign: {
       code:          parcel.campaign.code,
