@@ -455,9 +455,14 @@ export default function ParcelDetailPage({ params }) {
                 ) : null;
               })()}
             </div>
-            <div style={{ marginTop: 14, padding: '10px 14px', borderRadius: 8, background: '#fef9c3', border: '1px solid #fde68a', fontSize: 12.5, color: '#92400e' }}>
-              💸 Envoyez <strong>{parcel.confirmedPriceXaf.toLocaleString('fr')} CAD</strong> par Virement Interac — référence : <strong>{parcel.trackingCode}</strong>
-            </div>
+            {(() => {
+              const supplement = parcel.confirmedPriceXaf - (parcel.priceXaf ?? 0);
+              return supplement > 0 ? (
+                <div style={{ marginTop: 14, padding: '10px 14px', borderRadius: 8, background: '#fef9c3', border: '1px solid #fde68a', fontSize: 12.5, color: '#92400e' }}>
+                  💸 Envoyez le supplément de <strong>{supplement.toLocaleString('fr')} CAD</strong> par Virement Interac — référence : <strong>{parcel.trackingCode}</strong>
+                </div>
+              ) : null;
+            })()}
           </Section>
         )}
 
