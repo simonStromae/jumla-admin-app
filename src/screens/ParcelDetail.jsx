@@ -194,6 +194,24 @@ export default function ParcelDetailScreen({ id, onNav }) {
             </div>
           </div>
 
+          {/* Recipient */}
+          {(parcel.recipName || parcel.recipPhone || parcel.recipCity) && (
+            <div className="card" style={{ padding: 14 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+                <I.Truck style={{ color: 'var(--brand-500)', width: 16, height: 16 }} />
+                <span style={{ fontSize: 10.5, textTransform: 'uppercase', letterSpacing: '.06em', fontWeight: 700, color: 'var(--ink-400)' }}>Destinataire</span>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <Avatar initials={(parcel.recipName || '?').split(' ').map(x => x[0]).slice(0,2).join('')} color={3} size="lg" />
+                <div>
+                  <div style={{ fontSize: 15, fontWeight: 700 }}>{parcel.recipName || '—'}</div>
+                  {parcel.recipCity && <div style={{ fontSize: 12, color: 'var(--ink-500)' }}>{parcel.recipCity}</div>}
+                  {parcel.recipPhone && <div className="mono" style={{ fontSize: 12, color: 'var(--ink-400)', marginTop: 2 }}>{parcel.recipPhone}</div>}
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Items declared */}
           <div className="card" style={{ padding: 16 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
