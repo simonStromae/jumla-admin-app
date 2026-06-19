@@ -37,14 +37,16 @@ export async function GET() {
     const allocated = p.payment ? (allocMap[p.payment.id] ?? 0) : 0;
     const paymentRemaining = p.payment ? Math.max(0, p.payment.amount - allocated) : 0;
     return {
-      id:           p.id,
-      trackingCode: p.trackingCode,
-      description:  p.description,
-      weightKg:     p.weightKg,
-      priceXaf:     p.priceXaf,
-      status:       p.status,
-      confirmed:    p.confirmed,
-      createdAt:    p.createdAt,
+      id:                p.id,
+      trackingCode:      p.trackingCode,
+      description:       p.description,
+      weightKg:          p.weightKg,
+      priceXaf:          p.priceXaf,
+      confirmedPriceXaf: (p as any).confirmedPriceXaf ?? null,
+      adjustmentStatus:  (p as any).adjustmentStatus ?? 'none',
+      status:            p.status,
+      confirmed:         p.confirmed,
+      createdAt:         p.createdAt,
       campaign: {
         id:            p.campaign.id,
         code:          p.campaign.code,

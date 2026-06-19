@@ -39,6 +39,8 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
     description:       parcel.description,
     weightKg:          parcel.weightKg,
     priceXaf:          parcel.priceXaf,
+    confirmedPriceXaf: (parcel as any).confirmedPriceXaf ?? null,
+    adjustmentStatus:  (parcel as any).adjustmentStatus ?? 'none',
     status:            parcel.status,
     confirmed:         parcel.confirmed,
     notes:             (parcel as any).notes ?? null,

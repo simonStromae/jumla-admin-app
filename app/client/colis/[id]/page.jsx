@@ -417,6 +417,50 @@ export default function ParcelDetailPage({ params }) {
           )}
         </Section>
 
+        {/* ── Adjustment ── */}
+        {parcel.adjustmentStatus === 'pending' && parcel.confirmedPriceXaf != null && (
+          <Section title="Ajustement de prix" col="1 / -1" badge={
+            <span style={{ fontSize: 12, fontWeight: 700, padding: '3px 8px', borderRadius: 99, background: '#fef3c7', color: '#92400e' }}>
+              ⚠️ Action requise
+            </span>
+          }>
+            <div style={{ marginBottom: 14, padding: '12px 16px', borderRadius: 10, background: '#fffbeb', border: '1.5px solid #fbbf24' }}>
+              <div style={{ fontWeight: 700, fontSize: 14, color: '#92400e', marginBottom: 8 }}>
+                Votre colis a été pesé — un ajustement est nécessaire
+              </div>
+              <div style={{ fontSize: 13, color: '#b45309', lineHeight: 1.6 }}>
+                Après réception et pesée à notre entrepôt, le montant réel diffère de l&apos;estimation initiale. Veuillez régler le supplément pour que votre colis soit traité.
+              </div>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 12px', background: '#f9fafb', borderRadius: 8, fontSize: 13 }}>
+                <span style={{ color: '#6b7280' }}>Montant estimé</span>
+                <span style={{ fontFamily: 'monospace', fontWeight: 600, color: '#6b7280', textDecoration: 'line-through' }}>
+                  {parcel.priceXaf ? parcel.priceXaf.toLocaleString('fr') + ' CAD' : '—'}
+                </span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 12px', background: '#f0fdf4', borderRadius: 8, fontSize: 13 }}>
+                <span style={{ color: '#374151', fontWeight: 600 }}>Montant réel</span>
+                <span style={{ fontFamily: 'monospace', fontWeight: 700, fontSize: 15, color: '#111827' }}>
+                  {parcel.confirmedPriceXaf.toLocaleString('fr')} CAD
+                </span>
+              </div>
+              {(() => {
+                const diff = parcel.confirmedPriceXaf - (parcel.priceXaf ?? 0);
+                return diff > 0 ? (
+                  <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 12px', background: '#fef3c7', borderRadius: 8, fontSize: 13 }}>
+                    <span style={{ color: '#92400e', fontWeight: 700 }}>Supplément à payer</span>
+                    <span style={{ fontFamily: 'monospace', fontWeight: 700, color: '#92400e' }}>+{diff.toLocaleString('fr')} CAD</span>
+                  </div>
+                ) : null;
+              })()}
+            </div>
+            <div style={{ marginTop: 14, padding: '10px 14px', borderRadius: 8, background: '#fef9c3', border: '1px solid #fde68a', fontSize: 12.5, color: '#92400e' }}>
+              💸 Envoyez <strong>{parcel.confirmedPriceXaf.toLocaleString('fr')} CAD</strong> par Virement Interac — référence : <strong>{parcel.trackingCode}</strong>
+            </div>
+          </Section>
+        )}
+
         {/* ── Payment ── */}
         <Section title="Paiement" col="1 / -1" badge={
           <span style={{ fontSize: 12, fontWeight: 700, padding: '3px 8px', borderRadius: 99, background: paid ? '#dcfce7' : partial ? '#fef3c7' : '#fee2e2', color: paid ? '#16a34a' : partial ? '#92400e' : '#dc2626' }}>

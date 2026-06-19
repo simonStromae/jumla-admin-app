@@ -127,6 +127,8 @@ model Parcel {
   recipName         String?
   recipPhone        String?
   recipCity         String?
+  confirmedPriceXaf Int?
+  adjustmentStatus  String?  @default("none")
   bordereaux        Bordereau[]
   status        String       @default("enr")
   confirmed     Boolean      @default(false)

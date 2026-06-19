@@ -50,11 +50,18 @@ export default function ParcelDetailScreen({ id, onNav }) {
   const [addingBl, setAddingBl] = useState(false);
   const [editingBlId,    setEditingBlId]    = useState(null);
   const [editingBlItems, setEditingBlItems] = useState([]);
+  const [billing, setBilling] = useState({ confirmedPrice: '', saving: false, err: '', saved: false });
 
   useEffect(() => {
     fetch('/api/parcels/' + id)
       .then(r => r.json())
-      .then(data => { setParcel(data); setLoading(false); })
+      .then(data => {
+        setParcel(data);
+        setLoading(false);
+        if (data.confirmedPriceXaf != null) {
+          setBilling(b => ({ ...b, confirmedPrice: String(data.confirmedPriceXaf) }));
+        }
+      })
       .catch(() => setLoading(false));
   }, [id]);
 
@@ -539,6 +546,94 @@ export default function ParcelDetailScreen({ id, onNav }) {
                 <strong>Réglé</strong> · {payment.interacRef ? 'Réf. ' + payment.interacRef : 'Virement Interac'}
               </div>
             )}
+          </div>
+
+          {/* Billing / Adjustment */}
+          <div className="card" style={{ padding: 16 }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
+              <div className="section-title" style={{ margin: 0 }}>
+                <I.Edit style={{ width: 14, height: 14, color: 'var(--brand-600)' }} /> Facturation
+              </div>
+              {parcel.adjustmentStatus === 'pending' && (
+                <span className="badge badge--dot badge--warn">Ajustement en attente</span>
+              )}
+              {parcel.adjustmentStatus === 'paid' && (
+                <span className="badge badge--dot badge--ok">Ajustement réglé</span>
+              )}
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 12 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13 }}>
+                <span style={{ color: 'var(--ink-500)' }}>Estimation client</span>
+                <span className="mono" style={{ fontWeight: 600 }}>{parcel.priceXaf ? parcel.priceXaf.toLocaleString('fr') + ' CAD' : '—'}</span>
+              </div>
+              {parcel.confirmedPriceXaf != null && (
+                <>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13 }}>
+                    <span style={{ color: 'var(--ink-500)' }}>Prix réel (après pesée)</span>
+                    <span className="mono" style={{ fontWeight: 700, color: 'var(--ink-800)' }}>{parcel.confirmedPriceXaf.toLocaleString('fr')} CAD</span>
+                  </div>
+                  {(() => {
+                    const diff = parcel.confirmedPriceXaf - (parcel.priceXaf ?? 0);
+                    return diff !== 0 ? (
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, borderTop: '1px solid var(--border)', paddingTop: 8 }}>
+                        <span style={{ color: diff > 0 ? 'var(--warn-700)' : 'var(--ok-700)', fontWeight: 600 }}>
+                          {diff > 0 ? '↑ Supplément' : '↓ Remise'}
+                        </span>
+                        <span className="mono" style={{ fontWeight: 700, color: diff > 0 ? 'var(--warn-700)' : 'var(--ok-700)' }}>
+                          {diff > 0 ? '+' : ''}{diff.toLocaleString('fr')} CAD
+                        </span>
+                      </div>
+                    ) : null;
+                  })()}
+                </>
+              )}
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--ink-500)' }}>Prix réel après pesée (CAD)</div>
+              <input
+                className="input mono"
+                type="number"
+                min="0"
+                step="1"
+                placeholder={parcel.priceXaf ? String(parcel.priceXaf) : 'Montant CAD…'}
+                value={billing.confirmedPrice}
+                onChange={e => setBilling(b => ({ ...b, confirmedPrice: e.target.value, saved: false, err: '' }))}
+              />
+              {billing.err && (
+                <div style={{ fontSize: 12, color: 'var(--bad-600)' }}>{billing.err}</div>
+              )}
+              {billing.saved && (
+                <div style={{ fontSize: 12, color: 'var(--ok-700)' }}>✓ Enregistré — notification envoyée</div>
+              )}
+              <button
+                className="btn btn--brand"
+                style={{ justifyContent: 'center' }}
+                disabled={billing.saving || !billing.confirmedPrice}
+                onClick={async () => {
+                  setBilling(b => ({ ...b, saving: true, err: '', saved: false }));
+                  const res = await fetch('/api/parcels/' + parcel.id, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ confirmedPriceXaf: Number(billing.confirmedPrice) }),
+                  });
+                  const json = await res.json();
+                  if (res.ok) {
+                    setParcel(p => ({
+                      ...p,
+                      confirmedPriceXaf: Number(billing.confirmedPrice),
+                      adjustmentStatus:  json.parcel?.adjustmentStatus ?? p.adjustmentStatus,
+                    }));
+                    setBilling(b => ({ ...b, saving: false, saved: true }));
+                  } else {
+                    setBilling(b => ({ ...b, saving: false, err: json.error || 'Erreur' }));
+                  }
+                }}
+              >
+                {billing.saving ? 'Enregistrement…' : 'Enregistrer & Notifier'}
+              </button>
+            </div>
           </div>
 
           {/* Campaign info */}

@@ -659,7 +659,7 @@ export default function BookingScreen({ onNav, embedded = false }) {
   };
   const next = () => setStep(s => s + 1);
 
-  const handlePay = () => setPayStatus('interac');
+  const handlePay = () => confirmInterac();
 
   // Interac — save booking then mark as pending
   const confirmInterac = async () => {
@@ -806,29 +806,54 @@ export default function BookingScreen({ onNav, embedded = false }) {
         <div className="co-main">
           {isDone ? (
             <div className="co-done">
-              {payStatus === 'pending' && (
-                <>
-                  <div className="co-done__icon" style={{ background: 'var(--warn-100)', color: 'var(--warn-700)' }}>⏳</div>
-                  <h2 className="co-done__title">Virement en attente de confirmation</h2>
-                  <p className="co-done__sub">
-                    Réservation enregistrée. Dès que votre virement Interac est reçu et vérifié par notre équipe, vous recevrez une confirmation à <strong>{effectiveUser?.email}</strong>.
-                  </p>
-                  {refCode && (
-                    <div style={{ background: 'white', border: '2px solid var(--brand-200)', borderRadius: 'var(--radius)', padding: '14px 24px', marginBottom: 10, textAlign: 'center' }}>
-                      <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.08em', color: 'var(--ink-400)', marginBottom: 4 }}>Numéro de suivi</div>
-                      <div style={{ fontSize: 22, fontWeight: 800, fontFamily: 'ui-monospace, monospace', color: 'var(--ink-900)', letterSpacing: '.04em' }}>{refCode}</div>
-                    </div>
-                  )}
-                  <div style={{ background: 'var(--warn-50)', border: '1px solid var(--warn-200)', borderRadius: 'var(--radius)', padding: '14px 18px', fontSize: 13, color: 'var(--warn-700)', maxWidth: 420, textAlign: 'left', lineHeight: 1.7, marginBottom: 8 }}>
-                    <strong>Important :</strong> votre colis ne sera pris en charge qu'après confirmation du paiement. Incluez la référence <strong>{refCode}</strong> dans le message du virement.
-                  </div>
-                </>
-              )}
-              {(price?.isOutsideDelivery || price?.isExpedition) && (
-                <div style={{ background: 'var(--warn-50)', border: '1px solid var(--warn-200)', borderRadius: 'var(--radius)', padding: '14px 18px', fontSize: 13, color: 'var(--warn-700)', maxWidth: 420, textAlign: 'left', lineHeight: 1.6, marginBottom: 8 }}>
-                  <strong>Frais de livraison :</strong> les frais vers <strong>{form.recipCity === 'Hors région' ? form.recipCityCustom : form.recipCity}</strong> seront évalués à l'arrivée à Montréal.
+              <div className="co-done__icon" style={{ background: 'var(--ok-100)', color: 'var(--ok-700)' }}>✓</div>
+              <h2 className="co-done__title">Réservation confirmée !</h2>
+              <p className="co-done__sub">
+                Votre réservation est enregistrée. Pour sécuriser votre colis, effectuez le virement Interac ci-dessous.
+              </p>
+
+              {refCode && (
+                <div style={{ background: 'white', border: '2px solid var(--brand-200)', borderRadius: 'var(--radius)', padding: '14px 24px', marginBottom: 16, textAlign: 'center', width: '100%', maxWidth: 380 }}>
+                  <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.08em', color: 'var(--ink-400)', marginBottom: 4 }}>Numéro de suivi</div>
+                  <div style={{ fontSize: 22, fontWeight: 800, fontFamily: 'ui-monospace, monospace', color: 'var(--ink-900)', letterSpacing: '.04em' }}>{refCode}</div>
                 </div>
               )}
+
+              {/* Interac instructions */}
+              <div style={{ width: '100%', maxWidth: 420, marginBottom: 14 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+                  <span style={{ fontSize: 20 }}>🏦</span>
+                  <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--ink-800)' }}>Instructions de paiement — Virement Interac</span>
+                </div>
+                <div style={{ background: 'var(--bg-soft)', border: '1.5px solid var(--border)', borderRadius: 'var(--radius)', overflow: 'hidden', marginBottom: 10 }}>
+                  {[
+                    ['Envoyer à',            'paiement@jumla.cargo',                                          false],
+                    ['Depuis votre adresse', effectiveUser?.email ?? '',                                       true ],
+                    ['Montant estimé',       `${price?.total?.toFixed(0) ?? '—'} ${route?.currency ?? 'CAD'}`, false],
+                    ['Message / Référence',  refCode,                                                          false],
+                  ].map(([k, v, highlight], idx) => (
+                    <div key={k} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 14px', borderBottom: idx < 3 ? '1px solid var(--border-soft)' : 'none', background: highlight ? 'var(--brand-50)' : 'transparent' }}>
+                      <span style={{ fontSize: 12, color: 'var(--ink-400)', fontWeight: 500 }}>{k}</span>
+                      <span style={{ fontWeight: 700, color: highlight ? 'var(--brand-700)' : 'var(--ink-900)', fontFamily: 'ui-monospace, monospace', fontSize: k === 'Montant estimé' ? 15 : 12.5 }}>{v}</span>
+                    </div>
+                  ))}
+                </div>
+                <div style={{ background: 'var(--warn-50)', border: '1px solid var(--warn-200)', borderRadius: 'var(--radius)', padding: '12px 14px', fontSize: 12.5, color: 'var(--warn-700)', lineHeight: 1.65 }}>
+                  ⚠️ Sans paiement, votre colis <strong>ne sera pas traité</strong>. Incluez <strong>{refCode}</strong> dans le message du virement.
+                </div>
+              </div>
+
+              {/* Adjustment notice */}
+              <div style={{ width: '100%', maxWidth: 420, background: 'var(--brand-50)', border: '1px solid var(--brand-100)', borderRadius: 'var(--radius)', padding: '12px 14px', fontSize: 12.5, color: 'var(--brand-700)', lineHeight: 1.65, marginBottom: 8 }}>
+                💡 <strong>Montant estimatif :</strong> le prix final est calculé après pesage réel en entrepôt. Si un ajustement est nécessaire, vous recevrez une notification WhatsApp et une facture complémentaire dans votre espace client.
+              </div>
+
+              {(price?.isOutsideDelivery || price?.isExpedition) && (
+                <div style={{ width: '100%', maxWidth: 420, background: 'var(--warn-50)', border: '1px solid var(--warn-200)', borderRadius: 'var(--radius)', padding: '12px 14px', fontSize: 12.5, color: 'var(--warn-700)', lineHeight: 1.6, marginBottom: 8 }}>
+                  <strong>Frais de livraison :</strong> les frais vers <strong>{form.recipCity === 'Hors région' ? form.recipCityCustom : form.recipCity}</strong> seront évalués à l'arrivée.
+                </div>
+              )}
+
               <button className="co-btn co-btn--ghost" style={{ marginTop: 8 }} onClick={() => onNav?.(embedded ? '/client/dashboard?booked=' + refCode : '/')}>
                 {embedded ? '→ Voir mes colis' : '← Retour à l\'accueil'}
               </button>
@@ -1426,55 +1451,19 @@ export default function BookingScreen({ onNav, embedded = false }) {
                     </div>
                   </div>
 
-                  <div style={{ background: 'var(--brand-50)', border: '1px solid var(--brand-100)', borderRadius: 'var(--radius)', padding: '12px 16px', fontSize: 13, color: 'var(--brand-700)', display: 'flex', alignItems: 'center', gap: 10 }}>
-                    <span style={{ fontSize: 18 }}>🏦</span>
+                  <div style={{ background: 'var(--brand-50)', border: '1px solid var(--brand-100)', borderRadius: 'var(--radius)', padding: '12px 16px', fontSize: 13, color: 'var(--brand-700)', display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+                    <span style={{ fontSize: 18, flexShrink: 0 }}>🏦</span>
                     <div>
                       <div style={{ fontWeight: 700 }}>Paiement par virement Interac</div>
-                      <div style={{ fontSize: 12, marginTop: 2, color: 'var(--brand-600)' }}>Vous recevrez les instructions à l'étape suivante.</div>
+                      <div style={{ fontSize: 12, marginTop: 4, color: 'var(--brand-600)', lineHeight: 1.6 }}>
+                        Le montant affiché est <strong>estimatif</strong>. Le prix réel est calculé après pesage de votre colis en entrepôt.
+                        En cas d'ajustement, vous recevrez une notification et une facture dans votre espace client.
+                      </div>
                     </div>
                   </div>
                 </div>
               )}
 
-              {/* ── Payment flow: Interac ── */}
-              {step === 3 && payStatus === 'interac' && (
-                <div className="co-section">
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 20 }}>
-                    <div style={{ fontSize: 26 }}>🏦</div>
-                    <div>
-                      <div className="co-section__title" style={{ marginBottom: 0 }}>Virement Interac</div>
-                      <div style={{ fontSize: 12, color: 'var(--ink-400)', marginTop: 2 }}>Envoyez le montant exact depuis votre banque en ligne.</div>
-                    </div>
-                  </div>
-                  <div style={{ background: 'var(--bg-soft)', border: '1.5px solid var(--border)', borderRadius: 'var(--radius)', overflow: 'hidden', marginBottom: 18 }}>
-                    {[
-                      ['Envoyer à',            'paiement@jumla.cargo',             false],
-                      ['Depuis votre adresse', effectiveUser?.email ?? '',            true ],
-                      ['Montant',              `${price?.total?.toFixed(0)} ${route?.currency}`, false],
-                      ['Message / Référence',  refCode,                             false],
-                    ].map(([k, v, highlight], idx) => (
-                      <div key={k} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '11px 16px', borderBottom: idx < 3 ? '1px solid var(--border-soft)' : 'none', background: highlight ? 'var(--brand-50)' : 'transparent' }}>
-                        <span style={{ fontSize: 12.5, color: 'var(--ink-400)', fontWeight: 500 }}>{k}</span>
-                        <span style={{ fontWeight: 700, color: highlight ? 'var(--brand-700)' : 'var(--ink-900)', fontFamily: 'ui-monospace, monospace', fontSize: k === 'Montant' ? 17 : 13 }}>{v}</span>
-                      </div>
-                    ))}
-                  </div>
-                  <div style={{ background: 'var(--warn-50)', border: '1px solid var(--warn-200)', borderRadius: 'var(--radius)', padding: '12px 16px', fontSize: 12.5, color: 'var(--warn-700)', lineHeight: 1.65, marginBottom: 20 }}>
-                    ⚠️ Votre colis ne sera traité qu'<strong>après réception et confirmation</strong> du virement. Incluez la référence <strong>{refCode}</strong> dans le message du virement.
-                  </div>
-                  {bookingErr && (
-                    <div style={{ padding: '10px 14px', background: '#FEF2F2', border: '1px solid #FECACA', borderRadius: 'var(--radius-sm)', fontSize: 12.5, color: '#DC2626', marginBottom: 12 }}>
-                      {bookingErr}
-                    </div>
-                  )}
-                  <button className="co-btn co-btn--brand" onClick={confirmInterac} style={{ width: '100%' }}>
-                    J'ai effectué mon virement →
-                  </button>
-                  <button className="co-btn co-btn--ghost" onClick={() => setPayStatus('idle')} style={{ marginTop: 8, width: '100%' }}>
-                    ← Retour à la facture
-                  </button>
-                </div>
-              )}
 
               {/* ── Payment flow: Processing ── */}
               {step === 3 && payStatus === 'processing' && (
@@ -1498,7 +1487,7 @@ export default function BookingScreen({ onNav, embedded = false }) {
                     style={{ opacity: canNext() ? 1 : 0.4, cursor: canNext() ? 'pointer' : 'default' }}
                   >
                     {step === STEPS.length - 1
-                      ? `Payer ${price ? price.total.toFixed(0) + ' ' + route.currency : ''} →`
+                      ? `Confirmer ma réservation →`
                       : 'Continuer →'}
 
                   </button>

@@ -30,7 +30,7 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
   if (error) return error;
 
   const body = await req.json();
-  const { status, confirmed, notes, weightKg, priceXaf, eventNote, eventLocation, items } = body;
+  const { status, confirmed, notes, weightKg, priceXaf, eventNote, eventLocation, items, confirmedPriceXaf, adjustmentStatus } = body;
 
   // Fetch parcel with campaign to check lock status
   const existing = await prisma.parcel.findUnique({
@@ -38,6 +38,7 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
     select: {
       clientId: true,
       trackingCode: true,
+      priceXaf: true,
       campaign: { select: { status: true } },
       client: { select: { name: true, email: true, phone: true } },
     },
@@ -50,15 +51,24 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
     return NextResponse.json({ error: 'Colis verrouillé — le contenu ne peut plus être modifié (cargaison en transit).' }, { status: 403 });
   }
 
+  // Auto-set adjustmentStatus when confirmedPriceXaf is set
+  let finalAdjustmentStatus = adjustmentStatus;
+  if (confirmedPriceXaf !== undefined && adjustmentStatus === undefined) {
+    const diff = Number(confirmedPriceXaf) - (existing?.priceXaf ?? 0);
+    finalAdjustmentStatus = diff > 0 ? 'pending' : 'none';
+  }
+
   const parcel = await prisma.parcel.update({
     where: { id: params.id },
     data: {
-      ...(status    && { status: status as any }),
+      ...(status               && { status: status as any }),
       ...(confirmed !== undefined && { confirmed }),
       ...(notes     !== undefined && { notes }),
       ...(weightKg  !== undefined && { weightKg:  Number(weightKg) }),
       ...(priceXaf  !== undefined && { priceXaf:  Number(priceXaf) }),
       ...(items     !== undefined && { items } as any),
+      ...(confirmedPriceXaf !== undefined && { confirmedPriceXaf: Number(confirmedPriceXaf) }),
+      ...(finalAdjustmentStatus !== undefined && { adjustmentStatus: finalAdjustmentStatus }),
     },
   });
 
@@ -91,8 +101,20 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
     }
   }
 
+  // Notify client of price adjustment via WhatsApp
+  if (confirmedPriceXaf !== undefined && existing?.client?.phone) {
+    const estimatedPrice = existing.priceXaf ?? 0;
+    const diff = Number(confirmedPriceXaf) - estimatedPrice;
+    if (diff > 0) {
+      const firstName  = (existing.client.name ?? 'Client').split(' ')[0];
+      const trackCode  = existing.trackingCode ?? params.id;
+      const msg = `Bonjour ${firstName} 👋\n\nAprès réception de votre colis *${trackCode}* à notre entrepôt, le montant réel a été calculé.\n\n💰 Montant estimé : *${estimatedPrice.toLocaleString('fr')} CAD*\n💳 Montant réel : *${Number(confirmedPriceXaf).toLocaleString('fr')} CAD*\n📊 Ajustement : *+${diff.toLocaleString('fr')} CAD*\n\nUne facture complémentaire est disponible dans votre espace client. Merci de la régler pour que votre colis soit traité.`;
+      sendWhatsappNotification(existing.client.phone, msg, params.id).catch(() => {});
+    }
+  }
+
   // Notify client when admin modifies parcel info (not just status)
-  const infoChanged = weightKg !== undefined || priceXaf !== undefined || notes !== undefined || items !== undefined;
+  const infoChanged = weightKg !== undefined || priceXaf !== undefined || notes !== undefined || items !== undefined || confirmedPriceXaf !== undefined;
   if (infoChanged && existing?.clientId) {
     const code = existing.trackingCode ?? params.id;
     await createNotification(
