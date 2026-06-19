@@ -563,6 +563,7 @@ export default function BookingScreen({ onNav, embedded = false }) {
   const [savedAddresses, setSavedAddresses] = useState([]);
   const [savedRecipients, setSavedRecipients] = useState([]);
   const [saveAddr, setSaveAddr] = useState(false);
+  const [saveRecip, setSaveRecip] = useState(false);
   // 'idle' | 'interac' | 'processing' | 'pending' | 'error'
   const [payStatus, setPayStatus]   = useState('idle');
   const [bookingRef, setBookingRef] = useState('');
@@ -664,6 +665,19 @@ export default function BookingScreen({ onNav, embedded = false }) {
   const confirmInterac = async () => {
     setPayStatus('processing');
     setBookingErr('');
+
+    // Save recipient to profile if checkbox is checked
+    if (saveRecip && embedded && form.recipName) {
+      const city = form.recipCity === 'Hors région' ? (form.recipCityCustom || '') : form.recipCity;
+      const newRecip = { id: Date.now().toString(), label: '', name: form.recipName, phone: form.recipPhone || '', city };
+      const updatedRecips = [...savedRecipients, newRecip];
+      setSavedRecipients(updatedRecips);
+      fetch('/api/me/profile', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ savedRecipients: updatedRecips }),
+      }).catch(() => {});
+    }
 
     // Save address to profile if checkbox is checked
     if (saveAddr && embedded && form.recipAddress) {
@@ -1157,6 +1171,12 @@ export default function BookingScreen({ onNav, embedded = false }) {
                             onChange={e => upd('recipCityCustom', e.target.value)}
                             placeholder="Ex : Québec, Ottawa, Toronto…" />
                         </Field>
+                      )}
+                      {embedded && (
+                        <label style={{ display: 'flex', alignItems: 'flex-start', gap: 9, marginTop: 10, cursor: 'pointer', fontSize: 12.5 }}>
+                          <input type="checkbox" style={{ marginTop: 2, flexShrink: 0, accentColor: 'var(--brand-500)' }} checked={saveRecip} onChange={e => setSaveRecip(e.target.checked)} />
+                          <span style={{ color: 'var(--ink-600)' }}>Enregistrer ce destinataire pour mes prochaines réservations</span>
+                        </label>
                       )}
                     </div>
                   </div>
