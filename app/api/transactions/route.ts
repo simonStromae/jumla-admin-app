@@ -7,13 +7,15 @@ export async function GET() {
   const { error } = await requireAdmin();
   if (error) return error;
 
-  let rows: any[];
+  let rows: any[] = [];
+  let queryError: string | null = null;
+
   try {
     rows = await prisma.$queryRawUnsafe(`
       SELECT
         t.id,
         t."clientId",
-        t.amount,
+        t.amount::int                  AS amount,
         t.type,
         t.method,
         t.reference,
@@ -26,7 +28,7 @@ export async function GET() {
           json_agg(
             json_build_object(
               'paymentId',    ta."paymentId",
-              'amount',       ta.amount,
+              'amount',       ta.amount::int,
               'trackingCode', par."trackingCode",
               'campaignCode', c.code
             ) ORDER BY ta.id
@@ -45,16 +47,64 @@ export async function GET() {
                u.name, u.phone, rb.name
       ORDER BY t."createdAt" DESC
     `) as any[];
-  } catch {
-    // transactions table not yet created — run /api/db-migrate
+  } catch (e: any) {
+    queryError = e?.message ?? 'unknown';
     rows = [];
   }
 
+  // Legacy payments (marked completed before transactions table existed)
+  // Show them as synthetic rows so admins can see historical data
+  let legacyRows: any[] = [];
+  try {
+    const txIds = rows.map((r: any) => r.id as string);
+    // Find completed payments that have no transaction allocation
+    legacyRows = await prisma.$queryRawUnsafe(`
+      SELECT
+        py.id                                    AS id,
+        py."clientId",
+        py.amount::int                           AS amount,
+        'payment'                                AS type,
+        'interac'                                AS method,
+        py."interacRef"                          AS reference,
+        NULL::text                               AS note,
+        COALESCE(py."paidAt", py."createdAt")    AS "createdAt",
+        u.name                                   AS "clientName",
+        u.phone                                  AS "clientPhone",
+        NULL::text                               AS "recordedByName",
+        json_build_array(json_build_object(
+          'paymentId',    py.id,
+          'amount',       py.amount::int,
+          'trackingCode', par."trackingCode",
+          'campaignCode', c.code
+        ))                                       AS allocations,
+        py.amount::int                           AS "totalAllocated",
+        true                                     AS "isLegacy"
+      FROM payments py
+      JOIN users u   ON u.id   = py."clientId"
+      JOIN parcels par ON par.id = py."parcelId"
+      JOIN campaigns c ON c.id  = par."campaignId"
+      WHERE py.status = 'completed'
+        AND NOT EXISTS (
+          SELECT 1 FROM transaction_allocations ta WHERE ta."paymentId" = py.id
+        )
+      ORDER BY COALESCE(py."paidAt", py."createdAt") DESC
+    `) as any[];
+  } catch {
+    legacyRows = [];
+  }
+
+  const allRows = [...rows, ...legacyRows].sort(
+    (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+  );
+
   return NextResponse.json(
-    rows.map(r => ({
+    allRows.map(r => ({
       ...r,
-      credit: r.amount - r.totalAllocated,
-    }))
+      amount:         Number(r.amount),
+      totalAllocated: Number(r.totalAllocated),
+      credit:         Number(r.amount) - Number(r.totalAllocated),
+    })),
+    queryError ? { headers: { 'X-Query-Error': queryError } } : undefined
   );
 }
 

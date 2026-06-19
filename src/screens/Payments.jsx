@@ -444,15 +444,15 @@ function TransactionsTab({ onRecord }) {
             const credit = r.amount - r.totalAllocated;
             const dateStr = new Intl.DateTimeFormat('fr-FR', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }).format(new Date(r.createdAt));
             return (
-              <tr key={r.id}>
+              <tr key={r.id} style={r.isLegacy ? { background: 'var(--surface-soft, #fafafa)', color: 'var(--ink-600)' } : undefined}>
                 <td className="mono" style={{ fontSize: 12, color: 'var(--ink-500)' }}>{dateStr}</td>
                 <td>
                   <div style={{ fontWeight: 600, fontSize: 13 }}>{r.clientName}</div>
                   <div className="mono" style={{ fontSize: 10.5, color: 'var(--ink-400)' }}>{r.clientPhone ?? '—'}</div>
                 </td>
                 <td>
-                  <span className={'badge badge--dot badge--' + (r.type === 'credit' ? 'brand' : 'ok')}>
-                    {TYPE_LABELS[r.type] ?? r.type}
+                  <span className={'badge badge--dot badge--' + (r.isLegacy ? 'neutral' : r.type === 'credit' ? 'brand' : 'ok')}>
+                    {r.isLegacy ? 'Direct (ancien)' : (TYPE_LABELS[r.type] ?? r.type)}
                   </span>
                 </td>
                 <td style={{ textAlign: 'right' }}>
