@@ -159,29 +159,54 @@ export default function InvoicePage({ params }) {
             </tbody>
           </table>
 
-          {/* Total */}
-          <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 32 }}>
-            <div style={{ minWidth: 260 }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '12px 16px', background: '#1e3a5f', borderRadius: 8, color: 'white' }}>
-                <span style={{ fontWeight: 700 }}>Total{hasAdj ? ' ajusté' : ''}</span>
-                <span style={{ fontFamily: 'monospace', fontWeight: 800, fontSize: 18 }}>{totalAmt.toLocaleString('fr')} CAD</span>
-              </div>
-              {paid && data.payment?.paidAt && (
-                <div style={{ textAlign: 'right', fontSize: 12, color: '#16a34a', marginTop: 6, fontWeight: 600 }}>
-                  Payé le {fmt(data.payment.paidAt)}
-                  {data.payment.interacRef && <span> · Réf. {data.payment.interacRef}</span>}
+          {/* Total + partial breakdown */}
+          {(() => {
+            const partial   = data.payment?.status === 'partial';
+            const allocated = data.payment?.allocated ?? 0;
+            const remaining = data.payment?.remaining ?? totalAmt;
+            const txs       = data.payment?.transactions ?? [];
+            return (
+              <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: partial ? 16 : 32 }}>
+                <div style={{ minWidth: 280 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', padding: '12px 16px', background: '#1e3a5f', borderRadius: 8, color: 'white' }}>
+                    <span style={{ fontWeight: 700 }}>Total{hasAdj ? ' ajusté' : ''}</span>
+                    <span style={{ fontFamily: 'monospace', fontWeight: 800, fontSize: 18 }}>{totalAmt.toLocaleString('fr')} CAD</span>
+                  </div>
+                  {paid && data.payment?.paidAt && (
+                    <div style={{ textAlign: 'right', fontSize: 12, color: '#16a34a', marginTop: 6, fontWeight: 600 }}>
+                      Payé le {fmt(data.payment.paidAt)}
+                      {data.payment.interacRef && <span> · Réf. {data.payment.interacRef}</span>}
+                    </div>
+                  )}
+                  {partial && (
+                    <>
+                      {txs.length > 0 && txs.map((tx, i) => (
+                        <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', fontSize: 12, color: '#6b7280', borderTop: i === 0 ? '1px solid #e5e7eb' : 'none', marginTop: i === 0 ? 8 : 0 }}>
+                          <span>✓ Versement reçu · {new Date(tx.date).toLocaleDateString('fr-FR')}{tx.ref ? ` · ${tx.ref}` : ''}</span>
+                          <span style={{ fontFamily: 'monospace', fontWeight: 600, color: '#374151' }}>−{tx.amount.toLocaleString('fr')} CAD</span>
+                        </div>
+                      ))}
+                      <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 12px', background: '#fef3c7', borderRadius: 6, marginTop: 8, fontSize: 13, fontWeight: 700 }}>
+                        <span style={{ color: '#92400e' }}>Reste à régler</span>
+                        <span style={{ fontFamily: 'monospace', color: '#92400e' }}>{remaining.toLocaleString('fr')} CAD</span>
+                      </div>
+                    </>
+                  )}
                 </div>
-              )}
-            </div>
-          </div>
+              </div>
+            );
+          })()}
 
-          {/* Payment instructions if unpaid */}
+          {/* Payment instructions if not fully paid */}
           {!paid && (
             <div style={{ background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 8, padding: '16px 20px', marginBottom: 24 }}>
               <div style={{ fontWeight: 700, color: '#92400e', marginBottom: 6 }}>Modalités de paiement</div>
               <div style={{ fontSize: 13, color: '#78350f', lineHeight: 1.6 }}>
-                Effectuez un virement Interac e-Transfert à <strong>{paymentEmail}</strong> pour le montant exact de <strong>{totalAmt.toLocaleString('fr')} CAD</strong>.
-                Indiquez le code <strong style={{ fontFamily: 'monospace' }}>{data.trackingCode}</strong> en message.
+                {data.payment?.status === 'partial' && data.payment.remaining > 0
+                  ? <>Solde restant : <strong>{data.payment.remaining.toLocaleString('fr')} CAD</strong>. Effectuez le virement Interac à <strong>{paymentEmail}</strong>.</>
+                  : <>Effectuez un virement Interac e-Transfert à <strong>{paymentEmail}</strong> pour le montant de <strong>{totalAmt.toLocaleString('fr')} CAD</strong>.</>
+                }
+                {' '}Indiquez le code <strong style={{ fontFamily: 'monospace' }}>{data.trackingCode}</strong> en message.
               </div>
             </div>
           )}

@@ -26,6 +26,32 @@ export async function GET(_: NextRequest, { params }: { params: { parcelId: stri
   const adjustmentStatus  = (parcel as any).adjustmentStatus  ?? 'none';
   const priceXaf          = parcel.priceXaf ?? null;
 
+  // Fetch allocated amount + individual transactions
+  let allocated = 0;
+  let transactions: { amount: number; date: string; ref: string | null }[] = [];
+  if (parcel.payment) {
+    const rows = await prisma.$queryRawUnsafe<any[]>(
+      `SELECT COALESCE(SUM(ta.amount),0)::int AS allocated
+       FROM transaction_allocations ta WHERE ta."paymentId" = $1`,
+      parcel.payment.id
+    ).catch(() => [{ allocated: 0 }]);
+    allocated = Number(rows[0]?.allocated ?? 0);
+
+    const txRows = await prisma.$queryRawUnsafe<any[]>(
+      `SELECT t.amount, t."createdAt", t.reference
+       FROM transactions t
+       JOIN transaction_allocations ta ON ta."transactionId" = t.id
+       WHERE ta."paymentId" = $1
+       ORDER BY t."createdAt" ASC`,
+      parcel.payment.id
+    ).catch(() => []);
+    transactions = txRows.map(r => ({
+      amount: Number(r.amount),
+      date:   r.createdAt,
+      ref:    r.reference ?? null,
+    }));
+  }
+
   return NextResponse.json({
     invoiceNumber:     'FAC-' + parcel.trackingCode,
     issueDate:         parcel.createdAt,
@@ -57,9 +83,12 @@ export async function GET(_: NextRequest, { params }: { params: { parcelId: stri
       arrivalDate:   parcel.campaign.arrivalDate,
     },
     payment: parcel.payment ? {
-      status:     parcel.payment.status,
-      paidAt:     parcel.payment.paidAt,
-      interacRef: parcel.payment.interacRef,
+      status:       parcel.payment.status,
+      paidAt:       parcel.payment.paidAt,
+      interacRef:   parcel.payment.interacRef,
+      allocated,
+      remaining:    Math.max(0, parcel.payment.amount - allocated),
+      transactions,
     } : null,
     bordereaux: parcel.bordereaux.map(b => ({
       id:        b.id,

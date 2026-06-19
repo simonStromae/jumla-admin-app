@@ -14,12 +14,14 @@ const STATUS_LABEL = {
 
 const PAYMENT_COLOR = {
   completed: { bg: 'var(--ok-50)',   color: 'var(--ok-700)',   label: 'Payé' },
+  partial:   { bg: '#fef3c7',        color: '#92400e',          label: 'Partiel' },
   pending:   { bg: 'var(--warn-50)', color: 'var(--warn-700)', label: 'En attente' },
 };
 
 function Row({ parcel }) {
   const router   = useRouter();
   const pay      = parcel.payment;
+  const partial  = pay?.status === 'partial';
   const ps       = PAYMENT_COLOR[pay?.status] ?? { bg: 'var(--bg-soft)', color: 'var(--ink-500)', label: 'Non facturé' };
   const amount   = pay?.amount ?? parcel.priceXaf ?? 0;
   const paidAt   = pay?.paidAt ? new Date(pay.paidAt).toLocaleDateString('fr-FR') : null;
@@ -44,6 +46,11 @@ function Row({ parcel }) {
           {amount.toLocaleString('fr')}
         </span>
         <span style={{ fontSize: 11, color: 'var(--ink-400)', marginLeft: 4 }}>CAD</span>
+        {partial && pay.allocated > 0 && (
+          <div style={{ fontSize: 11, color: '#92400e', marginTop: 2, fontFamily: 'var(--font-mono)' }}>
+            Reçu : {pay.allocated.toLocaleString('fr')} · Reste : {pay.remaining.toLocaleString('fr')}
+          </div>
+        )}
       </td>
       <td style={{ padding: '14px 16px' }}>
         <span style={{
@@ -88,10 +95,8 @@ export default function ClientInvoices() {
     });
   }, []);
 
-  const totalDue  = parcels.filter(p => !p.payment || p.payment.status !== 'completed')
-    .reduce((s, p) => s + (p.payment?.amount ?? p.priceXaf ?? 0), 0);
-  const totalPaid = parcels.filter(p => p.payment?.status === 'completed')
-    .reduce((s, p) => s + (p.payment?.amount ?? 0), 0);
+  const totalDue  = parcels.reduce((s, p) => s + (p.payment?.remaining ?? (p.payment?.status !== 'completed' ? (p.priceXaf ?? 0) : 0)), 0);
+  const totalPaid = parcels.reduce((s, p) => s + (p.payment?.allocated ?? (p.payment?.status === 'completed' ? (p.payment?.amount ?? 0) : 0)), 0);
 
   return (
     <div>
@@ -133,7 +138,10 @@ export default function ClientInvoices() {
             <span style={{ fontSize: 14, fontWeight: 400, color: 'var(--ink-400)', marginLeft: 6 }}>CAD</span>
           </div>
           <div style={{ fontSize: 12, color: 'var(--ink-400)', marginTop: 6 }}>
-            {parcels.filter(p => p.payment?.status === 'completed').length} envoi(s) soldé(s)
+            {parcels.filter(p => p.payment?.status === 'completed').length} soldé(s)
+            {parcels.some(p => p.payment?.status === 'partial') && (
+              <> · {parcels.filter(p => p.payment?.status === 'partial').length} partiel(s)</>
+            )}
           </div>
         </div>
       </div>
