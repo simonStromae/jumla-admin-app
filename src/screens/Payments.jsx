@@ -1102,14 +1102,12 @@ export default function PaymentsScreen({ onNav }) {
     });
   }, []);
 
-  const suppTotal = payments
-    .filter(p => p.confirmedPriceXaf != null && p.adjustmentStatus === 'pending')
-    .reduce((s, p) => s + Math.max(0, (p.confirmedPriceXaf - (p.priceXaf ?? p.amount ?? 0))), 0);
-
-  const facture = payments.reduce((s, p) => s + (p.amount || 0), 0) + suppTotal;
-  const percu   = payments.filter(p => p.status === 'paid').reduce((s, p) => s + (p.amount || 0), 0);
-  const impayes = payments.filter(p => p.status !== 'paid' && p.status !== 'refunded').reduce((s, p) => s + (p.amount || 0), 0) + suppTotal;
-  const taux    = Math.round(percu / (facture || 1) * 100);
+  // KPIs using enriched data from API (allocated, invoiced, collected, remaining)
+  const facture = payments.reduce((s, p) => s + (p.invoiced ?? p.amount ?? 0), 0);
+  const percu   = payments.reduce((s, p) => s + (p.collected ?? (p.status === 'paid' ? p.amount : 0)), 0);
+  const impayes = payments.reduce((s, p) => s + (p.remaining ?? (p.status !== 'paid' && p.status !== 'refunded' ? p.amount : 0)), 0);
+  const taux    = facture > 0 ? Math.round(percu / facture * 100) : 0;
+  const nbImpayes = payments.filter(p => (p.remaining ?? 0) > 0).length;
 
   const reloadKpi = () => {
     fetch('/api/payments').then(r => r.json()).then(d => setPayments(Array.isArray(d) ? d : []));
@@ -1148,7 +1146,7 @@ export default function PaymentsScreen({ onNav }) {
           <div className="kpi__label" style={{ color: 'var(--bad-700)' }}>Impayés <span style={{ textTransform: 'none', opacity: .6 }}>/ Outstanding</span></div>
           <div className="kpi__value" style={{ color: 'var(--bad-700)' }}>{impayes.toLocaleString('fr')} <span style={{ fontSize: 14, opacity: .6 }}>CAD</span></div>
           <div className="kpi__delta" style={{ color: 'var(--bad-600)' }}>
-            {payments.filter(p => p.status !== 'paid').length} en attente
+            {nbImpayes} en attente
           </div>
         </div>
         <div className="kpi">
