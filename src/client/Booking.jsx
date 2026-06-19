@@ -740,7 +740,7 @@ function CampaignCalendar({ campaigns, selected, onSelect, routeLabel }) {
             </div>
           </div>
           {selectedCampaign.spotsKg !== null && (
-            <div style={{ fontSize: 12.5, display: 'flex', alignItems: 'center', gap: 6, color: selectedCampaign.spotsKg < 50 ? 'var(--warn-700)' : 'var(--ok-700)', fontWeight: 600 }}>
+            <div style={{ fontSize: 12.5, display: 'flex', alignItems: 'center', gap: 6, color: selectedCampaign.spotsKg < 50 ? 'var(--warn-700)' : 'var(--brand-600)', fontWeight: 600 }}>
               {selectedCampaign.spotsKg < 50
                 ? <>⚠️ Seulement <strong>{selectedCampaign.spotsKg} kg</strong> restants — réservez vite !</>
                 : <>✓ <strong>{selectedCampaign.spotsKg} kg</strong> disponibles</>
@@ -999,16 +999,16 @@ export default function BookingScreen({ onNav, embedded = false }) {
                   <div style={{
                     width: 28, height: 28, borderRadius: '50%', display: 'grid', placeItems: 'center',
                     fontSize: 12, fontWeight: 700, flexShrink: 0,
-                    background: done ? '#16a34a' : current ? '#111827' : '#f3f4f6',
+                    background: done ? 'var(--brand-400)' : current ? '#111827' : '#f3f4f6',
                     color: done || current ? 'white' : '#6b7280',
-                    border: `2px solid ${done ? '#16a34a' : current ? '#111827' : '#e5e7eb'}`,
+                    border: `2px solid ${done ? 'var(--brand-400)' : current ? '#111827' : '#e5e7eb'}`,
                   }}>{done ? '✓' : i + 1}</div>
-                  <span className="co-step-label" style={{ fontSize: 12.5, fontWeight: current ? 700 : 500, color: current ? '#111827' : done ? '#16a34a' : '#9ca3af', whiteSpace: 'nowrap' }}>
+                  <span className="co-step-label" style={{ fontSize: 12.5, fontWeight: current ? 700 : 500, color: current ? '#111827' : done ? 'var(--brand-600)' : '#9ca3af', whiteSpace: 'nowrap' }}>
                     {s.label}
                   </span>
                 </div>
                 {i < STEPS.length - 1 && (
-                  <div style={{ flex: 1, height: 2, background: done ? '#16a34a' : '#e5e7eb', margin: '0 12px' }} />
+                  <div style={{ flex: 1, height: 2, background: done ? 'var(--brand-200)' : '#e5e7eb', margin: '0 12px' }} />
                 )}
               </div>
             );
@@ -1020,7 +1020,7 @@ export default function BookingScreen({ onNav, embedded = false }) {
         <div className="co-main">
           {isDone ? (
             <div className="co-done">
-              <div className="co-done__icon" style={{ background: 'var(--ok-100)', color: 'var(--ok-700)' }}>✓</div>
+              <div className="co-done__icon" style={{ background: 'var(--brand-50)', color: 'var(--brand-600)' }}>✓</div>
               <h2 className="co-done__title">Réservation confirmée !</h2>
               <p className="co-done__sub">
                 Votre réservation est enregistrée. Pour sécuriser votre colis, effectuez le virement Interac ci-dessous.

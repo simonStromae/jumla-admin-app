@@ -207,8 +207,8 @@ export default function ParcelDetailPage({ params }) {
 
       {/* Hero status card */}
       <div style={{
-        background: `linear-gradient(135deg, ${s.icon === '🎉' ? '#dcfce7, #bbf7d0' : '#f0f9ff, #e0f2fe'})`,
-        border: `1.5px solid ${s.icon === '🎉' ? '#86efac' : '#bae6fd'}`,
+        background: s.icon === '🎉' ? 'linear-gradient(135deg, #dcfce7, #bbf7d0)' : 'linear-gradient(135deg, #fffbeb, #fef9c3)',
+        border: `1.5px solid ${s.icon === '🎉' ? '#86efac' : '#fde68a'}`,
         borderRadius: 16, padding: '20px', marginBottom: 20,
       }}>
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
@@ -439,7 +439,7 @@ export default function ParcelDetailPage({ params }) {
                   {parcel.priceXaf ? parcel.priceXaf.toLocaleString('fr') + ' CAD' : '—'}
                 </span>
               </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 12px', background: '#f0fdf4', borderRadius: 8, fontSize: 13 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 12px', background: '#f9fafb', borderRadius: 8, fontSize: 13 }}>
                 <span style={{ color: '#374151', fontWeight: 600 }}>Montant réel</span>
                 <span style={{ fontFamily: 'monospace', fontWeight: 700, fontSize: 15, color: '#111827' }}>
                   {parcel.confirmedPriceXaf.toLocaleString('fr')} CAD
@@ -561,11 +561,11 @@ export default function ParcelDetailPage({ params }) {
                     )}
                     <div style={{
                       width: 34, height: 34, borderRadius: '50%', flexShrink: 0,
-                      background: isLast ? '#f0fdf4' : '#f9fafb',
-                      border: `2px solid ${isLast ? '#86efac' : '#e5e7eb'}`,
+                      background: isLast ? '#fffbeb' : '#f9fafb',
+                      border: `2px solid ${isLast ? '#F5A524' : '#e5e7eb'}`,
                       display: 'grid', placeItems: 'center',
                       fontSize: isLast ? 17 : 14,
-                      boxShadow: isLast ? '0 0 0 3px #dcfce7' : 'none',
+                      boxShadow: isLast ? '0 0 0 3px #fef3c7' : 'none',
                     }}>
                       {isLast ? step.icon : '✓'}
                     </div>
@@ -575,7 +575,7 @@ export default function ParcelDetailPage({ params }) {
                           {step.label}
                         </span>
                         {isLast && (
-                          <span style={{ fontSize: 10, fontWeight: 700, background: '#16a34a', color: 'white', padding: '1px 7px', borderRadius: 3, letterSpacing: '.04em' }}>
+                          <span style={{ fontSize: 10, fontWeight: 700, background: '#F5A524', color: 'white', padding: '1px 7px', borderRadius: 3, letterSpacing: '.04em' }}>
                             ACTUEL
                           </span>
                         )}

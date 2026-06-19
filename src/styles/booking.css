@@ -59,7 +59,7 @@
   white-space: nowrap;
 }
 
-.co-crumb.is-done { color: var(--ok-600); }
+.co-crumb.is-done { color: var(--brand-600); }
 .co-crumb.is-active { color: var(--ink-900); font-weight: 700; }
 
 .co-crumb__sep {
@@ -77,8 +77,8 @@
 }
 
 .co-crumb.is-done .co-crumb__num {
-  background: var(--ok-500);
-  border-color: var(--ok-500);
+  background: var(--brand-400);
+  border-color: var(--brand-400);
   color: white;
 }
 
@@ -437,10 +437,10 @@
 }
 .co-done__icon {
   width: 64px; height: 64px;
-  background: var(--ok-50); border: 2px solid var(--ok-300);
+  background: var(--brand-50); border: 2px solid var(--brand-200);
   border-radius: var(--radius-lg);
   display: grid; place-items: center;
-  font-size: 24px; color: var(--ok-600); font-weight: 800;
+  font-size: 24px; color: var(--brand-600); font-weight: 800;
 }
 .co-done__title { font-size: 22px; font-weight: 800; color: var(--ink-900); letter-spacing: -.025em; }
 .co-done__sub { font-size: 13.5px; color: var(--ink-500); max-width: 420px; line-height: 1.65; }
