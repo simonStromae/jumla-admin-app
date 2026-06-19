@@ -539,6 +539,168 @@ function AuthGate({ onAuth, onNav }) {
 
 // ── Main ──
 
+// ── Calendar campaign picker ──
+const MONTH_LABELS_FR = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
+const DAY_LABELS_FR   = ['Dim','Lun','Mar','Mer','Jeu','Ven','Sam'];
+
+function getUTCDateKey(dateStr) {
+  if (!dateStr) return null;
+  const d = new Date(dateStr);
+  return `${d.getUTCFullYear()}-${String(d.getUTCMonth()+1).padStart(2,'0')}-${String(d.getUTCDate()).padStart(2,'0')}`;
+}
+
+function CampaignCalendar({ campaigns, selected, onSelect }) {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const firstWithDate = campaigns.find(c => c.departureDate);
+  const [viewYear,  setViewYear]  = useState(() => firstWithDate ? new Date(firstWithDate.departureDate).getUTCFullYear()  : today.getFullYear());
+  const [viewMonth, setViewMonth] = useState(() => firstWithDate ? new Date(firstWithDate.departureDate).getUTCMonth()     : today.getMonth());
+
+  const campaignsByDate = {};
+  campaigns.forEach(c => {
+    const key = getUTCDateKey(c.departureDate);
+    if (!key) return;
+    if (!campaignsByDate[key]) campaignsByDate[key] = [];
+    campaignsByDate[key].push(c);
+  });
+
+  const prevMonth = () => {
+    if (viewMonth === 0) { setViewYear(y => y - 1); setViewMonth(11); }
+    else setViewMonth(m => m - 1);
+  };
+  const nextMonth = () => {
+    if (viewMonth === 11) { setViewYear(y => y + 1); setViewMonth(0); }
+    else setViewMonth(m => m + 1);
+  };
+
+  const firstDayOfMonth = new Date(viewYear, viewMonth, 1).getDay();
+  const daysInMonth     = new Date(viewYear, viewMonth + 1, 0).getDate();
+  const cells = [
+    ...Array(firstDayOfMonth).fill(null),
+    ...Array.from({ length: daysInMonth }, (_, i) => i + 1),
+  ];
+
+  const selectedCampaign = campaigns.find(c => c.id === selected);
+
+  return (
+    <div>
+      {/* Calendar card */}
+      <div style={{ background: 'white', border: '1.5px solid var(--border)', borderRadius: 16, overflow: 'hidden' }}>
+        {/* Header */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 20px', borderBottom: '1px solid var(--border-soft)' }}>
+          <button onClick={prevMonth} style={{ width: 32, height: 32, borderRadius: 8, border: '1.5px solid var(--border)', background: 'white', cursor: 'pointer', fontSize: 15, display: 'grid', placeItems: 'center', color: 'var(--ink-600)' }}>←</button>
+          <span style={{ fontSize: 15, fontWeight: 800, color: 'var(--ink-900)' }}>{MONTH_LABELS_FR[viewMonth]} {viewYear}</span>
+          <button onClick={nextMonth} style={{ width: 32, height: 32, borderRadius: 8, border: '1.5px solid var(--border)', background: 'white', cursor: 'pointer', fontSize: 15, display: 'grid', placeItems: 'center', color: 'var(--ink-600)' }}>→</button>
+        </div>
+
+        {/* Day headers */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', padding: '8px 12px 4px' }}>
+          {DAY_LABELS_FR.map(d => (
+            <div key={d} style={{ textAlign: 'center', fontSize: 11, fontWeight: 700, color: 'var(--ink-400)', textTransform: 'uppercase', letterSpacing: '.05em', padding: '4px 0' }}>{d}</div>
+          ))}
+        </div>
+
+        {/* Days */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 3, padding: '2px 12px 14px' }}>
+          {cells.map((day, i) => {
+            if (!day) return <div key={i} />;
+            const dateStr  = `${viewYear}-${String(viewMonth + 1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+            const dayCamps = campaignsByDate[dateStr] ?? [];
+            const has      = dayCamps.length > 0;
+            const isPast   = new Date(viewYear, viewMonth, day) < today;
+            const isSel    = dayCamps.some(c => c.id === selected);
+            const isLow    = dayCamps.some(c => c.spotsKg !== null && c.spotsKg < 50);
+
+            return (
+              <button
+                key={i}
+                disabled={!has || isPast}
+                onClick={() => has && !isPast && onSelect(dayCamps[0].id)}
+                style={{
+                  position: 'relative',
+                  border: isSel ? '2px solid var(--brand-600)' : '2px solid transparent',
+                  borderRadius: 10,
+                  background: isSel ? 'var(--brand-600)' : has && !isPast ? 'var(--brand-50)' : 'transparent',
+                  color: isSel ? 'white' : isPast ? 'var(--ink-200)' : has ? 'var(--brand-800)' : 'var(--ink-700)',
+                  cursor: has && !isPast ? 'pointer' : 'default',
+                  fontSize: 14,
+                  fontWeight: has ? 700 : 400,
+                  padding: '10px 4px 8px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  gap: 4,
+                  transition: 'background .1s',
+                }}
+              >
+                <span>{day}</span>
+                {has && !isPast && (
+                  <div style={{
+                    width: 6, height: 6, borderRadius: '50%', flexShrink: 0,
+                    background: isSel ? 'rgba(255,255,255,.75)' : isLow ? 'var(--warn-500)' : 'var(--brand-400)',
+                  }} />
+                )}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Legend */}
+      <div style={{ display: 'flex', gap: 16, marginTop: 8, fontSize: 11.5, color: 'var(--ink-500)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+          <div style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--brand-400)', flexShrink: 0 }} />
+          Départ disponible
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+          <div style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--warn-500)', flexShrink: 0 }} />
+          Places limitées
+        </div>
+      </div>
+
+      {/* Selected campaign summary */}
+      {selectedCampaign && (
+        <div style={{ marginTop: 14, padding: '14px 16px', background: 'var(--brand-50)', border: '2px solid var(--brand-200)', borderRadius: 12, display: 'flex', flexDirection: 'column', gap: 10 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <span style={{ fontSize: 20 }}>✈️</span>
+            <span style={{ fontWeight: 800, fontSize: 14, color: 'var(--brand-900)' }}>Départ sélectionné</span>
+            <span style={{ marginLeft: 'auto', fontSize: 11.5, fontWeight: 700, background: 'var(--brand-600)', color: 'white', padding: '3px 10px', borderRadius: 99 }}>
+              {selectedCampaign.code}
+            </span>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+            <div style={{ background: 'white', borderRadius: 8, padding: '10px 12px', border: '1px solid var(--brand-100)' }}>
+              <div style={{ fontSize: 10.5, color: 'var(--ink-400)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.05em', marginBottom: 4 }}>Départ</div>
+              <div style={{ fontWeight: 700, fontSize: 13, color: 'var(--ink-900)' }}>
+                {selectedCampaign.departureDate
+                  ? new Date(selectedCampaign.departureDate).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'UTC' })
+                  : '—'}
+              </div>
+            </div>
+            <div style={{ background: 'white', borderRadius: 8, padding: '10px 12px', border: '1px solid var(--brand-100)' }}>
+              <div style={{ fontSize: 10.5, color: 'var(--ink-400)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.05em', marginBottom: 4 }}>Arrivée estimée</div>
+              <div style={{ fontWeight: 700, fontSize: 13, color: 'var(--ink-900)' }}>
+                {selectedCampaign.arrivalDate
+                  ? new Date(selectedCampaign.arrivalDate).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', timeZone: 'UTC' })
+                  : '~14 jours'}
+              </div>
+            </div>
+          </div>
+          {selectedCampaign.spotsKg !== null && (
+            <div style={{ fontSize: 12.5, display: 'flex', alignItems: 'center', gap: 6, color: selectedCampaign.spotsKg < 50 ? 'var(--warn-700)' : 'var(--ok-700)', fontWeight: 600 }}>
+              {selectedCampaign.spotsKg < 50
+                ? <>⚠️ Seulement <strong>{selectedCampaign.spotsKg} kg</strong> restants — réservez vite !</>
+                : <>✓ <strong>{selectedCampaign.spotsKg} kg</strong> disponibles</>
+              }
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function BookingScreen({ onNav, embedded = false }) {
   const { data: sessionData } = useSession();
   const [step, setStep] = useState(0);
@@ -887,32 +1049,20 @@ export default function BookingScreen({ onNav, embedded = false }) {
                         </div>
                       </div>
                       <div>
-                        <div className="co-label" style={{ marginBottom: 10 }}>Date de départ</div>
+                        <div className="co-label" style={{ marginBottom: 12 }}>Date de départ</div>
                         {campaigns.length === 0 ? (
                           <p style={{ fontSize: 13, color: 'var(--ink-400)', padding: '12px 0' }}>
                             Aucune cargaison ouverte sur cette route pour le moment.
                           </p>
                         ) : (
-                          <div className="co-dates">
-                            {campaigns.map(c => {
-                              const dep = c.departureDate ? new Date(c.departureDate).toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short', timeZone: 'UTC' }) : c.code;
-                              const low = c.spotsKg !== null && c.spotsKg < 50;
-                              return (
-                                <button key={c.id} className={`co-date${form.departure === c.id ? ' is-sel' : ''}`}
-                                  onClick={() => upd('departure', c.id)}>
-                                  <div className="co-date__day">{dep}</div>
-                                  <div className={`co-date__spots${low ? ' co-date__spots--low' : ''}`}>
-                                    {c.spotsKg !== null
-                                      ? low ? `⚠ ${c.spotsKg} kg restants` : `${c.spotsKg} kg dispo`
-                                      : c.code}
-                                  </div>
-                                </button>
-                              );
-                            })}
-                          </div>
+                          <CampaignCalendar
+                            campaigns={campaigns}
+                            selected={form.departure}
+                            onSelect={(id) => upd('departure', id)}
+                          />
                         )}
                         {!form.departure && campaigns.length > 0 && (
-                          <p style={{ fontSize: 12, color: 'var(--ink-400)', marginTop: 10 }}>Sélectionnez une date pour continuer.</p>
+                          <p style={{ fontSize: 12, color: 'var(--ink-400)', marginTop: 10 }}>Cliquez sur une date surlignée pour continuer.</p>
                         )}
                       </div>
                     </>
