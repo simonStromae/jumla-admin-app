@@ -83,6 +83,16 @@ export async function POST(req: NextRequest) {
     for (const alloc of (allocations ?? []) as { paymentId: string; amount: number }[]) {
       if (!alloc.paymentId || !alloc.amount) continue;
 
+      // Supplement pseudo-invoice: id starts with "sup_"
+      if (alloc.paymentId.startsWith('sup_')) {
+        const parcelId = alloc.paymentId.substring(4);
+        await prisma.$executeRawUnsafe(
+          `UPDATE parcels SET "adjustmentStatus" = 'paid' WHERE id = $1 AND "adjustmentStatus" = 'pending'`,
+          parcelId
+        );
+        continue;
+      }
+
       // Prevent overpayment: check remaining balance before allocating
       const payment = await prisma.payment.findUnique({
         where: { id: alloc.paymentId },

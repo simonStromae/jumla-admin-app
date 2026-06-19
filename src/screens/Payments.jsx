@@ -294,26 +294,34 @@ function RecordPaymentModal({ preselectedClient, preselectedPaymentId, onClose, 
                 {unpaid.map(inv => {
                   const alloc   = Number(allocations[inv.id] || 0);
                   const checked = alloc > 0;
+                  const isSupp  = inv.isSupplement;
                   return (
                     <div key={inv.id} style={{
                       display: 'flex', alignItems: 'center', gap: 10,
                       padding: '10px 12px', borderRadius: 8,
-                      border: `1px solid ${checked ? 'var(--brand-300)' : 'var(--border)'}`,
-                      background: checked ? 'var(--brand-50)' : 'white',
+                      border: `1px solid ${checked ? (isSupp ? '#d97706' : 'var(--brand-300)') : (isSupp ? '#fde68a' : 'var(--border)')}`,
+                      background: checked ? (isSupp ? '#fffbeb' : 'var(--brand-50)') : (isSupp ? '#fffef5' : 'white'),
                       transition: 'all .12s',
                     }}>
                       <input type="checkbox" checked={checked}
-                        style={{ width: 15, height: 15, cursor: 'pointer', accentColor: 'var(--brand-600)', flexShrink: 0 }}
+                        style={{ width: 15, height: 15, cursor: 'pointer', accentColor: isSupp ? '#d97706' : 'var(--brand-600)', flexShrink: 0 }}
                         onChange={e => {
                           if (e.target.checked) setAllocations(a => ({ ...a, [inv.id]: String(inv.remaining) }));
                           else setAllocations(a => { const n = { ...a }; delete n[inv.id]; return n; });
                         }} />
                       <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: 13, color: 'var(--ink-900)' }}>
-                          {inv.trackingCode}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                          <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: 13, color: 'var(--ink-900)' }}>
+                            {inv.trackingCode}
+                          </span>
+                          {isSupp && (
+                            <span style={{ fontSize: 10, fontWeight: 700, padding: '1px 6px', borderRadius: 4, background: '#fef3c7', color: '#92400e', textTransform: 'uppercase', letterSpacing: '.04em' }}>
+                              Supplément
+                            </span>
+                          )}
                         </div>
                         <div style={{ fontSize: 11, color: 'var(--ink-500)', marginTop: 1 }}>
-                          Cargaison <strong>{inv.campaignCode}</strong> · solde dû : <strong style={{ color: 'var(--bad-600)' }}>{inv.remaining.toLocaleString('fr')} CAD</strong>
+                          Cargaison <strong>{inv.campaignCode}</strong> · {isSupp ? 'supplément dû' : 'solde dû'} : <strong style={{ color: isSupp ? '#92400e' : 'var(--bad-600)' }}>{inv.remaining.toLocaleString('fr')} CAD</strong>
                         </div>
                       </div>
                       {checked && (
@@ -321,7 +329,7 @@ function RecordPaymentModal({ preselectedClient, preselectedPaymentId, onClose, 
                           <input type="number" min="0" max={inv.remaining}
                             value={allocations[inv.id] || ''}
                             onChange={e => setAllocations(a => ({ ...a, [inv.id]: e.target.value }))}
-                            style={{ width: 88, padding: '4px 8px', border: '1px solid var(--brand-300)', borderRadius: 6, fontFamily: 'var(--font-mono)', fontSize: 13, textAlign: 'right' }} />
+                            style={{ width: 88, padding: '4px 8px', border: `1px solid ${isSupp ? '#d97706' : 'var(--brand-300)'}`, borderRadius: 6, fontFamily: 'var(--font-mono)', fontSize: 13, textAlign: 'right' }} />
                           <span style={{ fontSize: 11, color: 'var(--ink-400)' }}>CAD</span>
                         </div>
                       )}

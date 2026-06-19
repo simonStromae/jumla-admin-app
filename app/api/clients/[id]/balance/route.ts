@@ -61,13 +61,48 @@ async function getBalance(clientId: string) {
       allocated:    effectiveAllocated,
       remaining:    Math.max(0, p.amount - effectiveAllocated),
       status:       p.status,
+      isSupplement: false,
       createdAt:    p.createdAt,
     };
   });
 
-  const totalInvoiced = invoices.reduce((s, i) => s + i.amount, 0);
+  // Supplement pseudo-invoices: parcels with a pending price adjustment
+  let suppInvoices: typeof invoices = [];
+  try {
+    const suppParcels = await prisma.$queryRawUnsafe<any[]>(
+      `SELECT p.id, p."trackingCode", p."priceXaf", p."confirmedPriceXaf", p."createdAt", c.code AS "campaignCode"
+       FROM parcels p
+       JOIN campaigns c ON c.id = p."campaignId"
+       WHERE p."clientId" = $1
+         AND p."adjustmentStatus" = 'pending'
+         AND p."confirmedPriceXaf" IS NOT NULL
+         AND p."confirmedPriceXaf" > COALESCE(p."priceXaf", 0)`,
+      clientId
+    );
+    suppInvoices = suppParcels.map(sp => {
+      const supplement = Number(sp.confirmedPriceXaf) - Number(sp.priceXaf ?? 0);
+      return {
+        id:           'sup_' + sp.id,
+        parcelId:     sp.id,
+        trackingCode: sp.trackingCode,
+        campaignCode: sp.campaignCode,
+        amount:       supplement,
+        allocated:    0,
+        remaining:    supplement,
+        status:       'pending',
+        isSupplement: true,
+        createdAt:    sp.createdAt,
+      };
+    });
+  } catch {
+    // adjustmentStatus column not yet migrated
+  }
+
+  const allInvoices = [...invoices, ...suppInvoices];
+
+  const totalInvoiced  = allInvoices.reduce((s, i) => s + i.amount, 0);
   const totalAllocated = invoices.reduce((s, i) => s + i.allocated, 0);
-  const totalDue = invoices.reduce((s, i) => s + i.remaining, 0);
+  const totalDue       = allInvoices.reduce((s, i) => s + i.remaining, 0);
 
   // Credit = money received beyond what was invoiced
   let totalReceived = 0;
@@ -87,7 +122,7 @@ async function getBalance(clientId: string) {
     totalReceived,
     totalDue,
     creditBalance,
-    unpaidInvoices: invoices.filter(i => i.remaining > 0),
-    allInvoices:    invoices,
+    unpaidInvoices: allInvoices.filter(i => i.remaining > 0),
+    allInvoices,
   });
 }
