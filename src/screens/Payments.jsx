@@ -719,23 +719,208 @@ function InvoicePreviewModal({ parcelId, onClose }) {
   );
 }
 
+/* ─── Invoice Settle Modal (focused per-invoice) ─────────── */
+
+function InvoiceSettleModal({ invoice, onClose, onSave }) {
+  const [balance, setBalance] = useState(null);
+  const [mode, setMode]       = useState('full');
+  const [form, setForm]       = useState({ method: 'interac', reference: '', note: '', amount: '' });
+  const [checked, setChecked] = useState({});
+  const [saving, setSaving]   = useState(false);
+  const [err, setErr]         = useState('');
+
+  useEffect(() => {
+    fetch(`/api/clients/${invoice.clientId}/balance`)
+      .then(r => r.json())
+      .then(d => {
+        setBalance(d);
+        const init = {};
+        if (d.unpaidInvoices?.find(i => i.id === invoice.id)) init[invoice.id] = true;
+        const suppId = 'sup_' + invoice.parcelId;
+        if (d.unpaidInvoices?.find(i => i.id === suppId)) init[suppId] = true;
+        setChecked(init);
+      })
+      .catch(() => setBalance({ unpaidInvoices: [] }));
+  }, [invoice.clientId, invoice.id, invoice.parcelId]);
+
+  const allLines     = balance?.unpaidInvoices ?? [];
+  const lines        = allLines.filter(l => l.id === invoice.id || l.id === 'sup_' + invoice.parcelId);
+  const selected     = lines.filter(l => checked[l.id]);
+  const totalDue     = selected.reduce((s, l) => s + l.remaining, 0);
+  const amount       = mode === 'full' ? totalDue : (Number(form.amount) || 0);
+
+  const handleSave = async () => {
+    if (!amount) { setErr('Montant requis'); return; }
+    if (selected.length === 0) { setErr('Sélectionnez au moins une ligne'); return; }
+    setSaving(true); setErr('');
+    let left = amount;
+    const allocs = [];
+    for (const line of selected) {
+      if (left <= 0) break;
+      const a = Math.min(left, line.remaining);
+      allocs.push({ paymentId: line.id, amount: a });
+      left -= a;
+    }
+    const res = await fetch('/api/transactions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        clientId: invoice.clientId, amount,
+        type: 'payment', method: form.method,
+        reference: form.reference || null,
+        note: form.note || null,
+        allocations: allocs,
+      }),
+    });
+    const json = await res.json().catch(() => ({}));
+    if (res.ok && json.ok) onSave();
+    else { setErr(json.error || 'Erreur serveur'); setSaving(false); }
+  };
+
+  return (
+    <Modal width={500} onClose={onClose}
+      title={`Règlement · ${invoice.parcel}`}
+      sub={`${invoice.recipName} · Cargaison ${invoice.campaign}`}
+      footer={
+        <>
+          <button className="btn btn--ghost" onClick={onClose}>Annuler</button>
+          <div style={{ flex: 1 }} />
+          {err && <span style={{ fontSize: 12, color: 'var(--bad-600)' }}>{err}</span>}
+          <button className="btn btn--brand" onClick={handleSave}
+            disabled={saving || !amount || selected.length === 0}>
+            <I.Check />{saving ? 'Enregistrement…' : 'Enregistrer'}
+          </button>
+        </>
+      }
+    >
+      {!balance ? (
+        <div style={{ padding: '32px 0', textAlign: 'center', color: 'var(--ink-400)', fontSize: 13 }}>Chargement…</div>
+      ) : lines.length === 0 ? (
+        <div style={{ padding: '32px 0', textAlign: 'center', color: 'var(--ok-600)', fontSize: 14, fontWeight: 600 }}>✓ Toutes les lignes sont réglées</div>
+      ) : (
+        <>
+          {/* Lines */}
+          <div style={{ marginBottom: 20 }}>
+            <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.06em', color: 'var(--ink-400)', marginBottom: 10 }}>Lignes à régler</div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {lines.map(line => {
+                const on = !!checked[line.id];
+                const sup = line.isSupplement;
+                return (
+                  <label key={line.id} style={{
+                    display: 'flex', alignItems: 'center', gap: 12, padding: '12px 14px',
+                    borderRadius: 8, cursor: 'pointer', transition: 'all .12s',
+                    border: `1px solid ${on ? (sup ? '#d97706' : 'var(--brand-300)') : 'var(--border)'}`,
+                    background: on ? (sup ? '#fffbeb' : 'var(--brand-50)') : 'white',
+                  }}>
+                    <input type="checkbox" checked={on}
+                      style={{ width: 15, height: 15, accentColor: sup ? '#d97706' : 'var(--brand-600)', flexShrink: 0 }}
+                      onChange={e => setChecked(c => ({ ...c, [line.id]: e.target.checked }))} />
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontSize: 13, fontWeight: 600, color: sup ? '#92400e' : 'var(--ink-900)', display: 'flex', alignItems: 'center', gap: 6 }}>
+                        {sup ? 'Supplément — ajustement de prix' : 'Facture principale'}
+                        {sup && <span style={{ fontSize: 10, padding: '1px 6px', background: '#fef3c7', color: '#92400e', borderRadius: 4, fontWeight: 700 }}>SUP</span>}
+                      </div>
+                      <div style={{ fontSize: 11, color: 'var(--ink-400)', marginTop: 2 }}>Solde restant</div>
+                    </div>
+                    <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                      <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: 15, color: sup ? '#92400e' : 'var(--ink-900)' }}>
+                        {line.remaining.toLocaleString('fr')}
+                      </span>
+                      <span style={{ fontSize: 11, color: 'var(--ink-400)', marginLeft: 3 }}>CAD</span>
+                    </div>
+                  </label>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Mode toggle */}
+          <div style={{ marginBottom: 16 }}>
+            <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.06em', color: 'var(--ink-400)', marginBottom: 8 }}>Mode de règlement</div>
+            <div style={{ display: 'flex', gap: 8 }}>
+              {[
+                { id: 'full',    label: 'Intégral',         sub: `${totalDue.toLocaleString('fr')} CAD` },
+                { id: 'partial', label: 'Acompte / Partiel', sub: 'Montant à saisir' },
+              ].map(m => (
+                <button key={m.id} onClick={() => setMode(m.id)} style={{
+                  flex: 1, padding: '10px 12px', borderRadius: 8, cursor: 'pointer', textAlign: 'left',
+                  border: `1px solid ${mode === m.id ? 'var(--brand-400)' : 'var(--border)'}`,
+                  background: mode === m.id ? 'var(--brand-50)' : 'white',
+                }}>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: mode === m.id ? 'var(--brand-700)' : 'var(--ink-800)' }}>{m.label}</div>
+                  <div style={{ fontSize: 11, color: mode === m.id ? 'var(--brand-500)' : 'var(--ink-400)', marginTop: 2 }}>{m.sub}</div>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Partial amount */}
+          {mode === 'partial' && (
+            <div className="field" style={{ marginBottom: 16 }}>
+              <label className="label">Montant reçu</label>
+              <div style={{ position: 'relative' }}>
+                <input className="input mono" type="number" min="0" max={totalDue}
+                  value={form.amount} onChange={e => setForm(f => ({ ...f, amount: e.target.value }))}
+                  placeholder="0" style={{ paddingRight: 48 }} />
+                <span style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', fontSize: 12, color: 'var(--ink-400)', pointerEvents: 'none' }}>CAD</span>
+              </div>
+            </div>
+          )}
+
+          {/* Total recap */}
+          <div style={{ background: 'var(--bg-soft)', borderRadius: 8, padding: '10px 14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+            <span style={{ fontSize: 13, color: 'var(--ink-600)', fontWeight: 600 }}>
+              {mode === 'full' ? 'Montant à enregistrer' : 'Versement'}
+            </span>
+            <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 800, fontSize: 16, color: 'var(--ink-900)' }}>
+              {(amount || 0).toLocaleString('fr')} <span style={{ fontSize: 12, fontWeight: 400, color: 'var(--ink-400)' }}>CAD</span>
+            </span>
+          </div>
+
+          {/* Method + Reference */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 12 }}>
+            <div className="field">
+              <label className="label">Méthode</label>
+              <select className="input" value={form.method} onChange={e => setForm(f => ({ ...f, method: e.target.value }))}>
+                {Object.entries(METHOD_LABELS).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+              </select>
+            </div>
+            <div className="field">
+              <label className="label">Référence <span style={{ color: 'var(--ink-400)', fontWeight: 400 }}>optionnel</span></label>
+              <input className="input" value={form.reference} onChange={e => setForm(f => ({ ...f, reference: e.target.value }))} placeholder="ex: XK7F2A" />
+            </div>
+          </div>
+          <div className="field">
+            <label className="label">Note interne <span style={{ color: 'var(--ink-400)', fontWeight: 400 }}>optionnel</span></label>
+            <input className="input" value={form.note} onChange={e => setForm(f => ({ ...f, note: e.target.value }))} placeholder="Contentieux, accord, …" />
+          </div>
+        </>
+      )}
+    </Modal>
+  );
+}
+
 /* ─── Invoices list tab (existing payments) ──────────────── */
 
-function InvoicesTab({ onSettle }) {
+function InvoicesTab({ onReload }) {
   const can = useCan();
   const [payments, setPayments]         = useState([]);
   const [loading, setLoading]           = useState(true);
   const [tab, setTab]                   = useState('all');
   const [search, setSearch]             = useState('');
   const [invoiceParcelId, setInvoiceParcelId] = useState(null);
+  const [settleInvoice, setSettleInvoice] = useState(null);
 
-  useEffect(() => {
+  const loadPayments = () => {
     setLoading(true);
     fetch('/api/payments').then(r => r.json()).then(d => {
       setPayments(Array.isArray(d) ? d : []);
       setLoading(false);
     });
-  }, []);
+  };
+
+  useEffect(() => { loadPayments(); }, []);
 
   const tabs = [
     { id: 'all',     l: 'Toutes',      n: payments.length },
@@ -773,6 +958,13 @@ function InvoicesTab({ onSettle }) {
       {invoiceParcelId && (
         <InvoicePreviewModal parcelId={invoiceParcelId} onClose={() => setInvoiceParcelId(null)} />
       )}
+      {settleInvoice && (
+        <InvoiceSettleModal
+          invoice={settleInvoice}
+          onClose={() => setSettleInvoice(null)}
+          onSave={() => { setSettleInvoice(null); loadPayments(); onReload?.(); }}
+        />
+      )}
 
       <table className="tbl" style={{ borderTopLeftRadius: 0, borderTopRightRadius: 0 }}>
         <thead>
@@ -781,7 +973,7 @@ function InvoicesTab({ onSettle }) {
             <th>Client</th>
             <th>Cargaison</th>
             <th>Colis</th>
-            <th style={{ textAlign: 'right' }}>Facturé</th>
+            <th style={{ textAlign: 'right' }}>Facturé / Total</th>
             <th>Statut</th>
             <th>Référence</th>
             <th style={{ borderRadius: 0, width: 140 }}></th>
@@ -815,22 +1007,24 @@ function InvoicesTab({ onSettle }) {
                 <td className="mono" style={{ fontSize: 12, fontWeight: 600 }}>{p.campaign}</td>
                 <td className="mono" style={{ fontSize: 12, fontWeight: 600 }}>{p.parcel}</td>
                 <td style={{ textAlign: 'right' }}>
-                  {p.confirmedPriceXaf != null && p.adjustmentStatus !== 'none' ? (
-                    <>
-                      <div>
-                        <span className="mono" style={{ fontWeight: 700 }}>{p.confirmedPriceXaf.toLocaleString('fr')}</span>
-                        <span style={{ fontSize: 11, color: 'var(--ink-400)', marginLeft: 3 }}>CAD</span>
-                      </div>
-                      <div style={{ fontSize: 10.5, color: 'var(--ink-400)', textDecoration: 'line-through', fontFamily: 'var(--font-mono)' }}>
-                        Est. {(p.priceXaf ?? p.due ?? 0).toLocaleString('fr')}
-                      </div>
-                    </>
-                  ) : (
-                    <>
-                      <span className="mono" style={{ fontWeight: 700 }}>{(p.due || 0).toLocaleString('fr')}</span>
-                      <span style={{ fontSize: 11, color: 'var(--ink-400)', marginLeft: 3 }}>CAD</span>
-                    </>
-                  )}
+                  {(() => {
+                    const hasAdj = p.confirmedPriceXaf != null && p.adjustmentStatus !== 'none';
+                    const suppAmt = hasAdj ? (p.confirmedPriceXaf - (p.priceXaf ?? p.due ?? 0)) : 0;
+                    const total = hasAdj ? p.confirmedPriceXaf : (p.due || 0);
+                    return (
+                      <>
+                        <div>
+                          <span className="mono" style={{ fontWeight: 700 }}>{total.toLocaleString('fr')}</span>
+                          <span style={{ fontSize: 11, color: 'var(--ink-400)', marginLeft: 3 }}>CAD</span>
+                        </div>
+                        {hasAdj && suppAmt > 0 && (
+                          <div style={{ fontSize: 10.5, color: '#b45309', fontFamily: 'var(--font-mono)', marginTop: 1 }}>
+                            dont suppl. {suppAmt.toLocaleString('fr')}
+                          </div>
+                        )}
+                      </>
+                    );
+                  })()}
                 </td>
                 <td><span className={'badge badge--dot badge--' + s.cls}>{s.label}</span></td>
                 <td className="mono" style={{ fontSize: 12, color: 'var(--ink-500)' }}>{p.interacRef ?? '—'}</td>
@@ -848,7 +1042,7 @@ function InvoicesTab({ onSettle }) {
                       ? <span style={{ fontSize: 12, color: 'var(--ok-600)' }}>✓ Réglé</span>
                       : can('payments', 'validate')
                         ? <button className="btn btn--brand btn--xs"
-                            onClick={() => onSettle({ clientId: p.clientId, paymentId: p.id, clientName: p.recipName, clientPhone: p.recipPhone })}>
+                            onClick={() => setSettleInvoice(p)}>
                             <I.Wallet />Régler
                           </button>
                         : <span style={{ fontSize: 12, color: 'var(--ink-400)' }}>En attente</span>}
@@ -879,17 +1073,14 @@ export default function PaymentsScreen({ onNav }) {
     });
   }, []);
 
-  const facture     = payments.reduce((s, p) => s + (p.amount || 0), 0);
-  const percu       = payments.filter(p => p.status === 'paid').reduce((s, p) => s + (p.amount || 0), 0);
-  const impayes     = payments.filter(p => p.status !== 'paid' && p.status !== 'refunded').reduce((s, p) => s + (p.amount || 0), 0);
-  const taux        = Math.round(percu / (facture || 1) * 100);
+  const suppTotal = payments
+    .filter(p => p.confirmedPriceXaf != null && p.adjustmentStatus === 'pending')
+    .reduce((s, p) => s + Math.max(0, (p.confirmedPriceXaf - (p.priceXaf ?? p.amount ?? 0))), 0);
 
-  const openSettle = (info) => {
-    setModal({
-      preselectedClient: { id: info.clientId, name: info.clientName, phone: info.clientPhone },
-      preselectedPaymentId: info.paymentId,
-    });
-  };
+  const facture = payments.reduce((s, p) => s + (p.amount || 0), 0) + suppTotal;
+  const percu   = payments.filter(p => p.status === 'paid').reduce((s, p) => s + (p.amount || 0), 0);
+  const impayes = payments.filter(p => p.status !== 'paid' && p.status !== 'refunded').reduce((s, p) => s + (p.amount || 0), 0) + suppTotal;
+  const taux    = Math.round(percu / (facture || 1) * 100);
 
   const reloadKpi = () => {
     fetch('/api/payments').then(r => r.json()).then(d => setPayments(Array.isArray(d) ? d : []));
@@ -962,7 +1153,7 @@ export default function PaymentsScreen({ onNav }) {
         <TransactionsTab key="tx" onRecord={() => setModal({})} />
       )}
       {mainTab === 'invoices' && (
-        <InvoicesTab key="inv" onSettle={openSettle} />
+        <InvoicesTab key="inv" onReload={reloadKpi} />
       )}
 
       {modal !== null && (
