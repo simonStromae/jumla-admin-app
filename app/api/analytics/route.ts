@@ -25,60 +25,165 @@ export async function GET(req: NextRequest) {
   const yearCampaignIds = yearCampaigns.map(c => c.id);
 
   let parcels:  any[] = [];
-  let payments: any[] = [];
   let costs:    any[] = [];
-  let allPayments: any[] = [];
 
   if (yearCampaignIds.length > 0) {
     [parcels, costs] = await Promise.all([
       prisma.parcel.findMany({
         where: { campaignId: { in: yearCampaignIds } },
-        include: { client: { select: { id: true, name: true, city: true } } },
+        include: {
+          client:  { select: { id: true, name: true, city: true } },
+          payment: true,
+        },
       }),
       prisma.campaignCost.findMany({ where: { campaignId: { in: yearCampaignIds } } }),
     ]);
-    const parcelIds = parcels.map((p: any) => p.id);
-    if (parcelIds.length > 0) {
-      [payments, allPayments] = await Promise.all([
-        prisma.payment.findMany({
-          where: { status: 'completed', parcelId: { in: parcelIds } },
-          include: { client: { select: { id: true, name: true } } },
-        }),
-        prisma.payment.findMany({
-          where: { parcelId: { in: parcelIds } },
-          include: {
-            client: { select: { id: true, name: true } },
-            parcel: { select: { trackingCode: true, campaignId: true } },
-          },
-        }),
-      ]);
+  }
+
+  // ── Collect transaction allocations (actual cash received, with dates) ──────
+  const paymentIds = parcels.filter((p: any) => p.payment).map((p: any) => p.payment.id) as string[];
+  let allocationsWithDates: { paymentId: string; amount: number; createdAt: Date }[] = [];
+  if (paymentIds.length > 0) {
+    allocationsWithDates = await prisma.$queryRawUnsafe<any[]>(
+      `SELECT ta."paymentId", ta.amount::int AS amount, t."createdAt"
+       FROM transaction_allocations ta
+       JOIN transactions t ON t.id = ta."transactionId"
+       WHERE ta."paymentId" = ANY($1::text[])`,
+      paymentIds
+    ).catch(() => []);
+  }
+
+  // Group allocations by paymentId → total collected for partial/legacy payments
+  const allocByPayment: Record<string, number> = {};
+  for (const a of allocationsWithDates) {
+    allocByPayment[a.paymentId] = (allocByPayment[a.paymentId] ?? 0) + Number(a.amount);
+  }
+  const paymentsWithAllocations = new Set(allocationsWithDates.map(a => a.paymentId));
+
+  // ── Per-parcel KPI computation ─────────────────────────────────────────────
+  let totalInvoiced  = 0;
+  let totalCollected = 0;
+
+  // client revenue map (actual collected, for top clients)
+  const clientRevMap: Record<string, { name: string; amount: number; count: number }> = {};
+
+  // monthly revenue map (index = month 0-11)
+  const monthlyRevMap: number[] = new Array(12).fill(0);
+
+  // unpaid list items
+  const unpaidItems: { id: string; clientName: string; trackingCode: string; amount: number; status: string }[] = [];
+
+  for (const p of parcels) {
+    const adjStatus      = (p as any).adjustmentStatus ?? 'none';
+    const confirmedPrice = (p as any).confirmedPriceXaf as number | null;
+
+    // Invoiced = confirmed price if exists, else original estimate
+    const invoiced = confirmedPrice ?? p.priceXaf ?? 0;
+    totalInvoiced += invoiced;
+
+    // ── Collected: main invoice ──
+    let collected = 0;
+    if (p.payment) {
+      if (p.payment.status === 'completed') {
+        if (paymentsWithAllocations.has(p.payment.id)) {
+          // Has transaction records → use allocations (more accurate)
+          collected = allocByPayment[p.payment.id] ?? p.payment.amount;
+        } else {
+          // Legacy payment marked completed without transactions table
+          collected = p.payment.amount;
+        }
+      } else {
+        // Partial or pending: use actual allocations received
+        collected = allocByPayment[p.payment.id] ?? 0;
+      }
+    }
+
+    // ── Collected: supplement ──
+    if (adjStatus === 'paid' && confirmedPrice != null) {
+      const suppAmt = Math.max(0, confirmedPrice - (p.priceXaf ?? 0));
+      collected += suppAmt;
+    }
+
+    totalCollected += collected;
+
+    // ── Monthly revenue ──
+    // Completed payments with no allocation records: use paidAt
+    if (p.payment?.status === 'completed' && !paymentsWithAllocations.has(p.payment.id)) {
+      const d = new Date(p.payment.paidAt ?? p.payment.createdAt);
+      if (d.getFullYear() === year) monthlyRevMap[d.getMonth()] += p.payment.amount;
+    }
+    // Paid supplements: approximate to campaign departure month
+    if (adjStatus === 'paid' && confirmedPrice != null) {
+      const suppAmt = Math.max(0, confirmedPrice - (p.priceXaf ?? 0));
+      if (suppAmt > 0) {
+        const camp = yearCampaigns.find(c => c.id === p.campaignId);
+        const d = camp?.departureDate ? new Date(camp.departureDate) : new Date();
+        if (d.getFullYear() === year) monthlyRevMap[d.getMonth()] += suppAmt;
+      }
+    }
+
+    // ── Top clients ──
+    const cid = p.client.id;
+    if (!clientRevMap[cid]) clientRevMap[cid] = { name: p.client.name, amount: 0, count: 0 };
+    clientRevMap[cid].amount += collected;
+    if (p.payment) clientRevMap[cid].count++;
+
+    // ── Unpaid items ──
+    const remaining = Math.max(0, invoiced - collected);
+    if (remaining > 0) {
+      // Split into main invoice remaining and supplement remaining
+      const mainRemaining = p.payment
+        ? Math.max(0, p.payment.amount - (p.payment.status === 'completed' ? p.payment.amount : (allocByPayment[p.payment.id] ?? 0)))
+        : 0;
+      const suppRemaining = adjStatus === 'pending' && confirmedPrice != null
+        ? Math.max(0, confirmedPrice - (p.priceXaf ?? 0))
+        : 0;
+
+      if (mainRemaining > 0 && p.payment) {
+        unpaidItems.push({
+          id:           p.payment.id,
+          clientName:   p.client.name,
+          trackingCode: p.trackingCode,
+          amount:       mainRemaining,
+          status:       p.payment.status,
+        });
+      }
+      if (suppRemaining > 0) {
+        unpaidItems.push({
+          id:           'sup_' + p.id,
+          clientName:   p.client.name,
+          trackingCode: p.trackingCode,
+          amount:       suppRemaining,
+          status:       'supplement_pending',
+        });
+      }
     }
   }
 
-  const totalCollected  = payments.reduce((s: number, p: any) => s + p.amount, 0);
-  const totalInvoiced   = parcels.reduce((s: number, p: any)  => s + (p.priceXaf ?? 0), 0);
-  const totalWeight     = parcels.reduce((s: number, p: any)  => s + (p.weightKg ?? 0), 0);
-  const totalParcels    = parcels.length;
-  const totalCampaigns  = yearCampaigns.length;
-  const totalCosts      = costs.reduce((s: number, c: any) => s + c.fret + c.manutention + c.douane + c.transport + c.divers, 0);
-  const grossMargin     = totalCollected - totalCosts;
-  const recoveryRate    = totalInvoiced > 0 ? Math.round(totalCollected / totalInvoiced * 100) : 0;
-  const grossMarginPct  = totalCollected > 0 ? Math.round(grossMargin / totalCollected * 100) : 0;
-  const avgCostPerKg    = totalWeight > 0 ? totalCosts / totalWeight : 0;
+  // Monthly revenue from allocations (actual transaction dates)
+  for (const a of allocationsWithDates) {
+    const d = new Date(a.createdAt);
+    if (d.getFullYear() === year) monthlyRevMap[d.getMonth()] += Number(a.amount);
+  }
+
+  const totalWeight    = parcels.reduce((s: number, p: any) => s + (p.weightKg ?? 0), 0);
+  const totalParcels   = parcels.length;
+  const totalCampaigns = yearCampaigns.length;
+  const totalCosts     = costs.reduce((s: number, c: any) => s + c.fret + c.manutention + c.douane + c.transport + c.divers, 0);
+  const grossMargin    = totalCollected - totalCosts;
+  const recoveryRate   = totalInvoiced > 0 ? Math.round(totalCollected / totalInvoiced * 100) : 0;
+  const grossMarginPct = totalCollected > 0 ? Math.round(grossMargin / totalCollected * 100) : 0;
+  const avgCostPerKg   = totalWeight > 0 ? totalCosts / totalWeight : 0;
   const marginPerParcel = totalParcels > 0 ? Math.round(grossMargin / totalParcels) : 0;
 
-  // Monthly breakdown
+  const unpaidTotal = unpaidItems.reduce((s, u) => s + u.amount, 0);
+  const unpaidCount = unpaidItems.length;
+
+  // ── Monthly breakdown ──────────────────────────────────────────────────────
   const months = Array.from({ length: 12 }, (_, i) => {
     const d = new Date(year, i, 1);
     return { label: new Intl.DateTimeFormat('fr-FR', { month: 'short' }).format(d), year: d.getFullYear(), month: d.getMonth() };
   });
-
-  const monthlyRevenue = months.map(m =>
-    payments.filter((p: any) => {
-      const d = new Date(p.paidAt ?? p.createdAt);
-      return d.getFullYear() === m.year && d.getMonth() === m.month;
-    }).reduce((s: number, p: any) => s + p.amount, 0)
-  );
 
   const monthlyCosts = months.map(m => {
     const campIds = yearCampaigns
@@ -88,15 +193,9 @@ export async function GET(req: NextRequest) {
       .reduce((s: number, c: any) => s + c.fret + c.manutention + c.douane + c.transport + c.divers, 0);
   });
 
-  // ── Top clients (by collected payments) ──────────────────────────
-  const clientRevMap: Record<string, { name: string; amount: number; count: number }> = {};
-  for (const p of payments) {
-    const id = p.client.id;
-    if (!clientRevMap[id]) clientRevMap[id] = { name: p.client.name, amount: 0, count: 0 };
-    clientRevMap[id].amount += p.amount;
-    clientRevMap[id].count  += 1;
-  }
+  // ── Top clients (by actual collected) ─────────────────────────────────────
   const topClients = Object.values(clientRevMap)
+    .filter(c => c.amount > 0)
     .sort((a, b) => b.amount - a.amount)
     .slice(0, 5)
     .map((c, i, arr) => ({
@@ -107,7 +206,7 @@ export async function GET(req: NextRequest) {
       color: (i % 8) + 1,
     }));
 
-  // ── Top destinations (by parcel count via client city) ───────────
+  // ── Top destinations ───────────────────────────────────────────────────────
   const destMap: Record<string, number> = {};
   for (const p of parcels) {
     const city = p.client?.city || 'Inconnue';
@@ -122,7 +221,7 @@ export async function GET(req: NextRequest) {
     meter: Math.round(count / destMax * 100),
   }));
 
-  // ── Top agents (by campaign count) ───────────────────────────────
+  // ── Top agents ─────────────────────────────────────────────────────────────
   const agents = await prisma.user.findMany({
     where: { role: { in: ['admin', 'agent'] } },
     include: { _count: { select: { campaigns: true } } },
@@ -138,22 +237,6 @@ export async function GET(req: NextRequest) {
     color: (i % 8) + 1,
   }));
 
-  // ── Impayés ───────────────────────────────────────────────────────
-  const unpaid = allPayments
-    .filter((p: any) => p.status !== 'completed')
-    .map((p: any) => ({
-      id:           p.id,
-      clientName:   p.client.name,
-      trackingCode: p.parcel.trackingCode,
-      amount:       p.amount,
-      status:       p.status,
-    }))
-    .slice(0, 8);
-
-  const unpaidTotal = allPayments
-    .filter((p: any) => p.status !== 'completed')
-    .reduce((s: number, p: any) => s + p.amount, 0);
-
   return NextResponse.json({
     kpi: {
       totalCollected, totalInvoiced,
@@ -163,12 +246,12 @@ export async function GET(req: NextRequest) {
       avgCostPerKg:  Math.round(avgCostPerKg * 100) / 100,
       marginPerParcel,
       unpaidTotal,
-      unpaidCount: allPayments.filter((p: any) => p.status !== 'completed').length,
+      unpaidCount,
     },
-    months:       { labels: months.map(m => m.label), revenue: monthlyRevenue, costs: monthlyCosts },
+    months:         { labels: months.map(m => m.label), revenue: monthlyRevMap, costs: monthlyCosts },
     topClients,
     topDestinations,
     topAgents,
-    unpaid,
+    unpaid:         unpaidItems.slice(0, 8),
   });
 }
