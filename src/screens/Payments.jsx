@@ -1006,9 +1006,13 @@ function InvoicesTab({ onReload }) {
             const suppAmt = p.confirmedPriceXaf != null && p.adjustmentStatus === 'pending'
               ? Math.max(0, p.confirmedPriceXaf - (p.priceXaf ?? p.amount ?? 0))
               : 0;
+            const suppAmtPaid = p.confirmedPriceXaf != null && p.adjustmentStatus === 'paid'
+              ? Math.max(0, p.confirmedPriceXaf - (p.priceXaf ?? p.amount ?? 0))
+              : 0;
+            const hasChildRow = suppAmt > 0 || suppAmtPaid > 0;
 
             const mainRow = (
-              <tr key={p.id} style={{ borderBottom: suppAmt > 0 ? 'none' : undefined }}>
+              <tr key={p.id} style={{ borderBottom: hasChildRow ? 'none' : undefined }}>
                 <td className="mono" style={{ fontSize: 12, color: 'var(--ink-500)' }}>{p.date}</td>
                 <td>
                   <div style={{ fontWeight: 600 }}>{p.recipName}</div>
@@ -1040,10 +1044,11 @@ function InvoicesTab({ onReload }) {
               </tr>
             );
 
-            if (!suppAmt) return [mainRow];
+            if (!hasChildRow) return [mainRow];
 
-            // Supplement child row — always visible when adjustmentStatus=pending
-            const suppRow = (
+            // Supplement child row
+            const suppRow = suppAmt > 0
+              ? (
               <tr key={'sup_' + p.parcelId} style={{ background: '#fffef5', borderBottom: '1px solid #fef3c7' }}>
                 <td style={{ paddingLeft: 24, fontSize: 13, color: '#d97706' }}>↳</td>
                 <td>
@@ -1076,7 +1081,35 @@ function InvoicesTab({ onReload }) {
                   </div>
                 </td>
               </tr>
-            );
+              ) : (
+              // Paid supplement — green "Réglé" row
+              <tr key={'sup_' + p.parcelId} style={{ background: '#f0fdf4', borderBottom: '1px solid #bbf7d0' }}>
+                <td style={{ paddingLeft: 24, fontSize: 13, color: 'var(--ok-600)' }}>↳</td>
+                <td>
+                  <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--ok-700)' }}>
+                    Ajustement de prix
+                  </span>
+                  <span style={{ marginLeft: 6, fontSize: 10, padding: '1px 6px', background: '#dcfce7', color: 'var(--ok-700)', borderRadius: 4, fontWeight: 700 }}>SUP</span>
+                </td>
+                <td className="mono" style={{ fontSize: 12, color: 'var(--ink-400)' }}>{p.campaign}</td>
+                <td className="mono" style={{ fontSize: 12, color: 'var(--ok-700)' }}>{p.parcel}</td>
+                <td style={{ textAlign: 'right' }}>
+                  <span className="mono" style={{ fontWeight: 700, color: 'var(--ok-700)' }}>{suppAmtPaid.toLocaleString('fr')}</span>
+                  <span style={{ fontSize: 11, color: 'var(--ink-400)', marginLeft: 3 }}>CAD</span>
+                </td>
+                <td><span className="badge badge--dot badge--ok">Réglé</span></td>
+                <td style={{ color: 'var(--ink-300)', fontSize: 12 }}>—</td>
+                <td>
+                  <div style={{ display: 'flex', gap: 6, justifyContent: 'flex-end', alignItems: 'center' }}>
+                    <button className="btn btn--ghost btn--xs" title="Facture supplément"
+                      onClick={() => setInvoiceParcelId(p.parcelId)} style={{ padding: '4px 8px' }}>
+                      <I.FileText style={{ width: 13, height: 13 }} />
+                    </button>
+                    <span style={{ fontSize: 12, color: 'var(--ok-600)' }}>✓ Réglé</span>
+                  </div>
+                </td>
+              </tr>
+              );
 
             return [mainRow, suppRow];
           })}

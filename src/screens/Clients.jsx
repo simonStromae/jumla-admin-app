@@ -303,8 +303,8 @@ function ClientDrawer({ cl, onClose, onEdit, onNav, onStatusChange }) {
   }, [cl.id]);
 
   const parcels   = detail?.parcels ?? [];
-  const unpaidAmt = parcels.filter(p => !p.paid).reduce((s, p) => s + (p.amount ?? 0), 0);
-  const totalAmt  = parcels.reduce((s, p) => s + (p.amount ?? 0), 0);
+  const totalAmt  = parcels.reduce((s, p) => s + (p.invoiced ?? p.amount ?? 0), 0);
+  const unpaidAmt = parcels.reduce((s, p) => s + (p.remaining ?? (p.paid ? 0 : p.amount ?? 0)), 0);
   const since     = detail?.createdAt
     ? new Date(detail.createdAt).toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' })
     : '—';
@@ -410,7 +410,7 @@ function ClientDrawer({ cl, onClose, onEdit, onNav, onStatusChange }) {
                   }}>
                     {a.label && <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--ink-500)', textTransform: 'uppercase', letterSpacing: '.04em', marginBottom: 2 }}>{a.label}</div>}
                     <div style={{ fontSize: 12.5, color: 'var(--ink-800)' }}>
-                      {a.address}{a.apt ? `, apt. ${a.apt}` : ''}
+                      {a.address}{a.apt ? `, apt. ${String(a.apt).replace(/^apt\.?\s*/i, '')}` : ''}
                     </div>
                     <div style={{ fontSize: 11.5, color: 'var(--ink-400)', marginTop: 1 }}>
                       {[a.city, a.province, a.postal].filter(Boolean).join(', ')}
@@ -460,12 +460,24 @@ function ClientDrawer({ cl, onClose, onEdit, onNav, onStatusChange }) {
                       {p.weightKg ? p.weightKg + ' kg' : '—'}
                     </td>
                     <td className="mono" style={{ textAlign: 'right', fontSize: 12, fontWeight: 600 }}>
-                      {p.amount ? p.amount.toLocaleString('fr') + ' CAD' : '—'}
+                      {(p.invoiced ?? p.amount) ? (p.invoiced ?? p.amount).toLocaleString('fr') + ' CAD' : '—'}
                     </td>
                     <td>
-                      <span className={'badge badge--dot badge--' + (p.paid ? 'ok' : 'warn')}>
-                        {p.paid ? 'Payé' : 'En attente'}
-                      </span>
+                      {p.displayStatus === 'paid' && (
+                        <span className="badge badge--dot badge--ok">Payé</span>
+                      )}
+                      {p.displayStatus === 'paid_supp_pending' && (
+                        <span className="badge badge--dot" style={{ background: '#fef3c7', color: '#92400e', borderColor: '#fde68a' }}>Payé · Suppl.</span>
+                      )}
+                      {p.displayStatus === 'partial' && (
+                        <span className="badge badge--dot badge--warn">Partiel</span>
+                      )}
+                      {p.displayStatus === 'pending' && (
+                        <span className="badge badge--dot badge--warn">En attente</span>
+                      )}
+                      {(!p.displayStatus || p.displayStatus === 'none') && (
+                        <span className="badge badge--dot badge--neutral">Sans facture</span>
+                      )}
                     </td>
                   </tr>
                 ))}
