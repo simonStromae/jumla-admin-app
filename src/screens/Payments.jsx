@@ -774,7 +774,13 @@ function InvoiceSettleModal({ invoice, onClose, onSave }) {
     });
     const json = await res.json().catch(() => ({}));
     if (res.ok && json.ok) onSave();
-    else { setErr(json.error || 'Erreur serveur'); setSaving(false); }
+    else {
+      const msg = json.error || 'Erreur serveur';
+      setErr(msg.includes('non initialisées') || msg.includes('does not exist')
+        ? 'Tables manquantes — visitez /api/db-migrate dans votre navigateur puis réessayez.'
+        : msg);
+      setSaving(false);
+    }
   };
 
   return (
@@ -973,7 +979,7 @@ function InvoicesTab({ onReload }) {
             <th>Client</th>
             <th>Cargaison</th>
             <th>Colis</th>
-            <th style={{ textAlign: 'right' }}>Facturé / Total</th>
+            <th style={{ textAlign: 'right' }}>Facturé</th>
             <th>Statut</th>
             <th>Référence</th>
             <th style={{ borderRadius: 0, width: 140 }}></th>
@@ -995,10 +1001,14 @@ function InvoicesTab({ onReload }) {
           {!loading && filtered.length === 0 && (
             <tr><td colSpan={8} style={{ textAlign: 'center', padding: 40, color: 'var(--ink-400)', fontSize: 13 }}>Aucune facture</td></tr>
           )}
-          {!loading && filtered.map(p => {
+          {!loading && filtered.flatMap(p => {
             const s = PAY_STATUS[p.status] ?? { label: p.status, cls: 'neutral' };
-            return (
-              <tr key={p.id}>
+            const suppAmt = p.confirmedPriceXaf != null && p.adjustmentStatus === 'pending'
+              ? Math.max(0, p.confirmedPriceXaf - (p.priceXaf ?? p.amount ?? 0))
+              : 0;
+
+            const mainRow = (
+              <tr key={p.id} style={{ borderBottom: suppAmt > 0 ? 'none' : undefined }}>
                 <td className="mono" style={{ fontSize: 12, color: 'var(--ink-500)' }}>{p.date}</td>
                 <td>
                   <div style={{ fontWeight: 600 }}>{p.recipName}</div>
@@ -1007,42 +1017,21 @@ function InvoicesTab({ onReload }) {
                 <td className="mono" style={{ fontSize: 12, fontWeight: 600 }}>{p.campaign}</td>
                 <td className="mono" style={{ fontSize: 12, fontWeight: 600 }}>{p.parcel}</td>
                 <td style={{ textAlign: 'right' }}>
-                  {(() => {
-                    const hasAdj = p.confirmedPriceXaf != null && p.adjustmentStatus !== 'none';
-                    const suppAmt = hasAdj ? (p.confirmedPriceXaf - (p.priceXaf ?? p.due ?? 0)) : 0;
-                    const total = hasAdj ? p.confirmedPriceXaf : (p.due || 0);
-                    return (
-                      <>
-                        <div>
-                          <span className="mono" style={{ fontWeight: 700 }}>{total.toLocaleString('fr')}</span>
-                          <span style={{ fontSize: 11, color: 'var(--ink-400)', marginLeft: 3 }}>CAD</span>
-                        </div>
-                        {hasAdj && suppAmt > 0 && (
-                          <div style={{ fontSize: 10.5, color: '#b45309', fontFamily: 'var(--font-mono)', marginTop: 1 }}>
-                            dont suppl. {suppAmt.toLocaleString('fr')}
-                          </div>
-                        )}
-                      </>
-                    );
-                  })()}
+                  <span className="mono" style={{ fontWeight: 700 }}>{(p.due || 0).toLocaleString('fr')}</span>
+                  <span style={{ fontSize: 11, color: 'var(--ink-400)', marginLeft: 3 }}>CAD</span>
                 </td>
                 <td><span className={'badge badge--dot badge--' + s.cls}>{s.label}</span></td>
                 <td className="mono" style={{ fontSize: 12, color: 'var(--ink-500)' }}>{p.interacRef ?? '—'}</td>
                 <td>
                   <div style={{ display: 'flex', gap: 6, alignItems: 'center', justifyContent: 'flex-end' }}>
-                    <button
-                      className="btn btn--ghost btn--xs"
-                      title="Voir la facture"
-                      onClick={() => setInvoiceParcelId(p.parcelId)}
-                      style={{ padding: '4px 8px' }}
-                    >
+                    <button className="btn btn--ghost btn--xs" title="Voir la facture"
+                      onClick={() => setInvoiceParcelId(p.parcelId)} style={{ padding: '4px 8px' }}>
                       <I.FileText style={{ width: 13, height: 13 }} />
                     </button>
                     {p.status === 'paid'
                       ? <span style={{ fontSize: 12, color: 'var(--ok-600)' }}>✓ Réglé</span>
                       : can('payments', 'validate')
-                        ? <button className="btn btn--brand btn--xs"
-                            onClick={() => setSettleInvoice(p)}>
+                        ? <button className="btn btn--brand btn--xs" onClick={() => setSettleInvoice(p)}>
                             <I.Wallet />Régler
                           </button>
                         : <span style={{ fontSize: 12, color: 'var(--ink-400)' }}>En attente</span>}
@@ -1050,6 +1039,46 @@ function InvoicesTab({ onReload }) {
                 </td>
               </tr>
             );
+
+            if (!suppAmt) return [mainRow];
+
+            // Supplement child row — always visible when adjustmentStatus=pending
+            const suppRow = (
+              <tr key={'sup_' + p.parcelId} style={{ background: '#fffef5', borderBottom: '1px solid #fef3c7' }}>
+                <td style={{ paddingLeft: 24, fontSize: 13, color: '#d97706' }}>↳</td>
+                <td>
+                  <span style={{ fontSize: 12, fontWeight: 600, color: '#92400e' }}>
+                    Ajustement de prix
+                  </span>
+                  <span style={{ marginLeft: 6, fontSize: 10, padding: '1px 6px', background: '#fef3c7', color: '#92400e', borderRadius: 4, fontWeight: 700 }}>SUP</span>
+                </td>
+                <td className="mono" style={{ fontSize: 12, color: 'var(--ink-400)' }}>{p.campaign}</td>
+                <td className="mono" style={{ fontSize: 12, color: '#92400e' }}>{p.parcel}</td>
+                <td style={{ textAlign: 'right' }}>
+                  <span className="mono" style={{ fontWeight: 700, color: '#92400e' }}>{suppAmt.toLocaleString('fr')}</span>
+                  <span style={{ fontSize: 11, color: 'var(--ink-400)', marginLeft: 3 }}>CAD</span>
+                </td>
+                <td><span className="badge badge--dot badge--warn">En attente</span></td>
+                <td style={{ color: 'var(--ink-300)', fontSize: 12 }}>—</td>
+                <td>
+                  <div style={{ display: 'flex', gap: 6, justifyContent: 'flex-end', alignItems: 'center' }}>
+                    <button className="btn btn--ghost btn--xs" title="Facture supplément"
+                      onClick={() => setInvoiceParcelId(p.parcelId)} style={{ padding: '4px 8px' }}>
+                      <I.FileText style={{ width: 13, height: 13 }} />
+                    </button>
+                    {can('payments', 'validate') && (
+                      <button
+                        onClick={() => setSettleInvoice({ ...p, id: 'sup_' + p.parcelId, due: suppAmt, status: 'pending' })}
+                        style={{ padding: '4px 12px', borderRadius: 6, border: '1px solid #d97706', background: '#fffbeb', color: '#92400e', cursor: 'pointer', fontSize: 12, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 4 }}>
+                        <I.Wallet style={{ width: 12, height: 12 }} />Régler suppl.
+                      </button>
+                    )}
+                  </div>
+                </td>
+              </tr>
+            );
+
+            return [mainRow, suppRow];
           })}
         </tbody>
       </table>
