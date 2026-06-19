@@ -504,6 +504,7 @@ function InvoicePreviewModal({ parcelId, onClose }) {
   const [loading, setLoading] = useState(true);
   const [error, setError]     = useState('');
   const [paymentEmail, setPaymentEmail] = useState('paiement@jumla.cargo');
+  const [adjMode, setAdjMode] = useState(false);
 
   useEffect(() => {
     fetch('/api/public/config').then(r => r.json()).then(d => {
@@ -534,9 +535,11 @@ function InvoicePreviewModal({ parcelId, onClose }) {
   }
 
   const paid = data?.payment?.status === 'completed' || data?.payment?.status === 'paid';
+  const hasAdj = data?.confirmedPriceXaf != null && data?.adjustmentStatus !== 'none';
+  const supplement = hasAdj ? (data.confirmedPriceXaf - (data.priceXaf ?? 0)) : 0;
 
   return (
-    <Modal title="Facture" onClose={onClose} width={780}>
+    <Modal title={adjMode ? 'Facture — Supplément' : 'Facture'} onClose={onClose} width={780}>
       {loading && (
         <div style={{ padding: 40, textAlign: 'center', color: 'var(--ink-400)' }}>Chargement…</div>
       )}
@@ -545,24 +548,41 @@ function InvoicePreviewModal({ parcelId, onClose }) {
       )}
       {data && (
         <>
-          <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 16, gap: 8 }}>
-            <button className="btn btn--ghost btn--sm" onClick={onClose}>Fermer</button>
-            <button className="btn btn--brand btn--sm" onClick={printInvoice}>
-              <I.Print style={{ width: 14, height: 14 }} />
-              Imprimer / PDF
-            </button>
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 16, gap: 8, alignItems: 'center' }}>
+            {hasAdj ? (
+              <div style={{ display: 'flex', background: 'var(--bg-soft)', borderRadius: 8, padding: 3, gap: 3 }}>
+                <button
+                  className={'btn btn--xs ' + (!adjMode ? 'btn--brand' : 'btn--ghost')}
+                  onClick={() => setAdjMode(false)}
+                >Facture principale</button>
+                <button
+                  className={'btn btn--xs ' + (adjMode ? 'btn--brand' : 'btn--ghost')}
+                  onClick={() => setAdjMode(true)}
+                >Facture supplément</button>
+              </div>
+            ) : <div />}
+            <div style={{ display: 'flex', gap: 8 }}>
+              <button className="btn btn--ghost btn--sm" onClick={onClose}>Fermer</button>
+              <button className="btn btn--brand btn--sm" onClick={printInvoice}>
+                <I.Print style={{ width: 14, height: 14 }} />
+                Imprimer / PDF
+              </button>
+            </div>
           </div>
 
           <div id="invoice-print-area" style={{ background: 'white', borderRadius: 10, overflow: 'hidden', border: '1px solid #e5e7eb' }}>
             {/* Header */}
-            <div style={{ background: '#1e3a5f', color: 'white', padding: '28px 36px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+            <div style={{ background: adjMode ? '#92400e' : '#1e3a5f', color: 'white', padding: '28px 36px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
               <div>
                 <div style={{ fontSize: 22, fontWeight: 800, letterSpacing: '-.02em' }}>Jumla Shipping</div>
                 <div style={{ fontSize: 12, opacity: .7, marginTop: 3 }}>Fret international · Douala · Montréal</div>
               </div>
               <div style={{ textAlign: 'right' }}>
-                <div style={{ fontSize: 20, fontWeight: 700, fontFamily: 'monospace' }}>{data.invoiceNumber}</div>
+                <div style={{ fontSize: 20, fontWeight: 700, fontFamily: 'monospace' }}>
+                  {adjMode ? data.invoiceNumber + '-SUP' : data.invoiceNumber}
+                </div>
                 <div style={{ fontSize: 12, opacity: .7, marginTop: 3 }}>Émis le {fmt(data.issueDate)}</div>
+                {adjMode && <div style={{ fontSize: 11, opacity: .8, marginTop: 2 }}>Facture de supplément</div>}
                 <div style={{
                   display: 'inline-block', marginTop: 8, padding: '3px 10px', borderRadius: 999,
                   background: paid ? '#16a34a' : '#f59e0b', fontSize: 11, fontWeight: 700,
@@ -587,7 +607,7 @@ function InvoicePreviewModal({ parcelId, onClose }) {
                   <div style={{ fontSize: 14, fontWeight: 700, color: '#111827', fontFamily: 'monospace' }}>{data.campaign.code}</div>
                   <div style={{ fontSize: 13, color: '#4b5563', marginTop: 2 }}>{data.campaign.from} → {data.campaign.to}</div>
                   <div style={{ fontSize: 12, color: '#6b7280', marginTop: 2 }}>Départ : {fmt(data.campaign.departureDate)}</div>
-                  <div style={{ fontSize: 12, color: '#6b7280' }}>Arrivée : {fmt(data.campaign.arrivalDate)}</div>
+                  <div style={{ fontSize: 12, color: '#6b7280' }}>Arrivée estimée : {fmt(data.campaign.arrivalDate)}</div>
                 </div>
               </div>
 
@@ -601,32 +621,61 @@ function InvoicePreviewModal({ parcelId, onClose }) {
                   </tr>
                 </thead>
                 <tbody>
-                  <tr>
-                    <td style={{ padding: '12px', borderBottom: '1px solid #f3f4f6', color: '#111827', fontSize: 13 }}>
-                      <div style={{ fontFamily: 'monospace', fontWeight: 700, color: '#1e3a5f', marginBottom: 2 }}>{data.trackingCode}</div>
-                      <div style={{ fontSize: 12, color: '#6b7280' }}>{data.description || 'Fret international'}</div>
-                      {data.bordereaux.length > 0 && (
-                        <div style={{ fontSize: 11, color: '#9ca3af', marginTop: 3 }}>
-                          {data.bordereaux.length} bordereau{data.bordereaux.length > 1 ? 'x' : ''} · {data.bordereaux.reduce((s, b) => s + (b.nbPieces || 0), 0)} pièce{data.bordereaux.reduce((s, b) => s + (b.nbPieces || 0), 0) > 1 ? 's' : ''}
-                        </div>
-                      )}
-                    </td>
-                    <td style={{ padding: '12px', borderBottom: '1px solid #f3f4f6', color: '#374151', fontFamily: 'monospace', fontSize: 13 }}>
-                      {data.weightKg ? data.weightKg + ' kg' : '—'}
-                    </td>
-                    <td style={{ padding: '12px', borderBottom: '1px solid #f3f4f6', textAlign: 'right', fontFamily: 'monospace', fontSize: 14, fontWeight: 700, color: '#111827' }}>
-                      {data.amount.toLocaleString('fr')} CAD
-                    </td>
-                  </tr>
+                  {adjMode ? (
+                    <>
+                      <tr>
+                        <td style={{ padding: '12px', borderBottom: '1px solid #f3f4f6', color: '#111827', fontSize: 13 }}>
+                          <div style={{ fontFamily: 'monospace', fontWeight: 700, color: '#92400e', marginBottom: 2 }}>{data.trackingCode}</div>
+                          <div style={{ fontSize: 12, color: '#6b7280' }}>Estimation initiale (réservation)</div>
+                        </td>
+                        <td style={{ padding: '12px', borderBottom: '1px solid #f3f4f6', color: '#9ca3af', fontFamily: 'monospace', fontSize: 13 }}>—</td>
+                        <td style={{ padding: '12px', borderBottom: '1px solid #f3f4f6', textAlign: 'right', fontFamily: 'monospace', fontSize: 13, color: '#9ca3af', textDecoration: 'line-through' }}>
+                          {(data.priceXaf ?? 0).toLocaleString('fr')} CAD
+                        </td>
+                      </tr>
+                      <tr style={{ background: '#fffbeb' }}>
+                        <td style={{ padding: '12px', borderBottom: '1px solid #f3f4f6', color: '#92400e', fontSize: 13 }}>
+                          <div style={{ fontWeight: 700 }}>Ajustement de prix</div>
+                          <div style={{ fontSize: 12, color: '#b45309', marginTop: 2 }}>Poids réel mesuré à l'entrepôt — supplément dû</div>
+                        </td>
+                        <td style={{ padding: '12px', borderBottom: '1px solid #f3f4f6', color: '#b45309', fontFamily: 'monospace', fontSize: 13 }}>
+                          {data.weightKg ? data.weightKg + ' kg' : '—'}
+                        </td>
+                        <td style={{ padding: '12px', borderBottom: '1px solid #f3f4f6', textAlign: 'right', fontFamily: 'monospace', fontSize: 14, fontWeight: 700, color: '#92400e' }}>
+                          +{supplement.toLocaleString('fr')} CAD
+                        </td>
+                      </tr>
+                    </>
+                  ) : (
+                    <tr>
+                      <td style={{ padding: '12px', borderBottom: '1px solid #f3f4f6', color: '#111827', fontSize: 13 }}>
+                        <div style={{ fontFamily: 'monospace', fontWeight: 700, color: '#1e3a5f', marginBottom: 2 }}>{data.trackingCode}</div>
+                        <div style={{ fontSize: 12, color: '#6b7280' }}>{data.description || 'Fret international'}</div>
+                        {data.bordereaux.length > 0 && (
+                          <div style={{ fontSize: 11, color: '#9ca3af', marginTop: 3 }}>
+                            {data.bordereaux.length} bordereau{data.bordereaux.length > 1 ? 'x' : ''} · {data.bordereaux.reduce((s, b) => s + (b.nbPieces || 0), 0)} pièce{data.bordereaux.reduce((s, b) => s + (b.nbPieces || 0), 0) > 1 ? 's' : ''}
+                          </div>
+                        )}
+                      </td>
+                      <td style={{ padding: '12px', borderBottom: '1px solid #f3f4f6', color: '#374151', fontFamily: 'monospace', fontSize: 13 }}>
+                        {data.weightKg ? data.weightKg + ' kg' : '—'}
+                      </td>
+                      <td style={{ padding: '12px', borderBottom: '1px solid #f3f4f6', textAlign: 'right', fontFamily: 'monospace', fontSize: 14, fontWeight: 700, color: '#111827' }}>
+                        {data.amount.toLocaleString('fr')} CAD
+                      </td>
+                    </tr>
+                  )}
                 </tbody>
               </table>
 
               {/* Total */}
               <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 24 }}>
                 <div style={{ minWidth: 240 }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 14px', background: '#1e3a5f', borderRadius: 8, color: 'white' }}>
-                    <span style={{ fontWeight: 700 }}>Total</span>
-                    <span style={{ fontFamily: 'monospace', fontWeight: 800, fontSize: 16 }}>{data.amount.toLocaleString('fr')} CAD</span>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 14px', background: adjMode ? '#92400e' : '#1e3a5f', borderRadius: 8, color: 'white' }}>
+                    <span style={{ fontWeight: 700 }}>{adjMode ? 'Supplément dû' : 'Total'}</span>
+                    <span style={{ fontFamily: 'monospace', fontWeight: 800, fontSize: 16 }}>
+                      {adjMode ? supplement.toLocaleString('fr') : data.amount.toLocaleString('fr')} CAD
+                    </span>
                   </div>
                   {paid && data.payment?.paidAt && (
                     <div style={{ textAlign: 'right', fontSize: 11, color: '#16a34a', marginTop: 5, fontWeight: 600 }}>
@@ -642,7 +691,8 @@ function InvoicePreviewModal({ parcelId, onClose }) {
                 <div style={{ background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 8, padding: '14px 18px', marginBottom: 20 }}>
                   <div style={{ fontWeight: 700, color: '#92400e', marginBottom: 5, fontSize: 13 }}>Modalités de paiement</div>
                   <div style={{ fontSize: 12, color: '#78350f', lineHeight: 1.6 }}>
-                    Effectuez un virement Interac e-Transfert à <strong>{paymentEmail}</strong> pour le montant exact de <strong>{data.amount.toLocaleString('fr')} CAD</strong>.
+                    Effectuez un virement Interac e-Transfert à <strong>{paymentEmail}</strong> pour le montant de{' '}
+                    <strong>{adjMode ? supplement.toLocaleString('fr') : data.amount.toLocaleString('fr')} CAD</strong>.
                     Indiquez le code <strong style={{ fontFamily: 'monospace' }}>{data.trackingCode}</strong> en message.
                   </div>
                 </div>

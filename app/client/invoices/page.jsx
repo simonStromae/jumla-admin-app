@@ -25,6 +25,8 @@ function Row({ parcel }) {
   const ps       = PAYMENT_COLOR[pay?.status] ?? { bg: 'var(--bg-soft)', color: 'var(--ink-500)', label: 'Non facturé' };
   const amount   = pay?.amount ?? parcel.priceXaf ?? 0;
   const paidAt   = pay?.paidAt ? new Date(pay.paidAt).toLocaleDateString('fr-FR') : null;
+  const hasAdj   = parcel.confirmedPriceXaf != null && parcel.adjustmentStatus !== 'none';
+  const supplement = hasAdj ? (parcel.confirmedPriceXaf - (parcel.priceXaf ?? 0)) : 0;
 
   return (
     <tr style={{ borderBottom: '1px solid var(--border-soft)' }}>
@@ -63,15 +65,28 @@ function Row({ parcel }) {
         {pay?.interacRef && <div style={{ fontSize: 10.5, color: 'var(--ink-400)', fontFamily: 'var(--font-mono)' }}>{pay.interacRef}</div>}
       </td>
       <td style={{ padding: '14px 16px', textAlign: 'right' }}>
-        <button
-          onClick={() => router.push('/client/invoice/' + parcel.id)}
-          style={{
-            padding: '5px 12px', borderRadius: 7, border: '1px solid var(--border)',
-            background: 'white', cursor: 'pointer', fontSize: 12.5, fontWeight: 600,
-            color: 'var(--ink-700)',
-          }}>
-          📄 Facture
-        </button>
+        <div style={{ display: 'flex', gap: 6, justifyContent: 'flex-end', flexWrap: 'wrap' }}>
+          <button
+            onClick={() => router.push('/client/invoice/' + parcel.id)}
+            style={{
+              padding: '5px 12px', borderRadius: 7, border: '1px solid var(--border)',
+              background: 'white', cursor: 'pointer', fontSize: 12.5, fontWeight: 600,
+              color: 'var(--ink-700)',
+            }}>
+            📄 Facture
+          </button>
+          {hasAdj && supplement > 0 && (
+            <button
+              onClick={() => router.push('/client/invoice/' + parcel.id + '?adj=1')}
+              style={{
+                padding: '5px 12px', borderRadius: 7, border: '1px solid #d97706',
+                background: '#fffbeb', cursor: 'pointer', fontSize: 12.5, fontWeight: 600,
+                color: '#92400e',
+              }}>
+              📄 Supplément
+            </button>
+          )}
+        </div>
       </td>
     </tr>
   );

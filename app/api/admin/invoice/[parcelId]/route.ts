@@ -19,13 +19,20 @@ export async function GET(_: NextRequest, { params }: { params: { parcelId: stri
 
   if (!parcel) return NextResponse.json({ error: 'Introuvable' }, { status: 404 });
 
+  const priceXaf          = parcel.priceXaf ?? null;
+  const confirmedPriceXaf = (parcel as any).confirmedPriceXaf ?? null;
+  const adjustmentStatus  = (parcel as any).adjustmentStatus ?? 'none';
+
   return NextResponse.json({
-    invoiceNumber: 'FAC-' + parcel.trackingCode,
-    issueDate:     parcel.createdAt,
-    trackingCode:  parcel.trackingCode,
-    description:   parcel.description,
-    weightKg:      parcel.weightKg,
-    amount:        parcel.payment?.amount ?? parcel.priceXaf ?? 0,
+    invoiceNumber:     'FAC-' + parcel.trackingCode,
+    issueDate:         parcel.createdAt,
+    trackingCode:      parcel.trackingCode,
+    description:       parcel.description,
+    weightKg:          parcel.weightKg,
+    amount:            parcel.payment?.amount ?? priceXaf ?? 0,
+    priceXaf,
+    confirmedPriceXaf,
+    adjustmentStatus,
     client: {
       name:  parcel.client.name,
       phone: parcel.client.phone,
