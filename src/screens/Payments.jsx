@@ -815,8 +815,22 @@ function InvoicesTab({ onSettle }) {
                 <td className="mono" style={{ fontSize: 12, fontWeight: 600 }}>{p.campaign}</td>
                 <td className="mono" style={{ fontSize: 12, fontWeight: 600 }}>{p.parcel}</td>
                 <td style={{ textAlign: 'right' }}>
-                  <span className="mono" style={{ fontWeight: 700 }}>{(p.due || 0).toLocaleString('fr')}</span>
-                  <span style={{ fontSize: 11, color: 'var(--ink-400)', marginLeft: 3 }}>CAD</span>
+                  {p.confirmedPriceXaf != null && p.adjustmentStatus !== 'none' ? (
+                    <>
+                      <div>
+                        <span className="mono" style={{ fontWeight: 700 }}>{p.confirmedPriceXaf.toLocaleString('fr')}</span>
+                        <span style={{ fontSize: 11, color: 'var(--ink-400)', marginLeft: 3 }}>CAD</span>
+                      </div>
+                      <div style={{ fontSize: 10.5, color: 'var(--ink-400)', textDecoration: 'line-through', fontFamily: 'var(--font-mono)' }}>
+                        Est. {(p.priceXaf ?? p.due ?? 0).toLocaleString('fr')}
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <span className="mono" style={{ fontWeight: 700 }}>{(p.due || 0).toLocaleString('fr')}</span>
+                      <span style={{ fontSize: 11, color: 'var(--ink-400)', marginLeft: 3 }}>CAD</span>
+                    </>
+                  )}
                 </td>
                 <td><span className={'badge badge--dot badge--' + s.cls}>{s.label}</span></td>
                 <td className="mono" style={{ fontSize: 12, color: 'var(--ink-500)' }}>{p.interacRef ?? '—'}</td>

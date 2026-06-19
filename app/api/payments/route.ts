@@ -14,6 +14,7 @@ export async function GET() {
       parcel: {
         select: {
           trackingCode: true,
+          priceXaf:     true,
           campaign: { select: { code: true } },
         },
       },
@@ -21,21 +22,24 @@ export async function GET() {
   });
 
   const result = payments.map(p => ({
-    id:         p.id,
-    clientId:   p.clientId,
-    parcelId:   p.parcelId,
-    date:       new Intl.DateTimeFormat('fr-FR', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }).format(p.createdAt),
-    recipName:  p.client.name,
-    recipPhone: p.client.phone ?? p.client.email,
-    campaign:   p.parcel.campaign.code,
-    parcel:     p.parcel.trackingCode,
-    due:        p.amount,
-    amount:     p.amount,
-    received:   p.status === 'completed' ? p.amount : 0,
-    status:     p.status === 'completed' ? 'paid' : p.status === 'pending' ? 'pending' : 'unpaid',
-    interacRef: p.interacRef,
-    paidAt:     p.paidAt,
-    createdAt:  p.createdAt,
+    id:                p.id,
+    clientId:          p.clientId,
+    parcelId:          p.parcelId,
+    date:              new Intl.DateTimeFormat('fr-FR', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }).format(p.createdAt),
+    recipName:         p.client.name,
+    recipPhone:        p.client.phone ?? p.client.email,
+    campaign:          p.parcel.campaign.code,
+    parcel:            p.parcel.trackingCode,
+    priceXaf:          p.parcel.priceXaf,
+    confirmedPriceXaf: (p.parcel as any).confirmedPriceXaf ?? null,
+    adjustmentStatus:  (p.parcel as any).adjustmentStatus  ?? 'none',
+    due:               p.amount,
+    amount:            p.amount,
+    received:          p.status === 'completed' ? p.amount : 0,
+    status:            p.status === 'completed' ? 'paid' : p.status === 'pending' ? 'pending' : 'unpaid',
+    interacRef:        p.interacRef,
+    paidAt:            p.paidAt,
+    createdAt:         p.createdAt,
   }));
 
   return NextResponse.json(result);

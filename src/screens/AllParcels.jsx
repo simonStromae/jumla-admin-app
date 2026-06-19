@@ -176,8 +176,22 @@ export default function AllParcelsScreen({ onNav, initialSearch = '' }) {
                 </div>
               </td>
               <td style={{ textAlign: 'right' }}>
-                <span className="mono" style={{ fontWeight: 700 }}>{p.amount}</span>
-                <span style={{ fontSize: 11, color: 'var(--ink-400)', marginLeft: 3 }}>CAD</span>
+                {p.confirmedPriceXaf != null && p.adjustmentStatus !== 'none' ? (
+                  <>
+                    <div>
+                      <span className="mono" style={{ fontWeight: 700 }}>{p.confirmedPriceXaf.toLocaleString('fr')}</span>
+                      <span style={{ fontSize: 11, color: 'var(--ink-400)', marginLeft: 3 }}>CAD</span>
+                    </div>
+                    <div style={{ fontSize: 10.5, color: 'var(--ink-400)', textDecoration: 'line-through', fontFamily: 'var(--font-mono)' }}>
+                      Est. {(p.priceXaf ?? p.amount ?? 0).toLocaleString('fr')}
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <span className="mono" style={{ fontWeight: 700 }}>{(p.amount ?? p.priceXaf ?? 0).toLocaleString('fr')}</span>
+                    <span style={{ fontSize: 11, color: 'var(--ink-400)', marginLeft: 3 }}>CAD</span>
+                  </>
+                )}
               </td>
               <td>
                 <span className={'badge badge--dot badge--' + STATUS.payment[p.paid].cls}>
