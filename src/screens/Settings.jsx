@@ -496,6 +496,106 @@ function SectionWhatsapp() {
   );
 }
 
+/* ── Modèles WhatsApp ────────────────────────────────────── */
+const WA_TEMPLATE_DEFAULTS = {
+  arrival:  {
+    label: 'Arrivée cargaison',
+    body:  'Bonjour {first_name} 👋\n\nVotre colis *{parcel_code}* est arrivé à Montréal ! 🎉\n\nPoids : {weight} kg\nMontant dû : *{amount} CAD*\n\nAdresse de retrait : {warehouse_address}\n\nMerci de nous contacter pour organiser la livraison.\n— Jumla Shipping',
+  },
+  payment: {
+    label: 'Rappel paiement',
+    body:  'Bonjour {first_name},\n\nNous vous rappelons que le paiement de *{amount} CAD* pour votre colis {parcel_code} est en attente.\n\nMerci de procéder au virement Interac à notre adresse dès que possible.\n— Jumla Shipping',
+  },
+  delivery: {
+    label: 'Livraison prévue',
+    body:  'Bonjour {first_name} 😊\n\nVotre colis *{parcel_code}* sera livré bientôt.\n\nDate estimée : {arrival_date}\nAdresse : {warehouse_address}\n\n— Jumla Shipping',
+  },
+};
+
+function SectionWaTemplates() {
+  const [templates, setTemplates] = useState(() =>
+    Object.fromEntries(Object.entries(WA_TEMPLATE_DEFAULTS).map(([k, v]) => [k, { ...v }]))
+  );
+  const [active,  setActive]  = useState('arrival');
+  const [saving,  setSaving]  = useState(false);
+  const [saved,   setSaved]   = useState(false);
+
+  useEffect(() => {
+    fetch('/api/settings').then(r => r.json()).then(d => {
+      setTemplates(prev => {
+        const next = { ...prev };
+        for (const id of Object.keys(WA_TEMPLATE_DEFAULTS)) {
+          next[id] = {
+            label: d[`wa_tmpl_${id}_label`] ?? prev[id].label,
+            body:  d[`wa_tmpl_${id}_body`]  ?? prev[id].body,
+          };
+        }
+        return next;
+      });
+    }).catch(() => {});
+  }, []);
+
+  const set = (id, k) => (e) =>
+    setTemplates(t => ({ ...t, [id]: { ...t[id], [k]: e.target.value } }));
+
+  const reset = () =>
+    setTemplates(t => ({ ...t, [active]: { ...WA_TEMPLATE_DEFAULTS[active] } }));
+
+  async function handleSave() {
+    setSaving(true);
+    const payload = {};
+    for (const [id, tmpl] of Object.entries(templates)) {
+      payload[`wa_tmpl_${id}_label`] = tmpl.label;
+      payload[`wa_tmpl_${id}_body`]  = tmpl.body;
+    }
+    await fetch('/api/settings', {
+      method: 'PUT', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    setSaving(false); setSaved(true); setTimeout(() => setSaved(false), 3000);
+  }
+
+  const tmpl = templates[active];
+
+  return (
+    <SettingsCard
+      title="Modèles de messages"
+      sub="Textes envoyés manuellement ou automatiquement depuis le modal WhatsApp.">
+      <div style={{ display: 'flex', gap: 6, marginBottom: 16 }}>
+        {Object.entries(templates).map(([id, t]) => (
+          <button key={id}
+            className={'btn btn--sm ' + (active === id ? 'btn--brand' : 'btn--ghost')}
+            onClick={() => setActive(id)}>
+            {t.label}
+          </button>
+        ))}
+      </div>
+      <div className="field">
+        <label className="label">Libellé du modèle <span className="opt">/ affiché dans le sélecteur</span></label>
+        <input className="input" value={tmpl.label} onChange={set(active, 'label')} />
+      </div>
+      <div className="field" style={{ marginBottom: 6 }}>
+        <label className="label">Corps du message</label>
+        <textarea className="textarea" rows={9} value={tmpl.body} onChange={set(active, 'body')}
+          style={{ fontSize: 12.5, fontFamily: 'var(--ff-mono)', lineHeight: 1.7 }} />
+      </div>
+      <div style={{ fontSize: 11, color: 'var(--ink-400)', marginBottom: 14, lineHeight: 1.6 }}>
+        Variables disponibles :
+        {['{first_name}', '{parcel_code}', '{amount}', '{weight}', '{arrival_date}', '{warehouse_address}'].map(v => (
+          <code key={v} style={{ fontFamily: 'var(--ff-mono)', background: 'var(--bg-soft)', padding: '1px 5px', borderRadius: 4, margin: '0 3px', fontSize: 10.5 }}>{v}</code>
+        ))}
+      </div>
+      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, alignItems: 'center' }}>
+        {saved && <span style={{ fontSize: 12, color: 'var(--ok-700)', fontWeight: 600 }}>✓ Sauvegardé</span>}
+        <button className="btn btn--ghost btn--sm" onClick={reset}>Réinitialiser</button>
+        <button className="btn btn--brand btn--sm" disabled={saving} onClick={handleSave}>
+          <I.Check />{saving ? 'Enregistrement…' : 'Enregistrer'}
+        </button>
+      </div>
+    </SettingsCard>
+  );
+}
+
 /* ── Auto-notifications ──────────────────────────────────── */
 function SectionAutoNotif() {
   const DEFAULTS = { notif_arrival: true, notif_reminder: true, notif_delivery: true, notif_overrun: false, notif_invoice: true, notif_broadcast: false };
@@ -1087,7 +1187,7 @@ export default function SettingsScreen({ onNav }) {
               <SectionPricing routes={routes} onEdit={setEditRoute} />
             </>
           )}
-          {section === 'whatsapp'  && <SectionWhatsapp />}
+          {section === 'whatsapp'  && <><SectionWhatsapp /><SectionWaTemplates /></>}
           {section === 'auto'      && <SectionAutoNotif />}
           {section === 'campaigns' && <SectionCampaigns />}
           {section === 'codes'     && <SectionCodes />}

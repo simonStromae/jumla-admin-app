@@ -524,7 +524,7 @@ function DrawerRow({ icon, label, value, mono, ok }) {
   );
 }
 
-const WA_TEMPLATES = [
+const WA_TEMPLATE_DEFAULTS = [
   { id: 'arrival',  label: 'Arrivée cargaison', body: 'Bonjour {first_name} 👋\n\nVotre colis *{parcel_code}* est arrivé à Montréal ! 🎉\n\nPoids : {weight} kg\nMontant dû : *{amount} CAD*\n\nAdresse de retrait : {warehouse_address}\n\nMerci de nous contacter pour organiser la livraison.\n— Jumla Shipping' },
   { id: 'payment',  label: 'Rappel paiement',   body: 'Bonjour {first_name},\n\nNous vous rappelons que le paiement de *{amount} CAD* pour votre colis {parcel_code} est en attente.\n\nMerci de procéder au virement Interac à notre adresse dès que possible.\n— Jumla Shipping' },
   { id: 'delivery', label: 'Livraison prévue',  body: 'Bonjour {first_name} 😊\n\nVotre colis *{parcel_code}* sera livré bientôt.\n\nDate estimée : {arrival_date}\nAdresse : {warehouse_address}\n\n— Jumla Shipping' },
@@ -535,14 +535,28 @@ function WhatsappModal({ client, parcels, onClose }) {
   const [selectedParcelIds, setSelectedParcelIds] = useState(
     activeParcels.length > 0 ? [activeParcels[0].id] : parcels.slice(0, 1).map(p => p.id)
   );
+  const [templates, setTemplates] = useState(WA_TEMPLATE_DEFAULTS);
   const [templateId, setTemplateId] = useState('arrival');
-  const [body, setBody] = useState(WA_TEMPLATES[0].body);
+  const [body, setBody] = useState(WA_TEMPLATE_DEFAULTS[0].body);
   const [sending, setSending] = useState(false);
   const [result, setResult] = useState(null);
 
+  useEffect(() => {
+    fetch('/api/settings').then(r => r.json()).then(d => {
+      const loaded = WA_TEMPLATE_DEFAULTS.map(t => ({
+        ...t,
+        label: d[`wa_tmpl_${t.id}_label`] ?? t.label,
+        body:  d[`wa_tmpl_${t.id}_body`]  ?? t.body,
+      }));
+      setTemplates(loaded);
+      const current = loaded.find(t => t.id === templateId);
+      if (current) setBody(current.body);
+    }).catch(() => {});
+  }, []);
+
   const onTemplateChange = (id) => {
     setTemplateId(id);
-    const found = WA_TEMPLATES.find(t => t.id === id);
+    const found = templates.find(t => t.id === id);
     if (found) setBody(found.body);
   };
 
@@ -620,7 +634,7 @@ function WhatsappModal({ client, parcels, onClose }) {
         <div>
           <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--ink-500)', textTransform: 'uppercase', letterSpacing: '.04em', marginBottom: 8 }}>Modèle</div>
           <select className="select" value={templateId} onChange={e => onTemplateChange(e.target.value)} style={{ marginBottom: 10 }}>
-            {WA_TEMPLATES.map(t => <option key={t.id} value={t.id}>{t.label}</option>)}
+            {templates.map(t => <option key={t.id} value={t.id}>{t.label}</option>)}
           </select>
           <textarea className="textarea" rows={8} value={body} onChange={e => setBody(e.target.value)}
             style={{ fontSize: 12.5, fontFamily: 'var(--ff-mono)', lineHeight: 1.6 }} />
