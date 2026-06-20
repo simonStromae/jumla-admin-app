@@ -497,34 +497,35 @@ function SectionWhatsapp() {
 }
 
 /* ── Modèles WhatsApp ────────────────────────────────────── */
-const WA_TEMPLATE_DEFAULTS = {
-  arrival:  {
-    label: 'Arrivée cargaison',
-    body:  'Bonjour {first_name} 👋\n\nVotre colis *{parcel_code}* est arrivé à Montréal ! 🎉\n\nPoids : {weight} kg\nMontant dû : *{amount} CAD*\n\nAdresse de retrait : {warehouse_address}\n\nMerci de nous contacter pour organiser la livraison.\n— Jumla Shipping',
-  },
-  payment: {
-    label: 'Rappel paiement',
-    body:  'Bonjour {first_name},\n\nNous vous rappelons que le paiement de *{amount} CAD* pour votre colis {parcel_code} est en attente.\n\nMerci de procéder au virement Interac à notre adresse dès que possible.\n— Jumla Shipping',
-  },
-  delivery: {
-    label: 'Livraison prévue',
-    body:  'Bonjour {first_name} 😊\n\nVotre colis *{parcel_code}* sera livré bientôt.\n\nDate estimée : {arrival_date}\nAdresse : {warehouse_address}\n\n— Jumla Shipping',
-  },
+const WA_TMPL_DEFS = {
+  // Manuel
+  arrival:  { label: "Avis d'arrivée",      group: 'manual', vars: ['{first_name}','{parcel_code}','{weight}','{amount}','{warehouse_address}','{agent_phone}'], body: `Bonjour {first_name} 👋\n\nVotre colis ({parcel_code}) est arrivé à Montréal.\n\n📦 Poids : {weight} kg\n💰 Montant dû : {amount} CAD\n\n📍 Retrait : {warehouse_address}\n📞 Contact : {agent_phone}\n\nMerci,\nJumla Shipping` },
+  reminder: { label: 'Relance paiement',     group: 'manual', vars: ['{first_name}','{parcel_code}','{amount}'], body: `Bonjour {first_name},\n\nNous n'avons pas encore reçu votre paiement pour le colis {parcel_code} — montant dû : {amount} CAD.\n\nMerci de régulariser votre situation au plus vite.\n\nJumla Shipping` },
+  delivery: { label: 'Livraison confirmée',  group: 'manual', vars: ['{first_name}','{parcel_code}'], body: `Bonjour {first_name},\n\nVotre colis {parcel_code} a été livré. Merci de votre confiance !\n\nJumla Shipping` },
+  invoice:  { label: 'Facture / Récap',      group: 'manual', vars: ['{first_name}','{parcel_code}','{weight}','{amount}'], body: `Bonjour {first_name},\n\nVoici le récapitulatif de votre colis {parcel_code} :\n• Poids : {weight} kg\n• Montant : {amount} CAD\n\nJumla Shipping` },
+  broadcast:{ label: 'Annonce cargaison',    group: 'manual', vars: ['{first_name}','{arrival_date}'], body: `Bonjour {first_name} 👋\n\nNouvelle cargaison disponible — départ prévu le {arrival_date}.\n\nRéservez votre place dès maintenant.\n\nJumla Shipping` },
+  // Automatiques
+  auto_status_parcel:         { label: 'Statut colis',          group: 'auto', trigger: "Changement de statut d'un colis",           vars: ['{first_name}','{parcel_code}','{status_label}'], body: `Bonjour {first_name} 👋\n\nLe statut de votre colis *{parcel_code}* a été mis à jour.\n\nNouveau statut : *{status_label}*\n\nConnectez-vous à votre espace client pour suivre votre envoi.` },
+  auto_supplement:            { label: 'Ajustement de prix',    group: 'auto', trigger: 'Prix confirmé supérieur au prix estimé',     vars: ['{first_name}','{parcel_code}','{estimated_price}','{confirmed_price}','{diff}'], body: `Bonjour {first_name} 👋\n\nAprès réception de votre colis *{parcel_code}* à notre entrepôt, le montant réel a été calculé.\n\n💰 Montant estimé : *{estimated_price} CAD*\n💳 Montant réel : *{confirmed_price} CAD*\n📊 Ajustement : *+{diff} CAD*\n\nUne facture complémentaire est disponible dans votre espace client. Merci de la régler pour que votre colis soit traité.` },
+  auto_campaign_status:       { label: 'Statut cargaison',      group: 'auto', trigger: "Changement de statut d'une cargaison",       vars: ['{first_name}','{campaign_code}','{status_label}','{parcel_codes}'], body: `Bonjour {first_name} 👋\n\nVotre cargaison *{campaign_code}* a été mise à jour.\n\nNouveau statut : *{status_label}*\n\nColis : {parcel_codes}\n\nConnectez-vous à votre espace client pour suivre l'avancement de votre envoi.` },
+  auto_bordereau_confirmed:   { label: 'Bordereau confirmé',    group: 'auto', trigger: 'Bordereau passé au statut « validé »',       vars: ['{first_name}','{bordereau_code}','{parcel_code}'], body: `Bonjour {first_name} 👋\n\nVotre bordereau *{bordereau_code}* (colis {parcel_code}) a été confirmé par Jumla Shipping.\n\nMerci de vous connecter à votre espace client pour vérifier et accepter le contenu déclaré avant l'expédition.` },
+  auto_bordereau_discordance: { label: 'Discordance bordereau', group: 'auto', trigger: 'Bordereau passé au statut « discordance »',  vars: ['{first_name}','{bordereau_code}','{parcel_code}'], body: `Bonjour {first_name} 👋\n\nUne discordance a été détectée sur votre bordereau *{bordereau_code}* (colis {parcel_code}).\n\nMerci de vous connecter à votre espace client pour consulter les détails et régulariser votre dossier.` },
 };
 
 function SectionWaTemplates() {
+  const [group,     setGroup]     = useState('manual');
+  const [active,    setActive]    = useState('arrival');
   const [templates, setTemplates] = useState(() =>
-    Object.fromEntries(Object.entries(WA_TEMPLATE_DEFAULTS).map(([k, v]) => [k, { ...v }]))
+    Object.fromEntries(Object.entries(WA_TMPL_DEFS).map(([k, v]) => [k, { label: v.label, body: v.body }]))
   );
-  const [active,  setActive]  = useState('arrival');
-  const [saving,  setSaving]  = useState(false);
-  const [saved,   setSaved]   = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [saved,  setSaved]  = useState(false);
 
   useEffect(() => {
     fetch('/api/settings').then(r => r.json()).then(d => {
       setTemplates(prev => {
         const next = { ...prev };
-        for (const id of Object.keys(WA_TEMPLATE_DEFAULTS)) {
+        for (const id of Object.keys(WA_TMPL_DEFS)) {
           next[id] = {
             label: d[`wa_tmpl_${id}_label`] ?? prev[id].label,
             body:  d[`wa_tmpl_${id}_body`]  ?? prev[id].body,
@@ -535,18 +536,19 @@ function SectionWaTemplates() {
     }).catch(() => {});
   }, []);
 
-  const set = (id, k) => (e) =>
-    setTemplates(t => ({ ...t, [id]: { ...t[id], [k]: e.target.value } }));
+  const groupIds  = Object.entries(WA_TMPL_DEFS).filter(([,v]) => v.group === group).map(([k]) => k);
+  const tmpl      = templates[active] ?? { label: '', body: '' };
+  const def       = WA_TMPL_DEFS[active];
 
-  const reset = () =>
-    setTemplates(t => ({ ...t, [active]: { ...WA_TEMPLATE_DEFAULTS[active] } }));
+  const set = (k) => (e) => setTemplates(t => ({ ...t, [active]: { ...t[active], [k]: e.target.value } }));
+  const reset = () => setTemplates(t => ({ ...t, [active]: { label: WA_TMPL_DEFS[active].label, body: WA_TMPL_DEFS[active].body } }));
 
   async function handleSave() {
     setSaving(true);
     const payload = {};
-    for (const [id, tmpl] of Object.entries(templates)) {
-      payload[`wa_tmpl_${id}_label`] = tmpl.label;
-      payload[`wa_tmpl_${id}_body`]  = tmpl.body;
+    for (const [id, t] of Object.entries(templates)) {
+      payload[`wa_tmpl_${id}_label`] = t.label;
+      payload[`wa_tmpl_${id}_body`]  = t.body;
     }
     await fetch('/api/settings', {
       method: 'PUT', headers: { 'Content-Type': 'application/json' },
@@ -555,36 +557,64 @@ function SectionWaTemplates() {
     setSaving(false); setSaved(true); setTimeout(() => setSaved(false), 3000);
   }
 
-  const tmpl = templates[active];
+  const switchGroup = (g) => {
+    setGroup(g);
+    setActive(Object.entries(WA_TMPL_DEFS).find(([,v]) => v.group === g)?.[0] ?? 'arrival');
+  };
 
   return (
     <SettingsCard
-      title="Modèles de messages"
-      sub="Textes envoyés manuellement ou automatiquement depuis le modal WhatsApp.">
-      <div style={{ display: 'flex', gap: 6, marginBottom: 16 }}>
-        {Object.entries(templates).map(([id, t]) => (
-          <button key={id}
-            className={'btn btn--sm ' + (active === id ? 'btn--brand' : 'btn--ghost')}
-            onClick={() => setActive(id)}>
-            {t.label}
+      title="Modèles de messages WhatsApp"
+      sub="Personnalisez chaque message envoyé manuellement ou automatiquement par le système.">
+
+      {/* Group selector */}
+      <div style={{ display: 'flex', gap: 4, marginBottom: 14, background: 'var(--bg-soft)', padding: 4, borderRadius: 8, width: 'fit-content' }}>
+        {[{ id: 'manual', l: 'Envoi manuel (5)' }, { id: 'auto', l: 'Automatiques (5)' }].map(g => (
+          <button key={g.id} onClick={() => switchGroup(g.id)}
+            className="btn btn--sm"
+            style={{ background: group === g.id ? 'white' : 'transparent', boxShadow: group === g.id ? '0 1px 3px rgba(0,0,0,.08)' : 'none', color: group === g.id ? 'var(--ink-900)' : 'var(--ink-400)', fontWeight: group === g.id ? 700 : 400, border: 'none' }}>
+            {g.l}
           </button>
         ))}
       </div>
+
+      {/* Template tabs */}
+      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 16 }}>
+        {groupIds.map(id => (
+          <button key={id}
+            className={'btn btn--sm ' + (active === id ? 'btn--brand' : 'btn--ghost')}
+            onClick={() => setActive(id)}>
+            {templates[id]?.label ?? WA_TMPL_DEFS[id].label}
+          </button>
+        ))}
+      </div>
+
+      {/* Trigger info for auto templates */}
+      {def?.trigger && (
+        <div style={{ fontSize: 12, color: 'var(--ink-500)', background: 'var(--bg-soft)', padding: '8px 12px', borderRadius: 6, marginBottom: 14, display: 'flex', alignItems: 'center', gap: 8 }}>
+          <span style={{ fontSize: 14 }}>⚡</span> <span><strong>Déclencheur :</strong> {def.trigger}</span>
+        </div>
+      )}
+
+      {/* Editor */}
       <div className="field">
         <label className="label">Libellé du modèle <span className="opt">/ affiché dans le sélecteur</span></label>
-        <input className="input" value={tmpl.label} onChange={set(active, 'label')} />
+        <input className="input" value={tmpl.label} onChange={set('label')} />
       </div>
       <div className="field" style={{ marginBottom: 6 }}>
         <label className="label">Corps du message</label>
-        <textarea className="textarea" rows={9} value={tmpl.body} onChange={set(active, 'body')}
+        <textarea className="textarea" rows={9} value={tmpl.body} onChange={set('body')}
           style={{ fontSize: 12.5, fontFamily: 'var(--ff-mono)', lineHeight: 1.7 }} />
       </div>
-      <div style={{ fontSize: 11, color: 'var(--ink-400)', marginBottom: 14, lineHeight: 1.6 }}>
-        Variables disponibles :
-        {['{first_name}', '{parcel_code}', '{amount}', '{weight}', '{arrival_date}', '{warehouse_address}'].map(v => (
-          <code key={v} style={{ fontFamily: 'var(--ff-mono)', background: 'var(--bg-soft)', padding: '1px 5px', borderRadius: 4, margin: '0 3px', fontSize: 10.5 }}>{v}</code>
+
+      {/* Variables */}
+      <div style={{ fontSize: 11, color: 'var(--ink-400)', marginBottom: 14, lineHeight: 1.9 }}>
+        Variables disponibles pour ce modèle :&nbsp;
+        {(def?.vars ?? []).map(v => (
+          <code key={v} style={{ fontFamily: 'var(--ff-mono)', background: 'var(--bg-soft)', padding: '1px 6px', borderRadius: 4, margin: '0 2px', fontSize: 10.5, border: '1px solid var(--border-soft)' }}>{v}</code>
         ))}
       </div>
+
       <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, alignItems: 'center' }}>
         {saved && <span style={{ fontSize: 12, color: 'var(--ok-700)', fontWeight: 600 }}>✓ Sauvegardé</span>}
         <button className="btn btn--ghost btn--sm" onClick={reset}>Réinitialiser</button>

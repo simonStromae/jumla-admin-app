@@ -5,6 +5,7 @@ import { requireAdmin, requirePermission } from '@/src/lib/api-auth';
 import { createNotification } from '@/src/lib/notifications';
 import { sendStatusEmail } from '@/src/lib/email';
 import { sendWhatsappNotification, PARCEL_STATUS_LABELS } from '@/src/lib/twilio';
+import { renderWaTemplate } from '@/src/lib/wa-template';
 
 export async function GET(_: NextRequest, { params }: { params: { id: string } }) {
   const { error } = await requireAdmin();
@@ -96,8 +97,11 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
     if (existing?.client?.phone) {
       const firstName   = (existing.client.name ?? 'Client').split(' ')[0];
       const statusLabel = PARCEL_STATUS_LABELS[status] ?? status;
-      const msg = `Bonjour ${firstName} 👋\n\nLe statut de votre colis *${existing.trackingCode}* a été mis à jour.\n\nNouveau statut : *${statusLabel}*\n\nConnectez-vous à votre espace client pour suivre votre envoi.`;
-      sendWhatsappNotification(existing.client.phone, msg, params.id).catch(() => {});
+      renderWaTemplate('auto_status_parcel', {
+        first_name:   firstName,
+        parcel_code:  existing.trackingCode,
+        status_label: statusLabel,
+      }).then(msg => sendWhatsappNotification(existing!.client!.phone!, msg, params.id)).catch(() => {});
     }
   }
 
@@ -108,8 +112,13 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
     if (diff > 0) {
       const firstName  = (existing.client.name ?? 'Client').split(' ')[0];
       const trackCode  = existing.trackingCode ?? params.id;
-      const msg = `Bonjour ${firstName} 👋\n\nAprès réception de votre colis *${trackCode}* à notre entrepôt, le montant réel a été calculé.\n\n💰 Montant estimé : *${estimatedPrice.toLocaleString('fr')} CAD*\n💳 Montant réel : *${Number(confirmedPriceXaf).toLocaleString('fr')} CAD*\n📊 Ajustement : *+${diff.toLocaleString('fr')} CAD*\n\nUne facture complémentaire est disponible dans votre espace client. Merci de la régler pour que votre colis soit traité.`;
-      sendWhatsappNotification(existing.client.phone, msg, params.id).catch(() => {});
+      renderWaTemplate('auto_supplement', {
+        first_name:      firstName,
+        parcel_code:     trackCode,
+        estimated_price: estimatedPrice.toLocaleString('fr'),
+        confirmed_price: Number(confirmedPriceXaf).toLocaleString('fr'),
+        diff:            diff.toLocaleString('fr'),
+      }).then(msg => sendWhatsappNotification(existing!.client!.phone!, msg, params.id)).catch(() => {});
     }
   }
 

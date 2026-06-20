@@ -5,6 +5,7 @@ import { requireAdmin } from '@/src/lib/api-auth';
 import { auth } from '@/auth';
 import { createNotification } from '@/src/lib/notifications';
 import { sendWhatsappNotification } from '@/src/lib/twilio';
+import { renderWaTemplate } from '@/src/lib/wa-template';
 
 export async function GET(_: NextRequest, { params }: { params: { id: string } }) {
   const { error } = await requireAdmin();
@@ -157,8 +158,11 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
       ).catch(() => {});
 
       if (clientPhone) {
-        const msg = `Bonjour ${clientName} 👋\n\nVotre bordereau *${blCode}* (colis ${trackingCode}) a été confirmé par Jumla Shipping.\n\nMerci de vous connecter à votre espace client pour vérifier et accepter le contenu déclaré avant l'expédition.`;
-        sendWhatsappNotification(clientPhone, msg, bl.parcelId).catch(() => {});
+        renderWaTemplate('auto_bordereau_confirmed', {
+          first_name:     clientName,
+          bordereau_code: blCode,
+          parcel_code:    trackingCode,
+        }).then(msg => sendWhatsappNotification(clientPhone!, msg, bl.parcelId)).catch(() => {});
       }
     }
   }
@@ -174,8 +178,11 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
     });
     if (bl?.parcel?.client?.phone) {
       const firstName = (bl.parcel.client.name ?? 'Client').split(' ')[0];
-      const msg = `Bonjour ${firstName} 👋\n\nUne discordance a été détectée sur votre bordereau *${bl.code}* (colis ${bl.parcel.trackingCode}).\n\nMerci de vous connecter à votre espace client pour consulter les détails et régulariser votre dossier.`;
-      sendWhatsappNotification(bl.parcel.client.phone, msg, bl.parcelId).catch(() => {});
+      renderWaTemplate('auto_bordereau_discordance', {
+        first_name:     firstName,
+        bordereau_code: bl.code,
+        parcel_code:    bl.parcel.trackingCode,
+      }).then(msg => sendWhatsappNotification(bl!.parcel!.client!.phone!, msg, bl!.parcelId)).catch(() => {});
     }
   }
 

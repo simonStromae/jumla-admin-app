@@ -4,19 +4,20 @@ import I from '../components/Icons.jsx';
 import { Bi, Avatar } from '../components/Shell.jsx';
 
 
-const TEMPLATES = [
-  { id: 'arrival',   l: "Avis d'arrivée",   body: `Bonjour {first_name} 👋\n\nVotre colis ({parcel_code}) est arrivé à Montréal.\n\n📦 Poids : {weight} kg\n💰 Montant dû : {amount} CAD\n\n📍 Retrait : {warehouse_address}\n📞 Contact : {agent_phone}\n\nMerci,\nJumla Shipping` },
-  { id: 'reminder',  l: 'Relance paiement', body: `Bonjour {first_name},\n\nNous n'avons pas encore reçu votre paiement pour le colis {parcel_code} — montant dû : {amount} CAD.\n\nMerci de régulariser votre situation au plus vite.\n\nJumla Shipping` },
-  { id: 'delivery',  l: 'Livraison',        body: `Bonjour {first_name},\n\nVotre colis {parcel_code} a été livré. Merci de votre confiance !\n\nJumla Shipping` },
-  { id: 'invoice',   l: 'Facture',          body: `Bonjour {first_name},\n\nVoici le récapitulatif de votre colis {parcel_code} :\n• Poids : {weight} kg\n• Montant : {amount} CAD\n\nJumla Shipping` },
+const TEMPLATE_DEFAULTS = [
+  { id: 'arrival',   l: "Avis d'arrivée",    body: `Bonjour {first_name} 👋\n\nVotre colis ({parcel_code}) est arrivé à Montréal.\n\n📦 Poids : {weight} kg\n💰 Montant dû : {amount} CAD\n\n📍 Retrait : {warehouse_address}\n📞 Contact : {agent_phone}\n\nMerci,\nJumla Shipping` },
+  { id: 'reminder',  l: 'Relance paiement',  body: `Bonjour {first_name},\n\nNous n'avons pas encore reçu votre paiement pour le colis {parcel_code} — montant dû : {amount} CAD.\n\nMerci de régulariser votre situation au plus vite.\n\nJumla Shipping` },
+  { id: 'delivery',  l: 'Livraison',         body: `Bonjour {first_name},\n\nVotre colis {parcel_code} a été livré. Merci de votre confiance !\n\nJumla Shipping` },
+  { id: 'invoice',   l: 'Facture',           body: `Bonjour {first_name},\n\nVoici le récapitulatif de votre colis {parcel_code} :\n• Poids : {weight} kg\n• Montant : {amount} CAD\n\nJumla Shipping` },
   { id: 'broadcast', l: 'Annonce cargaison', body: `Bonjour {first_name} 👋\n\nNouvelle cargaison disponible — départ prévu le {arrival_date}.\n\nRéservez votre place dès maintenant.\n\nJumla Shipping` },
 ];
 const VARIABLES = ['{first_name}', '{amount}', '{weight}', '{parcel_code}', '{arrival_date}', '{warehouse_address}', '{agent_phone}'];
 
 export default function MessagingScreen({ onNav, campaignId }) {
   const [selected,        setSelected]        = useState([]);
+  const [templates,       setTemplates]       = useState(TEMPLATE_DEFAULTS);
   const [template,        setTemplate]        = useState('arrival');
-  const [body,            setBody]            = useState(TEMPLATES[0].body);
+  const [body,            setBody]            = useState(TEMPLATE_DEFAULTS[0].body);
   const [parcels,         setParcels]         = useState([]);
   const [campaigns,       setCampaigns]       = useState([]);
   const [loading,         setLoading]         = useState(true);
@@ -44,6 +45,20 @@ export default function MessagingScreen({ onNav, campaignId }) {
 
   useEffect(() => { loadData(); }, [loadData]);
 
+  // Load customised templates from settings
+  useEffect(() => {
+    fetch('/api/settings').then(r => r.json()).then(d => {
+      const loaded = TEMPLATE_DEFAULTS.map(t => ({
+        ...t,
+        l:    d[`wa_tmpl_${t.id}_label`] ?? t.l,
+        body: d[`wa_tmpl_${t.id}_body`]  ?? t.body,
+      }));
+      setTemplates(loaded);
+      const cur = loaded.find(t => t.id === template);
+      if (cur) setBody(cur.body);
+    }).catch(() => {});
+  }, []);
+
   // Sync campaignFilter when campaignId prop changes
   useEffect(() => {
     if (campaignId) setCampaignFilter(campaignId);
@@ -63,7 +78,7 @@ export default function MessagingScreen({ onNav, campaignId }) {
 
   const onTemplateChange = (id) => {
     setTemplate(id);
-    const found = TEMPLATES.find(tmpl => tmpl.id === id);
+    const found = templates.find(tmpl => tmpl.id === id);
     if (found) setBody(found.body);
   };
 
@@ -270,7 +285,7 @@ export default function MessagingScreen({ onNav, campaignId }) {
                 <div style={{ fontSize: 11, color: 'var(--ink-400)' }}>Variables remplacées automatiquement à l'envoi</div>
               </div>
               <select className="select input--sm" style={{ width: 220 }} value={template} onChange={e => onTemplateChange(e.target.value)}>
-                {TEMPLATES.map(t => <option key={t.id} value={t.id}>{t.l}</option>)}
+                {templates.map(t => <option key={t.id} value={t.id}>{t.l}</option>)}
               </select>
             </div>
 
@@ -289,7 +304,7 @@ export default function MessagingScreen({ onNav, campaignId }) {
                 <textarea className="textarea" rows={11} value={body} onChange={e => setBody(e.target.value)} style={{ fontSize: 13, lineHeight: 1.55 }} />
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 12 }}>
                   <span style={{ fontSize: 11.5, color: 'var(--ink-400)' }}>{body.length} caractères</span>
-                  <button className="btn btn--ghost btn--sm" onClick={() => { const t = TEMPLATES.find(t => t.id === template); if (t) setBody(t.body); }}>Réinit.</button>
+                  <button className="btn btn--ghost btn--sm" onClick={() => { const t = templates.find(t => t.id === template); if (t) setBody(t.body); }}>Réinit.</button>
                 </div>
               </div>
 

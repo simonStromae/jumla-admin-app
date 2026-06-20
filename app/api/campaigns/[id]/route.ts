@@ -4,6 +4,7 @@ import { prisma } from '@/src/lib/prisma';
 import { requireAdmin, requirePermission, mapCampaignStatus, toPrismaStatus } from '@/src/lib/api-auth';
 import { auth } from '@/auth';
 import { sendWhatsappNotification, CAMPAIGN_STATUS_LABELS } from '@/src/lib/twilio';
+import { renderWaTemplate } from '@/src/lib/wa-template';
 
 export async function GET(_: NextRequest, { params }: { params: { id: string } }) {
   const { error } = await requireAdmin();
@@ -190,8 +191,12 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
 
       const statusLabel = CAMPAIGN_STATUS_LABELS[prismaStatus] ?? prismaStatus;
       for (const { firstName, phone, codes, parcelId } of byPhone.values()) {
-        const msg = `Bonjour ${firstName} 👋\n\nVotre cargaison *${updated.code}* a été mise à jour.\n\nNouveau statut : *${statusLabel}*\n\nColis : ${codes.join(', ')}\n\nConnectez-vous à votre espace client pour suivre l'avancement de votre envoi.`;
-        sendWhatsappNotification(phone, msg, parcelId).catch(() => {});
+        renderWaTemplate('auto_campaign_status', {
+          first_name:    firstName,
+          campaign_code: updated.code,
+          status_label:  statusLabel,
+          parcel_codes:  codes.join(', '),
+        }).then(msg => sendWhatsappNotification(phone, msg, parcelId)).catch(() => {});
       }
     }
 

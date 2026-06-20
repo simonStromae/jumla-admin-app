@@ -525,9 +525,11 @@ function DrawerRow({ icon, label, value, mono, ok }) {
 }
 
 const WA_TEMPLATE_DEFAULTS = [
-  { id: 'arrival',  label: 'Arrivée cargaison', body: 'Bonjour {first_name} 👋\n\nVotre colis *{parcel_code}* est arrivé à Montréal ! 🎉\n\nPoids : {weight} kg\nMontant dû : *{amount} CAD*\n\nAdresse de retrait : {warehouse_address}\n\nMerci de nous contacter pour organiser la livraison.\n— Jumla Shipping' },
-  { id: 'payment',  label: 'Rappel paiement',   body: 'Bonjour {first_name},\n\nNous vous rappelons que le paiement de *{amount} CAD* pour votre colis {parcel_code} est en attente.\n\nMerci de procéder au virement Interac à notre adresse dès que possible.\n— Jumla Shipping' },
-  { id: 'delivery', label: 'Livraison prévue',  body: 'Bonjour {first_name} 😊\n\nVotre colis *{parcel_code}* sera livré bientôt.\n\nDate estimée : {arrival_date}\nAdresse : {warehouse_address}\n\n— Jumla Shipping' },
+  { id: 'arrival',   label: "Avis d'arrivée",    body: `Bonjour {first_name} 👋\n\nVotre colis ({parcel_code}) est arrivé à Montréal.\n\n📦 Poids : {weight} kg\n💰 Montant dû : {amount} CAD\n\n📍 Retrait : {warehouse_address}\n📞 Contact : {agent_phone}\n\nMerci,\nJumla Shipping` },
+  { id: 'reminder',  label: 'Relance paiement',  body: `Bonjour {first_name},\n\nNous n'avons pas encore reçu votre paiement pour le colis {parcel_code} — montant dû : {amount} CAD.\n\nMerci de régulariser votre situation au plus vite.\n\nJumla Shipping` },
+  { id: 'delivery',  label: 'Livraison confirmée', body: `Bonjour {first_name},\n\nVotre colis {parcel_code} a été livré. Merci de votre confiance !\n\nJumla Shipping` },
+  { id: 'invoice',   label: 'Facture / Récap',   body: `Bonjour {first_name},\n\nVoici le récapitulatif de votre colis {parcel_code} :\n• Poids : {weight} kg\n• Montant : {amount} CAD\n\nJumla Shipping` },
+  { id: 'broadcast', label: 'Annonce cargaison', body: `Bonjour {first_name} 👋\n\nNouvelle cargaison disponible — départ prévu le {arrival_date}.\n\nRéservez votre place dès maintenant.\n\nJumla Shipping` },
 ];
 
 function WhatsappModal({ client, parcels, onClose }) {
@@ -535,11 +537,11 @@ function WhatsappModal({ client, parcels, onClose }) {
   const [selectedParcelIds, setSelectedParcelIds] = useState(
     activeParcels.length > 0 ? [activeParcels[0].id] : parcels.slice(0, 1).map(p => p.id)
   );
-  const [templates, setTemplates] = useState(WA_TEMPLATE_DEFAULTS);
-  const [templateId, setTemplateId] = useState('arrival');
-  const [body, setBody] = useState(WA_TEMPLATE_DEFAULTS[0].body);
-  const [sending, setSending] = useState(false);
-  const [result, setResult] = useState(null);
+  const [templates,   setTemplates]   = useState(WA_TEMPLATE_DEFAULTS);
+  const [templateId,  setTemplateId]  = useState('arrival');
+  const [body,        setBody]        = useState(WA_TEMPLATE_DEFAULTS[0].body);
+  const [sending,     setSending]     = useState(false);
+  const [result,      setResult]      = useState(null);
 
   useEffect(() => {
     fetch('/api/settings').then(r => r.json()).then(d => {
@@ -549,7 +551,7 @@ function WhatsappModal({ client, parcels, onClose }) {
         body:  d[`wa_tmpl_${t.id}_body`]  ?? t.body,
       }));
       setTemplates(loaded);
-      const current = loaded.find(t => t.id === templateId);
+      const current = loaded.find(t => t.id === 'arrival');
       if (current) setBody(current.body);
     }).catch(() => {});
   }, []);
