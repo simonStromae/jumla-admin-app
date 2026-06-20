@@ -66,7 +66,6 @@ function TrackContent() {
     search(input);
   };
 
-  const currentStep = result ? STEPS.indexOf(result.status) : -1;
   const s = result ? (STATUS[result.status] ?? { label: result.status, color: '#6b7280', bg: '#f9fafb', icon: '📦' }) : null;
 
   return (
