@@ -19,7 +19,15 @@ const IMGS = {
 
 
 /* ─── Hero plein fond ─── */
-function JHero({ onBook }) {
+function JHero({ onBook, onNav }) {
+  const [code, setCode] = useState('');
+
+  const handleTrack = (e) => {
+    e.preventDefault();
+    const c = code.trim().toUpperCase();
+    if (c) onNav?.('/suivi?code=' + encodeURIComponent(c));
+  };
+
   return (
     <section className="jhero">
       <img className="jhero__bg" src={IMGS.hero} alt="" />
@@ -40,6 +48,34 @@ function JHero({ onBook }) {
               Notre histoire
             </button>
           </div>
+
+          {/* Widget suivi colis */}
+          <div style={{ marginTop: 28, background: 'rgba(255,255,255,.07)', backdropFilter: 'blur(10px)', border: '1px solid rgba(255,255,255,.15)', borderRadius: 12, padding: '16px 18px' }}>
+            <div style={{ fontSize: 11, color: 'rgba(255,255,255,.55)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.08em', marginBottom: 10 }}>
+              Suivre un colis
+            </div>
+            <form onSubmit={handleTrack} style={{ display: 'flex', gap: 8 }}>
+              <input
+                value={code}
+                onChange={e => setCode(e.target.value.toUpperCase())}
+                placeholder="JMS-12345"
+                style={{
+                  flex: 1, height: 46, padding: '0 14px',
+                  background: 'rgba(255,255,255,.1)', border: '1.5px solid rgba(255,255,255,.2)',
+                  color: 'white', fontFamily: 'monospace', fontSize: 15, fontWeight: 700,
+                  letterSpacing: '.06em', outline: 'none', borderRadius: 8,
+                }}
+              />
+              <button type="submit" style={{
+                padding: '0 22px', background: '#F5A524', color: '#1a0f00',
+                border: 'none', fontWeight: 800, fontSize: 14, cursor: 'pointer',
+                borderRadius: 8, whiteSpace: 'nowrap', letterSpacing: '.01em',
+              }}>
+                Suivre →
+              </button>
+            </form>
+          </div>
+
           <div className="jhero__stats">
             {[
               { n: '14 jours', l: 'Transit moyen' },
@@ -416,7 +452,7 @@ export default function LandingPage({ onNav }) {
     <div className="jpage">
       <TopBar />
       <SiteNav onNav={onNav} onBook={onBook} mode="landing" />
-      <JHero onBook={onBook} />
+      <JHero onBook={onBook} onNav={onNav} />
       <JEstimator onBook={onBook} />
       <JAbout />
       <JCommit onBook={onBook} />
