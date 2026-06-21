@@ -6,7 +6,7 @@ import '@/src/styles/tokens.css';
 const STATUS = {
   enr: { label: 'Colis enregistré',               color: '#4B5563', bg: '#F4F5F7', icon: '📝' },
   rec: { label: "Reçu à l'entrepôt",              color: '#1d4ed8', bg: '#EEF2FF', icon: '📥' },
-  pre: { label: 'Vérifié et préparé',              color: '#7c3aed', bg: '#F5F3FF', icon: '🔍' },
+  pre: { label: 'Vérifié et préparé',              color: '#4F46E5', bg: '#EEF2FF', icon: '🔍' },
   exp: { label: 'Expédié',                         color: '#0e7490', bg: '#ECFEFF', icon: '🚀' },
   tra: { label: 'En transit',                      color: '#0891b2', bg: '#ECFEFF', icon: '✈️' },
   apd: { label: 'Arrivé au pays de destination',   color: '#059669', bg: '#ECFDF5', icon: '🛬' },
@@ -15,7 +15,7 @@ const STATUS = {
   ret: { label: 'Retenu par les douanes',          color: '#DC2626', bg: '#FEF2F2', icon: '⚠️' },
   lib: { label: 'Libéré par les douanes',          color: '#059669', bg: '#ECFDF5', icon: '✅' },
   ard: { label: "Arrivé à l'entrepôt destination", color: '#059669', bg: '#ECFDF5', icon: '🏭' },
-  ver: { label: 'Vérification finale',             color: '#7c3aed', bg: '#F5F3FF', icon: '🔬' },
+  ver: { label: 'Vérification finale',             color: '#4F46E5', bg: '#EEF2FF', icon: '🔬' },
   pdl: { label: 'Prêt pour livraison ou retrait',  color: '#0e7490', bg: '#ECFEFF', icon: '📦' },
   liv: { label: 'En cours de livraison',           color: '#0891b2', bg: '#ECFEFF', icon: '🚚' },
   ok:  { label: 'Livré',                           color: '#047857', bg: '#D1FAE5', icon: '🎉' },
