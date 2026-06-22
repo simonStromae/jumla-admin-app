@@ -68,13 +68,13 @@ function LoginForm() {
       {/* Left — visual */}
       <div style={{
         position: 'relative',
-        background: 'linear-gradient(155deg, #1a1408 0%, #2a1d0c 45%, #432a0d 100%)',
+        background: 'linear-gradient(155deg, #1A1A2E 0%, #0D2E6E 55%, #1B4FD8 100%)',
         color: 'white', padding: '48px 56px',
         display: 'flex', flexDirection: 'column', overflow: 'hidden',
       }}>
         <div style={{
           position: 'absolute', inset: 0,
-          backgroundImage: 'radial-gradient(circle at 80% 20%, rgba(245,165,36,.25), transparent 50%), radial-gradient(circle at 20% 80%, rgba(217,119,6,.2), transparent 50%)',
+          backgroundImage: 'radial-gradient(circle at 80% 20%, rgba(0,180,216,.2), transparent 50%), radial-gradient(circle at 20% 80%, rgba(27,79,216,.25), transparent 50%)',
           pointerEvents: 'none',
         }} />
         <svg style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', opacity: .06 }} xmlns="http://www.w3.org/2000/svg">
@@ -90,27 +90,24 @@ function LoginForm() {
           display: 'flex', alignItems: 'center', gap: 12, position: 'relative', zIndex: 2,
           background: 'none', border: 'none', cursor: 'pointer', padding: 0, color: 'inherit',
         }}>
-          <div style={{
-            width: 44, height: 44, borderRadius: 12,
-            background: 'linear-gradient(135deg, #F5A524, #D97706)',
-            display: 'grid', placeItems: 'center',
-            fontWeight: 700, fontSize: 19, color: 'white',
-            boxShadow: 'inset 0 -2px 4px rgba(0,0,0,.2), 0 6px 16px rgba(217,119,6,.35)',
-          }}>J</div>
+          <svg width="44" height="44" viewBox="0 0 48 48" fill="none">
+            <defs><linearGradient id="llg" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stopColor="#00B4D8"/><stop offset="100%" stopColor="#1B4FD8"/></linearGradient></defs>
+            <path d="M8 8 C8 6 10 4 12 5 L38 20 C40 21 40 27 38 28 L12 43 C10 44 8 42 8 40 Z" fill="url(#llg)"/>
+          </svg>
           <div>
-            <div style={{ fontWeight: 700, fontSize: 18, letterSpacing: '-.01em' }}>Jumla Shipping</div>
+            <div style={{ fontFamily: "'Barlow Condensed', 'Arial Narrow', sans-serif", fontWeight: 800, fontSize: 20, letterSpacing: '.05em', textTransform: 'uppercase' }}>JUMLA Shipping</div>
             <div style={{ fontSize: 11.5, color: 'rgba(255,255,255,.55)', marginTop: 1 }}>Fret international · Douala</div>
           </div>
         </button>
 
         <div style={{ marginTop: 'auto', position: 'relative', zIndex: 2 }}>
           <div className="route-pill" style={{
-            background: 'rgba(255,255,255,.08)', border: '1px solid rgba(245,165,36,.25)',
+            background: 'rgba(255,255,255,.08)', border: '1px solid rgba(0,180,216,.3)',
             color: 'rgba(255,255,255,.85)', padding: '6px 14px', fontSize: 12, marginBottom: 24,
           }}>
-            <span>DOUALA</span><I.Plane style={{ color: '#F5A524' }} /><span>MONTRÉAL</span>
+            <span>DOUALA</span><I.Plane style={{ color: '#00B4D8' }} /><span>MONTRÉAL</span>
           </div>
-          <h1 style={{ fontSize: 44, fontWeight: 700, letterSpacing: '-.025em', lineHeight: 1.1, margin: 0, color: 'white' }}>
+          <h1 style={{ fontFamily: "'Barlow Condensed', 'Arial Narrow', sans-serif", fontSize: 48, fontWeight: 800, letterSpacing: '.02em', textTransform: 'uppercase', lineHeight: 1.05, margin: 0, color: 'white' }}>
             Chaque colis,<br />tracé du départ<br />jusqu'à la remise.
           </h1>
           <p style={{ fontSize: 14.5, color: 'rgba(255,255,255,.6)', marginTop: 18, marginBottom: 0, maxWidth: 420, lineHeight: 1.55 }}>
