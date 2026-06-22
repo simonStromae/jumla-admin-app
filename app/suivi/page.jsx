@@ -3,27 +3,47 @@ import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import '@/src/styles/tokens.css';
 
+/* ── Jumla brand tokens ──────────────────────────────── */
+const J = {
+  cyan:    '#00B4D8',
+  blue:    '#1B4FD8',
+  teal:    '#0087A8',
+  dark:    '#0D2E6E',
+  black:   '#1A1A2E',
+  gray100: '#F4F6FA',
+  gray200: '#E2E8F0',
+  gray400: '#94A3B8',
+  gray700: '#374151',
+  success: '#10B981',
+  warning: '#F59E0B',
+  danger:  '#EF4444',
+  gradient: 'linear-gradient(90deg, #00B4D8 0%, #1B4FD8 100%)',
+};
+
+const FONT_DISPLAY = "'Barlow Condensed', 'Arial Narrow', sans-serif";
+const FONT_BODY    = "'Barlow', 'Helvetica Neue', Arial, sans-serif";
+
 const STATUS = {
-  enr: { label: 'Colis enregistré',               color: '#4B5563', bg: '#F4F5F7', icon: '📝' },
-  rec: { label: "Reçu à l'entrepôt",              color: '#1d4ed8', bg: '#EEF2FF', icon: '📥' },
-  pre: { label: 'Vérifié et préparé',              color: '#D97706', bg: '#FFF8EB', icon: '🔍' },
-  exp: { label: 'Expédié',                         color: '#0e7490', bg: '#ECFEFF', icon: '🚀' },
-  tra: { label: 'En transit',                      color: '#0891b2', bg: '#ECFEFF', icon: '✈️' },
-  apd: { label: 'Arrivé au pays de destination',   color: '#059669', bg: '#ECFDF5', icon: '🛬' },
-  dou: { label: 'Présenté aux douanes',            color: '#B45309', bg: '#FFFBEB', icon: '🛃' },
-  ins: { label: 'En inspection douanière',         color: '#B45309', bg: '#FFFBEB', icon: '🔎' },
-  ret: { label: 'Retenu par les douanes',          color: '#DC2626', bg: '#FEF2F2', icon: '⚠️' },
-  lib: { label: 'Libéré par les douanes',          color: '#059669', bg: '#ECFDF5', icon: '✅' },
-  ard: { label: "Arrivé à l'entrepôt destination", color: '#059669', bg: '#ECFDF5', icon: '🏭' },
-  ver: { label: 'Vérification finale',             color: '#D97706', bg: '#FFF8EB', icon: '🔬' },
-  pdl: { label: 'Prêt pour livraison ou retrait',  color: '#0e7490', bg: '#ECFEFF', icon: '📦' },
-  liv: { label: 'En cours de livraison',           color: '#0891b2', bg: '#ECFEFF', icon: '🚚' },
-  ok:  { label: 'Livré',                           color: '#047857', bg: '#D1FAE5', icon: '🎉' },
-  adr: { label: 'Adresse incomplète',              color: '#DC2626', bg: '#FEF2F2', icon: '📍' },
-  tdl: { label: 'Tentative de livraison',          color: '#B45309', bg: '#FFFBEB', icon: '🔔' },
-  rte: { label: "Retour à l'entrepôt",             color: '#DC2626', bg: '#FEF2F2', icon: '↩️' },
-  dom: { label: 'Colis endommagé',                 color: '#DC2626', bg: '#FEF2F2', icon: '💥' },
-  cla: { label: 'Réclamation ouverte',             color: '#DC2626', bg: '#FEF2F2', icon: '📋' },
+  enr: { label: 'Colis enregistré',               color: J.gray400,  bg: 'rgba(148,163,184,.1)',  icon: '📝' },
+  rec: { label: "Reçu à l'entrepôt",              color: J.blue,     bg: 'rgba(27,79,216,.08)',   icon: '📥' },
+  pre: { label: 'Vérifié et préparé',              color: J.blue,     bg: 'rgba(27,79,216,.08)',   icon: '🔍' },
+  exp: { label: 'Expédié',                         color: J.teal,     bg: 'rgba(0,180,216,.08)',   icon: '🚀' },
+  tra: { label: 'En transit',                      color: J.teal,     bg: 'rgba(0,180,216,.08)',   icon: '✈️' },
+  apd: { label: 'Arrivé au pays de destination',   color: '#059669',  bg: 'rgba(16,185,129,.08)',  icon: '🛬' },
+  dou: { label: 'Présenté aux douanes',            color: '#D97706',  bg: 'rgba(245,158,11,.08)',  icon: '🛃' },
+  ins: { label: 'En inspection douanière',         color: '#D97706',  bg: 'rgba(245,158,11,.08)',  icon: '🔎' },
+  ret: { label: 'Retenu par les douanes',          color: '#DC2626',  bg: 'rgba(239,68,68,.08)',   icon: '⚠️' },
+  lib: { label: 'Libéré par les douanes',          color: '#059669',  bg: 'rgba(16,185,129,.08)',  icon: '✅' },
+  ard: { label: "Arrivé à l'entrepôt destination", color: '#059669',  bg: 'rgba(16,185,129,.08)',  icon: '🏭' },
+  ver: { label: 'Vérification finale',             color: J.blue,     bg: 'rgba(27,79,216,.08)',   icon: '🔬' },
+  pdl: { label: 'Prêt pour livraison ou retrait',  color: J.teal,     bg: 'rgba(0,180,216,.08)',   icon: '📦' },
+  liv: { label: 'En cours de livraison',           color: J.teal,     bg: 'rgba(0,180,216,.08)',   icon: '🚚' },
+  ok:  { label: 'Livré',                           color: '#059669',  bg: 'rgba(16,185,129,.1)',   icon: '🎉' },
+  adr: { label: 'Adresse incomplète',              color: '#DC2626',  bg: 'rgba(239,68,68,.08)',   icon: '📍' },
+  tdl: { label: 'Tentative de livraison',          color: '#D97706',  bg: 'rgba(245,158,11,.08)',  icon: '🔔' },
+  rte: { label: "Retour à l'entrepôt",             color: '#DC2626',  bg: 'rgba(239,68,68,.08)',   icon: '↩️' },
+  dom: { label: 'Colis endommagé',                 color: '#DC2626',  bg: 'rgba(239,68,68,.08)',   icon: '💥' },
+  cla: { label: 'Réclamation ouverte',             color: '#DC2626',  bg: 'rgba(239,68,68,.08)',   icon: '📋' },
 };
 
 function fmt(d) {
@@ -34,11 +54,6 @@ function fmtFull(d) {
   if (!d) return '—';
   return new Date(d).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' });
 }
-
-const BRAND = '#F5A524';
-const DARK  = '#1a1408';
-const CARD  = { background: 'white', border: '1px solid #E5E7EB', borderRadius: 12, boxShadow: '0 1px 1px rgba(15,23,42,.04)' };
-const LABEL = { fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.06em', color: '#9CA3AF', marginBottom: 6 };
 
 function TrackContent() {
   const router       = useRouter();
@@ -71,110 +86,130 @@ function TrackContent() {
     search(input);
   };
 
-  const s = result ? (STATUS[result.status] ?? { label: result.status, color: '#6B7280', bg: '#F4F5F7', icon: '📦' }) : null;
+  const s = result ? (STATUS[result.status] ?? { label: result.status, color: J.gray400, bg: 'rgba(148,163,184,.1)', icon: '📦' }) : null;
 
   return (
-    <div style={{ fontFamily: 'Inter, system-ui, -apple-system, sans-serif', minHeight: '100vh', background: '#F7F8FA', WebkitFontSmoothing: 'antialiased' }}>
+    <div style={{ fontFamily: FONT_BODY, minHeight: '100vh', background: J.gray100, WebkitFontSmoothing: 'antialiased', color: J.gray700 }}>
 
       {/* Header */}
-      <header style={{ background: DARK, color: 'white', padding: '0 24px', height: 60, display: 'flex', alignItems: 'center', justifyContent: 'space-between', boxShadow: '0 1px 3px rgba(0,0,0,.15)' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer' }} onClick={() => router.push('/')}>
-          <div style={{ width: 32, height: 32, borderRadius: 8, background: 'linear-gradient(135deg,#F5A524,#D97706)', display: 'grid', placeItems: 'center', fontWeight: 800, fontSize: 15, boxShadow: 'inset 0 -2px 4px rgba(0,0,0,.1)' }}>J</div>
-          <span style={{ fontWeight: 700, fontSize: 15, letterSpacing: '-.01em' }}>Jumla Shipping</span>
+      <header style={{ background: J.black, padding: '0 24px', height: 64, display: 'flex', alignItems: 'center', justifyContent: 'space-between', boxShadow: '0 8px 32px rgba(27,79,216,.18)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14, cursor: 'pointer' }} onClick={() => router.push('/')}>
+          {/* Triangle logo */}
+          <svg width="36" height="36" viewBox="0 0 48 48" fill="none">
+            <defs>
+              <linearGradient id="lg" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stopColor="#00B4D8"/>
+                <stop offset="100%" stopColor="#1B4FD8"/>
+              </linearGradient>
+            </defs>
+            <path d="M8 8 C8 6 10 4 12 5 L38 20 C40 21 40 27 38 28 L12 43 C10 44 8 42 8 40 Z" fill="url(#lg)"/>
+          </svg>
+          <div>
+            <div style={{ fontFamily: FONT_DISPLAY, fontSize: 22, fontWeight: 800, letterSpacing: '.05em', textTransform: 'uppercase', background: J.gradient, WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text', lineHeight: 1 }}>JUMLA</div>
+            <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: '.15em', color: 'rgba(255,255,255,.3)', textTransform: 'uppercase', marginTop: 2 }}>Import · Export · Livraison</div>
+          </div>
         </div>
-        <a href="/login" style={{ fontSize: 13, color: 'rgba(255,255,255,.7)', textDecoration: 'none', padding: '6px 14px', border: '1px solid rgba(255,255,255,.18)', borderRadius: 8, fontWeight: 600, letterSpacing: '.01em' }}>
+        <a href="/login" style={{ fontFamily: FONT_DISPLAY, fontSize: 14, fontWeight: 700, letterSpacing: '.08em', textTransform: 'uppercase', color: 'white', textDecoration: 'none', padding: '8px 18px', border: '2px solid rgba(255,255,255,.25)', borderRadius: 8, transition: 'all .2s' }}>
           Connexion →
         </a>
       </header>
 
-      <div style={{ maxWidth: 640, margin: '0 auto', padding: '40px 20px 80px' }}>
+      <div style={{ maxWidth: 660, margin: '0 auto', padding: '44px 20px 80px' }}>
 
         {/* Title */}
-        <div style={{ marginBottom: 24 }}>
-          <h1 style={{ fontSize: 22, fontWeight: 700, margin: '0 0 5px', color: '#111827', letterSpacing: '-.02em' }}>Suivi de colis</h1>
-          <p style={{ fontSize: 13.5, color: '#6B7280', margin: 0 }}>
-            Entrez votre numéro de suivi pour voir l'état de votre envoi en temps réel.
+        <div style={{ marginBottom: 28 }}>
+          <div style={{ fontFamily: FONT_DISPLAY, fontSize: 11, fontWeight: 700, letterSpacing: '.2em', textTransform: 'uppercase', color: J.cyan, marginBottom: 6 }}>Suivi en temps réel</div>
+          <h1 style={{ fontFamily: FONT_DISPLAY, fontSize: 36, fontWeight: 800, margin: '0 0 8px', color: J.black, textTransform: 'uppercase', letterSpacing: '.02em', lineHeight: 1.1 }}>Suivi de colis</h1>
+          <p style={{ fontSize: 15, color: J.gray400, margin: 0 }}>
+            Entrez votre numéro de suivi pour voir l'état de votre envoi.
           </p>
         </div>
 
         {/* Search bar */}
-        <form onSubmit={handleSubmit} style={{ display: 'flex', gap: 8, marginBottom: 24 }}>
+        <form onSubmit={handleSubmit} style={{ display: 'flex', gap: 8, marginBottom: 28 }}>
           <input
             value={input}
             onChange={e => setInput(e.target.value.toUpperCase())}
             placeholder="JMS-12345"
             style={{
-              flex: 1, height: 44, padding: '0 14px',
-              border: '1px solid #E5E7EB', borderRadius: 8,
+              flex: 1, height: 50, padding: '0 16px',
+              border: '2px solid ' + J.gray200, borderRadius: 8,
               background: 'white', fontFamily: 'JetBrains Mono, ui-monospace, monospace',
-              fontSize: 15, fontWeight: 700, letterSpacing: '.05em',
-              outline: 'none', color: '#111827',
-              boxShadow: '0 1px 2px rgba(15,23,42,.06)',
-              transition: 'border-color .15s, box-shadow .15s',
+              fontSize: 16, fontWeight: 700, letterSpacing: '.05em',
+              outline: 'none', color: J.black,
+              boxShadow: '0 1px 3px rgba(0,0,0,.08)',
+              transition: 'border-color .2s, box-shadow .2s',
             }}
-            onFocus={e => { e.target.style.borderColor = BRAND; e.target.style.boxShadow = '0 0 0 3px #FFF8EB'; }}
-            onBlur={e => { e.target.style.borderColor = '#E5E7EB'; e.target.style.boxShadow = '0 1px 2px rgba(15,23,42,.06)'; }}
+            onFocus={e => { e.target.style.borderColor = J.cyan; e.target.style.boxShadow = '0 0 0 3px rgba(0,180,216,.15)'; }}
+            onBlur={e => { e.target.style.borderColor = J.gray200; e.target.style.boxShadow = '0 1px 3px rgba(0,0,0,.08)'; }}
           />
           <button
             type="submit"
             disabled={loading}
             style={{
-              padding: '0 20px', height: 44,
-              background: loading ? '#E5E7EB' : BRAND,
-              color: loading ? '#9CA3AF' : DARK,
+              padding: '0 24px', height: 50,
+              background: loading ? J.gray200 : J.gradient,
+              color: loading ? J.gray400 : 'white',
               border: 'none', borderRadius: 8,
-              fontWeight: 700, fontSize: 13.5, cursor: loading ? 'not-allowed' : 'pointer',
-              whiteSpace: 'nowrap', letterSpacing: '.01em',
-              boxShadow: loading ? 'none' : '0 1px 2px rgba(180,83,9,.25), inset 0 1px 0 rgba(255,255,255,.15)',
-              transition: 'all .15s',
+              fontFamily: FONT_DISPLAY, fontWeight: 700, fontSize: 16,
+              letterSpacing: '.08em', textTransform: 'uppercase',
+              cursor: loading ? 'not-allowed' : 'pointer',
+              whiteSpace: 'nowrap',
+              boxShadow: loading ? 'none' : '0 4px 14px rgba(27,79,216,.3)',
+              transition: 'all .2s',
             }}>
-            {loading ? '…' : 'Suivre →'}
+            {loading ? '…' : 'Suivre'}
           </button>
         </form>
 
         {/* Error */}
         {error && (
-          <div style={{ padding: '12px 16px', background: '#FEF2F2', border: '1px solid #FECACA', borderRadius: 8, color: '#DC2626', fontSize: 13, marginBottom: 18, fontWeight: 500 }}>
-            {error === 'Colis introuvable'
-              ? <>Aucun colis trouvé avec le code <strong style={{ fontFamily: 'monospace' }}>{input}</strong>. Vérifiez l'orthographe.</>
-              : error}
+          <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, padding: '14px 16px', background: 'rgba(239,68,68,.08)', border: '1px solid rgba(239,68,68,.2)', borderLeft: '4px solid ' + J.danger, borderRadius: 8, color: '#DC2626', fontSize: 14, marginBottom: 20, fontWeight: 500 }}>
+            <span>🚫</span>
+            <div>
+              {error === 'Colis introuvable'
+                ? <>Aucun colis trouvé avec le code <strong style={{ fontFamily: 'monospace' }}>{input}</strong>. Vérifiez l'orthographe.</>
+                : error}
+            </div>
           </div>
         )}
 
         {/* Result */}
         {result && s && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
 
             {/* Status banner */}
             <div style={{
-              ...CARD,
-              background: s.bg,
-              borderColor: s.color + '30',
-              padding: '18px 20px',
-              display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap',
+              background: 'white',
+              border: '1px solid ' + J.gray200,
+              borderTop: '3px solid ' + s.color,
+              borderRadius: 16,
+              padding: '20px 22px',
+              boxShadow: '0 1px 3px rgba(0,0,0,.08)',
+              display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap',
             }}>
-              <span style={{ fontSize: 40, lineHeight: 1, flexShrink: 0 }}>{s.icon}</span>
+              <div style={{ width: 52, height: 52, borderRadius: 12, background: s.bg, display: 'grid', placeItems: 'center', fontSize: 26, flexShrink: 0 }}>{s.icon}</div>
               <div style={{ flex: 1, minWidth: 160 }}>
-                <div style={{ ...LABEL, color: s.color, opacity: .7, marginBottom: 4 }}>
+                <div style={{ fontFamily: FONT_DISPLAY, fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.15em', color: J.gray400, marginBottom: 4 }}>
                   Statut · {result.campaign.from} → {result.campaign.to}
                 </div>
-                <div style={{ fontSize: 20, fontWeight: 700, color: s.color, letterSpacing: '-.02em', lineHeight: 1.15 }}>{s.label}</div>
-                <div style={{ fontSize: 11.5, color: s.color, opacity: .55, marginTop: 3 }}>Cargaison {result.campaign.code}</div>
+                <div style={{ fontFamily: FONT_DISPLAY, fontSize: 24, fontWeight: 700, color: s.color, letterSpacing: '.02em', lineHeight: 1.15, textTransform: 'uppercase' }}>{s.label}</div>
+                <div style={{ fontSize: 12, color: J.gray400, marginTop: 3 }}>Cargaison {result.campaign.code}</div>
               </div>
               <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                <div style={{ fontFamily: 'JetBrains Mono, ui-monospace, monospace', fontSize: 18, fontWeight: 700, color: '#111827', letterSpacing: '.03em' }}>{result.trackingCode}</div>
-                <div style={{ marginTop: 6 }}>
+                <div style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 18, fontWeight: 700, color: J.blue, letterSpacing: '.03em' }}>{result.trackingCode}</div>
+                <div style={{ marginTop: 8 }}>
                   {result.paid
-                    ? <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 11, color: '#047857', fontWeight: 600, background: '#D1FAE5', padding: '2px 9px', borderRadius: 999, border: '1px solid #A7F3D0' }}>✓ Paiement confirmé</span>
-                    : <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 11, color: '#92400E', fontWeight: 600, background: '#FEF3C7', padding: '2px 9px', borderRadius: 999, border: '1px solid #FDE68A' }}>⏳ Paiement en attente</span>}
+                    ? <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 11, fontWeight: 700, color: '#059669', background: 'rgba(16,185,129,.1)', padding: '3px 10px', borderRadius: 9999, letterSpacing: '.05em', textTransform: 'uppercase' }}>✓ Paiement confirmé</span>
+                    : <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 11, fontWeight: 700, color: '#D97706', background: 'rgba(245,158,11,.1)', padding: '3px 10px', borderRadius: 9999, letterSpacing: '.05em', textTransform: 'uppercase' }}>⏳ En attente</span>}
                 </div>
               </div>
             </div>
 
             {/* Details grid */}
-            <div style={{ ...CARD, padding: '16px 20px' }}>
-              <div style={LABEL}>Détails de l'envoi</div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px 28px' }}>
+            <div style={{ background: 'white', border: '1px solid ' + J.gray200, borderRadius: 16, padding: '18px 22px', boxShadow: '0 1px 3px rgba(0,0,0,.08)' }}>
+              <div style={{ fontFamily: FONT_DISPLAY, fontSize: 11, fontWeight: 700, letterSpacing: '.15em', textTransform: 'uppercase', color: J.cyan, marginBottom: 14 }}>Détails de l'envoi</div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px 32px' }}>
                 {[
                   { l: 'Description',    v: result.description || '—' },
                   { l: 'Poids déclaré',  v: result.weightKg ? result.weightKg + ' kg' : '—' },
@@ -182,56 +217,61 @@ function TrackContent() {
                   { l: 'Arrivée prévue', v: fmt(result.campaign.arrivalDate) },
                 ].map(r => (
                   <div key={r.l}>
-                    <div style={{ ...LABEL, marginBottom: 3 }}>{r.l}</div>
-                    <div style={{ fontSize: 13.5, fontWeight: 600, color: '#111827' }}>{r.v}</div>
+                    <div style={{ fontSize: 10, fontWeight: 700, color: J.gray400, textTransform: 'uppercase', letterSpacing: '.1em', marginBottom: 4 }}>{r.l}</div>
+                    <div style={{ fontSize: 14, fontWeight: 600, color: J.black }}>{r.v}</div>
                   </div>
                 ))}
               </div>
             </div>
 
             {/* Timeline */}
-            <div style={{ ...CARD, padding: '16px 20px' }}>
-              <div style={LABEL}>Historique du colis</div>
+            <div style={{ background: 'white', border: '1px solid ' + J.gray200, borderRadius: 16, padding: '18px 22px', boxShadow: '0 1px 3px rgba(0,0,0,.08)' }}>
+              <div style={{ fontFamily: FONT_DISPLAY, fontSize: 11, fontWeight: 700, letterSpacing: '.15em', textTransform: 'uppercase', color: J.cyan, marginBottom: 20 }}>Historique du colis</div>
               {result.tracking.length === 0 ? (
-                <div style={{ color: '#D1D5DB', fontSize: 13, fontStyle: 'italic', padding: '6px 0' }}>Aucun événement enregistré pour le moment.</div>
+                <div style={{ color: J.gray400, fontSize: 14, fontStyle: 'italic', padding: '8px 0' }}>Aucun événement enregistré pour le moment.</div>
               ) : (
                 <div>
                   {[...result.tracking].reverse().map((e, i, arr) => {
-                    const es      = STATUS[e.status] ?? { label: e.status, color: '#6B7280', icon: '📦', bg: '#F4F5F7' };
+                    const es      = STATUS[e.status] ?? { label: e.status, color: J.gray400, icon: '📦', bg: 'rgba(148,163,184,.1)' };
                     const isFirst = i === 0;
                     return (
-                      <div key={i} style={{ display: 'flex', gap: 12, paddingBottom: i < arr.length - 1 ? 20 : 0, position: 'relative' }}>
+                      <div key={i} style={{ display: 'flex', gap: 14, paddingBottom: i < arr.length - 1 ? 22 : 0, position: 'relative' }}>
                         {i < arr.length - 1 && (
-                          <div style={{ position: 'absolute', left: isFirst ? 17 : 14, top: isFirst ? 38 : 30, bottom: 0, width: 2, background: '#F3F4F6', borderRadius: 1 }} />
+                          <div style={{ position: 'absolute', left: isFirst ? 19 : 15, top: isFirst ? 42 : 32, bottom: 0, width: 2, background: J.gray200, borderRadius: 1 }} />
                         )}
                         <div style={{ flexShrink: 0, paddingTop: 2 }}>
-                          <div style={{
-                            width: isFirst ? 36 : 28, height: isFirst ? 36 : 28,
-                            borderRadius: '50%',
-                            background: isFirst ? es.bg : '#F4F5F7',
-                            border: '2px solid ' + (isFirst ? es.color : '#E5E7EB'),
-                            display: 'grid', placeItems: 'center',
-                            fontSize: isFirst ? 18 : 11,
-                            boxShadow: isFirst ? '0 0 0 4px ' + es.color + '18' : 'none',
-                            transition: 'box-shadow .2s',
-                          }}>
-                            {isFirst ? es.icon : <span style={{ color: '#9CA3AF' }}>✓</span>}
-                          </div>
+                          {isFirst ? (
+                            <div style={{
+                              width: 40, height: 40, borderRadius: '50%',
+                              background: J.gradient,
+                              display: 'grid', placeItems: 'center',
+                              fontSize: 18,
+                              boxShadow: '0 4px 14px rgba(27,79,216,.3)',
+                            }}>{es.icon}</div>
+                          ) : (
+                            <div style={{
+                              width: 30, height: 30, borderRadius: '50%',
+                              background: J.gray100,
+                              border: '2px solid ' + J.gray200,
+                              display: 'grid', placeItems: 'center',
+                              fontSize: 11, color: J.gray400,
+                            }}>✓</div>
+                          )}
                         </div>
-                        <div style={{ paddingTop: isFirst ? 6 : 4 }}>
+                        <div style={{ paddingTop: isFirst ? 7 : 5 }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 2 }}>
-                            <span style={{ fontSize: isFirst ? 14.5 : 13, fontWeight: isFirst ? 700 : 500, color: isFirst ? es.color : '#374151' }}>
+                            <span style={{ fontFamily: isFirst ? FONT_DISPLAY : FONT_BODY, fontSize: isFirst ? 16 : 13.5, fontWeight: isFirst ? 700 : 500, color: isFirst ? J.blue : J.gray700, textTransform: isFirst ? 'uppercase' : 'none', letterSpacing: isFirst ? '.02em' : 0 }}>
                               {es.label}
                             </span>
                             {isFirst && (
-                              <span style={{ fontSize: 10, fontWeight: 700, background: es.color, color: 'white', padding: '2px 7px', borderRadius: 999, letterSpacing: '.05em' }}>
+                              <span style={{ fontFamily: FONT_DISPLAY, fontSize: 10, fontWeight: 700, background: J.gradient, color: 'white', padding: '2px 8px', borderRadius: 9999, letterSpacing: '.08em', textTransform: 'uppercase' }}>
                                 ACTUEL
                               </span>
                             )}
                           </div>
-                          {e.location && <div style={{ fontSize: 12, color: '#6B7280', marginTop: 2 }}>📍 {e.location}</div>}
-                          {e.note     && <div style={{ fontSize: 12, color: '#6B7280', fontStyle: 'italic', marginTop: 2 }}>{e.note}</div>}
-                          <div style={{ fontSize: 11, color: '#9CA3AF', marginTop: 3 }}>{fmtFull(e.createdAt)}</div>
+                          {e.location && <div style={{ fontSize: 12, color: J.gray400, marginTop: 2 }}>📍 {e.location}</div>}
+                          {e.note     && <div style={{ fontSize: 12, color: J.gray400, fontStyle: 'italic', marginTop: 2 }}>{e.note}</div>}
+                          <div style={{ fontSize: 11, color: J.gray400, marginTop: 3 }}>{fmtFull(e.createdAt)}</div>
                         </div>
                       </div>
                     );
@@ -241,9 +281,9 @@ function TrackContent() {
             </div>
 
             {/* Footer CTA */}
-            <div style={{ textAlign: 'center', fontSize: 13, color: '#9CA3AF', padding: '6px 0' }}>
+            <div style={{ textAlign: 'center', fontSize: 13, color: J.gray400, padding: '8px 0' }}>
               Pour plus de détails,{' '}
-              <a href="/login" style={{ color: '#111827', fontWeight: 600, textDecoration: 'none', borderBottom: '1.5px solid ' + BRAND }}>
+              <a href="/login" style={{ color: J.blue, fontWeight: 600, textDecoration: 'none', borderBottom: '1.5px solid ' + J.cyan }}>
                 connectez-vous à votre espace client
               </a>.
             </div>
