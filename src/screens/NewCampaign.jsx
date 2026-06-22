@@ -313,7 +313,7 @@ function StepCosts({ data, upd }) {
           ].map(({ l, v, sign, gold }, i) => (
             <div key={i}>
               <div style={{ fontSize: 11, color: 'rgba(255,255,255,.5)', marginBottom: 4 }}>{l}</div>
-              <div className="mono" style={{ fontSize: 20, fontWeight: 700, color: gold ? '#F5A524' : 'white' }}>
+              <div className="mono" style={{ fontSize: 20, fontWeight: 700, color: gold ? '#00B4D8' : 'white' }}>
                 {sign}{v.toLocaleString('fr')} <span style={{ fontSize: 12, color: 'rgba(255,255,255,.5)' }}>{data.currency}</span>
               </div>
             </div>
