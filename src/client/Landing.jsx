@@ -51,7 +51,7 @@ function JHero({ onBook, onNav }) {
 
           {/* Widget suivi colis */}
           <div style={{ marginTop: 28, background: 'rgba(255,255,255,.07)', backdropFilter: 'blur(10px)', border: '1px solid rgba(255,255,255,.15)', borderRadius: 12, padding: '16px 18px' }}>
-            <div style={{ fontSize: 11, color: 'rgba(255,255,255,.55)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.08em', marginBottom: 10 }}>
+            <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.15em', color: '#00B4D8', marginBottom: 10 }}>
               Suivre un colis
             </div>
             <form onSubmit={handleTrack} style={{ display: 'flex', gap: 8 }}>
@@ -61,15 +61,18 @@ function JHero({ onBook, onNav }) {
                 placeholder="JMS-12345"
                 style={{
                   flex: 1, height: 46, padding: '0 14px',
-                  background: 'rgba(255,255,255,.1)', border: '1.5px solid rgba(255,255,255,.2)',
-                  color: 'white', fontFamily: 'monospace', fontSize: 15, fontWeight: 700,
+                  background: 'rgba(255,255,255,.1)', border: '1px solid rgba(255,255,255,.2)',
+                  color: 'white', fontFamily: 'JetBrains Mono, ui-monospace, monospace', fontSize: 15, fontWeight: 700,
                   letterSpacing: '.06em', outline: 'none', borderRadius: 8,
                 }}
               />
               <button type="submit" style={{
-                padding: '0 22px', background: '#F5A524', color: '#1a0f00',
-                border: 'none', fontWeight: 800, fontSize: 14, cursor: 'pointer',
-                borderRadius: 8, whiteSpace: 'nowrap', letterSpacing: '.01em',
+                padding: '0 22px', background: 'linear-gradient(90deg, #00B4D8, #1B4FD8)',
+                color: 'white', border: 'none',
+                fontFamily: "'Barlow Condensed', sans-serif",
+                fontWeight: 700, fontSize: 15, letterSpacing: '.08em', textTransform: 'uppercase',
+                cursor: 'pointer', borderRadius: 8, whiteSpace: 'nowrap',
+                boxShadow: '0 4px 14px rgba(27,79,216,.4)',
               }}>
                 Suivre →
               </button>

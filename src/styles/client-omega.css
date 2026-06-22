@@ -1,6 +1,6 @@
 /* ============================================
    JUMLA LANDING — Gogrin-inspired layout
-   Montserrat + Inter · border 0 · max 1300px
+   Barlow Condensed + Barlow · border 0 · max 1300px
    ============================================ */
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -10,14 +10,14 @@
 }
 
 .jpage {
-  font-family: "Inter",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  font-family: 'Barlow', 'Helvetica Neue', Arial, sans-serif;
   color: var(--ink-800);
   background: var(--white);
   -webkit-font-smoothing: antialiased;
 }
 
 .jpage h1, .jpage h2, .jpage h3, .jpage h4 {
-  font-family: "Inter",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  font-family: 'Barlow Condensed', 'Arial Narrow', sans-serif;
   font-weight: 800; letter-spacing: -.025em; line-height: 1.1;
 }
 
@@ -50,14 +50,14 @@
 }
 .jnav__logo {
   display: flex; align-items: center; gap: 10px;
-  font-family: 'Montserrat', sans-serif;
+  font-family: 'Barlow Condensed', sans-serif;
   font-size: 20px; font-weight: 900;
   color: var(--ink-900); text-decoration: none;
   letter-spacing: -.03em; white-space: nowrap;
 }
 .jnav__logo-mark {
   width: 38px; height: 38px;
-  background: var(--brand-400); display: grid; place-items: center;
+  background: linear-gradient(135deg, #00B4D8, #1B4FD8); display: grid; place-items: center;
   font-size: 18px; font-weight: 900; color: white;
   border-radius: var(--radius);
 }
@@ -80,15 +80,15 @@
 }
 .jnav__signin:hover { color: var(--ink-900); }
 .jbtn-nav {
-  font-family: 'Montserrat', sans-serif;
+  font-family: 'Barlow Condensed', sans-serif;
   font-size: 13.5px; font-weight: 700;
-  background: var(--brand-400); color: white; border: 0;
+  background: linear-gradient(90deg, #00B4D8, #1B4FD8); color: white; border: 0;
   border-radius: var(--radius);
   padding: 11px 22px; cursor: pointer;
   display: inline-flex; align-items: center; gap: 8px;
   transition: background .15s, transform .15s;
 }
-.jbtn-nav:hover { background: var(--brand-600); transform: translateY(-1px); }
+.jbtn-nav:hover { background: linear-gradient(90deg, #0087A8, #0D2E6E); transform: translateY(-1px); }
 
 /* ── Hero ── */
 .jhero {
@@ -126,7 +126,7 @@
 }
 .jhero__btns { display: flex; gap: 14px; flex-wrap: wrap; }
 .jhero__btn-1 {
-  font-family: 'Montserrat', sans-serif;
+  font-family: 'Barlow Condensed', sans-serif;
   font-size: 14px; font-weight: 700;
   background: white; color: var(--ink-900);
   border: 0; border-radius: var(--radius);
@@ -135,7 +135,7 @@
 }
 .jhero__btn-1:hover { background: var(--ink-50); }
 .jhero__btn-2 {
-  font-family: 'Montserrat', sans-serif;
+  font-family: 'Barlow Condensed', sans-serif;
   font-size: 14px; font-weight: 700;
   background: transparent; color: white;
   border: 2px solid rgba(255,255,255,.35);
@@ -155,7 +155,7 @@
 }
 .jhero__stat:last-child { border-right: none; margin-right: 0; padding-right: 0; }
 .jhero__stat-n {
-  font-family: 'Montserrat', sans-serif;
+  font-family: 'Barlow Condensed', sans-serif;
   font-size: 28px; font-weight: 900; color: var(--brand-400);
   letter-spacing: -.03em;
 }
@@ -172,10 +172,10 @@
   align-items: stretch; min-height: 88px;
 }
 .jtrack-band__label {
-  background: var(--brand-400);
+  background: linear-gradient(135deg, #00B4D8, #1B4FD8);
   display: flex; align-items: center;
   padding: 20px 28px; gap: 14px;
-  font-family: 'Montserrat', sans-serif;
+  font-family: 'Barlow Condensed', sans-serif;
   font-size: 17px; font-weight: 800; color: white;
   line-height: 1.25;
 }
@@ -191,7 +191,7 @@
 }
 .jtrack-band__input::placeholder { color: var(--ink-300); }
 .jtrack-band__btn {
-  font-family: 'Montserrat', sans-serif;
+  font-family: 'Barlow Condensed', sans-serif;
   font-size: 13px; font-weight: 800; letter-spacing: .05em;
   text-transform: uppercase;
   background: var(--ink-900); color: white; border: 0;
@@ -209,7 +209,7 @@
 /* ── About ── */
 .jabout { padding: 96px 0; background: var(--white); }
 .jabout__eyebrow {
-  font-family: 'Montserrat', sans-serif;
+  font-family: 'Barlow Condensed', sans-serif;
   font-size: 12px; font-weight: 700; letter-spacing: .12em;
   text-transform: uppercase; color: var(--brand-400);
   margin-bottom: 20px; display: block;
@@ -229,7 +229,7 @@
 }
 .jabout__ceo-av {
   width: 48px; height: 48px;
-  background: var(--ink-900); color: white; font-family: 'Montserrat', sans-serif;
+  background: var(--ink-900); color: white; font-family: 'Barlow Condensed', sans-serif;
   font-size: 18px; font-weight: 800; display: grid; place-items: center;
   border-radius: var(--radius);
   flex-shrink: 0;
@@ -260,7 +260,7 @@
 .jcommit__body { font-size: 15px; line-height: 1.8; color: var(--ink-400); margin-bottom: 28px; }
 .jcommit__more {
   display: inline-flex; align-items: center; gap: 10px;
-  font-family: 'Montserrat', sans-serif;
+  font-family: 'Barlow Condensed', sans-serif;
   font-size: 13px; font-weight: 700;
   background: var(--ink-900); color: white; border: 0;
   border-radius: var(--radius);
@@ -279,7 +279,7 @@
   display: grid; place-items: center; margin-bottom: 16px;
 }
 .jfeats__title {
-  font-family: 'Montserrat', sans-serif;
+  font-family: 'Barlow Condensed', sans-serif;
   font-size: 16px; font-weight: 800; color: var(--ink-900); margin-bottom: 10px;
 }
 .jfeats__desc { font-size: 14px; line-height: 1.7; color: var(--ink-400); }
@@ -291,7 +291,7 @@
   gap: 48px; align-items: start; margin-bottom: 56px;
 }
 .jsvc-sec__eyebrow {
-  font-family: 'Montserrat', sans-serif;
+  font-family: 'Barlow Condensed', sans-serif;
   font-size: 12px; font-weight: 700; letter-spacing: .14em;
   text-transform: uppercase; color: var(--brand-400); margin-bottom: 12px;
 }
@@ -310,13 +310,13 @@
 .jsvc-card:hover .jsvc-card__img img { transform: scale(1.05); }
 .jsvc-card__body { padding: 18px 20px 20px; }
 .jsvc-card__title {
-  font-family: 'Montserrat', sans-serif;
+  font-family: 'Barlow Condensed', sans-serif;
   font-size: 15px; font-weight: 800; color: var(--ink-900);
   margin-bottom: 8px; text-transform: uppercase; letter-spacing: .04em;
 }
 .jsvc-card__desc { font-size: 13px; line-height: 1.65; color: var(--ink-400); margin-bottom: 14px; }
 .jsvc-card__more {
-  font-family: 'Montserrat', sans-serif;
+  font-family: 'Barlow Condensed', sans-serif;
   font-size: 12px; font-weight: 700; color: var(--brand-400);
   background: none; border: 0; cursor: pointer; padding: 0;
   letter-spacing: .03em; text-transform: uppercase;
@@ -332,7 +332,7 @@
   justify-content: space-between; gap: 16px;
   padding: 22px 0; background: none; border: 0; text-align: left;
   cursor: pointer;
-  font-family: 'Montserrat', sans-serif;
+  font-family: 'Barlow Condensed', sans-serif;
   font-size: 16px; font-weight: 700; color: var(--ink-900);
   transition: color .15s;
 }
@@ -348,22 +348,22 @@
 }
 .jcta-sec::before {
   content: ''; position: absolute; inset: 0;
-  background: radial-gradient(ellipse 60% 80% at 50% 100%, rgba(249,115,22,.18), transparent);
+  background: radial-gradient(ellipse 60% 80% at 50% 100%, rgba(0,180,216,.15), transparent);
 }
 .jcta-sec__title { font-size: 36px; color: white; margin-bottom: 16px; position: relative; }
 .jcta-sec__sub { font-size: 16px; color: rgba(255,255,255,.6); margin-bottom: 36px; position: relative; max-width: 480px; margin-left: auto; margin-right: auto; line-height: 1.65; }
 .jcta-sec__btns { display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; position: relative; }
 .jcta-btn-1 {
-  font-family: 'Montserrat', sans-serif; font-size: 14px; font-weight: 800;
-  background: var(--brand-400); color: white; border: 0;
+  font-family: 'Barlow Condensed', sans-serif; font-size: 14px; font-weight: 800;
+  background: linear-gradient(90deg, #00B4D8, #1B4FD8); color: white; border: 0;
   border-radius: var(--radius);
   padding: 15px 32px; cursor: pointer;
   display: inline-flex; align-items: center; gap: 8px;
   transition: background .15s;
 }
-.jcta-btn-1:hover { background: var(--brand-600); }
+.jcta-btn-1:hover { background: linear-gradient(90deg, #0087A8, #0D2E6E); }
 .jcta-btn-2 {
-  font-family: 'Montserrat', sans-serif; font-size: 14px; font-weight: 700;
+  font-family: 'Barlow Condensed', sans-serif; font-size: 14px; font-weight: 700;
   background: transparent; color: white;
   border: 2px solid rgba(255,255,255,.3);
   border-radius: var(--radius);
@@ -376,18 +376,18 @@
 .jfoot { background: var(--ink-900); border-top: 1px solid rgba(255,255,255,.07); padding: 64px 0 32px; font-family: "Inter",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; }
 .jfoot__grid { display: grid; grid-template-columns: 1.5fr 1fr 1fr 1fr; gap: 48px; margin-bottom: 48px; }
 .jfoot__brand {
-  font-family: 'Montserrat', sans-serif; font-size: 20px; font-weight: 900;
+  font-family: 'Barlow Condensed', sans-serif; font-size: 20px; font-weight: 900;
   color: white; display: flex; align-items: center; gap: 10px; margin-bottom: 16px;
 }
 .jfoot__brand-mark {
-  width: 36px; height: 36px; background: var(--brand-400);
+  width: 36px; height: 36px; background: linear-gradient(135deg, #00B4D8, #1B4FD8);
   display: grid; place-items: center; font-size: 17px; font-weight: 900; color: white;
   border-radius: var(--radius);
 }
 .jfoot__desc { font-size: 14px; line-height: 1.75; color: rgba(255,255,255,.5); margin-bottom: 20px; }
 .jfoot__contact { display: flex; align-items: center; gap: 7px; font-size: 13.5px; color: #25D366; font-weight: 600; }
 .jfoot__col-title {
-  font-family: 'Montserrat', sans-serif; font-size: 12px; font-weight: 800;
+  font-family: 'Barlow Condensed', sans-serif; font-size: 12px; font-weight: 800;
   text-transform: uppercase; letter-spacing: .1em;
   color: rgba(255,255,255,.4); margin-bottom: 16px;
 }
@@ -434,7 +434,7 @@
 .jauth__tabs button {
   flex: 1; padding: 9px; border: 0;
   border-radius: var(--radius-xs);
-  font-family: 'Montserrat', sans-serif; font-size: 13px; font-weight: 700;
+  font-family: 'Barlow Condensed', 'Arial Narrow', sans-serif; font-size: 13px; font-weight: 700;
   cursor: pointer; background: none; color: var(--ink-400); transition: background .15s, color .15s;
 }
 .jauth__tabs button.is-active { background: var(--ink-900); color: white; border-radius: var(--radius-xs); }
@@ -459,14 +459,14 @@
 .jauth__perks { display: flex; flex-direction: column; gap: 11px; margin-top: 24px; }
 .jauth__perk { display: flex; align-items: center; gap: 10px; font-size: 13px; color: rgba(255,255,255,.75); }
 .jbtn-or {
-  font-family: 'Montserrat', sans-serif; font-size: 14px; font-weight: 700;
-  background: var(--brand-400); color: white; border: 0;
+  font-family: 'Barlow Condensed', sans-serif; font-size: 14px; font-weight: 700;
+  background: linear-gradient(90deg, #00B4D8, #1B4FD8); color: white; border: 0;
   border-radius: var(--radius);
   padding: 12px 20px; cursor: pointer;
   display: inline-flex; align-items: center; gap: 8px; justify-content: center;
   transition: background .15s; width: 100%;
 }
-.jbtn-or:hover { background: var(--brand-600); }
+.jbtn-or:hover { background: linear-gradient(90deg, #0087A8, #0D2E6E); }
 .jbtn-ghost {
   font-family: 'Inter', sans-serif; font-size: 14px; font-weight: 600;
   background: white; color: var(--ink-800);
@@ -490,7 +490,7 @@
   padding: 16px 24px; border-bottom: 1px solid var(--border); background: var(--bg-soft);
 }
 .jest__title {
-  font-family: 'Montserrat', sans-serif; font-size: 14px; font-weight: 800; color: var(--ink-900);
+  font-family: 'Barlow Condensed', 'Arial Narrow', sans-serif; font-size: 14px; font-weight: 800; color: var(--ink-900);
 }
 .jest__route { display: flex; align-items: flex-end; gap: 14px; padding: 18px 24px; border-bottom: 1px solid var(--border); flex-wrap: wrap; }
 .jest__f { display: flex; flex-direction: column; gap: 5px; }
@@ -535,5 +535,5 @@
   background: var(--ink-900); gap: 16px; flex-wrap: wrap;
 }
 .jest__total-label { font-size: 12px; color: rgba(255,255,255,.55); font-weight: 600; margin-bottom: 2px; }
-.jest__total-n { font-family: 'Montserrat', sans-serif; font-size: 32px; font-weight: 800; color: white; }
+.jest__total-n { font-family: 'Barlow Condensed', 'Arial Narrow', sans-serif; font-size: 32px; font-weight: 800; color: white; }
 .jest__total-cur { font-size: 15px; color: rgba(255,255,255,.5); font-weight: 600; margin-left: 6px; }
