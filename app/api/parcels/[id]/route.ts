@@ -31,7 +31,7 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
   if (error) return error;
 
   const body = await req.json();
-  const { status, confirmed, notes, weightKg, priceXaf, eventNote, eventLocation, items, confirmedPriceXaf, adjustmentStatus } = body;
+  const { status, confirmed, notes, weightKg, priceXaf, eventNote, eventLocation, items, confirmedPriceXaf, adjustmentStatus, marginPct } = body;
 
   // Fetch parcel with campaign to check lock status
   const existing = await prisma.parcel.findUnique({
@@ -54,9 +54,16 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
 
   // Auto-set adjustmentStatus when confirmedPriceXaf is set
   let finalAdjustmentStatus = adjustmentStatus;
+  let paymentAmountUpdate: number | undefined;
   if (confirmedPriceXaf !== undefined && adjustmentStatus === undefined) {
     const diff = Number(confirmedPriceXaf) - (existing?.priceXaf ?? 0);
-    finalAdjustmentStatus = diff > 0 ? 'pending' : 'none';
+    if (diff > 0) {
+      finalAdjustmentStatus = 'pending';
+    } else {
+      // Remise ou prix identique — on met à jour le montant du payment
+      finalAdjustmentStatus = 'discount';
+      paymentAmountUpdate = Math.round(Number(confirmedPriceXaf));
+    }
   }
 
   const parcel = await prisma.parcel.update({
@@ -70,8 +77,17 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
       ...(items     !== undefined && { items } as any),
       ...(confirmedPriceXaf !== undefined && { confirmedPriceXaf: Number(confirmedPriceXaf) }),
       ...(finalAdjustmentStatus !== undefined && { adjustmentStatus: finalAdjustmentStatus }),
+      ...(marginPct !== undefined && { marginPct: Number(marginPct) }),
     },
   });
+
+  // Mettre à jour le montant du paiement si remise appliquée
+  if (paymentAmountUpdate !== undefined) {
+    await prisma.payment.updateMany({
+      where: { parcelId: params.id },
+      data: { amount: paymentAmountUpdate },
+    }).catch(() => {});
+  }
 
   if (status) {
     const sess = await import('@/auth').then(m => m.auth());

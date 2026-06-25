@@ -446,16 +446,20 @@ export default function ParcelDetailPage({ params }) {
         </Section>
 
         {/* ── Adjustment ── */}
-        {parcel.adjustmentStatus === 'pending' && parcel.confirmedPriceXaf != null && (() => {
-          const supplement = parcel.confirmedPriceXaf - (parcel.priceXaf ?? 0);
+        {parcel.confirmedPriceXaf != null && (parcel.adjustmentStatus === 'pending' || parcel.adjustmentStatus === 'discount') && (() => {
+          const isPending  = parcel.adjustmentStatus === 'pending';
+          const diff       = parcel.confirmedPriceXaf - (parcel.priceXaf ?? 0);
+          const supplement = Math.abs(diff);
           return (
             <Section title="Ajustement de prix" col="1 / -1" badge={
-              <span style={{ fontSize: 12, fontWeight: 700, padding: '3px 8px', borderRadius: 99, background: '#fef3c7', color: '#92400e' }}>
-                ⚠️ Action requise
-              </span>
+              isPending
+                ? <span style={{ fontSize: 12, fontWeight: 700, padding: '3px 8px', borderRadius: 99, background: '#fef3c7', color: '#92400e' }}>⚠️ Action requise</span>
+                : <span style={{ fontSize: 12, fontWeight: 700, padding: '3px 8px', borderRadius: 99, background: '#dcfce7', color: '#15803d' }}>✓ Remise appliquée</span>
             }>
               <p style={{ fontSize: 13, color: '#6b7280', margin: '0 0 16px', lineHeight: 1.5 }}>
-                Après pesée à l&apos;entrepôt, le montant réel diffère de l&apos;estimation de réservation. Veuillez régler le supplément pour que votre colis soit traité.
+                {isPending
+                  ? 'Après pesée à l\'entrepôt, le montant réel diffère de l\'estimation de réservation. Veuillez régler le supplément pour que votre colis soit traité.'
+                  : 'Une remise a été appliquée par Jumla. Le montant à payer a été mis à jour.'}
               </p>
 
               {/* 3-col stats */}
@@ -474,19 +478,19 @@ export default function ParcelDetailPage({ params }) {
                   </div>
                   <div style={{ fontSize: 11, color: '#9ca3af', marginTop: 2 }}>CAD</div>
                 </div>
-                {supplement > 0 && (
-                  <div style={{ padding: '14px 16px', background: '#fffbeb', borderRadius: 12, border: '1.5px solid #fbbf24' }}>
-                    <div style={{ fontSize: 10.5, fontWeight: 700, color: '#92400e', textTransform: 'uppercase', letterSpacing: '.05em', marginBottom: 8 }}>Supplément dû</div>
-                    <div style={{ fontFamily: 'monospace', fontSize: 22, fontWeight: 800, color: '#92400e' }}>
-                      +{supplement.toLocaleString('fr')}
-                    </div>
-                    <div style={{ fontSize: 11, color: '#b45309', marginTop: 2 }}>CAD</div>
+                <div style={{ padding: '14px 16px', borderRadius: 12, border: isPending ? '1.5px solid #fbbf24' : '1.5px solid #86efac', background: isPending ? '#fffbeb' : '#f0fdf4' }}>
+                  <div style={{ fontSize: 10.5, fontWeight: 700, color: isPending ? '#92400e' : '#15803d', textTransform: 'uppercase', letterSpacing: '.05em', marginBottom: 8 }}>
+                    {isPending ? 'Supplément dû' : 'Remise'}
                   </div>
-                )}
+                  <div style={{ fontFamily: 'monospace', fontSize: 22, fontWeight: 800, color: isPending ? '#92400e' : '#15803d' }}>
+                    {isPending ? '+' : '−'}{supplement.toLocaleString('fr')}
+                  </div>
+                  <div style={{ fontSize: 11, color: isPending ? '#b45309' : '#16a34a', marginTop: 2 }}>CAD</div>
+                </div>
               </div>
 
-              {/* CTA Interac */}
-              {supplement > 0 && (
+              {/* CTA Interac — seulement pour les suppléments */}
+              {isPending && supplement > 0 && (
                 <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12, padding: '12px 16px', background: 'white', border: '1px solid #e5e7eb', borderLeft: '3px solid #F5A524', borderRadius: 10 }}>
                   <span style={{ fontSize: 18, flexShrink: 0, marginTop: 1 }}>💸</span>
                   <div style={{ fontSize: 12.5, color: '#374151', lineHeight: 1.6 }}>
