@@ -908,6 +908,13 @@ function RouteEditModal({ editRoute, onClose, onSaved }) {
   const [marginPct,      setMarginPct]      = useState(String(r?.fees?.marginPct  ?? 30));
   const [deliveryFeeIle, setDeliveryFeeIle] = useState(String(r?.fees?.deliveryFee ?? 25));
 
+  // Contact & dépôt
+  const [dropoffAddress,      setDropoffAddress]      = useState(r?.fees?.dropoff?.address      || '');
+  const [dropoffPhone,        setDropoffPhone]        = useState(r?.fees?.dropoff?.phone        || '');
+  const [dropoffWhatsapp,     setDropoffWhatsapp]     = useState(r?.fees?.dropoff?.whatsapp     || '');
+  const [dropoffHours,        setDropoffHours]        = useState(r?.fees?.dropoff?.hours        || '');
+  const [dropoffInstructions, setDropoffInstructions] = useState(r?.fees?.dropoff?.instructions || '');
+
   // Helpers paliers
   const updTier = (id, k, v) => setTiers(ts => ts.map(t => t.id === id ? { ...t, [k]: v } : t));
   const delTier = (id) => setTiers(ts => ts.filter(t => t.id !== id));
@@ -932,6 +939,13 @@ function RouteEditModal({ editRoute, onClose, onSaved }) {
         supplements: { vetements: parseFloat(suppVetements)||2, cosmetique: parseFloat(suppCosmetique)||3, biere: parseFloat(suppBiere)||6, electronique: parseFloat(suppElectronique)||5, documents: parseFloat(suppDocuments)||-2 },
         marginPct:   parseFloat(marginPct) || 30,
         deliveryFee: parseFloat(deliveryFeeIle) || 25,
+        dropoff: {
+          address:      dropoffAddress.trim()      || null,
+          phone:        dropoffPhone.trim()        || null,
+          whatsapp:     dropoffWhatsapp.trim()     || null,
+          hours:        dropoffHours.trim()        || null,
+          instructions: dropoffInstructions.trim() || null,
+        },
       };
       const payload = {
         origin: origin.toUpperCase().trim(),
@@ -1174,6 +1188,38 @@ function RouteEditModal({ editRoute, onClose, onSaved }) {
                 <span style={{ fontSize: 12, color: 'var(--ink-400)' }}>{currency} <span style={{ fontSize: 11, color: 'var(--ink-300)' }}>(auto)</span></span>
               </div>
             </div>
+          </div>
+        </div>
+
+        {/* Section 7 — Contact & dépôt */}
+        <SectionTitle>Contact & instructions de dépôt</SectionTitle>
+        <div className="card" style={{ padding: 20, marginBottom: 20 }}>
+          <p style={{ fontSize: 12, color: 'var(--ink-400)', marginBottom: 14, lineHeight: 1.5 }}>
+            Ces informations sont affichées au client dans sa confirmation de réservation pour qu'il sache où et comment déposer son colis.
+          </p>
+          <div className="field-row field-row--2">
+            <div className="field">
+              <label className="label">Téléphone contact dépôt</label>
+              <input className="input" type="tel" value={dropoffPhone} onChange={e => setDropoffPhone(e.target.value)} placeholder="+237 6 XX XX XX XX" />
+            </div>
+            <div className="field">
+              <label className="label">WhatsApp</label>
+              <input className="input" type="tel" value={dropoffWhatsapp} onChange={e => setDropoffWhatsapp(e.target.value)} placeholder="+237 6 XX XX XX XX" />
+            </div>
+          </div>
+          <div className="field">
+            <label className="label">Adresse de dépôt</label>
+            <input className="input" value={dropoffAddress} onChange={e => setDropoffAddress(e.target.value)} placeholder="ex: 45 Rue de la Réunification, Akwa, Douala" />
+          </div>
+          <div className="field">
+            <label className="label">Horaires</label>
+            <input className="input" value={dropoffHours} onChange={e => setDropoffHours(e.target.value)} placeholder="ex: Lun–Sam · 08h–18h" />
+          </div>
+          <div className="field" style={{ marginBottom: 0 }}>
+            <label className="label">Instructions de dépôt <span className="opt">/ texte libre</span></label>
+            <textarea className="input" rows={4} value={dropoffInstructions} onChange={e => setDropoffInstructions(e.target.value)}
+              style={{ resize: 'vertical' }}
+              placeholder="ex: Venez avec une pièce d'identité et votre numéro de suivi. Un reçu vous sera remis sur place. Prévenez-nous 24h avant votre venue par WhatsApp." />
           </div>
         </div>
 

@@ -782,6 +782,7 @@ export default function BookingScreen({ onNav, embedded = false }) {
   const [payStatus, setPayStatus]   = useState('idle');
   const [bookingRef, setBookingRef] = useState('');
   const [bookingErr, setBookingErr] = useState('');
+  const [dropoffInfo, setDropoffInfo] = useState(null);
   const [paymentEmail, setPaymentEmail] = useState('paiement@jumla.cargo');
   const [user, setUser] = useState(() => {
     try { return JSON.parse(localStorage.getItem('jumla_user')); } catch { return null; }
@@ -948,6 +949,7 @@ export default function BookingScreen({ onNav, embedded = false }) {
         return;
       }
       setBookingRef(json.trackingCode);
+      setDropoffInfo(json.dropoff ?? null);
       setPayStatus('pending');
     } catch {
       setBookingErr('Erreur réseau. Réessayez.');
@@ -1063,6 +1065,60 @@ export default function BookingScreen({ onNav, embedded = false }) {
                   ⚠️ Sans paiement, votre colis <strong>ne sera pas traité</strong>. Incluez <strong>{refCode}</strong> dans le message du virement.
                 </div>
               </div>
+
+              {/* Dropoff contact & instructions */}
+              {dropoffInfo && (dropoffInfo.address || dropoffInfo.phone || dropoffInfo.whatsapp || dropoffInfo.instructions) && (
+                <div style={{ width: '100%', maxWidth: 420, marginBottom: 14 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+                    <span style={{ fontSize: 20 }}>📦</span>
+                    <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--ink-800)' }}>Comment déposer votre colis</span>
+                  </div>
+                  <div style={{ background: 'var(--bg-soft)', border: '1.5px solid var(--border)', borderRadius: 'var(--radius)', overflow: 'hidden', marginBottom: 10 }}>
+                    {dropoffInfo.address && (
+                      <div style={{ display: 'flex', gap: 10, padding: '10px 14px', borderBottom: '1px solid var(--border-soft)' }}>
+                        <span style={{ fontSize: 13, flexShrink: 0 }}>📍</span>
+                        <div>
+                          <div style={{ fontSize: 11, color: 'var(--ink-400)', fontWeight: 600, marginBottom: 2 }}>Adresse de dépôt</div>
+                          <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--ink-900)' }}>{dropoffInfo.address}</div>
+                        </div>
+                      </div>
+                    )}
+                    {dropoffInfo.hours && (
+                      <div style={{ display: 'flex', gap: 10, padding: '10px 14px', borderBottom: '1px solid var(--border-soft)' }}>
+                        <span style={{ fontSize: 13, flexShrink: 0 }}>🕐</span>
+                        <div>
+                          <div style={{ fontSize: 11, color: 'var(--ink-400)', fontWeight: 600, marginBottom: 2 }}>Horaires</div>
+                          <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--ink-900)' }}>{dropoffInfo.hours}</div>
+                        </div>
+                      </div>
+                    )}
+                    {(dropoffInfo.phone || dropoffInfo.whatsapp) && (
+                      <div style={{ display: 'flex', gap: 10, padding: '10px 14px', borderBottom: dropoffInfo.instructions ? '1px solid var(--border-soft)' : 'none' }}>
+                        <span style={{ fontSize: 13, flexShrink: 0 }}>📞</span>
+                        <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap' }}>
+                          {dropoffInfo.phone && (
+                            <div>
+                              <div style={{ fontSize: 11, color: 'var(--ink-400)', fontWeight: 600, marginBottom: 2 }}>Téléphone</div>
+                              <a href={`tel:${dropoffInfo.phone}`} style={{ fontSize: 13, fontWeight: 700, color: 'var(--brand-700)', textDecoration: 'none' }}>{dropoffInfo.phone}</a>
+                            </div>
+                          )}
+                          {dropoffInfo.whatsapp && (
+                            <div>
+                              <div style={{ fontSize: 11, color: 'var(--ink-400)', fontWeight: 600, marginBottom: 2 }}>WhatsApp</div>
+                              <a href={`https://wa.me/${dropoffInfo.whatsapp.replace(/[^0-9]/g, '')}`} target="_blank" rel="noreferrer" style={{ fontSize: 13, fontWeight: 700, color: '#25D366', textDecoration: 'none' }}>{dropoffInfo.whatsapp}</a>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                    {dropoffInfo.instructions && (
+                      <div style={{ padding: '12px 14px', fontSize: 12.5, color: 'var(--ink-700)', lineHeight: 1.7, whiteSpace: 'pre-line' }}>
+                        {dropoffInfo.instructions}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
 
               {/* Adjustment notice */}
               <div style={{ width: '100%', maxWidth: 420, background: 'var(--brand-50)', border: '1px solid var(--brand-100)', borderRadius: 'var(--radius)', padding: '12px 14px', fontSize: 12.5, color: 'var(--brand-700)', lineHeight: 1.65, marginBottom: 8 }}>

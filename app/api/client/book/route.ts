@@ -54,7 +54,10 @@ export async function POST(req: NextRequest) {
   }
 
   // Block booking on campaigns that are no longer open
-  const campaign = await prisma.campaign.findUnique({ where: { id: campaignId }, select: { status: true } });
+  const campaign = await prisma.campaign.findUnique({
+    where: { id: campaignId },
+    select: { status: true, route: { select: { fees: true, origin: true } } },
+  });
   if (!campaign) return NextResponse.json({ error: 'Cargaison introuvable' }, { status: 404 });
   if (campaign.status !== 'enr') {
     return NextResponse.json({ error: 'Cette cargaison n\'est plus ouverte aux réservations' }, { status: 409 });
@@ -145,10 +148,15 @@ export async function POST(req: NextRequest) {
     }).catch(() => {});
   }
 
+  const routeFees = campaign.route?.fees as any;
+  const dropoff   = routeFees?.dropoff ?? null;
+
   return NextResponse.json({
     ok:           true,
     trackingCode: parcel.trackingCode,
     parcelId:     parcel.id,
     campaign:     parcel.campaign.code,
+    dropoff,
+    routeOrigin:  campaign.route?.origin ?? null,
   });
 }
