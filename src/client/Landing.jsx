@@ -7,18 +7,12 @@ import { TopBar, SiteNav, SiteFooter } from './SiteLayout.jsx';
 import '@/src/styles/client-omega.css';
 
 const IMGS = {
-  hero:    'https://images.pexels.com/photos/46148/aircraft-jet-landing-cloud-46148.jpeg?auto=compress&cs=tinysrgb&w=1400',
-  cargo:   'https://images.pexels.com/photos/2026324/pexels-photo-2026324.jpeg?auto=compress&cs=tinysrgb&w=900',
-  airport: 'https://images.pexels.com/photos/358319/pexels-photo-358319.jpeg?auto=compress&cs=tinysrgb&w=900',
-  team:    'https://images.pexels.com/photos/4480505/pexels-photo-4480505.jpeg?auto=compress&cs=tinysrgb&w=900',
-  svc1:    'https://images.pexels.com/photos/46148/aircraft-jet-landing-cloud-46148.jpeg?auto=compress&cs=tinysrgb&w=600',
-  svc2:    'https://images.pexels.com/photos/4481259/pexels-photo-4481259.jpeg?auto=compress&cs=tinysrgb&w=600',
-  svc3:    'https://images.pexels.com/photos/1267338/pexels-photo-1267338.jpeg?auto=compress&cs=tinysrgb&w=600',
-  svc4:    'https://images.pexels.com/photos/4481327/pexels-photo-4481327.jpeg?auto=compress&cs=tinysrgb&w=600',
+  hero:    'https://images.pexels.com/photos/46148/aircraft-jet-landing-cloud-46148.jpeg?auto=compress&cs=tinysrgb&w=1600',
+  cargo:   'https://images.pexels.com/photos/2026324/pexels-photo-2026324.jpeg?auto=compress&cs=tinysrgb&w=1600',
+  airport: 'https://images.pexels.com/photos/358319/pexels-photo-358319.jpeg?auto=compress&cs=tinysrgb&w=1600',
 };
 
-
-/* ─── Hero plein fond ─── */
+/* ─── Hero split layout ─── */
 function JHero({ onBook, onNav }) {
   const [code, setCode] = useState('');
 
@@ -29,221 +23,253 @@ function JHero({ onBook, onNav }) {
   };
 
   return (
-    <section className="jhero">
-      <img className="jhero__bg" src={IMGS.hero} alt="" />
-      <div className="jhero__overlay" />
+    <section className="jhero2">
       <div className="jc">
-        <div className="jhero__content">
-          <h1 className="jhero__title">
-            <span className="or">Rapide</span> <span className="wh">&amp; fiable</span><br />
-            <span className="wh">partout au</span> <span className="or">Canada</span>
-          </h1>
-          <p className="jhero__sub">
-            Jumla Shipping est le spécialiste du fret aérien entre le Cameroun et le Canada.
-            Réservez en ligne, déposez vos colis à Douala — votre destinataire les reçoit à Montréal en 14 jours.
-          </p>
-          <div className="jhero__btns">
-            <button className="jhero__btn-1" onClick={onBook}>En savoir plus</button>
-            <button className="jhero__btn-2" onClick={() => document.getElementById('jabout')?.scrollIntoView({ behavior: 'smooth' })}>
-              Notre histoire
-            </button>
-          </div>
+        <div className="jhero2__grid">
 
-          {/* Widget suivi colis */}
-          <div style={{ marginTop: 28, background: 'rgba(255,255,255,.07)', backdropFilter: 'blur(10px)', border: '1px solid rgba(255,255,255,.15)', borderRadius: 12, padding: '16px 18px' }}>
-            <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.15em', color: '#00B4D8', marginBottom: 10 }}>
-              Suivre un colis
+          {/* Left — headline */}
+          <div className="jhero2__left">
+            <div className="jhero2__eyebrow">
+              <span className="jhero2__eyebrow-dot" />
+              Spécialiste du fret aérien · Douala → Montréal
             </div>
-            <form onSubmit={handleTrack} style={{ display: 'flex', gap: 8 }}>
-              <input
-                value={code}
-                onChange={e => setCode(e.target.value.toUpperCase())}
-                placeholder="JMS-12345"
-                style={{
-                  flex: 1, height: 46, padding: '0 14px',
-                  background: 'rgba(255,255,255,.1)', border: '1px solid rgba(255,255,255,.2)',
-                  color: 'white', fontFamily: 'JetBrains Mono, ui-monospace, monospace', fontSize: 15, fontWeight: 700,
-                  letterSpacing: '.06em', outline: 'none', borderRadius: 8,
-                }}
-              />
-              <button type="submit" style={{
-                padding: '0 22px', background: 'linear-gradient(90deg, #00B4D8, #1B4FD8)',
-                color: 'white', border: 'none',
-                fontFamily: "'Barlow Condensed', sans-serif",
-                fontWeight: 700, fontSize: 15, letterSpacing: '.08em', textTransform: 'uppercase',
-                cursor: 'pointer', borderRadius: 8, whiteSpace: 'nowrap',
-                boxShadow: '0 4px 14px rgba(27,79,216,.4)',
-              }}>
-                Suivre →
+            <h1 className="jhero2__title">
+              Chaque colis,<br />
+              livré de <span className="cy">Douala</span><br />
+              à <span className="cy">Montréal</span>
+            </h1>
+            <p className="jhero2__sub">
+              Réservez en ligne, déposez vos colis à Douala — votre destinataire les reçoit à Montréal en 14 jours.
+              Suivi en temps réel et notification WhatsApp à chaque étape.
+            </p>
+            <div className="jhero2__btns">
+              <button className="jhero2__btn-primary" onClick={onBook}>
+                Réserver un envoi
               </button>
-            </form>
-          </div>
-
-          <div className="jhero__stats">
-            {[
-              { n: '14 jours', l: 'Transit moyen' },
-              { n: '12 000+',  l: 'Colis livrés' },
-              { n: '98%',      l: 'Taux de succès' },
-              { n: '2 500+',   l: 'Clients fidèles' },
-            ].map(({ n, l }) => (
-              <div key={l} className="jhero__stat">
-                <div className="jhero__stat-n">{n}</div>
-                <div className="jhero__stat-l">{l}</div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-    </section>
-  );
-}
-
-/* ─── About ─── */
-function JAbout() {
-  return (
-    <section className="jabout" id="jabout">
-      <div className="jc">
-        <span className="jabout__eyebrow">Bienvenue chez Jumla Shipping</span>
-        <div className="jabout__grid">
-          <div>
-            <h2 className="jabout__title">
-              Nous sommes experts du<br />
-              <span className="or">fret aérien</span> international
-            </h2>
-            <div style={{ marginTop: 28 }}>
-              <p className="jabout__body">
-                Depuis 2021, Jumla Shipping connecte la diaspora africaine au Canada grâce au transport aérien.
-                Chaque colis est pris en charge de Douala jusqu'à la porte de votre destinataire à Montréal,
-                avec un suivi en temps réel et une vérification article par article à l'arrivée.
-              </p>
+              <button className="jhero2__btn-ghost" onClick={() => document.getElementById('jest')?.scrollIntoView({ behavior: 'smooth' })}>
+                Calculer mon tarif →
+              </button>
             </div>
-            <div className="jabout__ceo">
-              <div className="jabout__ceo-av">JD</div>
-              <div>
-                <div className="jabout__ceo-name">Jean-Paul Douala</div>
-                <div className="jabout__ceo-role">Directeur Général · Jumla Shipping</div>
-              </div>
-            </div>
-          </div>
-          <div>
-            <p className="jabout__body">
-              Nos décisions opérationnelles sont guidées par une seule priorité : que chaque colis arrive intact,
-              à temps, et que l'expéditeur comme le destinataire soient informés à chaque étape du voyage.
-            </p>
-            <p className="jabout__body">
-              Nous avons bâti un réseau de partenaires aériens fiables — Air France Cargo, Ethiopian Airlines,
-              Turkish Cargo — pour garantir la régularité des rotations et la sécurité de vos marchandises,
-              quelles que soient les saisons.
-            </p>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 24, marginTop: 36, paddingTop: 28, borderTop: '1px solid var(--border)' }}>
-              {[{ n: '14j', l: 'Transit moyen' }, { n: '12k+', l: 'Colis livrés' }, { n: '98%', l: 'Succès' }].map(({ n, l }) => (
-                <div key={l}>
-                  <div style={{ fontFamily: 'Montserrat, sans-serif', fontSize: 32, fontWeight: 900, color: 'var(--ink-900)', letterSpacing: '-.03em' }}>{n}</div>
-                  <div style={{ fontSize: 13, color: 'var(--ink-400)', marginTop: 4 }}>{l}</div>
+            <div className="jhero2__stats">
+              {[
+                { n: '14 jours', l: 'Transit moyen' },
+                { n: '12 000+',  l: 'Colis livrés' },
+                { n: '98%',      l: 'Taux de succès' },
+              ].map(({ n, l }, i) => (
+                <div key={l} className="jhero2__stat">
+                  {i > 0 && <div className="jhero2__stat-sep" />}
+                  <div className="jhero2__stat-n">{n}</div>
+                  <div className="jhero2__stat-l">{l}</div>
                 </div>
               ))}
             </div>
           </div>
-        </div>
-      </div>
-    </section>
-  );
-}
 
-/* ─── Commitment ─── */
-function JCommit({ onBook }) {
-  return (
-    <section className="jcommit">
-      <div className="jc">
-        <div className="jcommit__grid">
-          <div className="jcommit__photos">
-            <div className="jcommit__photo jcommit__photo--tall">
-              <img src={IMGS.cargo} alt="Fret aérien" />
-            </div>
-            <div className="jcommit__photo">
-              <img src={IMGS.airport} alt="Aéroport" />
-            </div>
-            <div className="jcommit__photo">
-              <img src={IMGS.team} alt="Équipe" />
-            </div>
-          </div>
-          <div>
-            <h2 className="jcommit__title">
-              Nous sommes engagés à fournir un service<br />
-              <span className="or">sécurisé, équitable et fiable.</span>
-            </h2>
-            <p className="jcommit__body">
-              Chaque colis est photographié au départ, pesé, et pointé article par article à l'arrivée à Montréal.
-              Vous recevez une notification WhatsApp à chaque étape du voyage — sans avoir à demander.
-            </p>
-            <button className="jcommit__more" onClick={onBook}>
-              <I.Plus style={{ width: 16, height: 16 }} /> Réserver maintenant
-            </button>
-          </div>
-        </div>
-      </div>
-    </section>
-  );
-}
+          {/* Right — tracking card */}
+          <div className="jhero2__right">
+            <div className="jhero2__card">
+              <div className="jhero2__card-header">
+                <div className="jhero2__card-icon">
+                  <I.Search style={{ width: 16, height: 16 }} />
+                </div>
+                <span className="jhero2__card-title">Suivre mon colis</span>
+              </div>
 
-/* ─── Features bar ─── */
-function JFeats() {
-  const feats = [
-    { Icon: I.Plane,    t: 'Livraison aérienne express',   d: 'Transit garanti 14 jours porte à porte entre Douala et Montréal grâce à nos partenaires aériens.' },
-    { Icon: I.Sparkle,  t: 'Meilleur service du marché',   d: 'Vérification article par article, photos au départ et notification WhatsApp à chaque étape.' },
-    { Icon: I.Globe,    t: 'Partout au Canada',             d: 'Livraison à domicile dans tout le Québec ou retrait à notre entrepôt de Montréal.' },
-  ];
-  return (
-    <section className="jfeats">
-      <div className="jc">
-        <div className="jfeats__grid">
-          {feats.map(({ Icon, t, d }) => (
-            <div key={t}>
-              <div className="jfeats__icon"><Icon style={{ width: 24, height: 24 }} /></div>
-              <div className="jfeats__title">{t}</div>
-              <p className="jfeats__desc">{d}</p>
-            </div>
-          ))}
-        </div>
-      </div>
-    </section>
-  );
-}
+              <form onSubmit={handleTrack}>
+                <label className="jhero2__card-label">Numéro de suivi</label>
+                <input
+                  value={code}
+                  onChange={e => setCode(e.target.value.toUpperCase())}
+                  placeholder="JMS-12345"
+                  className="jhero2__card-input"
+                />
+                <button type="submit" className="jhero2__card-btn">
+                  Suivre mon colis →
+                </button>
+              </form>
 
-/* ─── Services cards ─── */
-function JServices({ onBook }) {
-  const svcs = [
-    { img: IMGS.svc1, t: 'Fret aérien',        d: 'Transport direct Douala → Montréal. Le plus rapide et le plus sécurisé pour vos colis.' },
-    { img: IMGS.svc2, t: 'Livraison domicile',  d: 'Votre destinataire reçoit son colis à domicile. Créneau sur rendez-vous, signature requise.' },
-    { img: IMGS.svc3, t: 'Retrait entrepôt',    d: 'Récupération à notre entrepôt de Montréal. Horaires étendus, pas d\'avance requise.' },
-    { img: IMGS.svc4, t: 'Suivi temps réel',    d: 'Notifications WhatsApp & SMS à chaque étape. Expéditeur et destinataire toujours informés.' },
-  ];
-  return (
-    <section className="jsvc-sec" id="jsvc">
-      <div className="jc">
-        <div className="jsvc-sec__head">
-          <div>
-            <div className="jsvc-sec__eyebrow">Ce que nous proposons</div>
-            <h2 className="jsvc-sec__title">
-              Jumla <span className="or">Service</span>
-            </h2>
-          </div>
-          <p className="jsvc-sec__body">
-            Un seul interlocuteur pour tout votre envoi — de la prise en charge à Douala jusqu'à la remise
-            au destinataire au Canada. Transparence totale, zéro mauvaise surprise.
-          </p>
-        </div>
-        <div className="jsvc-grid">
-          {svcs.map(({ img, t, d }) => (
-            <div key={t} className="jsvc-card">
-              <div className="jsvc-card__img"><img src={img} alt={t} /></div>
-              <div className="jsvc-card__body">
-                <div className="jsvc-card__title">{t}</div>
-                <p className="jsvc-card__desc">{d}</p>
-                <button className="jsvc-card__more" onClick={onBook}>En savoir plus →</button>
+              <div className="jhero2__card-divider" />
+
+              <div className="jhero2__card-route">
+                <div className="jhero2__card-city">
+                  <div className="jhero2__card-city-label">Départ</div>
+                  <div className="jhero2__card-city-name">DOUALA</div>
+                  <div className="jhero2__card-city-sub">DLA · Cameroun</div>
+                </div>
+                <div className="jhero2__card-plane">
+                  <I.Plane style={{ width: 20, height: 20, color: '#00B4D8' }} />
+                </div>
+                <div className="jhero2__card-city" style={{ textAlign: 'right' }}>
+                  <div className="jhero2__card-city-label">Arrivée</div>
+                  <div className="jhero2__card-city-name">MONTRÉAL</div>
+                  <div className="jhero2__card-city-sub">YUL · Canada</div>
+                </div>
+              </div>
+
+              <div className="jhero2__card-badge">
+                <span className="jhero2__card-badge-dot" />
+                Transit 14 jours · Notification WhatsApp incluse
               </div>
             </div>
+
+            <div className="jhero2__card-book">
+              Pas encore client ?{' '}
+              <button onClick={onBook} className="jhero2__card-book-link">
+                Créer un envoi maintenant
+              </button>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ─── Full-width plane photo divider ─── */
+function JPlanePhoto() {
+  return (
+    <div className="jplane">
+      <img className="jplane__img" src={IMGS.hero} alt="Fret aérien Jumla Shipping" />
+      <div className="jplane__overlay" />
+      <div className="jplane__content">
+        <div className="jplane__route">
+          <span className="jplane__iata">DLA</span>
+          <I.Plane style={{ width: 32, height: 32, color: 'white' }} />
+          <span className="jplane__iata">YUL</span>
+        </div>
+        <div className="jplane__label">Douala → Montréal · Vol direct · 14 jours de transit</div>
+      </div>
+    </div>
+  );
+}
+
+/* ─── Services 3-column text grid ─── */
+function JServices({ onBook }) {
+  const svcs = [
+    {
+      Icon: I.Plane,
+      num: '01',
+      t: 'Fret aérien express',
+      d: 'Transport direct Douala → Montréal via nos partenaires certifiés (Air France Cargo, Ethiopian Airlines). Délai garanti 14 jours porte à porte.',
+    },
+    {
+      Icon: I.Box,
+      num: '02',
+      t: 'Livraison à domicile',
+      d: 'Votre destinataire reçoit son colis directement chez lui, partout au Québec. Créneau sur rendez-vous, signature requise, paiement à la porte.',
+    },
+    {
+      Icon: I.Search,
+      num: '03',
+      t: 'Suivi en temps réel',
+      d: 'Notifications WhatsApp & SMS automatiques à chaque étape — prise en charge, départ, transit, arrivée, livraison. Expéditeur et destinataire toujours informés.',
+    },
+  ];
+
+  return (
+    <section className="jsvc3" id="jsvc">
+      <div className="jc">
+        <div className="jsvc3__head">
+          <div className="jsvc3__eyebrow">Ce que nous proposons</div>
+          <h2 className="jsvc3__title">
+            Nos <span className="cy">services</span>
+          </h2>
+          <p className="jsvc3__subtitle">
+            Un seul interlocuteur de Douala jusqu'au Canada. Transparence totale, zéro mauvaise surprise.
+          </p>
+        </div>
+        <div className="jsvc3__grid">
+          {svcs.map(({ Icon, num, t, d }) => (
+            <div key={t} className="jsvc3__item">
+              <div className="jsvc3__item-top">
+                <div className="jsvc3__num">{num}</div>
+                <div className="jsvc3__icon-wrap">
+                  <Icon style={{ width: 24, height: 24 }} />
+                </div>
+              </div>
+              <h3 className="jsvc3__item-title">{t}</h3>
+              <p className="jsvc3__item-desc">{d}</p>
+              <button className="jsvc3__more" onClick={onBook}>En savoir plus →</button>
+            </div>
           ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ─── Features accordion ─── */
+function JFeats({ onBook }) {
+  const [open, setOpen] = useState(0);
+
+  const feats = [
+    {
+      t: 'Vérification article par article',
+      d: 'Chaque colis est photographié et listé sur un bordereau signé au départ. À l\'arrivée à Montréal, nos agents vérifient chaque article. En cas d\'écart, vous êtes alertés immédiatement par WhatsApp.',
+    },
+    {
+      t: 'Réseau de partenaires aériens fiables',
+      d: 'Air France Cargo, Ethiopian Airlines, Turkish Cargo — nous choisissons les rotations les plus régulières pour garantir la ponctualité de vos livraisons quelles que soient les saisons.',
+    },
+    {
+      t: 'Notifications automatiques à chaque étape',
+      d: 'Dès la prise en charge jusqu\'à la remise finale : vous et votre destinataire recevez une notification WhatsApp à chaque changement de statut. Aucune démarche nécessaire de votre côté.',
+    },
+    {
+      t: 'Paiement flexible à la livraison',
+      d: 'Interac, virement bancaire, Mobile Money (Orange Money, MTN) ou espèces — choisissez le mode qui vous convient. Aucun frais caché, devis instantané avec notre simulateur.',
+    },
+    {
+      t: 'Couverture dans tout le Canada',
+      d: 'Livraison à domicile dans tout le Québec ou retrait à notre entrepôt de Montréal. Nous desservons également Toronto, Ottawa et Vancouver sur commande groupée.',
+    },
+  ];
+
+  return (
+    <section className="jfeats3" id="jabout">
+      <div className="jc">
+        <div className="jfeats3__grid">
+
+          {/* Left */}
+          <div className="jfeats3__left">
+            <div className="jfeats3__eyebrow">Pourquoi Jumla</div>
+            <h2 className="jfeats3__title">
+              Un service conçu pour<br />
+              la <span className="cy">diaspora africaine</span>
+            </h2>
+            <p className="jfeats3__body">
+              Depuis 2021, nous connectons les familles entre l'Afrique et le Canada grâce à un service
+              de fret aérien simple, transparent et fiable.
+            </p>
+            <button className="jfeats3__btn" onClick={onBook}>
+              Réserver maintenant <I.ArrowRight style={{ width: 15, height: 15 }} />
+            </button>
+            <div className="jfeats3__stats">
+              {[{ n: '2 500+', l: 'Clients fidèles' }, { n: '4', l: 'Routes actives' }, { n: '22', l: 'Cargaisons / an' }].map(({ n, l }) => (
+                <div key={l} className="jfeats3__stat">
+                  <div className="jfeats3__stat-n">{n}</div>
+                  <div className="jfeats3__stat-l">{l}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Right — accordion */}
+          <div className="jfeats3__right">
+            {feats.map((f, i) => (
+              <div key={i} className={'jfeats3__item' + (open === i ? ' is-open' : '')}
+                onClick={() => setOpen(open === i ? -1 : i)}>
+                <div className="jfeats3__item-head">
+                  <span className="jfeats3__item-num">0{i + 1}</span>
+                  <span className="jfeats3__item-title">{f.t}</span>
+                  <span className="jfeats3__item-ic">{open === i ? '−' : '+'}</span>
+                </div>
+                {open === i && <div className="jfeats3__item-body">{f.d}</div>}
+              </div>
+            ))}
+          </div>
+
         </div>
       </div>
     </section>
@@ -278,17 +304,17 @@ function JEstimator({ onBook }) {
     <section className="jest-wrap" id="jest">
       <div className="jc">
         <div style={{ textAlign: 'center', marginBottom: 40 }}>
-          <div className="jsvc-sec__eyebrow" style={{ display: 'block', marginBottom: 10 }}>Simulateur de prix</div>
-          <h2 style={{ fontFamily: 'Montserrat, sans-serif', fontSize: '36px', color: 'var(--ink-900)', fontWeight: 900 }}>
+          <div className="jsvc3__eyebrow" style={{ display: 'block', marginBottom: 10 }}>Simulateur de prix</div>
+          <h2 style={{ fontFamily: "'Barlow Condensed', 'Arial Narrow', sans-serif", fontSize: '40px', color: 'var(--ink-900)', fontWeight: 800, letterSpacing: '-.02em' }}>
             Combien coûte mon envoi ?
           </h2>
-          <p style={{ fontSize: 15, color: 'var(--ink-400)', marginTop: 12, lineHeight: 1.65, maxWidth: 460, margin: '12px auto 0' }}>
+          <p style={{ fontSize: 15, color: 'var(--ink-400)', marginTop: 12, lineHeight: 1.65, maxWidth: 440, margin: '12px auto 0' }}>
             Calculez en quelques secondes. Sans inscription, sans engagement.
           </p>
         </div>
         <div className="jest">
           <div className="jest__head">
-            <I.Calculator style={{ width: 16, height: 16, color: "var(--brand-400)" }} />
+            <I.Calculator style={{ width: 16, height: 16, color: 'var(--brand-400)' }} />
             <span className="jest__title">Estimateur d'envoi</span>
             <span style={{ marginLeft: 'auto', fontSize: 12, color: 'var(--ink-400)' }}>Ajoutez autant d'articles que nécessaire</span>
           </div>
@@ -299,15 +325,15 @@ function JEstimator({ onBook }) {
                 {routes.map(rr => <option key={rr.id} value={rr.id}>{rr.fromCity} ({rr.fromIATA})</option>)}
               </select>
             </div>
-            <I.ArrowRight style={{ width: 18, height: 18, color: "var(--ink-300)", alignSelf: 'flex-end', marginBottom: 11 }} />
+            <I.ArrowRight style={{ width: 18, height: 18, color: 'var(--ink-300)', alignSelf: 'flex-end', marginBottom: 11 }} />
             <div className="jest__f">
               <label>Destination</label>
               <select>{routes.map(rr => <option key={rr.id}>{rr.toCity} ({rr.toIATA})</option>)}</select>
             </div>
             <div style={{ flex: 1 }} />
             <div style={{ alignSelf: 'flex-end', marginBottom: 11, fontSize: 13, color: 'var(--ink-400)' }}>
-              Transit <strong style={{ color: "var(--ink-900)" }}>{r?.transitDays} j</strong>
-              {' · '}Tarif en <strong style={{ color: "var(--ink-900)" }}>{r?.currency}</strong>
+              Transit <strong style={{ color: 'var(--ink-900)' }}>{r?.transitDays} j</strong>
+              {' · '}Tarif en <strong style={{ color: 'var(--ink-900)' }}>{r?.currency}</strong>
             </div>
           </div>
           <div className="jest__lines">
@@ -334,7 +360,7 @@ function JEstimator({ onBook }) {
                     {c.base} <span className="jest__cur">{r?.currency}</span>
                     <div className="jest__tier">{c.tier.from}–{c.tier.to}kg · {c.tier.rate}/kg</div>
                   </div>
-                  <div className="jest__cell" style={{ textAlign: 'right', color: c.surcharge > 0 ? "var(--brand-600)" : c.surcharge < 0 ? '#059669' : "var(--ink-300)" }}>
+                  <div className="jest__cell" style={{ textAlign: 'right', color: c.surcharge > 0 ? 'var(--brand-600)' : c.surcharge < 0 ? '#059669' : 'var(--ink-300)' }}>
                     {c.surcharge > 0 ? '+' : ''}{c.surcharge} <span className="jest__cur">{r?.currency}</span>
                     <div className="jest__tier">{c.cat.label} {c.cat.pct > 0 ? '+' : ''}{c.cat.pct}%</div>
                   </div>
@@ -381,12 +407,12 @@ function JFAQ() {
   ];
   const [open, setOpen] = useState(0);
   return (
-    <section style={{ padding: '96px 0', background: '#F8F9FC' }} id="jfaq">
+    <section style={{ padding: '96px 0', background: 'var(--bg-soft)' }} id="jfaq">
       <div className="jc">
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: 72, alignItems: 'start' }}>
           <div>
-            <div className="jsvc-sec__eyebrow" style={{ display: 'block', marginBottom: 12 }}>FAQ</div>
-            <h2 style={{ fontFamily: 'Montserrat, sans-serif', fontSize: '36px', fontWeight: 900, color: 'var(--ink-900)', marginBottom: 16 }}>
+            <div className="jsvc3__eyebrow" style={{ display: 'block', marginBottom: 12 }}>FAQ</div>
+            <h2 style={{ fontFamily: "'Barlow Condensed', 'Arial Narrow', sans-serif", fontSize: '40px', fontWeight: 800, letterSpacing: '-.02em', color: 'var(--ink-900)', marginBottom: 16 }}>
               Questions fréquentes
             </h2>
             <p style={{ fontSize: 15, lineHeight: 1.75, color: 'var(--ink-400)' }}>
@@ -415,25 +441,61 @@ function JFAQ() {
   );
 }
 
-/* ─── CTA section ─── */
+/* ─── CTA with photo ─── */
 function JCTA({ onBook }) {
   return (
-    <section className="jcta-sec">
-      <div className="jc">
-        <div className="jcta-sec__title">Prêt à envoyer votre premier colis ?</div>
-        <p className="jcta-sec__sub">
-          Rejoignez 2 500+ clients qui font confiance à Jumla Shipping pour leurs envois entre l'Afrique et le Canada.
-        </p>
-        <div className="jcta-sec__btns">
-          <button className="jcta-btn-1" onClick={onBook}>
-            Réserver un envoi <I.ArrowRight style={{ width: 17, height: 17 }} />
-          </button>
+    <section className="jcta3">
+      <img className="jcta3__bg" src={IMGS.cargo} alt="" />
+      <div className="jcta3__overlay" />
+      <div className="jc" style={{ position: 'relative', zIndex: 2, height: '100%' }}>
+        <div className="jcta3__grid">
+
+          {/* Left */}
+          <div className="jcta3__left">
+            <div className="jcta3__eyebrow">Prêt à commencer ?</div>
+            <h2 className="jcta3__title">
+              Envoyez votre<br />
+              premier colis<br />
+              <span style={{ color: '#00B4D8' }}>aujourd'hui</span>
+            </h2>
+            <p className="jcta3__sub">
+              Rejoignez 2 500+ clients qui font confiance à Jumla Shipping pour leurs envois entre l'Afrique et le Canada.
+            </p>
+            <button className="jcta3__btn" onClick={onBook}>
+              Réserver un envoi <I.ArrowRight style={{ width: 17, height: 17 }} />
+            </button>
+          </div>
+
+          {/* Right — floating card */}
+          <div className="jcta3__card">
+            <div className="jcta3__card-title">Pourquoi Jumla ?</div>
+            <div className="jcta3__items">
+              {[
+                'Transit garanti 14 jours',
+                'Suivi WhatsApp à chaque étape',
+                'Vérification article par article',
+                'Livraison à domicile au Canada',
+                'Paiement flexible à la livraison',
+              ].map(t => (
+                <div key={t} className="jcta3__item">
+                  <span className="jcta3__check">✓</span>
+                  <span>{t}</span>
+                </div>
+              ))}
+            </div>
+            <div className="jcta3__card-footer">
+              <div style={{ fontSize: 12, color: 'var(--ink-400)', marginBottom: 8 }}>Une question ?</div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 7, fontSize: 14, color: '#25D366', fontWeight: 700 }}>
+                <I.Whatsapp style={{ width: 18, height: 18 }} /> WhatsApp · Réponse en 1h
+              </div>
+            </div>
+          </div>
+
         </div>
       </div>
     </section>
   );
 }
-
 
 /* ─── Root ─── */
 export default function LandingPage({ onNav }) {
@@ -456,11 +518,10 @@ export default function LandingPage({ onNav }) {
       <TopBar />
       <SiteNav onNav={onNav} onBook={onBook} mode="landing" />
       <JHero onBook={onBook} onNav={onNav} />
-      <JEstimator onBook={onBook} />
-      <JAbout />
-      <JCommit onBook={onBook} />
-      <JFeats />
+      <JPlanePhoto />
       <JServices onBook={onBook} />
+      <JFeats onBook={onBook} />
+      <JEstimator onBook={onBook} />
       <JFAQ />
       <JCTA onBook={onBook} />
       <SiteFooter />
