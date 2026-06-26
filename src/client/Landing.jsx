@@ -183,24 +183,6 @@ function JHero({ onBook, onNav, content }) {
   );
 }
 
-/* ─── Full-width plane photo divider ─── */
-function JPlanePhoto() {
-  return (
-    <div className="jplane">
-      <img className="jplane__img" src={IMGS.hero} alt="Fret aérien Jumla Shipping" />
-      <div className="jplane__overlay" />
-      <div className="jplane__content">
-        <div className="jplane__route">
-          <span className="jplane__iata">DLA</span>
-          <I.Plane style={{ width: 32, height: 32, color: 'white' }} />
-          <span className="jplane__iata">YUL</span>
-        </div>
-        <div className="jplane__label">Douala → Montréal · Vol direct · 14 jours de transit</div>
-      </div>
-    </div>
-  );
-}
-
 const SVC_ICONS = [I.Plane, I.Box, I.Search];
 
 /* ─── Services 3-column text grid ─── */
@@ -534,7 +516,6 @@ export default function LandingPage({ onNav }) {
       <TopBar />
       <SiteNav onNav={onNav} onBook={onBook} mode="landing" />
       <JHero onBook={onBook} onNav={onNav} content={content} />
-      <JPlanePhoto />
       <JServices onBook={onBook} content={content} />
       <JFeats onBook={onBook} content={content} />
       <JEstimator onBook={onBook} />
