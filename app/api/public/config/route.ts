@@ -7,6 +7,9 @@ const DEFAULTS: Record<string, string> = {
   company_name:      'Jumla Shipping',
   company_logo:      '',
   company_logo_icon: '',
+  logo_size_h:       '36',
+  logo_icon_size:    '32',
+  landing_content:   '',
 };
 
 export async function GET() {
@@ -16,10 +19,18 @@ export async function GET() {
   const m: Record<string, string> = { ...DEFAULTS };
   for (const r of rows) m[r.key] = r.value;
 
+  let landingContent = null;
+  if (m.landing_content) {
+    try { landingContent = JSON.parse(m.landing_content); } catch {}
+  }
+
   return NextResponse.json({
-    paymentEmail:   m.payment_email,
-    companyName:    m.company_name,
-    companyLogo:    m.company_logo      || null,
+    paymentEmail:    m.payment_email,
+    companyName:     m.company_name,
+    companyLogo:     m.company_logo      || null,
     companyLogoIcon: m.company_logo_icon || null,
+    logoHeight:      parseInt(m.logo_size_h)    || 36,
+    logoIconSize:    parseInt(m.logo_icon_size)  || 32,
+    landingContent,
   });
 }

@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, Fragment } from 'react';
 import I from '../components/Icons.jsx';
 import { invalidateCompanyAssets } from '../lib/useCompanyAssets.js';
 import { Bi, RoutePill, Modal, Drawer } from '../components/Shell.jsx';
+import LandingEditor from './LandingEditor.jsx';
 
 // Grille tarifaire par défaut (miroir de DEFAULT_ROUTE_FEES dans pricing.ts)
 const DEFAULT_TIERS = [
@@ -169,11 +170,13 @@ function SectionCompany() {
   });
   const [saving, setSaving]       = useState(false);
   const [saved,  setSaved]        = useState(false);
-  const [logoUrl,     setLogoUrl]     = useState('');
-  const [logoIconUrl, setLogoIconUrl] = useState('');
-  const [logoSaving,  setLogoSaving]  = useState(false);
-  const [logoSaved,   setLogoSaved]   = useState(false);
-  const [logoError,   setLogoError]   = useState('');
+  const [logoUrl,      setLogoUrl]      = useState('');
+  const [logoIconUrl,  setLogoIconUrl]  = useState('');
+  const [logoSizeH,    setLogoSizeH]    = useState(36);
+  const [logoIconSize, setLogoIconSize] = useState(32);
+  const [logoSaving,   setLogoSaving]   = useState(false);
+  const [logoSaved,    setLogoSaved]    = useState(false);
+  const [logoError,    setLogoError]    = useState('');
   const fileInputRef     = useRef(null);
   const iconInputRef     = useRef(null);
 
@@ -190,6 +193,8 @@ function SectionCompany() {
       }));
       if (d.company_logo)      setLogoUrl(d.company_logo);
       if (d.company_logo_icon) setLogoIconUrl(d.company_logo_icon);
+      if (d.logo_size_h)    setLogoSizeH(parseInt(d.logo_size_h) || 36);
+      if (d.logo_icon_size) setLogoIconSize(parseInt(d.logo_icon_size) || 32);
     }).catch(() => {});
   }, []);
 
@@ -279,7 +284,7 @@ function SectionCompany() {
         </div>
 
         {/* Icône carrée */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 16, padding: '14px 16px', background: 'var(--bg-soft)', borderRadius: 8 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 16, padding: '14px 16px', background: 'var(--bg-soft)', borderRadius: 8, marginBottom: 16 }}>
           <div style={{ width: 48, height: 48, borderRadius: 10, border: '1px solid var(--border)', background: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', flexShrink: 0 }}>
             {logoIconUrl
               ? <img src={logoIconUrl} alt="Icône" style={{ width: '100%', height: '100%', objectFit: 'contain', padding: 4 }} />
@@ -296,6 +301,47 @@ function SectionCompany() {
           <button className="btn btn--ghost btn--sm" onClick={() => iconInputRef.current?.click()} disabled={logoSaving}>
             <I.Upload />{logoSaving ? 'Envoi…' : logoIconUrl ? 'Changer' : 'Téléverser'}
           </button>
+        </div>
+
+        {/* Tailles */}
+        <div style={{ borderTop: '1px solid var(--border-soft)', paddingTop: 16 }}>
+          <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--ink-800)', marginBottom: 12 }}>Tailles d'affichage</div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+            <div>
+              <label className="label">Hauteur du logo complet (px)</label>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <input type="range" min={20} max={72} value={logoSizeH}
+                  onChange={e => setLogoSizeH(parseInt(e.target.value))}
+                  style={{ flex: 1 }} />
+                <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--ink-700)', minWidth: 32 }}>{logoSizeH}px</span>
+              </div>
+              <div style={{ fontSize: 11, color: 'var(--ink-400)', marginTop: 4 }}>Hauteur dans la nav et le footer</div>
+            </div>
+            <div>
+              <label className="label">Taille de l'icône carrée (px)</label>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <input type="range" min={18} max={56} value={logoIconSize}
+                  onChange={e => setLogoIconSize(parseInt(e.target.value))}
+                  style={{ flex: 1 }} />
+                <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--ink-700)', minWidth: 32 }}>{logoIconSize}px</span>
+              </div>
+              <div style={{ fontSize: 11, color: 'var(--ink-400)', marginTop: 4 }}>Taille dans la sidebar et l'écran de connexion</div>
+            </div>
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 12 }}>
+            <button className="btn btn--ghost btn--sm" disabled={logoSaving} onClick={async () => {
+              setLogoSaving(true);
+              await fetch('/api/settings', {
+                method: 'PUT', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ logo_size_h: String(logoSizeH), logo_icon_size: String(logoIconSize) }),
+              });
+              invalidateCompanyAssets();
+              setLogoSaving(false); setLogoSaved(true);
+              setTimeout(() => setLogoSaved(false), 3000);
+            }}>
+              <I.Check />{logoSaving ? 'Enregistrement…' : 'Appliquer les tailles'}
+            </button>
+          </div>
         </div>
       </SettingsCard>
     </>
@@ -1326,6 +1372,7 @@ export default function SettingsScreen({ onNav }) {
         {/* Content */}
         <div>
           {section === 'company'   && <SectionCompany />}
+          {section === 'landing'   && <LandingEditor />}
           {section === 'routes'    && (
             <>
               <SectionRoutes routes={routes} onEdit={setEditRoute} onDetail={setRouteDetail} />

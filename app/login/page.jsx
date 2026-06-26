@@ -9,7 +9,7 @@ function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const initialTab = searchParams.get('tab') === 'register' ? 'register' : 'login';
-  const { logoIconUrl } = useCompanyAssets();
+  const { logoIconUrl, logoIconSize } = useCompanyAssets();
   const [tab, setTab]     = useState(initialTab); // 'login' | 'register' | 'verify'
   const [fields, setFields] = useState({ email: '', name: '', password: '', confirm: '' });
   const [code, setCode]     = useState('');
@@ -93,7 +93,7 @@ function LoginForm() {
           background: 'none', border: 'none', cursor: 'pointer', padding: 0, color: 'inherit',
         }}>
           {logoIconUrl
-            ? <img src={logoIconUrl} alt="Logo" style={{ width: 44, height: 44, objectFit: 'contain' }} />
+            ? <img src={logoIconUrl} alt="Logo" style={{ width: logoIconSize + 12, height: logoIconSize + 12, objectFit: 'contain' }} />
             : <svg width="44" height="44" viewBox="0 0 48 48" fill="none">
                 <defs><linearGradient id="llg" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stopColor="#00B4D8"/><stop offset="100%" stopColor="#1B4FD8"/></linearGradient></defs>
                 <path d="M8 8 C8 6 10 4 12 5 L38 20 C40 21 40 27 38 28 L12 43 C10 44 8 42 8 40 Z" fill="url(#llg)"/>

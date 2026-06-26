@@ -114,7 +114,7 @@ function NotificationBell({ router }) {
 
 export default function ClientLayout({ children }) {
   const { data: session, status } = useSession();
-  const { logoIconUrl } = useCompanyAssets();
+  const { logoIconUrl, logoIconSize } = useCompanyAssets();
   const router   = useRouter();
   const pathname = usePathname();
 
@@ -150,7 +150,7 @@ export default function ClientLayout({ children }) {
           display: 'flex', alignItems: 'center', gap: 10,
           background: 'none', border: 'none', cursor: 'pointer', padding: 0, width: '100%',
         }}>
-          <div style={{ width: 34, height: 34, borderRadius: 9, overflow: 'hidden', display: 'grid', placeItems: 'center', flexShrink: 0, background: logoIconUrl ? 'white' : 'none' }}>
+          <div style={{ width: logoIconSize, height: logoIconSize, borderRadius: 9, overflow: 'hidden', display: 'grid', placeItems: 'center', flexShrink: 0, background: logoIconUrl ? 'white' : 'none' }}>
             {logoIconUrl
               ? <img src={logoIconUrl} alt="Logo" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
               : <svg width="30" height="30" viewBox="0 0 48 48" fill="none">
@@ -235,7 +235,7 @@ export default function ClientLayout({ children }) {
             {/* Mobile: logo */}
             <div className="mobile-logo" style={{ display: 'none' }}>
               <style>{`.mobile-logo { display: block; } @media (min-width: 768px) { .mobile-logo { display: none !important; } }`}</style>
-              <div style={{ width: 30, height: 30, borderRadius: 8, overflow: 'hidden', display: 'grid', placeItems: 'center', background: logoIconUrl ? 'white' : 'none' }}>
+              <div style={{ width: Math.round(logoIconSize * 0.88), height: Math.round(logoIconSize * 0.88), borderRadius: 8, overflow: 'hidden', display: 'grid', placeItems: 'center', background: logoIconUrl ? 'white' : 'none' }}>
                 {logoIconUrl
                   ? <img src={logoIconUrl} alt="Logo" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
                   : <svg width="26" height="26" viewBox="0 0 48 48" fill="none">

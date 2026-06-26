@@ -37,7 +37,7 @@ export function TopBar() {
 /* ─── Nav ─── */
 export function SiteNav({ onNav, onBook, mode = 'landing' }) {
   const { data: session, status } = useSession();
-  const { logoUrl, logoIconUrl } = useCompanyAssets();
+  const { logoUrl, logoIconUrl, logoHeight } = useCompanyAssets();
   const user = session?.user;
   const role = user?.role;
 
@@ -53,7 +53,7 @@ export function SiteNav({ onNav, onBook, mode = 'landing' }) {
           <button className="jnav__logo" onClick={() => mode === 'landing' ? window.scrollTo({ top: 0, behavior: 'smooth' }) : onNav?.('/')}
             style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 10, padding: 0 }}>
             {logoUrl ? (
-              <img src={logoUrl} alt="Logo" style={{ height: 36, maxWidth: 160, objectFit: 'contain' }} />
+              <img src={logoUrl} alt="Logo" style={{ height: logoHeight, maxWidth: 200, objectFit: 'contain' }} />
             ) : (
               <>
                 <div className="jnav__logo-mark" style={{ background: 'none', fontSize: 0 }}>
@@ -92,7 +92,7 @@ export function SiteNav({ onNav, onBook, mode = 'landing' }) {
 
 /* ─── Footer ─── */
 export function SiteFooter() {
-  const { logoUrl, logoIconUrl } = useCompanyAssets();
+  const { logoUrl, logoIconUrl, logoHeight } = useCompanyAssets();
   const cols = [
     { l: 'Services',   items: ['Fret aérien Douala → Montréal', 'Livraison à domicile', 'Retrait entrepôt', 'Suivi en temps réel'] },
     { l: 'Entreprise', items: ['À propos', 'Blog', 'Carrières', 'Contact'] },
@@ -105,7 +105,7 @@ export function SiteFooter() {
           <div>
             <div className="jfoot__brand">
               {logoUrl ? (
-                <img src={logoUrl} alt="Logo" style={{ height: 34, maxWidth: 140, objectFit: 'contain', filter: 'brightness(0) invert(1)' }} />
+                <img src={logoUrl} alt="Logo" style={{ height: logoHeight, maxWidth: 200, objectFit: 'contain', filter: 'brightness(0) invert(1)' }} />
               ) : (
                 <>
                   <div className="jfoot__brand-mark" style={{ background: 'none', fontSize: 0 }}>

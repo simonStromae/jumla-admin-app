@@ -1,10 +1,69 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import I from '../components/Icons.jsx';
 import { ROUTES, PARCEL_CATEGORIES, getRoute } from '../data.js';
 import { TopBar, SiteNav, SiteFooter } from './SiteLayout.jsx';
 import '@/src/styles/client-omega.css';
+
+const DEFAULT_CONTENT = {
+  hero: {
+    eyebrow:  'Spécialiste du fret aérien · Douala → Montréal',
+    line1:    'Chaque colis,',
+    line2:    'livré de Douala',
+    line3:    'à Montréal',
+    subtitle: 'Réservez en ligne, déposez vos colis à Douala — votre destinataire les reçoit à Montréal en 14 jours. Suivi en temps réel et notification WhatsApp à chaque étape.',
+    stats: [
+      { value: '14 jours', label: 'Transit moyen' },
+      { value: '12 000+',  label: 'Colis livrés' },
+      { value: '98%',      label: 'Taux de succès' },
+    ],
+  },
+  services: [
+    { title: 'Fret aérien express',   description: 'Transport direct Douala → Montréal via nos partenaires certifiés (Air France Cargo, Ethiopian Airlines). Délai garanti 14 jours porte à porte.' },
+    { title: 'Livraison à domicile',  description: 'Votre destinataire reçoit son colis directement chez lui, partout au Québec. Créneau sur rendez-vous, signature requise, paiement à la porte.' },
+    { title: 'Suivi en temps réel',   description: 'Notifications WhatsApp & SMS automatiques à chaque étape — prise en charge, départ, transit, arrivée, livraison. Expéditeur et destinataire toujours informés.' },
+  ],
+  features: [
+    { title: 'Vérification article par article',           description: "Chaque colis est photographié et listé sur un bordereau signé au départ. À l'arrivée à Montréal, nos agents vérifient chaque article. En cas d'écart, vous êtes alertés immédiatement par WhatsApp." },
+    { title: 'Réseau de partenaires aériens fiables',      description: 'Air France Cargo, Ethiopian Airlines, Turkish Cargo — nous choisissons les rotations les plus régulières pour garantir la ponctualité de vos livraisons quelles que soient les saisons.' },
+    { title: 'Notifications automatiques à chaque étape', description: "Dès la prise en charge jusqu'à la remise finale : vous et votre destinataire recevez une notification WhatsApp à chaque changement de statut. Aucune démarche nécessaire de votre côté." },
+    { title: 'Paiement flexible à la livraison',           description: 'Interac, virement bancaire, Mobile Money (Orange Money, MTN) ou espèces — choisissez le mode qui vous convient. Aucun frais caché, devis instantané avec notre simulateur.' },
+    { title: 'Couverture dans tout le Canada',             description: "Livraison à domicile dans tout le Québec ou retrait à notre entrepôt de Montréal. Nous desservons également Toronto, Ottawa et Vancouver sur commande groupée." },
+  ],
+  faq: [
+    { question: 'Combien de temps dure un envoi Douala → Montréal ?', answer: 'Le transit moyen est de 14 jours porte à porte. Vous recevez une estimation précise dès la réservation, puis des notifications WhatsApp à chaque étape du voyage.' },
+    { question: 'Comment est calculé le prix ?', answer: "Le tarif est au kilo avec une grille par tranche (0–5 kg, 5–10 kg, 10–25 kg…). Certaines catégories appliquent un supplément : fragile +8%, électronique +5%. Les documents bénéficient d'une réduction de 10%. Utilisez notre simulateur pour un devis instantané." },
+    { question: "Comment est vérifié le contenu à l'arrivée ?", answer: "Chaque article est photographié et listé sur un bordereau au départ. À l'arrivée à Montréal, nos agents vérifient article par article. En cas d'écart, vous êtes alertés immédiatement par WhatsApp." },
+    { question: 'Que puis-je envoyer ?', answer: 'Vêtements, denrées alimentaires sèches, électronique, cosmétiques, documents, mobilier léger. Les produits dangereux, liquides et marchandises prohibées au transport aérien sont exclus.' },
+    { question: 'Comment mon destinataire récupère-t-il le colis ?', answer: "Au choix : livraison à domicile partout au Québec (créneau sur rendez-vous, signature requise) ou retrait à notre entrepôt de Montréal. Paiement à la livraison — Interac, virement, espèces ou Mobile Money." },
+    { question: "Peut-on envoyer depuis d'autres villes ?", answer: "Nous opérons principalement depuis Douala. Nous avons également des routes depuis Lagos (Nigeria) et vers Bruxelles. Contactez-nous pour un devis personnalisé sur d'autres origines." },
+  ],
+  cta: {
+    line1:    'Envoyez votre',
+    line2:    'premier colis',
+    line3:    "aujourd'hui",
+    subtitle: "Rejoignez 2 500+ clients qui font confiance à Jumla Shipping pour leurs envois entre l'Afrique et le Canada.",
+  },
+};
+
+function useLandingContent() {
+  const [content, setContent] = useState(DEFAULT_CONTENT);
+  useEffect(() => {
+    fetch('/api/public/config').then(r => r.json()).then(d => {
+      if (d.landingContent) {
+        setContent(c => ({
+          hero:     { ...c.hero,     ...d.landingContent.hero },
+          services: d.landingContent.services ?? c.services,
+          features: d.landingContent.features ?? c.features,
+          faq:      d.landingContent.faq      ?? c.faq,
+          cta:      { ...c.cta,      ...d.landingContent.cta },
+        }));
+      }
+    }).catch(() => {});
+  }, []);
+  return content;
+}
 
 const IMGS = {
   hero:    'https://images.pexels.com/photos/46148/aircraft-jet-landing-cloud-46148.jpeg?auto=compress&cs=tinysrgb&w=1600',
@@ -13,8 +72,9 @@ const IMGS = {
 };
 
 /* ─── Hero split layout ─── */
-function JHero({ onBook, onNav }) {
+function JHero({ onBook, onNav, content }) {
   const [code, setCode] = useState('');
+  const h = content.hero;
 
   const handleTrack = (e) => {
     e.preventDefault();
@@ -31,17 +91,18 @@ function JHero({ onBook, onNav }) {
           <div className="jhero2__left">
             <div className="jhero2__eyebrow">
               <span className="jhero2__eyebrow-dot" />
-              Spécialiste du fret aérien · Douala → Montréal
+              {h.eyebrow}
             </div>
             <h1 className="jhero2__title">
-              Chaque colis,<br />
-              livré de <span className="cy">Douala</span><br />
-              à <span className="cy">Montréal</span>
+              {h.line1}<br />
+              {h.line2.includes('Douala')
+                ? <>{h.line2.split('Douala')[0]}<span className="cy">Douala</span>{h.line2.split('Douala')[1]}</>
+                : h.line2}<br />
+              {h.line3.includes('Montréal')
+                ? <>{h.line3.split('Montréal')[0]}<span className="cy">Montréal</span>{h.line3.split('Montréal')[1]}</>
+                : <span className="cy">{h.line3}</span>}
             </h1>
-            <p className="jhero2__sub">
-              Réservez en ligne, déposez vos colis à Douala — votre destinataire les reçoit à Montréal en 14 jours.
-              Suivi en temps réel et notification WhatsApp à chaque étape.
-            </p>
+            <p className="jhero2__sub">{h.subtitle}</p>
             <div className="jhero2__btns">
               <button className="jhero2__btn-primary" onClick={onBook}>
                 Réserver un envoi
@@ -51,11 +112,7 @@ function JHero({ onBook, onNav }) {
               </button>
             </div>
             <div className="jhero2__stats">
-              {[
-                { n: '14 jours', l: 'Transit moyen' },
-                { n: '12 000+',  l: 'Colis livrés' },
-                { n: '98%',      l: 'Taux de succès' },
-              ].map(({ n, l }, i) => (
+              {h.stats.map(({ value: n, label: l }, i) => (
                 <div key={l} className="jhero2__stat">
                   {i > 0 && <div className="jhero2__stat-sep" />}
                   <div className="jhero2__stat-n">{n}</div>
@@ -144,28 +201,16 @@ function JPlanePhoto() {
   );
 }
 
+const SVC_ICONS = [I.Plane, I.Box, I.Search];
+
 /* ─── Services 3-column text grid ─── */
-function JServices({ onBook }) {
-  const svcs = [
-    {
-      Icon: I.Plane,
-      num: '01',
-      t: 'Fret aérien express',
-      d: 'Transport direct Douala → Montréal via nos partenaires certifiés (Air France Cargo, Ethiopian Airlines). Délai garanti 14 jours porte à porte.',
-    },
-    {
-      Icon: I.Box,
-      num: '02',
-      t: 'Livraison à domicile',
-      d: 'Votre destinataire reçoit son colis directement chez lui, partout au Québec. Créneau sur rendez-vous, signature requise, paiement à la porte.',
-    },
-    {
-      Icon: I.Search,
-      num: '03',
-      t: 'Suivi en temps réel',
-      d: 'Notifications WhatsApp & SMS automatiques à chaque étape — prise en charge, départ, transit, arrivée, livraison. Expéditeur et destinataire toujours informés.',
-    },
-  ];
+function JServices({ onBook, content }) {
+  const svcs = content.services.map((s, i) => ({
+    Icon: SVC_ICONS[i] ?? I.Box,
+    num: `0${i + 1}`,
+    t: s.title,
+    d: s.description,
+  }));
 
   return (
     <section className="jsvc3" id="jsvc">
@@ -200,31 +245,9 @@ function JServices({ onBook }) {
 }
 
 /* ─── Features accordion ─── */
-function JFeats({ onBook }) {
+function JFeats({ onBook, content }) {
   const [open, setOpen] = useState(0);
-
-  const feats = [
-    {
-      t: 'Vérification article par article',
-      d: 'Chaque colis est photographié et listé sur un bordereau signé au départ. À l\'arrivée à Montréal, nos agents vérifient chaque article. En cas d\'écart, vous êtes alertés immédiatement par WhatsApp.',
-    },
-    {
-      t: 'Réseau de partenaires aériens fiables',
-      d: 'Air France Cargo, Ethiopian Airlines, Turkish Cargo — nous choisissons les rotations les plus régulières pour garantir la ponctualité de vos livraisons quelles que soient les saisons.',
-    },
-    {
-      t: 'Notifications automatiques à chaque étape',
-      d: 'Dès la prise en charge jusqu\'à la remise finale : vous et votre destinataire recevez une notification WhatsApp à chaque changement de statut. Aucune démarche nécessaire de votre côté.',
-    },
-    {
-      t: 'Paiement flexible à la livraison',
-      d: 'Interac, virement bancaire, Mobile Money (Orange Money, MTN) ou espèces — choisissez le mode qui vous convient. Aucun frais caché, devis instantané avec notre simulateur.',
-    },
-    {
-      t: 'Couverture dans tout le Canada',
-      d: 'Livraison à domicile dans tout le Québec ou retrait à notre entrepôt de Montréal. Nous desservons également Toronto, Ottawa et Vancouver sur commande groupée.',
-    },
-  ];
+  const feats = content.features.map(f => ({ t: f.title, d: f.description }));
 
   return (
     <section className="jfeats3" id="jabout">
@@ -396,15 +419,8 @@ function JEstimator({ onBook }) {
 }
 
 /* ─── FAQ ─── */
-function JFAQ() {
-  const faqs = [
-    { q: 'Combien de temps dure un envoi Douala → Montréal ?', a: 'Le transit moyen est de 14 jours porte à porte. Vous recevez une estimation précise dès la réservation, puis des notifications WhatsApp à chaque étape du voyage.' },
-    { q: 'Comment est calculé le prix ?', a: 'Le tarif est au kilo avec une grille par tranche (0–5 kg, 5–10 kg, 10–25 kg…). Certaines catégories appliquent un supplément : fragile +8%, électronique +5%. Les documents bénéficient d\'une réduction de 10%. Utilisez notre simulateur pour un devis instantané.' },
-    { q: 'Comment est vérifié le contenu à l\'arrivée ?', a: 'Chaque article est photographié et listé sur un bordereau au départ. À l\'arrivée à Montréal, nos agents vérifient article par article. En cas d\'écart, vous êtes alertés immédiatement par WhatsApp.' },
-    { q: 'Que puis-je envoyer ?', a: 'Vêtements, denrées alimentaires sèches, électronique, cosmétiques, documents, mobilier léger. Les produits dangereux, liquides et marchandises prohibées au transport aérien sont exclus.' },
-    { q: 'Comment mon destinataire récupère-t-il le colis ?', a: 'Au choix : livraison à domicile partout au Québec (créneau sur rendez-vous, signature requise) ou retrait à notre entrepôt de Montréal. Paiement à la livraison — Interac, virement, espèces ou Mobile Money.' },
-    { q: 'Peut-on envoyer depuis d\'autres villes ?', a: 'Nous opérons principalement depuis Douala. Nous avons également des routes depuis Lagos (Nigeria) et vers Bruxelles. Contactez-nous pour un devis personnalisé sur d\'autres origines.' },
-  ];
+function JFAQ({ content }) {
+  const faqs = content.faq.map(f => ({ q: f.question, a: f.answer }));
   const [open, setOpen] = useState(0);
   return (
     <section style={{ padding: '96px 0', background: 'var(--bg-soft)' }} id="jfaq">
@@ -442,7 +458,8 @@ function JFAQ() {
 }
 
 /* ─── CTA with photo ─── */
-function JCTA({ onBook }) {
+function JCTA({ onBook, content }) {
+  const c = content.cta;
   return (
     <section className="jcta3">
       <img className="jcta3__bg" src={IMGS.cargo} alt="" />
@@ -454,13 +471,11 @@ function JCTA({ onBook }) {
           <div className="jcta3__left">
             <div className="jcta3__eyebrow">Prêt à commencer ?</div>
             <h2 className="jcta3__title">
-              Envoyez votre<br />
-              premier colis<br />
-              <span style={{ color: '#00B4D8' }}>aujourd'hui</span>
+              {c.line1}<br />
+              {c.line2}<br />
+              <span style={{ color: '#00B4D8' }}>{c.line3}</span>
             </h2>
-            <p className="jcta3__sub">
-              Rejoignez 2 500+ clients qui font confiance à Jumla Shipping pour leurs envois entre l'Afrique et le Canada.
-            </p>
+            <p className="jcta3__sub">{c.subtitle}</p>
             <button className="jcta3__btn" onClick={onBook}>
               Réserver un envoi <I.ArrowRight style={{ width: 17, height: 17 }} />
             </button>
@@ -500,7 +515,8 @@ function JCTA({ onBook }) {
 /* ─── Root ─── */
 export default function LandingPage({ onNav }) {
   const { data: session } = useSession();
-  const role = session?.user?.role;
+  const role    = session?.user?.role;
+  const content = useLandingContent();
 
   const onBook = () => {
     if (!onNav) return;
@@ -517,13 +533,13 @@ export default function LandingPage({ onNav }) {
     <div className="jpage">
       <TopBar />
       <SiteNav onNav={onNav} onBook={onBook} mode="landing" />
-      <JHero onBook={onBook} onNav={onNav} />
+      <JHero onBook={onBook} onNav={onNav} content={content} />
       <JPlanePhoto />
-      <JServices onBook={onBook} />
-      <JFeats onBook={onBook} />
+      <JServices onBook={onBook} content={content} />
+      <JFeats onBook={onBook} content={content} />
       <JEstimator onBook={onBook} />
-      <JFAQ />
-      <JCTA onBook={onBook} />
+      <JFAQ content={content} />
+      <JCTA onBook={onBook} content={content} />
       <SiteFooter />
     </div>
   );
