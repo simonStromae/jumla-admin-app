@@ -911,3 +911,111 @@
 .jest__total-label { font-size: 12px; color: rgba(255,255,255,.55); font-weight: 600; margin-bottom: 2px; }
 .jest__total-n { font-family: 'Barlow Condensed', 'Arial Narrow', sans-serif; font-size: 32px; font-weight: 800; color: white; }
 .jest__total-cur { font-size: 15px; color: rgba(255,255,255,.5); font-weight: 600; margin-left: 6px; }
+
+/* ── FAQ section layout ── */
+.jfaq-section { padding: 96px 0; background: var(--bg-soft); }
+.jfaq-grid {
+  display: grid; grid-template-columns: 1fr 2fr;
+  gap: 72px; align-items: start;
+}
+
+/* ==============================================
+   RESPONSIVE — landing page
+   ============================================== */
+
+/* ── Tablet (≤ 1024px) ── */
+@media (max-width: 1024px) {
+  .jhero2__grid { grid-template-columns: 1fr 340px; gap: 40px; }
+  .jfeats3__grid { grid-template-columns: 320px 1fr; gap: 48px; }
+  .jfeats3__right { position: static; }
+  .jcta3__grid { grid-template-columns: 1fr 300px; gap: 40px; }
+}
+
+/* ── Mobile (≤ 768px) ── */
+@media (max-width: 768px) {
+  .jc { padding: 0 18px; }
+
+  /* Top bar: hide on mobile */
+  .jtop-bar { display: none; }
+
+  /* Nav */
+  .jnav__inner { height: 58px; gap: 14px; }
+
+  /* Hero2 */
+  .jhero2 { padding: 48px 0 40px; }
+  .jhero2__grid {
+    grid-template-columns: 1fr;
+    gap: 32px;
+  }
+  .jhero2__title { font-size: 40px; }
+  .jhero2__sub { font-size: 15px; margin-bottom: 28px; }
+  .jhero2__btns { flex-direction: column; gap: 10px; }
+  .jhero2__btn-primary,
+  .jhero2__btn-ghost { width: 100%; text-align: center; justify-content: center; }
+  .jhero2__stats { margin-top: 32px; padding-top: 20px; }
+  .jhero2__stat-n { font-size: 24px; }
+  .jhero2__right { order: -1; }
+  .jhero2__card { padding: 20px; }
+
+  /* Services */
+  .jsvc3 { padding: 56px 0; }
+  .jsvc3__head { margin-bottom: 36px; }
+  .jsvc3__title { font-size: 30px; }
+  .jsvc3__grid { grid-template-columns: 1fr; gap: 0; }
+  .jsvc3__item { padding: 28px 24px; }
+
+  /* Features accordion */
+  .jfeats3 { padding: 56px 0; }
+  .jfeats3__grid { grid-template-columns: 1fr; gap: 40px; }
+  .jfeats3__right { position: static; }
+  .jfeats3__title { font-size: 28px; }
+  .jfeats3__stats { gap: 20px; flex-wrap: wrap; }
+  .jfeats3__btn { width: 100%; justify-content: center; }
+
+  /* Estimator */
+  .jest-wrap { padding: 56px 0; }
+  .jest__route { flex-direction: column; gap: 10px; }
+  .jest__lhead { display: none; }
+  .jest__line { grid-template-columns: 1fr 80px 80px 32px; gap: 6px; }
+  .jest__line > :nth-child(3),
+  .jest__line > :nth-child(4) { display: none; }
+  .jest__lines { padding: 0 14px 4px; }
+  .jest__head { padding: 12px 14px; }
+  .jest__res { padding: 16px 14px; flex-direction: column; align-items: flex-start; gap: 12px; }
+  .jest__res .jbtn-nav { width: 100%; justify-content: center; }
+
+  /* FAQ */
+  .jfaq-section { padding: 56px 0; }
+  .jfaq-grid { grid-template-columns: 1fr; gap: 32px; }
+
+  /* CTA */
+  .jcta3 { min-height: auto; }
+  .jcta3__grid { grid-template-columns: 1fr; gap: 28px; padding: 56px 0; }
+  .jcta3__title { font-size: 36px; }
+  .jcta3__sub { font-size: 14px; }
+  .jcta3__btn { width: 100%; justify-content: center; }
+  .jcta3__card { padding: 20px; }
+
+  /* Footer */
+  .jfoot { padding: 48px 0 28px; }
+  .jfoot__grid { grid-template-columns: 1fr 1fr; gap: 32px; }
+  .jfoot__grid > div:first-child { grid-column: 1 / -1; }
+}
+
+/* ── Small mobile (≤ 480px) ── */
+@media (max-width: 480px) {
+  .jc { padding: 0 14px; }
+
+  .jhero2 { padding: 36px 0 32px; }
+  .jhero2__title { font-size: 34px; }
+  .jhero2__stat-n { font-size: 21px; }
+  .jhero2__stat-l { font-size: 11px; }
+
+  .jsvc3__item { padding: 22px 18px; }
+  .jsvc3__item-top { margin-bottom: 16px; }
+
+  .jfaq__q { font-size: 14px; padding: 16px 0; }
+
+  .jfoot__grid { grid-template-columns: 1fr; }
+  .jfoot__grid > div:first-child { grid-column: auto; }
+}

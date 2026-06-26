@@ -405,9 +405,9 @@ function JFAQ({ content }) {
   const faqs = content.faq.map(f => ({ q: f.question, a: f.answer }));
   const [open, setOpen] = useState(0);
   return (
-    <section style={{ padding: '96px 0', background: 'var(--bg-soft)' }} id="jfaq">
+    <section className="jfaq-section" id="jfaq">
       <div className="jc">
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: 72, alignItems: 'start' }}>
+        <div className="jfaq-grid">
           <div>
             <div className="jsvc3__eyebrow" style={{ display: 'block', marginBottom: 12 }}>FAQ</div>
             <h2 style={{ fontFamily: "'Barlow', 'Helvetica Neue', Arial, sans-serif", fontSize: '36px', fontWeight: 700, letterSpacing: '-.03em', color: 'var(--ink-900)', marginBottom: 16 }}>
