@@ -4,6 +4,7 @@ import { useRouter, usePathname } from 'next/navigation';
 import { useEffect, useState, useRef } from 'react';
 import '@/src/styles/tokens.css';
 import I from '@/src/components/Icons.jsx';
+import { useCompanyAssets } from '@/src/lib/useCompanyAssets.js';
 
 const NAV_ALL = [
   { label: 'Mes colis',      icon: I.Box,        href: '/client/dashboard', suspendedOk: true  },
@@ -113,6 +114,7 @@ function NotificationBell({ router }) {
 
 export default function ClientLayout({ children }) {
   const { data: session, status } = useSession();
+  const { logoIconUrl } = useCompanyAssets();
   const router   = useRouter();
   const pathname = usePathname();
 
@@ -148,12 +150,15 @@ export default function ClientLayout({ children }) {
           display: 'flex', alignItems: 'center', gap: 10,
           background: 'none', border: 'none', cursor: 'pointer', padding: 0, width: '100%',
         }}>
-          <div style={{
-            width: 34, height: 34, borderRadius: 9,
-            background: 'linear-gradient(135deg, #F5A524, #D97706)',
-            display: 'grid', placeItems: 'center',
-            fontWeight: 800, fontSize: 15, color: 'white',
-          }}>J</div>
+          <div style={{ width: 34, height: 34, borderRadius: 9, overflow: 'hidden', display: 'grid', placeItems: 'center', flexShrink: 0, background: logoIconUrl ? 'white' : 'none' }}>
+            {logoIconUrl
+              ? <img src={logoIconUrl} alt="Logo" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+              : <svg width="30" height="30" viewBox="0 0 48 48" fill="none">
+                  <defs><linearGradient id="cllg" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stopColor="#00B4D8"/><stop offset="100%" stopColor="#1B4FD8"/></linearGradient></defs>
+                  <path d="M8 8 C8 6 10 4 12 5 L38 20 C40 21 40 27 38 28 L12 43 C10 44 8 42 8 40 Z" fill="url(#cllg)"/>
+                </svg>
+            }
+          </div>
           <div style={{ textAlign: 'left' }}>
             <div style={{ fontWeight: 700, fontSize: 13, color: 'var(--ink-900)' }}>Jumla Shipping</div>
             <div style={{ fontSize: 10.5, color: 'var(--ink-400)' }}>Espace client</div>
@@ -230,12 +235,15 @@ export default function ClientLayout({ children }) {
             {/* Mobile: logo */}
             <div className="mobile-logo" style={{ display: 'none' }}>
               <style>{`.mobile-logo { display: block; } @media (min-width: 768px) { .mobile-logo { display: none !important; } }`}</style>
-              <div style={{
-                width: 30, height: 30, borderRadius: 8,
-                background: 'linear-gradient(135deg, #F5A524, #D97706)',
-                display: 'grid', placeItems: 'center',
-                fontWeight: 800, fontSize: 14, color: 'white',
-              }}>J</div>
+              <div style={{ width: 30, height: 30, borderRadius: 8, overflow: 'hidden', display: 'grid', placeItems: 'center', background: logoIconUrl ? 'white' : 'none' }}>
+                {logoIconUrl
+                  ? <img src={logoIconUrl} alt="Logo" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+                  : <svg width="26" height="26" viewBox="0 0 48 48" fill="none">
+                      <defs><linearGradient id="cllg2" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stopColor="#00B4D8"/><stop offset="100%" stopColor="#1B4FD8"/></linearGradient></defs>
+                      <path d="M8 8 C8 6 10 4 12 5 L38 20 C40 21 40 27 38 28 L12 43 C10 44 8 42 8 40 Z" fill="url(#cllg2)"/>
+                    </svg>
+                }
+              </div>
             </div>
             <div style={{ flex: 1, fontSize: 14, fontWeight: 600, color: 'var(--ink-700)' }}>
               {NAV.find(n => pathname === n.href || pathname.startsWith(n.href + '/'))?.label ?? 'Espace client'}

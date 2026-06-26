@@ -3,9 +3,10 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/src/lib/prisma';
 
 const DEFAULTS: Record<string, string> = {
-  payment_email: 'paiement@jumla.cargo',
-  company_name:  'Jumla Shipping',
-  company_logo:  '',
+  payment_email:     'paiement@jumla.cargo',
+  company_name:      'Jumla Shipping',
+  company_logo:      '',
+  company_logo_icon: '',
 };
 
 export async function GET() {
@@ -16,8 +17,9 @@ export async function GET() {
   for (const r of rows) m[r.key] = r.value;
 
   return NextResponse.json({
-    paymentEmail: m.payment_email,
-    companyName:  m.company_name,
-    companyLogo:  m.company_logo || null,
+    paymentEmail:   m.payment_email,
+    companyName:    m.company_name,
+    companyLogo:    m.company_logo      || null,
+    companyLogoIcon: m.company_logo_icon || null,
   });
 }

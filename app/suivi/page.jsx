@@ -2,6 +2,7 @@
 import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import '@/src/styles/tokens.css';
+import { useCompanyAssets } from '@/src/lib/useCompanyAssets.js';
 
 /* ── Jumla brand tokens ──────────────────────────────── */
 const J = {
@@ -56,6 +57,7 @@ function fmtFull(d) {
 }
 
 function TrackContent() {
+  const { logoUrl, logoIconUrl } = useCompanyAssets();
   const router       = useRouter();
   const searchParams = useSearchParams();
   const [input,   setInput]   = useState(searchParams.get('code') ?? '');
@@ -94,20 +96,20 @@ function TrackContent() {
       {/* Header */}
       <header style={{ background: J.black, padding: '0 24px', height: 64, display: 'flex', alignItems: 'center', justifyContent: 'space-between', boxShadow: '0 8px 32px rgba(27,79,216,.18)' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 14, cursor: 'pointer' }} onClick={() => router.push('/')}>
-          {/* Triangle logo */}
-          <svg width="36" height="36" viewBox="0 0 48 48" fill="none">
-            <defs>
-              <linearGradient id="lg" x1="0" y1="0" x2="1" y2="1">
-                <stop offset="0%" stopColor="#00B4D8"/>
-                <stop offset="100%" stopColor="#1B4FD8"/>
-              </linearGradient>
-            </defs>
-            <path d="M8 8 C8 6 10 4 12 5 L38 20 C40 21 40 27 38 28 L12 43 C10 44 8 42 8 40 Z" fill="url(#lg)"/>
-          </svg>
-          <div>
-            <div style={{ fontFamily: FONT_DISPLAY, fontSize: 22, fontWeight: 800, letterSpacing: '.05em', textTransform: 'uppercase', background: J.gradient, WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text', lineHeight: 1 }}>JUMLA</div>
-            <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: '.15em', color: 'rgba(255,255,255,.3)', textTransform: 'uppercase', marginTop: 2 }}>Import · Export · Livraison</div>
-          </div>
+          {logoUrl ? (
+            <img src={logoUrl} alt="Logo" style={{ height: 38, maxWidth: 160, objectFit: 'contain' }} />
+          ) : (
+            <>
+              <svg width="36" height="36" viewBox="0 0 48 48" fill="none">
+                <defs><linearGradient id="lg" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stopColor="#00B4D8"/><stop offset="100%" stopColor="#1B4FD8"/></linearGradient></defs>
+                <path d="M8 8 C8 6 10 4 12 5 L38 20 C40 21 40 27 38 28 L12 43 C10 44 8 42 8 40 Z" fill="url(#lg)"/>
+              </svg>
+              <div>
+                <div style={{ fontFamily: FONT_DISPLAY, fontSize: 22, fontWeight: 800, letterSpacing: '.05em', textTransform: 'uppercase', background: J.gradient, WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text', lineHeight: 1 }}>JUMLA</div>
+                <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: '.15em', color: 'rgba(255,255,255,.3)', textTransform: 'uppercase', marginTop: 2 }}>Import · Export · Livraison</div>
+              </div>
+            </>
+          )}
         </div>
         <a href="/login" style={{ fontFamily: FONT_DISPLAY, fontSize: 14, fontWeight: 700, letterSpacing: '.08em', textTransform: 'uppercase', color: 'white', textDecoration: 'none', padding: '8px 18px', border: '2px solid rgba(255,255,255,.25)', borderRadius: 8, transition: 'all .2s' }}>
           Connexion →

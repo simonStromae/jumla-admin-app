@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, Fragment } from 'react';
 import I from '../components/Icons.jsx';
+import { invalidateCompanyAssets } from '../lib/useCompanyAssets.js';
 import { Bi, RoutePill, Modal, Drawer } from '../components/Shell.jsx';
 
 // Grille tarifaire par défaut (miroir de DEFAULT_ROUTE_FEES dans pricing.ts)
@@ -168,11 +169,13 @@ function SectionCompany() {
   });
   const [saving, setSaving]       = useState(false);
   const [saved,  setSaved]        = useState(false);
-  const [logoUrl, setLogoUrl]     = useState('');
-  const [logoSaving, setLogoSaving] = useState(false);
-  const [logoSaved,  setLogoSaved]  = useState(false);
-  const [logoError,  setLogoError]  = useState('');
-  const fileInputRef = useRef(null);
+  const [logoUrl,     setLogoUrl]     = useState('');
+  const [logoIconUrl, setLogoIconUrl] = useState('');
+  const [logoSaving,  setLogoSaving]  = useState(false);
+  const [logoSaved,   setLogoSaved]   = useState(false);
+  const [logoError,   setLogoError]   = useState('');
+  const fileInputRef     = useRef(null);
+  const iconInputRef     = useRef(null);
 
   useEffect(() => {
     fetch('/api/settings').then(r => r.json()).then(d => {
@@ -185,11 +188,12 @@ function SectionCompany() {
         warehouse_addr:   d.warehouse_addr   ?? f.warehouse_addr,
         payment_email:    d.payment_email    ?? f.payment_email,
       }));
-      if (d.company_logo) setLogoUrl(d.company_logo);
+      if (d.company_logo)      setLogoUrl(d.company_logo);
+      if (d.company_logo_icon) setLogoIconUrl(d.company_logo_icon);
     }).catch(() => {});
   }, []);
 
-  async function handleLogoChange(e) {
+  async function handleLogoFile(e, key, setter) {
     const file = e.target.files?.[0];
     if (!file) return;
     setLogoError('');
@@ -198,18 +202,22 @@ function SectionCompany() {
     const reader = new FileReader();
     reader.onload = async (ev) => {
       const dataUrl = ev.target.result;
-      setLogoUrl(dataUrl);
+      setter(dataUrl);
       setLogoSaving(true);
       await fetch('/api/settings', {
         method: 'PUT', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ company_logo: dataUrl }),
+        body: JSON.stringify({ [key]: dataUrl }),
       });
+      invalidateCompanyAssets();
       setLogoSaving(false); setLogoSaved(true);
       setTimeout(() => setLogoSaved(false), 3000);
     };
     reader.readAsDataURL(file);
     e.target.value = '';
   }
+
+  const handleLogoChange = (e) => handleLogoFile(e, 'company_logo', setLogoUrl);
+  const handleIconChange = (e) => handleLogoFile(e, 'company_logo_icon', setLogoIconUrl);
 
   const set = (k) => (e) => setFields(f => ({ ...f, [k]: e.target.value }));
 
@@ -249,24 +257,44 @@ function SectionCompany() {
       </SettingsCard>
       <SettingsCard title="Apparence & marque" sub="Logo, couleurs et pied de page des documents.">
         <input ref={fileInputRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handleLogoChange} />
-        <div style={{ display: 'flex', alignItems: 'center', gap: 16, padding: '14px 16px', background: 'var(--bg-soft)', borderRadius: 8 }}>
-          <div style={{ width: 60, height: 60, borderRadius: 12, border: '1px solid var(--border)', background: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', flexShrink: 0 }}>
+        <input ref={iconInputRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handleIconChange} />
+        {logoError && <div style={{ fontSize: 12, color: 'var(--bad-600)', marginBottom: 10 }}>{logoError}</div>}
+        {logoSaved  && <div style={{ fontSize: 12, color: 'var(--ok-700)', fontWeight: 600, marginBottom: 10 }}>✓ Image sauvegardée</div>}
+
+        {/* Logo complet */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 16, padding: '14px 16px', background: 'var(--bg-soft)', borderRadius: 8, marginBottom: 10 }}>
+          <div style={{ width: 120, height: 48, borderRadius: 10, border: '1px solid var(--border)', background: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', flexShrink: 0 }}>
             {logoUrl
-              ? <img src={logoUrl} alt="Logo" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
-              : <svg width="44" height="44" viewBox="0 0 48 48" fill="none">
-                  <defs><linearGradient id="stlg" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stopColor="#00B4D8"/><stop offset="100%" stopColor="#1B4FD8"/></linearGradient></defs>
-                  <path d="M8 8 C8 6 10 4 12 5 L38 20 C40 21 40 27 38 28 L12 43 C10 44 8 42 8 40 Z" fill="url(#stlg)"/>
+              ? <img src={logoUrl} alt="Logo" style={{ width: '100%', height: '100%', objectFit: 'contain', padding: 4 }} />
+              : <span style={{ fontSize: 11, color: 'var(--ink-300)', fontStyle: 'italic' }}>Aucun</span>
+            }
+          </div>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontSize: 13, fontWeight: 600 }}>Logo complet</div>
+            <div style={{ fontSize: 12, color: 'var(--ink-400)', marginTop: 2 }}>Format paysage — affiché dans la nav, le footer et les en-têtes · PNG/SVG transparent · max 2 Mo</div>
+          </div>
+          <button className="btn btn--ghost btn--sm" onClick={() => fileInputRef.current?.click()} disabled={logoSaving}>
+            <I.Upload />{logoSaving ? 'Envoi…' : logoUrl ? 'Changer' : 'Téléverser'}
+          </button>
+        </div>
+
+        {/* Icône carrée */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 16, padding: '14px 16px', background: 'var(--bg-soft)', borderRadius: 8 }}>
+          <div style={{ width: 48, height: 48, borderRadius: 10, border: '1px solid var(--border)', background: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', flexShrink: 0 }}>
+            {logoIconUrl
+              ? <img src={logoIconUrl} alt="Icône" style={{ width: '100%', height: '100%', objectFit: 'contain', padding: 4 }} />
+              : <svg width="32" height="32" viewBox="0 0 48 48" fill="none">
+                  <defs><linearGradient id="stlg2" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stopColor="#00B4D8"/><stop offset="100%" stopColor="#1B4FD8"/></linearGradient></defs>
+                  <path d="M8 8 C8 6 10 4 12 5 L38 20 C40 21 40 27 38 28 L12 43 C10 44 8 42 8 40 Z" fill="url(#stlg2)"/>
                 </svg>
             }
           </div>
           <div style={{ flex: 1 }}>
-            <div style={{ fontSize: 13, fontWeight: 600 }}>Logo actuel</div>
-            <div style={{ fontSize: 12, color: 'var(--ink-400)', marginTop: 2 }}>PNG/JPG/SVG · max 2 Mo · fond transparent recommandé</div>
-            {logoError && <div style={{ fontSize: 12, color: 'var(--bad-600)', marginTop: 4 }}>{logoError}</div>}
-            {logoSaved  && <div style={{ fontSize: 12, color: 'var(--ok-700)', fontWeight: 600, marginTop: 4 }}>✓ Logo sauvegardé</div>}
+            <div style={{ fontSize: 13, fontWeight: 600 }}>Icône / Logo carré</div>
+            <div style={{ fontSize: 12, color: 'var(--ink-400)', marginTop: 2 }}>Format carré — affiché dans la sidebar, le mobile et les petits espaces · PNG/SVG transparent · max 2 Mo</div>
           </div>
-          <button className="btn btn--ghost btn--sm" onClick={() => fileInputRef.current?.click()} disabled={logoSaving}>
-            <I.Upload />{logoSaving ? 'Envoi…' : 'Changer le logo'}
+          <button className="btn btn--ghost btn--sm" onClick={() => iconInputRef.current?.click()} disabled={logoSaving}>
+            <I.Upload />{logoSaving ? 'Envoi…' : logoIconUrl ? 'Changer' : 'Téléverser'}
           </button>
         </div>
       </SettingsCard>

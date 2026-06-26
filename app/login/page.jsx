@@ -3,11 +3,13 @@ import { useState, Suspense } from 'react';
 import { signIn } from 'next-auth/react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import I from '@/src/components/Icons.jsx';
+import { useCompanyAssets } from '@/src/lib/useCompanyAssets.js';
 
 function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const initialTab = searchParams.get('tab') === 'register' ? 'register' : 'login';
+  const { logoIconUrl } = useCompanyAssets();
   const [tab, setTab]     = useState(initialTab); // 'login' | 'register' | 'verify'
   const [fields, setFields] = useState({ email: '', name: '', password: '', confirm: '' });
   const [code, setCode]     = useState('');
@@ -90,10 +92,13 @@ function LoginForm() {
           display: 'flex', alignItems: 'center', gap: 12, position: 'relative', zIndex: 2,
           background: 'none', border: 'none', cursor: 'pointer', padding: 0, color: 'inherit',
         }}>
-          <svg width="44" height="44" viewBox="0 0 48 48" fill="none">
-            <defs><linearGradient id="llg" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stopColor="#00B4D8"/><stop offset="100%" stopColor="#1B4FD8"/></linearGradient></defs>
-            <path d="M8 8 C8 6 10 4 12 5 L38 20 C40 21 40 27 38 28 L12 43 C10 44 8 42 8 40 Z" fill="url(#llg)"/>
-          </svg>
+          {logoIconUrl
+            ? <img src={logoIconUrl} alt="Logo" style={{ width: 44, height: 44, objectFit: 'contain' }} />
+            : <svg width="44" height="44" viewBox="0 0 48 48" fill="none">
+                <defs><linearGradient id="llg" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stopColor="#00B4D8"/><stop offset="100%" stopColor="#1B4FD8"/></linearGradient></defs>
+                <path d="M8 8 C8 6 10 4 12 5 L38 20 C40 21 40 27 38 28 L12 43 C10 44 8 42 8 40 Z" fill="url(#llg)"/>
+              </svg>
+          }
           <div>
             <div style={{ fontFamily: "'Barlow Condensed', 'Arial Narrow', sans-serif", fontWeight: 800, fontSize: 20, letterSpacing: '.05em', textTransform: 'uppercase' }}>JUMLA Shipping</div>
             <div style={{ fontSize: 11.5, color: 'rgba(255,255,255,.55)', marginTop: 1 }}>Fret international · Douala</div>

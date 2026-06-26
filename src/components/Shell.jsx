@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, Fragment } from 'react';
 import { useSession, signOut } from 'next-auth/react';
 import I from './Icons.jsx';
+import { useCompanyAssets } from '../lib/useCompanyAssets.js';
 
 const PERM_ALIAS = { campaigns: 'cargaisons' };
 
@@ -64,6 +65,7 @@ export function Bi({ fr, en, sep = '/' }) {
 
 export function Sidebar({ route, onNav }) {
   const { data: session } = useSession();
+  const { logoIconUrl } = useCompanyAssets();
   const [stats, setStats] = useState({ campaigns: 0, clients: 0, verifyPending: 0, unpaidPayments: 0 });
 
   useEffect(() => {
@@ -130,10 +132,13 @@ export function Sidebar({ route, onNav }) {
     <aside className="sidebar">
       <div className="sidebar__brand">
         <div className="sidebar__logo" style={{ display: 'grid', placeItems: 'center', background: 'none' }}>
-          <svg width="18" height="18" viewBox="0 0 48 48" fill="none">
-            <defs><linearGradient id="slg" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stopColor="#00B4D8"/><stop offset="100%" stopColor="#1B4FD8"/></linearGradient></defs>
-            <path d="M8 8 C8 6 10 4 12 5 L38 20 C40 21 40 27 38 28 L12 43 C10 44 8 42 8 40 Z" fill="url(#slg)"/>
-          </svg>
+          {logoIconUrl
+            ? <img src={logoIconUrl} alt="Logo" style={{ width: 28, height: 28, objectFit: 'contain' }} />
+            : <svg width="18" height="18" viewBox="0 0 48 48" fill="none">
+                <defs><linearGradient id="slg" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stopColor="#00B4D8"/><stop offset="100%" stopColor="#1B4FD8"/></linearGradient></defs>
+                <path d="M8 8 C8 6 10 4 12 5 L38 20 C40 21 40 27 38 28 L12 43 C10 44 8 42 8 40 Z" fill="url(#slg)"/>
+              </svg>
+          }
         </div>
         <div>
           <div className="sidebar__name">Jumla Shipping</div>
