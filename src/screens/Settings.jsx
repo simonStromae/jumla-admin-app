@@ -1,4 +1,4 @@
-import { useState, useEffect, Fragment } from 'react';
+import { useState, useEffect, useRef, Fragment } from 'react';
 import I from '../components/Icons.jsx';
 import { Bi, RoutePill, Modal, Drawer } from '../components/Shell.jsx';
 
@@ -166,8 +166,13 @@ function SectionCompany() {
     warehouse_addr:    '5500 Place de la Savane, Lachine, QC H4S 1V8, Canada',
     payment_email:     'paiement@jumla.cargo',
   });
-  const [saving, setSaving] = useState(false);
-  const [saved,  setSaved]  = useState(false);
+  const [saving, setSaving]       = useState(false);
+  const [saved,  setSaved]        = useState(false);
+  const [logoUrl, setLogoUrl]     = useState('');
+  const [logoSaving, setLogoSaving] = useState(false);
+  const [logoSaved,  setLogoSaved]  = useState(false);
+  const [logoError,  setLogoError]  = useState('');
+  const fileInputRef = useRef(null);
 
   useEffect(() => {
     fetch('/api/settings').then(r => r.json()).then(d => {
@@ -180,8 +185,31 @@ function SectionCompany() {
         warehouse_addr:   d.warehouse_addr   ?? f.warehouse_addr,
         payment_email:    d.payment_email    ?? f.payment_email,
       }));
+      if (d.company_logo) setLogoUrl(d.company_logo);
     }).catch(() => {});
   }, []);
+
+  async function handleLogoChange(e) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setLogoError('');
+    if (!file.type.startsWith('image/')) { setLogoError('Fichier non supporté — PNG, JPG ou SVG uniquement.'); return; }
+    if (file.size > 2 * 1024 * 1024)    { setLogoError('Fichier trop lourd — maximum 2 Mo.'); return; }
+    const reader = new FileReader();
+    reader.onload = async (ev) => {
+      const dataUrl = ev.target.result;
+      setLogoUrl(dataUrl);
+      setLogoSaving(true);
+      await fetch('/api/settings', {
+        method: 'PUT', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ company_logo: dataUrl }),
+      });
+      setLogoSaving(false); setLogoSaved(true);
+      setTimeout(() => setLogoSaved(false), 3000);
+    };
+    reader.readAsDataURL(file);
+    e.target.value = '';
+  }
 
   const set = (k) => (e) => setFields(f => ({ ...f, [k]: e.target.value }));
 
@@ -220,18 +248,26 @@ function SectionCompany() {
         </div>
       </SettingsCard>
       <SettingsCard title="Apparence & marque" sub="Logo, couleurs et pied de page des documents.">
+        <input ref={fileInputRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handleLogoChange} />
         <div style={{ display: 'flex', alignItems: 'center', gap: 16, padding: '14px 16px', background: 'var(--bg-soft)', borderRadius: 8 }}>
-          <div style={{ width: 60, height: 60, borderRadius: 12, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <svg width="52" height="52" viewBox="0 0 48 48" fill="none">
-                <defs><linearGradient id="stlg" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stopColor="#00B4D8"/><stop offset="100%" stopColor="#1B4FD8"/></linearGradient></defs>
-                <path d="M8 8 C8 6 10 4 12 5 L38 20 C40 21 40 27 38 28 L12 43 C10 44 8 42 8 40 Z" fill="url(#stlg)"/>
-              </svg>
-            </div>
+          <div style={{ width: 60, height: 60, borderRadius: 12, border: '1px solid var(--border)', background: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', flexShrink: 0 }}>
+            {logoUrl
+              ? <img src={logoUrl} alt="Logo" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+              : <svg width="44" height="44" viewBox="0 0 48 48" fill="none">
+                  <defs><linearGradient id="stlg" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stopColor="#00B4D8"/><stop offset="100%" stopColor="#1B4FD8"/></linearGradient></defs>
+                  <path d="M8 8 C8 6 10 4 12 5 L38 20 C40 21 40 27 38 28 L12 43 C10 44 8 42 8 40 Z" fill="url(#stlg)"/>
+                </svg>
+            }
+          </div>
           <div style={{ flex: 1 }}>
             <div style={{ fontSize: 13, fontWeight: 600 }}>Logo actuel</div>
-            <div style={{ fontSize: 12, color: 'var(--ink-400)', marginTop: 2 }}>PNG/SVG · max 2 Mo · fond transparent recommandé</div>
+            <div style={{ fontSize: 12, color: 'var(--ink-400)', marginTop: 2 }}>PNG/JPG/SVG · max 2 Mo · fond transparent recommandé</div>
+            {logoError && <div style={{ fontSize: 12, color: 'var(--bad-600)', marginTop: 4 }}>{logoError}</div>}
+            {logoSaved  && <div style={{ fontSize: 12, color: 'var(--ok-700)', fontWeight: 600, marginTop: 4 }}>✓ Logo sauvegardé</div>}
           </div>
-          <button className="btn btn--ghost btn--sm"><I.Upload />Changer le logo</button>
+          <button className="btn btn--ghost btn--sm" onClick={() => fileInputRef.current?.click()} disabled={logoSaving}>
+            <I.Upload />{logoSaving ? 'Envoi…' : 'Changer le logo'}
+          </button>
         </div>
       </SettingsCard>
     </>

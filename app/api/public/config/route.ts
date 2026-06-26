@@ -5,6 +5,7 @@ import { prisma } from '@/src/lib/prisma';
 const DEFAULTS: Record<string, string> = {
   payment_email: 'paiement@jumla.cargo',
   company_name:  'Jumla Shipping',
+  company_logo:  '',
 };
 
 export async function GET() {
@@ -17,5 +18,6 @@ export async function GET() {
   return NextResponse.json({
     paymentEmail: m.payment_email,
     companyName:  m.company_name,
+    companyLogo:  m.company_logo || null,
   });
 }
