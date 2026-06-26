@@ -933,7 +933,7 @@
 
 /* ── Mobile (≤ 768px) ── */
 @media (max-width: 768px) {
-  .jc { padding: 0 18px; }
+  .jc { padding: 0 16px; }
 
   /* Top bar: hide on mobile */
   .jtop-bar { display: none; }
@@ -942,20 +942,35 @@
   .jnav__inner { height: 58px; gap: 14px; }
 
   /* Hero2 */
-  .jhero2 { padding: 48px 0 40px; }
+  .jhero2 { padding: 40px 0 36px; overflow: hidden; }
   .jhero2__grid {
     grid-template-columns: 1fr;
-    gap: 32px;
+    gap: 28px;
   }
-  .jhero2__title { font-size: 40px; }
-  .jhero2__sub { font-size: 15px; margin-bottom: 28px; }
+  .jhero2__left { min-width: 0; }
+  .jhero2__sub { font-size: 14px; margin-bottom: 24px; line-height: 1.65; word-break: break-word; }
+  .jhero2__title { font-size: 38px; }
   .jhero2__btns { flex-direction: column; gap: 10px; }
   .jhero2__btn-primary,
-  .jhero2__btn-ghost { width: 100%; text-align: center; justify-content: center; }
-  .jhero2__stats { margin-top: 32px; padding-top: 20px; }
-  .jhero2__stat-n { font-size: 24px; }
-  .jhero2__right { order: -1; }
-  .jhero2__card { padding: 20px; }
+  .jhero2__btn-ghost { width: 100%; text-align: center; justify-content: center; box-sizing: border-box; }
+
+  /* Stats — column layout, wrap */
+  .jhero2__stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0;
+    margin-top: 28px; padding-top: 20px;
+  }
+  .jhero2__stat { flex-direction: column; gap: 3px; align-items: flex-start; }
+  .jhero2__stat-sep { display: none; }
+  .jhero2__stat-n { font-size: 22px; }
+  .jhero2__stat-l { font-size: 11px; white-space: normal; }
+
+  /* Tracking card — full width, no overflow */
+  .jhero2__right { order: -1; min-width: 0; }
+  .jhero2__card { padding: 18px; min-width: 0; }
+  .jhero2__card-input { font-size: 14px; }
+  .jhero2__card-city-name { font-size: 15px; }
 
   /* Services */
   .jsvc3 { padding: 56px 0; }
