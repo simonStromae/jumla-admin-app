@@ -698,9 +698,9 @@ function CampaignCalendar({ campaigns, selected, onSelect, routeLabel }) {
                   </div>
                 )}
 
-                {/* Complet */}
+                {/* Full */}
                 {isFull && (
-                  <span style={{ fontSize: 9, color: 'var(--ink-300)', fontWeight: 600 }}>Complet</span>
+                  <span style={{ fontSize: 9, color: 'var(--ink-300)', fontWeight: 600 }}>{t('booking.route.full')}</span>
                 )}
               </button>
             );
@@ -713,34 +713,34 @@ function CampaignCalendar({ campaigns, selected, onSelect, routeLabel }) {
         <div style={{ marginTop: 14, padding: '14px 16px', background: 'var(--brand-50)', border: '2px solid var(--brand-200)', borderRadius: 12, display: 'flex', flexDirection: 'column', gap: 10 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <span style={{ fontSize: 20 }}>✈️</span>
-            <span style={{ fontWeight: 800, fontSize: 14, color: 'var(--brand-900)' }}>Départ sélectionné</span>
+            <span style={{ fontWeight: 800, fontSize: 14, color: 'var(--brand-900)' }}>{t('booking.route.selected')}</span>
             <span style={{ marginLeft: 'auto', fontSize: 11.5, fontWeight: 700, background: 'var(--brand-600)', color: 'white', padding: '3px 10px', borderRadius: 99 }}>
               {selectedCampaign.code}
             </span>
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
             <div style={{ background: 'white', borderRadius: 8, padding: '10px 12px', border: '1px solid var(--brand-100)' }}>
-              <div style={{ fontSize: 10.5, color: 'var(--ink-400)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.05em', marginBottom: 4 }}>Départ</div>
+              <div style={{ fontSize: 10.5, color: 'var(--ink-400)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.05em', marginBottom: 4 }}>{t('booking.route.dep')}</div>
               <div style={{ fontWeight: 700, fontSize: 13, color: 'var(--ink-900)' }}>
                 {selectedCampaign.departureDate
-                  ? new Date(selectedCampaign.departureDate).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'UTC' })
+                  ? new Date(selectedCampaign.departureDate).toLocaleDateString(locale === 'fr' ? 'fr-FR' : 'en-CA', { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'UTC' })
                   : '—'}
               </div>
             </div>
             <div style={{ background: 'white', borderRadius: 8, padding: '10px 12px', border: '1px solid var(--brand-100)' }}>
-              <div style={{ fontSize: 10.5, color: 'var(--ink-400)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.05em', marginBottom: 4 }}>Arrivée estimée</div>
+              <div style={{ fontSize: 10.5, color: 'var(--ink-400)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.05em', marginBottom: 4 }}>{t('booking.route.arr')}</div>
               <div style={{ fontWeight: 700, fontSize: 13, color: 'var(--ink-900)' }}>
                 {selectedCampaign.arrivalDate
-                  ? new Date(selectedCampaign.arrivalDate).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', timeZone: 'UTC' })
-                  : '~14 jours après départ'}
+                  ? new Date(selectedCampaign.arrivalDate).toLocaleDateString(locale === 'fr' ? 'fr-FR' : 'en-CA', { day: 'numeric', month: 'long', timeZone: 'UTC' })
+                  : '—'}
               </div>
             </div>
           </div>
           {selectedCampaign.spotsKg !== null && (
-            <div style={{ fontSize: 12.5, display: 'flex', alignItems: 'center', gap: 6, color: selectedCampaign.spotsKg < 50 ? 'var(--warn-700)' : 'var(--brand-600)', fontWeight: 600 }}>
+            <div style={{ fontSize: 12.5, color: selectedCampaign.spotsKg < 50 ? 'var(--warn-700)' : 'var(--brand-600)', fontWeight: 600 }}>
               {selectedCampaign.spotsKg < 50
-                ? <>⚠️ Seulement <strong>{selectedCampaign.spotsKg} kg</strong> restants — réservez vite !</>
-                : <>✓ <strong>{selectedCampaign.spotsKg} kg</strong> disponibles</>
+                ? t('booking.route.spotsLow').replace('{n}', selectedCampaign.spotsKg)
+                : t('booking.route.spotsAvail').replace('{n}', selectedCampaign.spotsKg)
               }
             </div>
           )}
@@ -975,7 +975,7 @@ export default function BookingScreen({ onNav, embedded = false }) {
       {!embedded && (
         <div className="co-subhead">
           <div className="co-subhead__inner">
-            <span className="co-subhead__title">Réservation</span>
+            <span className="co-subhead__title">{t('booking.misc.title')}</span>
             <span style={{ fontSize: 12, color: 'var(--ink-400)', display: 'flex', alignItems: 'center', gap: 6 }}>
               <span style={{ width: 24, height: 24, borderRadius: 999, background: 'var(--brand-100)', color: 'var(--brand-700)', fontSize: 11, fontWeight: 800, display: 'grid', placeItems: 'center', flexShrink: 0 }}>
                 {effectiveUser?.name?.charAt(0).toUpperCase()}
@@ -983,7 +983,7 @@ export default function BookingScreen({ onNav, embedded = false }) {
               {effectiveUser?.name} · {effectiveUser?.email}
               <button onClick={() => { localStorage.removeItem('jumla_user'); setUser(null); }}
                 style={{ background: 'none', border: 'none', color: 'var(--ink-300)', fontSize: 11, cursor: 'pointer', marginLeft: 4 }}>
-                Déconnexion
+                {t('booking.misc.logout')}
               </button>
             </span>
             <nav className="co-crumbs">
@@ -1035,14 +1035,12 @@ export default function BookingScreen({ onNav, embedded = false }) {
           {isDone ? (
             <div className="co-done">
               <div className="co-done__icon" style={{ background: 'var(--brand-50)', color: 'var(--brand-600)' }}>✓</div>
-              <h2 className="co-done__title">Réservation confirmée !</h2>
-              <p className="co-done__sub">
-                Votre réservation est enregistrée. Pour sécuriser votre colis, effectuez le virement Interac ci-dessous.
-              </p>
+              <h2 className="co-done__title">{t('booking.confirm.title')}</h2>
+              <p className="co-done__sub">{t('booking.confirm.sub')}</p>
 
               {refCode && (
                 <div style={{ background: 'white', border: '2px solid var(--brand-200)', borderRadius: 'var(--radius)', padding: '14px 24px', marginBottom: 16, textAlign: 'center', width: '100%', maxWidth: 380 }}>
-                  <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.08em', color: 'var(--ink-400)', marginBottom: 4 }}>Numéro de suivi</div>
+                  <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.08em', color: 'var(--ink-400)', marginBottom: 4 }}>{t('booking.confirm.trackingNumber')}</div>
                   <div style={{ fontSize: 22, fontWeight: 800, fontFamily: 'ui-monospace, monospace', color: 'var(--ink-900)', letterSpacing: '.04em' }}>{refCode}</div>
                 </div>
               )}
@@ -1051,23 +1049,23 @@ export default function BookingScreen({ onNav, embedded = false }) {
               <div style={{ width: '100%', maxWidth: 420, marginBottom: 14 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
                   <span style={{ fontSize: 20 }}>🏦</span>
-                  <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--ink-800)' }}>Instructions de paiement — Virement Interac</span>
+                  <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--ink-800)' }}>{t('booking.confirm.interacTitle')}</span>
                 </div>
                 <div style={{ background: 'var(--bg-soft)', border: '1.5px solid var(--border)', borderRadius: 'var(--radius)', overflow: 'hidden', marginBottom: 10 }}>
                   {[
-                    ['Envoyer à',            paymentEmail,                                                    false],
-                    ['Depuis votre adresse', effectiveUser?.email ?? '',                                       true ],
-                    ['Montant estimé',       `${price?.total?.toFixed(0) ?? '—'} ${route?.currency ?? 'CAD'}`, false],
-                    ['Message / Référence',  refCode,                                                          false],
+                    [t('booking.confirm.sendTo'),    paymentEmail,                                                    false],
+                    [t('booking.confirm.from'),      effectiveUser?.email ?? '',                                       true ],
+                    [t('booking.confirm.amount'),    `${price?.total?.toFixed(0) ?? '—'} ${route?.currency ?? 'CAD'}`, false],
+                    [t('booking.confirm.reference'), refCode,                                                          false],
                   ].map(([k, v, highlight], idx) => (
                     <div key={k} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 14px', borderBottom: idx < 3 ? '1px solid var(--border-soft)' : 'none', background: highlight ? 'var(--brand-50)' : 'transparent' }}>
                       <span style={{ fontSize: 12, color: 'var(--ink-400)', fontWeight: 500 }}>{k}</span>
-                      <span style={{ fontWeight: 700, color: highlight ? 'var(--brand-700)' : 'var(--ink-900)', fontFamily: 'ui-monospace, monospace', fontSize: k === 'Montant estimé' ? 15 : 12.5 }}>{v}</span>
+                      <span style={{ fontWeight: 700, color: highlight ? 'var(--brand-700)' : 'var(--ink-900)', fontFamily: 'ui-monospace, monospace', fontSize: 12.5 }}>{v}</span>
                     </div>
                   ))}
                 </div>
                 <div style={{ background: 'var(--warn-50)', border: '1px solid var(--warn-200)', borderRadius: 'var(--radius)', padding: '12px 14px', fontSize: 12.5, color: 'var(--warn-700)', lineHeight: 1.65 }}>
-                  ⚠️ Sans paiement, votre colis <strong>ne sera pas traité</strong>. Incluez <strong>{refCode}</strong> dans le message du virement.
+                  {t('booking.confirm.warning').replace('{code}', refCode)}
                 </div>
               </div>
 
@@ -1076,14 +1074,14 @@ export default function BookingScreen({ onNav, embedded = false }) {
                 <div style={{ width: '100%', maxWidth: 420, marginBottom: 14 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
                     <span style={{ fontSize: 20 }}>📦</span>
-                    <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--ink-800)' }}>Comment déposer votre colis</span>
+                    <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--ink-800)' }}>{t('booking.confirm.dropoffTitle')}</span>
                   </div>
                   <div style={{ background: 'var(--bg-soft)', border: '1.5px solid var(--border)', borderRadius: 'var(--radius)', overflow: 'hidden', marginBottom: 10 }}>
                     {dropoffInfo.address && (
                       <div style={{ display: 'flex', gap: 10, padding: '10px 14px', borderBottom: '1px solid var(--border-soft)' }}>
                         <span style={{ fontSize: 13, flexShrink: 0 }}>📍</span>
                         <div>
-                          <div style={{ fontSize: 11, color: 'var(--ink-400)', fontWeight: 600, marginBottom: 2 }}>Adresse de dépôt</div>
+                          <div style={{ fontSize: 11, color: 'var(--ink-400)', fontWeight: 600, marginBottom: 2 }}>{t('booking.confirm.dropoffAddress')}</div>
                           <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--ink-900)' }}>{dropoffInfo.address}</div>
                         </div>
                       </div>
@@ -1092,7 +1090,7 @@ export default function BookingScreen({ onNav, embedded = false }) {
                       <div style={{ display: 'flex', gap: 10, padding: '10px 14px', borderBottom: '1px solid var(--border-soft)' }}>
                         <span style={{ fontSize: 13, flexShrink: 0 }}>🕐</span>
                         <div>
-                          <div style={{ fontSize: 11, color: 'var(--ink-400)', fontWeight: 600, marginBottom: 2 }}>Horaires</div>
+                          <div style={{ fontSize: 11, color: 'var(--ink-400)', fontWeight: 600, marginBottom: 2 }}>{t('booking.confirm.dropoffHours')}</div>
                           <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--ink-900)' }}>{dropoffInfo.hours}</div>
                         </div>
                       </div>
@@ -1103,7 +1101,7 @@ export default function BookingScreen({ onNav, embedded = false }) {
                         <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap' }}>
                           {dropoffInfo.phone && (
                             <div>
-                              <div style={{ fontSize: 11, color: 'var(--ink-400)', fontWeight: 600, marginBottom: 2 }}>Téléphone</div>
+                              <div style={{ fontSize: 11, color: 'var(--ink-400)', fontWeight: 600, marginBottom: 2 }}>{t('booking.confirm.dropoffPhone')}</div>
                               <a href={`tel:${dropoffInfo.phone}`} style={{ fontSize: 13, fontWeight: 700, color: 'var(--brand-700)', textDecoration: 'none' }}>{dropoffInfo.phone}</a>
                             </div>
                           )}
@@ -1127,33 +1125,33 @@ export default function BookingScreen({ onNav, embedded = false }) {
 
               {/* Adjustment notice */}
               <div style={{ width: '100%', maxWidth: 420, background: 'var(--brand-50)', border: '1px solid var(--brand-100)', borderRadius: 'var(--radius)', padding: '12px 14px', fontSize: 12.5, color: 'var(--brand-700)', lineHeight: 1.65, marginBottom: 8 }}>
-                💡 <strong>Montant estimatif :</strong> le prix final est calculé après pesage réel en entrepôt. Si un ajustement est nécessaire, vous recevrez une notification WhatsApp et une facture complémentaire dans votre espace client.
+                {t('booking.confirm.estimate')}
               </div>
 
               {(price?.isOutsideDelivery || price?.isExpedition) && (
                 <div style={{ width: '100%', maxWidth: 420, background: 'var(--warn-50)', border: '1px solid var(--warn-200)', borderRadius: 'var(--radius)', padding: '12px 14px', fontSize: 12.5, color: 'var(--warn-700)', lineHeight: 1.6, marginBottom: 8 }}>
-                  <strong>Frais de livraison :</strong> les frais vers <strong>{form.recipCity === 'Hors région' ? form.recipCityCustom : form.recipCity}</strong> seront évalués à l'arrivée.
+                  {t('booking.confirm.outside').replace('{city}', form.recipCity === 'Hors région' ? form.recipCityCustom : form.recipCity)}
                 </div>
               )}
 
               <button className="co-btn co-btn--ghost" style={{ marginTop: 8 }} onClick={() => onNav?.(embedded ? '/client/dashboard?booked=' + refCode : '/')}>
-                {embedded ? '→ Voir mes colis' : '← Retour à l\'accueil'}
+                {embedded ? t('booking.confirm.viewParcels') : t('booking.confirm.backHome')}
               </button>
             </div>
           ) : (
             <>
-              {/* ── Step 0 : Route & Départ ── */}
+              {/* ── Step 0 : Route & Departure ── */}
               {step === 0 && (
                 <div className="co-section">
-                  <div className="co-section__title">Route & Date de départ</div>
+                  <div className="co-section__title">{t('booking.route.title')}</div>
                   {routesLoading ? (
-                    <div style={{ padding: 32, textAlign: 'center', color: 'var(--ink-400)' }}>Chargement des routes…</div>
+                    <div style={{ padding: 32, textAlign: 'center', color: 'var(--ink-400)' }}>{t('booking.route.loading')}</div>
                   ) : dbRoutes.length === 0 ? (
-                    <div style={{ padding: 32, textAlign: 'center', color: 'var(--ink-400)' }}>Aucune route disponible pour le moment.</div>
+                    <div style={{ padding: 32, textAlign: 'center', color: 'var(--ink-400)' }}>{t('booking.route.noRoutes')}</div>
                   ) : (
                     <>
                       <div style={{ marginBottom: 24 }}>
-                        <div className="co-label" style={{ marginBottom: 10 }}>Direction</div>
+                        <div className="co-label" style={{ marginBottom: 10 }}>{t('booking.route.direction')}</div>
                         <div className="co-opts">
                           {dbRoutes.map(r => (
                             <button key={r.id} className={`co-opt${form.route === r.id ? ' is-sel' : ''}`}
@@ -1161,18 +1159,18 @@ export default function BookingScreen({ onNav, embedded = false }) {
                               <div className="co-opt__radio" />
                               <div className="co-opt__body">
                                 <div className="co-opt__label">✈️ {r.label}</div>
-                                <div className="co-opt__sub">{r.code} · Transit ~14 jours</div>
+                                <div className="co-opt__sub">{r.code} · {t('booking.misc.transitDays').replace('{n}', r.transitDays ?? 14)}</div>
                               </div>
-                              <span className="co-opt__badge">dès 65 CAD</span>
+                              <span className="co-opt__badge">{t('booking.route.badge')}</span>
                             </button>
                           ))}
                         </div>
                       </div>
                       <div>
-                        <div className="co-label" style={{ marginBottom: 12 }}>Date de départ</div>
+                        <div className="co-label" style={{ marginBottom: 12 }}>{t('booking.route.departure')}</div>
                         {campaigns.length === 0 ? (
                           <p style={{ fontSize: 13, color: 'var(--ink-400)', padding: '12px 0' }}>
-                            Aucune cargaison ouverte sur cette route pour le moment.
+                            {t('booking.route.noCampaigns')}
                           </p>
                         ) : (
                           <CampaignCalendar
@@ -1183,7 +1181,7 @@ export default function BookingScreen({ onNav, embedded = false }) {
                           />
                         )}
                         {!form.departure && campaigns.length > 0 && (
-                          <p style={{ fontSize: 12, color: 'var(--ink-400)', marginTop: 10 }}>Cliquez sur une date surlignée pour continuer.</p>
+                          <p style={{ fontSize: 12, color: 'var(--ink-400)', marginTop: 10 }}>{t('booking.route.clickHint')}</p>
                         )}
                       </div>
                     </>
@@ -1191,24 +1189,32 @@ export default function BookingScreen({ onNav, embedded = false }) {
                 </div>
               )}
 
-              {/* ── Step 1 : Contenu du colis ── */}
+              {/* ── Step 1 : Parcel content ── */}
               {step === 1 && (
                 <div className="co-section">
-                  <div className="co-section__title">Contenu du colis</div>
+                  <div className="co-section__title">{t('booking.parcel.title')}</div>
 
                   {/* Info hint */}
                   <div style={{ background: 'var(--brand-50)', border: '1px solid var(--brand-100)', borderRadius: 'var(--radius)', padding: '10px 14px', fontSize: 12.5, color: 'var(--brand-700)', marginBottom: 16, lineHeight: 1.6 }}>
-                    💡 Créez <strong>une ligne par produit</strong>. Si votre produit n'apparaît pas dans les catégories, choisissez <strong>Standard</strong>.
+                    💡 {t('booking.parcel.hint').split(t('booking.parcel.hintBold1')).map((part, i, arr) =>
+                      i < arr.length - 1
+                        ? <span key={i}>{part}<strong>{t('booking.parcel.hintBold1')}</strong></span>
+                        : part.split(t('booking.parcel.hintBold2')).map((p, j, a) =>
+                            j < a.length - 1
+                              ? <span key={j}>{p}<strong>{t('booking.parcel.hintBold2')}</strong></span>
+                              : p
+                          )
+                    )}
                   </div>
 
-                  {/* Articles */}
-                  <div className="co-label" style={{ marginBottom: 10 }}>Articles</div>
+                  {/* Items */}
+                  <div className="co-label" style={{ marginBottom: 10 }}>{t('booking.parcel.items')}</div>
                   <div style={{ border: '1px solid var(--border)', borderRadius: 'var(--radius)', overflow: 'hidden' }}>
                     <div style={{ display: 'grid', gridTemplateColumns: '180px 1fr 80px 100px 36px', gap: 0, padding: '8px 12px', background: 'var(--bg-soft)', borderBottom: '1px solid var(--border)', fontSize: 10.5, fontWeight: 700, letterSpacing: '.06em', textTransform: 'uppercase', color: 'var(--ink-500)' }}>
-                      <div>Catégorie</div>
-                      <div>Description</div>
-                      <div>Pièces</div>
-                      <div>Poids (kg)</div>
+                      <div>{t('booking.parcel.category')}</div>
+                      <div>{t('booking.parcel.desc')}</div>
+                      <div>{t('booking.parcel.pieces')}</div>
+                      <div>{t('booking.parcel.weight')}</div>
                       <div></div>
                     </div>
                     {items.map((item, idx) => {
@@ -1250,7 +1256,7 @@ export default function BookingScreen({ onNav, embedded = false }) {
                           </div>
                           {isBeer && (
                             <div style={{ background: '#fffbeb', borderBottom: isLast ? 'none' : '1px solid var(--border-soft)', padding: '6px 12px 8px 28px', display: 'flex', gap: 10, alignItems: 'center' }}>
-                              <span style={{ fontSize: 11.5, color: '#92400e', fontWeight: 600, whiteSpace: 'nowrap' }}>🍺 Frais SAQ :</span>
+                              <span style={{ fontSize: 11.5, color: '#92400e', fontWeight: 600, whiteSpace: 'nowrap' }}>🍺 {t('booking.parcel.saqFees')}</span>
                               <select className="co-input" value={item.beerFormat} onChange={e => updItem(item.id, 'beerFormat', e.target.value)} style={{ fontSize: 12, flex: '0 0 auto', width: 190 }}>
                                 <option value="24x65">Casier 24×65 cl (24.50$)</option>
                                 <option value="24x33">Casier 24×33 cl (35.83$)</option>
@@ -1258,7 +1264,7 @@ export default function BookingScreen({ onNav, embedded = false }) {
                               </select>
                               <input className="co-input" type="number" min="0" step="1" value={item.nbCasiers}
                                 onChange={e => updItem(item.id, 'nbCasiers', e.target.value)}
-                                placeholder="Nb casiers" style={{ width: 100 }} />
+                                placeholder={t('booking.parcel.nbCasiers')} style={{ width: 100 }} />
                             </div>
                           )}
                         </div>
@@ -1270,12 +1276,12 @@ export default function BookingScreen({ onNav, embedded = false }) {
                     background: 'none', border: '2px dashed var(--border)',
                     borderRadius: 'var(--radius)', fontSize: 13, fontWeight: 600,
                     color: 'var(--ink-400)', cursor: 'pointer',
-                  }} onClick={addItem}>+ Ajouter un article</button>
+                  }} onClick={addItem}>{t('booking.parcel.addItem')}</button>
 
-                  {/* Poids total */}
+                  {/* Total weight */}
                   {totalKg > 0 && (
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 10, padding: '10px 4px 0', fontSize: 13 }}>
-                      <span style={{ color: 'var(--ink-500)' }}>Poids total :</span>
+                      <span style={{ color: 'var(--ink-500)' }}>{t('booking.parcel.totalWeight')} :</span>
                       <strong style={{ color: 'var(--ink-900)' }}>{totalKg} kg</strong>
                       {totalKg > 3 && (
                         <span style={{ color: 'var(--ink-400)', fontSize: 12 }}>
@@ -1290,22 +1296,22 @@ export default function BookingScreen({ onNav, embedded = false }) {
                     </div>
                   )}
 
-                  {/* Accessoires */}
+                  {/* Accessories */}
                   <div style={{ marginTop: 20, marginBottom: price ? 20 : 0 }}>
-                    <div className="co-label" style={{ marginBottom: 10 }}>Accessoires (optionnel)</div>
+                    <div className="co-label" style={{ marginBottom: 10 }}>{t('booking.parcel.addons')}</div>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                       {[
-                        { key: 'smallBag',  label: 'Petit sac',   unitPrice: route.fees.bags?.small  ?? route.fees.addons?.smallBag  ?? 5,   icon: '🛍️' },
-                        { key: 'mediumBag', label: 'Moyen sac',   unitPrice: route.fees.bags?.medium ?? route.fees.addons?.mediumBag ?? 7.5, icon: '🛍️' },
-                        { key: 'largeBag',  label: 'Grand sac',   unitPrice: route.fees.bags?.large  ?? route.fees.addons?.largeBag  ?? 10,  icon: '🛍️' },
-                        { key: 'cartons',   label: 'Carton',      unitPrice: totalKg <= 3 ? (route.fees.tiers?.[0]?.cartonFlat ?? 1) : (route.fees.tiers?.[1]?.cartonPerUnit ?? 1.5), icon: '📦',
+                        { key: 'smallBag',  label: t('booking.parcel.smallBag'),  unitPrice: route.fees.bags?.small  ?? route.fees.addons?.smallBag  ?? 5,   icon: '🛍️' },
+                        { key: 'mediumBag', label: t('booking.parcel.mediumBag'), unitPrice: route.fees.bags?.medium ?? route.fees.addons?.mediumBag ?? 7.5, icon: '🛍️' },
+                        { key: 'largeBag',  label: t('booking.parcel.largeBag'),  unitPrice: route.fees.bags?.large  ?? route.fees.addons?.largeBag  ?? 10,  icon: '🛍️' },
+                        { key: 'cartons',   label: t('booking.parcel.cartons'),   unitPrice: totalKg <= 3 ? (route.fees.tiers?.[0]?.cartonFlat ?? 1) : (route.fees.tiers?.[1]?.cartonPerUnit ?? 1.5), icon: '📦',
                           sub: totalKg <= 3 ? `${route.fees.tiers?.[0]?.cartonFlat ?? 1} ${route.currency} / carton` : `${route.fees.tiers?.[1]?.cartonPerUnit ?? 1.5} ${route.currency} / carton (> 3 kg)` },
                       ].map(({ key, label, unitPrice, icon, sub }) => (
                         <div key={key} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', background: 'var(--bg-soft)', border: '1.5px solid var(--border)', borderRadius: 'var(--radius)' }}>
                           <div>
                             <span style={{ fontSize: 13.5, fontWeight: 600, color: 'var(--ink-800)' }}>{icon} {label}</span>
                             <span style={{ fontSize: 12, color: 'var(--ink-400)', marginLeft: 8 }}>
-                              {sub || `${unitPrice} ${route.currency} / unité`}
+                              {sub || `${unitPrice} ${route.currency} / ${locale === 'fr' ? 'unité' : 'unit'}`}
                             </span>
                           </div>
                           <Stepper value={form.addons[key]} onChange={v => updAddon(key, v)} />
@@ -1319,25 +1325,22 @@ export default function BookingScreen({ onNav, embedded = false }) {
                     <div style={{ background: 'var(--brand-50)', border: '1.5px solid var(--brand-100)', borderRadius: 'var(--radius)', padding: '14px 16px' }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: showBreakdown ? 12 : 0 }}>
                         <span style={{ fontSize: 13.5, fontWeight: 700, color: 'var(--brand-700)' }}>
-                          Estimation : {price.prixClient.toFixed(0)} {route.currency}
+                          {t('booking.parcel.estimation')} : {price.prixClient.toFixed(0)} {route.currency}
                         </span>
                         <button onClick={() => setShowBreakdown(b => !b)}
                           style={{ fontSize: 11.5, color: 'var(--brand-600)', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 600 }}>
-                          {showBreakdown ? 'Masquer ▴' : 'Voir le détail ▾'}
+                          {showBreakdown ? t('booking.parcel.hideBreakdown') : t('booking.parcel.showBreakdown')}
                         </button>
                       </div>
                       {showBreakdown && (
                         <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-                          {/* Transport */}
                           <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12.5, color: 'var(--ink-700)', fontWeight: 600 }}>
-                            <span>Transport ({price.totalKg} kg)</span><span>{price.transport.toFixed(0)} {route.currency}</span>
+                            <span>{t('booking.payment.transport')} ({price.totalKg} kg)</span><span>{price.transport.toFixed(0)} {route.currency}</span>
                           </div>
-
-                          {/* Surcharges catégories */}
                           {price.catSurchargeLines.length > 0 && (
                             <>
                               <div style={{ fontSize: 10.5, fontWeight: 700, letterSpacing: '.08em', textTransform: 'uppercase', color: 'var(--brand-500)', marginTop: 4, marginBottom: 2 }}>
-                                Suppléments
+                                {t('booking.parcel.supplements')}
                               </div>
                               {price.catSurchargeLines.map(l => (
                                 <div key={l.catId} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: 'var(--ink-600)', paddingLeft: 10 }}>
@@ -1347,12 +1350,10 @@ export default function BookingScreen({ onNav, embedded = false }) {
                               ))}
                             </>
                           )}
-
-                          {/* SAQ */}
                           {price.saqLines?.length > 0 && (
                             <>
                               <div style={{ fontSize: 10.5, fontWeight: 700, letterSpacing: '.08em', textTransform: 'uppercase', color: 'var(--brand-500)', marginTop: 4, marginBottom: 2 }}>
-                                Frais SAQ
+                                {t('booking.payment.saq')}
                               </div>
                               {price.saqLines.map((l, i) => (
                                 <div key={i} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: 'var(--ink-600)', paddingLeft: 10 }}>
@@ -1362,69 +1363,65 @@ export default function BookingScreen({ onNav, embedded = false }) {
                               ))}
                             </>
                           )}
-
-                          {/* Accessoires */}
                           {price.addonTotal > 0 && (
                             <>
                               <div style={{ fontSize: 10.5, fontWeight: 700, letterSpacing: '.08em', textTransform: 'uppercase', color: 'var(--brand-500)', marginTop: 4, marginBottom: 2 }}>
-                                Accessoires
+                                {t('booking.payment.accessories')}
                               </div>
-                              {price.addonSmall  > 0 && <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: 'var(--ink-600)', paddingLeft: 10 }}><span>Petits sacs × {form.addons.smallBag}</span><span>{price.addonSmall.toFixed(0)} {route.currency}</span></div>}
-                              {price.addonMedium > 0 && <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: 'var(--ink-600)', paddingLeft: 10 }}><span>Moyens sacs × {form.addons.mediumBag}</span><span>{price.addonMedium.toFixed(0)} {route.currency}</span></div>}
-                              {price.addonLarge  > 0 && <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: 'var(--ink-600)', paddingLeft: 10 }}><span>Grands sacs × {form.addons.largeBag}</span><span>{price.addonLarge.toFixed(0)} {route.currency}</span></div>}
-                              {price.carton > 0 && <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: 'var(--ink-600)', paddingLeft: 10 }}><span>Cartons × {form.addons.cartons} ({price.cartonRate} {route.currency}/u)</span><span>{price.carton.toFixed(2)} {route.currency}</span></div>}
+                              {price.addonSmall  > 0 && <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: 'var(--ink-600)', paddingLeft: 10 }}><span>{t('booking.parcel.smallBag')} × {form.addons.smallBag}</span><span>{price.addonSmall.toFixed(0)} {route.currency}</span></div>}
+                              {price.addonMedium > 0 && <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: 'var(--ink-600)', paddingLeft: 10 }}><span>{t('booking.parcel.mediumBag')} × {form.addons.mediumBag}</span><span>{price.addonMedium.toFixed(0)} {route.currency}</span></div>}
+                              {price.addonLarge  > 0 && <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: 'var(--ink-600)', paddingLeft: 10 }}><span>{t('booking.parcel.largeBag')} × {form.addons.largeBag}</span><span>{price.addonLarge.toFixed(0)} {route.currency}</span></div>}
+                              {price.carton > 0 && <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: 'var(--ink-600)', paddingLeft: 10 }}><span>{t('booking.parcel.cartons')} × {form.addons.cartons} ({price.cartonRate} {route.currency}/u)</span><span>{price.carton.toFixed(2)} {route.currency}</span></div>}
                             </>
                           )}
-
-                          {/* Manutention / Douane / Formalités */}
                           {price.manutention > 0 && (
                             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: 'var(--ink-600)' }}>
-                              <span>Manutention</span><span>{price.manutention.toFixed(2)} {route.currency}</span>
+                              <span>{t('booking.payment.handling')}</span><span>{price.manutention.toFixed(2)} {route.currency}</span>
                             </div>
                           )}
                           {price.douane > 0 && (
                             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: 'var(--ink-600)' }}>
-                              <span>Douane</span><span>{price.douane.toFixed(2)} {route.currency}</span>
+                              <span>{t('booking.payment.customs')}</span><span>{price.douane.toFixed(2)} {route.currency}</span>
                             </div>
                           )}
                           {price.formalites > 0 && (
                             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: 'var(--ink-600)' }}>
-                              <span>Formalités</span><span>{price.formalites.toFixed(2)} {route.currency}</span>
+                              <span>{t('booking.payment.formalities')}</span><span>{price.formalites.toFixed(2)} {route.currency}</span>
                             </div>
                           )}
                         </div>
                       )}
                       <div style={{ marginTop: 10, fontSize: 11.5, color: 'var(--brand-600)', fontStyle: 'italic' }}>
-                        Prix indicatif — le montant final sera calculé après réception et pesage réel en entrepôt.
+                        {t('booking.parcel.indicative')}
                       </div>
                     </div>
                   )}
                 </div>
               )}
 
-              {/* ── Step 2 : Coordonnées ── */}
+              {/* ── Step 2 : Sender & Recipient ── */}
               {step === 2 && (
                 <div className="co-section">
-                  <div className="co-section__title">Expéditeur & Destinataire</div>
+                  <div className="co-section__title">{t('booking.coords.title')}</div>
 
                   <div className="co-split">
                     <div className="co-split-block">
-                      <div className="co-split-block__title">Expéditeur</div>
-                      <Field label="Nom complet">
+                      <div className="co-split-block__title">{t('booking.coords.sender')}</div>
+                      <Field label={t('booking.coords.name')}>
                         <input className="co-input" value={form.senderName} onChange={e => upd('senderName', e.target.value)} placeholder="Awa Nkemdirim" />
                       </Field>
-                      <Field label="Téléphone">
+                      <Field label={t('booking.coords.phone')}>
                         <input className="co-input" value={form.senderPhone} onChange={e => upd('senderPhone', e.target.value)} placeholder="+237 6** ** ** **" />
                       </Field>
-                      <Field label="Email">
+                      <Field label={t('booking.coords.email')}>
                         <input className="co-input" type="email" value={form.senderEmail} onChange={e => upd('senderEmail', e.target.value)} placeholder="vous@email.com" />
                       </Field>
                     </div>
 
                     <div className="co-split-block">
-                      <div className="co-split-block__title">Destinataire</div>
+                      <div className="co-split-block__title">{t('booking.coords.recipient')}</div>
                       {savedRecipients.length > 0 && (
-                        <Field label="Destinataire fréquent">
+                        <Field label={t('booking.coords.frequentRecipient')}>
                           <select className="co-select" defaultValue="" onChange={e => {
                             const r = savedRecipients.find(x => x.id === e.target.value);
                             if (r) {
@@ -1433,7 +1430,7 @@ export default function BookingScreen({ onNav, embedded = false }) {
                               if (r.city) upd('recipCity', r.city);
                             }
                           }}>
-                            <option value="">Choisir un destinataire…</option>
+                            <option value="">{t('booking.coords.chooseRecipient')}</option>
                             {savedRecipients.map(r => (
                               <option key={r.id} value={r.id}>
                                 {r.label ? `${r.label} — ` : ''}{r.name}{r.city ? ` (${r.city})` : ''}
@@ -1442,27 +1439,27 @@ export default function BookingScreen({ onNav, embedded = false }) {
                           </select>
                         </Field>
                       )}
-                      <Field label="Nom complet">
+                      <Field label={t('booking.coords.name')}>
                         <input className="co-input" value={form.recipName} onChange={e => upd('recipName', e.target.value)} placeholder="Jean Mbarga" />
                       </Field>
-                      <Field label="Téléphone">
+                      <Field label={t('booking.coords.phone')}>
                         <input className="co-input" value={form.recipPhone} onChange={e => upd('recipPhone', e.target.value)} placeholder="+1 514 *** ****" />
                       </Field>
-                      <Field label="Ville">
+                      <Field label={t('booking.coords.city')}>
                         <select className="co-select" value={form.recipCity} onChange={e => upd('recipCity', e.target.value)}>
-                          <optgroup label="Île de Montréal (+25 CAD livraison)">
+                          <optgroup label={t('booking.coords.montrealIleOption')}>
                             {montréalIleCities.map(c => <option key={c.label}>{c.label}</option>)}
                           </optgroup>
-                          <optgroup label="Grand Montréal (+30 CAD livraison)">
+                          <optgroup label={t('booking.coords.montrealGrandOption')}>
                             {montréalGrandCities.map(c => <option key={c.label}>{c.label}</option>)}
                           </optgroup>
-                          <optgroup label="Partout ailleurs">
+                          <optgroup label={t('booking.coords.elsewhere')}>
                             <option value="Hors région">Hors région</option>
                           </optgroup>
                         </select>
                       </Field>
                       {form.recipCity === 'Hors région' && (
-                        <Field label="Votre ville">
+                        <Field label={t('booking.coords.yourCity')}>
                           <input className="co-input" value={form.recipCityCustom}
                             onChange={e => upd('recipCityCustom', e.target.value)}
                             placeholder="Ex : Québec, Ottawa, Toronto…" />
@@ -1471,27 +1468,25 @@ export default function BookingScreen({ onNav, embedded = false }) {
                       {embedded && (
                         <label style={{ display: 'flex', alignItems: 'flex-start', gap: 9, marginTop: 10, cursor: 'pointer', fontSize: 12.5 }}>
                           <input type="checkbox" style={{ marginTop: 2, flexShrink: 0, accentColor: 'var(--brand-500)' }} checked={saveRecip} onChange={e => setSaveRecip(e.target.checked)} />
-                          <span style={{ color: 'var(--ink-600)' }}>Enregistrer ce destinataire pour mes prochaines réservations</span>
+                          <span style={{ color: 'var(--ink-600)' }}>{t('booking.coords.saveRecipient')}</span>
                         </label>
                       )}
                     </div>
                   </div>
 
-                  {/* Mode de livraison */}
+                  {/* Delivery method */}
                   <div style={{ marginTop: 22 }}>
-                    <div className="co-label" style={{ marginBottom: 10 }}>Mode de livraison</div>
+                    <div className="co-label" style={{ marginBottom: 10 }}>{t('booking.coords.delivery')}</div>
                     <div className="co-opts" style={{ flexDirection: 'column', gap: 8 }}>
-                      {/* Retrait */}
                       <button className={`co-opt${form.delivery === 'pickup' ? ' is-sel' : ''}`} onClick={() => upd('delivery', 'pickup')}>
                         <div className="co-opt__radio" />
                         <div className="co-opt__body">
-                          <div className="co-opt__label">Retrait à l'entrepôt</div>
-                          <div className="co-opt__sub">Lachine, Montréal · Sur rendez-vous</div>
+                          <div className="co-opt__label">{t('booking.coords.pickup')}</div>
+                          <div className="co-opt__sub">{t('booking.coords.pickupSub')}</div>
                         </div>
-                        <span className="co-opt__badge">Gratuit</span>
+                        <span className="co-opt__badge">{t('booking.summary.deliveryFree')}</span>
                       </button>
 
-                      {/* Livraison domicile */}
                       <button
                         className={`co-opt${form.delivery === 'home' ? ' is-sel' : ''}`}
                         onClick={() => upd('delivery', 'home')}
@@ -1499,39 +1494,38 @@ export default function BookingScreen({ onNav, embedded = false }) {
                       >
                         <div className="co-opt__radio" />
                         <div className="co-opt__body">
-                          <div className="co-opt__label">Livraison à domicile</div>
+                          <div className="co-opt__label">{t('booking.coords.home')}</div>
                           <div className="co-opt__sub">
-                            {cityZone === 'montreal-ile'   ? 'Île de Montréal'    :
-                             cityZone === 'montreal-grand' ? 'Grand Montréal'     : 'Hors région'}
+                            {cityZone === 'montreal-ile'   ? t('booking.coords.montrealIle')    :
+                             cityZone === 'montreal-grand' ? t('booking.coords.montrealGrand')   : 'Hors région'}
                           </div>
                         </div>
                         <span className="co-opt__badge">
                           {cityZone === 'montreal-ile'   ? `+${route.fees.montrealIleDelivery   ?? 25} ${route.currency}`   :
-                           cityZone === 'montreal-grand' ? `+${route.fees.montrealGrandDelivery ?? 30} ${route.currency}` : 'À évaluer'}
+                           cityZone === 'montreal-grand' ? `+${route.fees.montrealGrandDelivery ?? 30} ${route.currency}` : t('booking.summary.toEvaluate')}
                         </span>
                       </button>
 
-                      {/* Expédition postale */}
                       <button className={`co-opt${form.delivery === 'expedition' ? ' is-sel' : ''}`} onClick={() => upd('delivery', 'expedition')}>
                         <div className="co-opt__radio" />
                         <div className="co-opt__body">
-                          <div className="co-opt__label">Expédition par la poste</div>
-                          <div className="co-opt__sub">Colis envoyé par Postes Canada vers votre adresse</div>
+                          <div className="co-opt__label">{t('booking.coords.postalService')}</div>
+                          <div className="co-opt__sub">{t('booking.coords.postSub')}</div>
                         </div>
-                        <span className="co-opt__badge">Frais évalués</span>
+                        <span className="co-opt__badge">{t('booking.coords.postalFees')}</span>
                       </button>
                     </div>
                   </div>
 
-                  {/* Adresse de livraison */}
+                  {/* Delivery address */}
                   {(form.delivery === 'home' || form.delivery === 'expedition') && (
                     <div style={{ marginTop: 18, padding: '16px 18px', background: 'var(--bg-soft)', border: '1.5px solid var(--border)', borderRadius: 'var(--radius)' }}>
                       <div className="co-label" style={{ marginBottom: 14 }}>
-                        {form.delivery === 'expedition' ? 'Adresse d\'expédition' : 'Adresse de livraison'}
+                        {form.delivery === 'expedition' ? t('booking.coords.shippingAddr') : t('booking.coords.deliveryAddr')}
                       </div>
                       {savedAddresses.length > 0 && (
                         <div className="co-field" style={{ marginBottom: 12 }}>
-                          <label className="co-label">Utiliser une adresse sauvegardée</label>
+                          <label className="co-label">{t('booking.coords.useSaved')}</label>
                           <select className="co-select" defaultValue="" onChange={e => {
                             const addr = savedAddresses.find(a => a.id === e.target.value);
                             if (addr) {
@@ -1541,7 +1535,7 @@ export default function BookingScreen({ onNav, embedded = false }) {
                               upd('recipPostal', addr.postal || '');
                             }
                           }}>
-                            <option value="">Choisir une adresse…</option>
+                            <option value="">{t('booking.coords.chooseSaved')}</option>
                             {savedAddresses.map(a => (
                               <option key={a.id} value={a.id}>
                                 {a.label ? `${a.label} — ` : ''}{a.address}{a.city ? `, ${a.city}` : ''}
@@ -1552,22 +1546,22 @@ export default function BookingScreen({ onNav, embedded = false }) {
                       )}
                       <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                         <div className="co-field" style={{ marginBottom: 0 }}>
-                          <label className="co-label">Adresse (numéro et rue)</label>
+                          <label className="co-label">{t('booking.coords.addressLine')}</label>
                           <input className="co-input" value={form.recipAddress} onChange={e => upd('recipAddress', e.target.value)} placeholder="123 rue Sainte-Catherine" />
                         </div>
                         <div className="co-field" style={{ marginBottom: 0 }}>
-                          <label className="co-label">Appartement, bureau, suite (optionnel)</label>
+                          <label className="co-label">{t('booking.coords.aptOptional')}</label>
                           <input className="co-input" value={form.recipApt} onChange={e => upd('recipApt', e.target.value)} placeholder="Apt 4B" />
                         </div>
                         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
                           <div className="co-field" style={{ marginBottom: 0 }}>
-                            <label className="co-label">Ville</label>
+                            <label className="co-label">{t('booking.coords.city')}</label>
                             <div className="co-input" style={{ background: 'var(--ink-50)', color: 'var(--ink-500)', cursor: 'default', display: 'flex', alignItems: 'center' }}>
                               {form.recipCity === 'Hors région' ? (form.recipCityCustom || 'Hors région') : form.recipCity}
                             </div>
                           </div>
                           <div className="co-field" style={{ marginBottom: 0 }}>
-                            <label className="co-label">Province / Territoire</label>
+                            <label className="co-label">{t('booking.coords.provinceTerritoire')}</label>
                             <select className="co-select" value={form.recipProvince} onChange={e => upd('recipProvince', e.target.value)}>
                               <option value="QC">Québec</option>
                               <option value="ON">Ontario</option>
@@ -1581,21 +1575,21 @@ export default function BookingScreen({ onNav, embedded = false }) {
                           </div>
                         </div>
                         <div className="co-field" style={{ marginBottom: 0 }}>
-                          <label className="co-label">Code postal</label>
+                          <label className="co-label">{t('booking.coords.postal')}</label>
                           <input className="co-input" value={form.recipPostal} onChange={e => upd('recipPostal', e.target.value)} placeholder="H3H 1A1" style={{ maxWidth: 160 }} />
                         </div>
                       </div>
 
                       {(form.delivery === 'expedition' || cityZone === 'other') && (
                         <div style={{ marginTop: 12, background: 'var(--warn-50)', border: '1px solid var(--warn-200)', borderRadius: 'var(--radius)', padding: '10px 14px', fontSize: 12.5, color: 'var(--warn-700)', lineHeight: 1.6 }}>
-                          ℹ️ Les frais vers <strong>{form.recipCity === 'Hors région' ? (form.recipCityCustom || 'votre ville') : form.recipCity}</strong> seront évalués à l'arrivée à Montréal. Vous recevrez une facture et un lien de paiement par email.
+                          {t('booking.coords.outsideNote').replace('{city}', form.recipCity === 'Hors région' ? (form.recipCityCustom || 'votre ville') : form.recipCity)}
                         </div>
                       )}
 
                       {embedded && (
                         <label style={{ display: 'flex', alignItems: 'flex-start', gap: 10, marginTop: 14, cursor: 'pointer', fontSize: 12.5 }}>
                           <input type="checkbox" style={{ marginTop: 2, flexShrink: 0 }} checked={saveAddr} onChange={e => setSaveAddr(e.target.checked)} />
-                          <span style={{ color: 'var(--ink-600)' }}>Enregistrer cette adresse pour mes prochaines réservations</span>
+                          <span style={{ color: 'var(--ink-600)' }}>{t('booking.coords.saveAddress')}</span>
                         </label>
                       )}
                     </div>
@@ -1605,53 +1599,51 @@ export default function BookingScreen({ onNav, embedded = false }) {
                     <label className="co-account" style={{ marginTop: 16 }}>
                       <input type="checkbox" checked={createAccount} onChange={e => setCreateAccount(e.target.checked)} />
                       <div>
-                        <div className="co-account__title">Créer un compte Jumla</div>
-                        <div className="co-account__sub">Suivez vos envois en ligne et accédez à votre historique.</div>
+                        <div className="co-account__title">{t('booking.coords.createAccount')}</div>
+                        <div className="co-account__sub">{t('booking.coords.createAccountSub')}</div>
                       </div>
                     </label>
                   )}
                 </div>
               )}
 
-              {/* ── Step 3 : Paiement ── */}
+              {/* ── Step 3 : Payment ── */}
               {step === 3 && price && (
                 <div className="co-section">
-                  <div className="co-section__title">Paiement</div>
+                  <div className="co-section__title">{t('booking.steps.payment')}</div>
 
                   <div style={{ border: '1px solid var(--border)', borderRadius: 'var(--radius)', overflow: 'hidden', marginBottom: 24 }}>
                     <div style={{ padding: '10px 16px', background: 'var(--ink-900)', color: 'white', fontSize: 11, fontWeight: 700, letterSpacing: '.08em', textTransform: 'uppercase' }}>
-                      Détail de la facture
+                      {t('booking.payment.invoiceDetail')}
                     </div>
 
                     <div style={{ padding: '16px 16px 0' }}>
-                      {/* Transport */}
                       <div style={{ marginBottom: 14 }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13.5, fontWeight: 700, color: 'var(--ink-800)', marginBottom: 6 }}>
-                          <span>Transport — {price.totalKg} kg</span>
+                          <span>{t('booking.payment.transport')} — {price.totalKg} kg</span>
                           <span>{price.transport.toFixed(0)} {route.currency}</span>
                         </div>
                         {price.manutention > 0 && (
                           <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: 'var(--ink-500)', paddingLeft: 14, marginBottom: 2 }}>
-                            <span>Manutention</span><span>{price.manutention.toFixed(2)} {route.currency}</span>
+                            <span>{t('booking.payment.handling')}</span><span>{price.manutention.toFixed(2)} {route.currency}</span>
                           </div>
                         )}
                         {price.douane > 0 && (
                           <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: 'var(--ink-500)', paddingLeft: 14, marginBottom: 2 }}>
-                            <span>Douane</span><span>{price.douane.toFixed(2)} {route.currency}</span>
+                            <span>{t('booking.payment.customs')}</span><span>{price.douane.toFixed(2)} {route.currency}</span>
                           </div>
                         )}
                         {price.formalites > 0 && (
                           <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: 'var(--ink-500)', paddingLeft: 14, marginBottom: 2 }}>
-                            <span>Formalités</span><span>{price.formalites.toFixed(2)} {route.currency}</span>
+                            <span>{t('booking.payment.formalities')}</span><span>{price.formalites.toFixed(2)} {route.currency}</span>
                           </div>
                         )}
                       </div>
 
-                      {/* Suppléments catégories */}
                       {price.catSurchargeLines.length > 0 && (
                         <div style={{ borderTop: '1px solid var(--border-soft)', paddingTop: 12, marginBottom: 14 }}>
                           <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13.5, fontWeight: 700, color: 'var(--ink-800)', marginBottom: 4 }}>
-                            <span>Suppléments catégories</span>
+                            <span>{t('booking.payment.categorySupp')}</span>
                             <span>{price.catSurchargeTotal >= 0 ? '+' : ''}{price.catSurchargeTotal.toFixed(0)} {route.currency}</span>
                           </div>
                           {price.catSurchargeLines.map(l => (
@@ -1663,11 +1655,10 @@ export default function BookingScreen({ onNav, embedded = false }) {
                         </div>
                       )}
 
-                      {/* Frais SAQ */}
                       {price.saqLines?.length > 0 && (
                         <div style={{ borderTop: '1px solid var(--border-soft)', paddingTop: 12, marginBottom: 14 }}>
                           <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13.5, fontWeight: 700, color: 'var(--ink-800)', marginBottom: 4 }}>
-                            <span>Frais SAQ</span>
+                            <span>{t('booking.payment.saq')}</span>
                             <span>+{price.saqTotal.toFixed(2)} {route.currency}</span>
                           </div>
                           {price.saqLines.map((l, i) => (
@@ -1679,37 +1670,35 @@ export default function BookingScreen({ onNav, embedded = false }) {
                         </div>
                       )}
 
-                      {/* Accessoires */}
                       {price.addonTotal > 0 && (
                         <div style={{ borderTop: '1px solid var(--border-soft)', paddingTop: 12, marginBottom: 14 }}>
                           <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13.5, fontWeight: 700, color: 'var(--ink-800)', marginBottom: 4 }}>
-                            <span>Accessoires</span><span>{price.addonTotal.toFixed(2)} {route.currency}</span>
+                            <span>{t('booking.payment.accessories')}</span><span>{price.addonTotal.toFixed(2)} {route.currency}</span>
                           </div>
-                          {price.addonSmall  > 0 && <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: 'var(--ink-500)', paddingLeft: 14, marginBottom: 2 }}><span>Petits sacs × {form.addons.smallBag}</span><span>{price.addonSmall.toFixed(0)} {route.currency}</span></div>}
-                          {price.addonMedium > 0 && <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: 'var(--ink-500)', paddingLeft: 14, marginBottom: 2 }}><span>Moyens sacs × {form.addons.mediumBag}</span><span>{price.addonMedium.toFixed(0)} {route.currency}</span></div>}
-                          {price.addonLarge  > 0 && <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: 'var(--ink-500)', paddingLeft: 14, marginBottom: 2 }}><span>Grands sacs × {form.addons.largeBag}</span><span>{price.addonLarge.toFixed(0)} {route.currency}</span></div>}
-                          {price.carton > 0 && <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: 'var(--ink-500)', paddingLeft: 14 }}><span>Cartons × {form.addons.cartons} ({price.cartonRate} {route.currency}/u)</span><span>{price.carton.toFixed(2)} {route.currency}</span></div>}
+                          {price.addonSmall  > 0 && <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: 'var(--ink-500)', paddingLeft: 14, marginBottom: 2 }}><span>{t('booking.parcel.smallBag')} × {form.addons.smallBag}</span><span>{price.addonSmall.toFixed(0)} {route.currency}</span></div>}
+                          {price.addonMedium > 0 && <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: 'var(--ink-500)', paddingLeft: 14, marginBottom: 2 }}><span>{t('booking.parcel.mediumBag')} × {form.addons.mediumBag}</span><span>{price.addonMedium.toFixed(0)} {route.currency}</span></div>}
+                          {price.addonLarge  > 0 && <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: 'var(--ink-500)', paddingLeft: 14, marginBottom: 2 }}><span>{t('booking.parcel.largeBag')} × {form.addons.largeBag}</span><span>{price.addonLarge.toFixed(0)} {route.currency}</span></div>}
+                          {price.carton > 0 && <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: 'var(--ink-500)', paddingLeft: 14 }}><span>{t('booking.parcel.cartons')} × {form.addons.cartons} ({price.cartonRate} {route.currency}/u)</span><span>{price.carton.toFixed(2)} {route.currency}</span></div>}
                         </div>
                       )}
 
-                      {/* Livraison */}
                       <div style={{ borderTop: '1px solid var(--border-soft)', paddingTop: 12, paddingBottom: 16 }}>
                         {form.delivery === 'pickup' ? (
                           <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13.5, fontWeight: 700, color: 'var(--ink-800)' }}>
-                            <span>Retrait entrepôt</span><span>Gratuit</span>
+                            <span>{t('booking.payment.pickupFree')}</span><span>{t('booking.summary.deliveryFree')}</span>
                           </div>
                         ) : price.isExpedition || price.isOutsideDelivery ? (
                           <div>
                             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13.5, fontWeight: 700, color: 'var(--warn-700)' }}>
-                              <span>{price.isExpedition ? 'Expédition postale' : 'Livraison hors région'}</span><span>À évaluer</span>
+                              <span>{price.isExpedition ? t('booking.payment.postalDelivery') : t('booking.payment.outsideDelivery')}</span><span>{t('booking.payment.toEvaluate')}</span>
                             </div>
                             <p style={{ fontSize: 11.5, color: 'var(--ink-400)', marginTop: 4, lineHeight: 1.5 }}>
-                              Facture envoyée par email à l'arrivée de votre colis à Montréal.
+                              {t('booking.payment.invoiceNote')}
                             </p>
                           </div>
                         ) : (
                           <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13.5, fontWeight: 700, color: 'var(--ink-800)' }}>
-                            <span>{price.isMontrealIle ? 'Livraison île de Montréal' : 'Livraison Grand Montréal'}</span>
+                            <span>{price.isMontrealIle ? t('booking.payment.montrealIle') : t('booking.payment.montrealGrand')}</span>
                             <span>{price.deliveryFee} {route.currency}</span>
                           </div>
                         )}
@@ -1717,7 +1706,7 @@ export default function BookingScreen({ onNav, embedded = false }) {
                     </div>
 
                     <div style={{ padding: '14px 16px', borderTop: '2px solid var(--ink-900)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <span style={{ fontSize: 13, fontWeight: 800, color: 'var(--ink-700)' }}>Total à payer maintenant</span>
+                      <span style={{ fontSize: 13, fontWeight: 800, color: 'var(--ink-700)' }}>{t('booking.payment.totalNow')}</span>
                       <span style={{ fontSize: 22, fontWeight: 800, color: 'var(--ink-900)' }}>{price.total.toFixed(0)} {route.currency}</span>
                     </div>
                   </div>
@@ -1725,10 +1714,9 @@ export default function BookingScreen({ onNav, embedded = false }) {
                   <div style={{ background: 'var(--brand-50)', border: '1px solid var(--brand-100)', borderRadius: 'var(--radius)', padding: '12px 16px', fontSize: 13, color: 'var(--brand-700)', display: 'flex', alignItems: 'flex-start', gap: 10 }}>
                     <span style={{ fontSize: 18, flexShrink: 0 }}>🏦</span>
                     <div>
-                      <div style={{ fontWeight: 700 }}>Paiement par virement Interac</div>
+                      <div style={{ fontWeight: 700 }}>{t('booking.payment.interacTitle')}</div>
                       <div style={{ fontSize: 12, marginTop: 4, color: 'var(--brand-600)', lineHeight: 1.6 }}>
-                        Le montant affiché est <strong>estimatif</strong>. Le prix réel est calculé après pesage de votre colis en entrepôt.
-                        En cas d'ajustement, vous recevrez une notification et une facture dans votre espace client.
+                        {t('booking.payment.interacNote')}
                       </div>
                     </div>
                   </div>
@@ -1740,16 +1728,16 @@ export default function BookingScreen({ onNav, embedded = false }) {
               {step === 3 && payStatus === 'processing' && (
                 <div style={{ textAlign: 'center', padding: '48px 24px' }}>
                   <div style={{ width: 52, height: 52, border: '4px solid var(--border)', borderTopColor: 'var(--brand-500)', borderRadius: '50%', margin: '0 auto 20px', animation: 'spin 0.8s linear infinite' }} />
-                  <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--ink-800)', marginBottom: 6 }}>Enregistrement de votre virement…</div>
-                  <p style={{ fontSize: 13, color: 'var(--ink-400)' }}>Merci de patienter quelques instants.</p>
+                  <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--ink-800)', marginBottom: 6 }}>{t('booking.payment.processing')}</div>
+                  <p style={{ fontSize: 13, color: 'var(--ink-400)' }}>{t('booking.payment.processingNote')}</p>
                 </div>
               )}
 
-              {/* Navigation — hidden during payment sub-flows */}
+              {/* Navigation */}
               {payStatus === 'idle' && (
                 <div className="co-nav">
                   <button className="co-btn co-btn--ghost" onClick={prev}>
-                    ← {step === 0 ? "Retour à l'accueil" : 'Précédent'}
+                    {step === 0 ? t('booking.nav.backHome') : t('booking.nav.back')}
                   </button>
                   <button
                     className={`co-btn ${step === STEPS.length - 1 ? 'co-btn--brand' : 'co-btn--primary'}`}
@@ -1757,10 +1745,7 @@ export default function BookingScreen({ onNav, embedded = false }) {
                     disabled={!canNext()}
                     style={{ opacity: canNext() ? 1 : 0.4, cursor: canNext() ? 'pointer' : 'default' }}
                   >
-                    {step === STEPS.length - 1
-                      ? `Confirmer ma réservation →`
-                      : 'Continuer →'}
-
+                    {step === STEPS.length - 1 ? t('booking.nav.pay') : t('booking.nav.continue')}
                   </button>
                 </div>
               )}
