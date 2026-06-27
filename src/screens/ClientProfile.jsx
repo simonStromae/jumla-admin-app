@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { signOut } from 'next-auth/react';
 import I from '../components/Icons.jsx';
+import { useT } from '../lib/i18n';
 
 const ADDR_KEY = 'jumla_addresses';
 
@@ -131,6 +132,8 @@ const alertBad = {
 };
 
 export default function ClientProfile() {
+  const t = useT();
+
   // --- Profile info ---
   const [profile, setProfile] = useState({ name: '', email: '', phone: '', city: '' });
   const [profileLoading, setProfileLoading] = useState(true);
@@ -152,7 +155,7 @@ export default function ClientProfile() {
   const handleProfileSave = async (e) => {
     e.preventDefault();
     setProfileMsg('');
-    if (!profile.name.trim()) { setProfileMsg('error:Le nom est obligatoire.'); return; }
+    if (!profile.name.trim()) { setProfileMsg('error:' + t('profile.info.name')); return; }
     setProfileSaving(true);
     try {
       const res = await fetch('/api/me/profile', {
@@ -162,12 +165,12 @@ export default function ClientProfile() {
       });
       if (!res.ok) {
         const d = await res.json();
-        setProfileMsg('error:' + (d.error || 'Erreur lors de la sauvegarde.'));
+        setProfileMsg('error:' + (d.error || t('error.network')));
       } else {
         setProfileMsg('success');
       }
     } catch {
-      setProfileMsg('error:Erreur réseau.');
+      setProfileMsg('error:' + t('error.network'));
     }
     setProfileSaving(false);
   };
@@ -242,9 +245,9 @@ export default function ClientProfile() {
   const handlePasswordChange = async (e) => {
     e.preventDefault();
     setPwMsg('');
-    if (!pw.currentPassword) { setPwMsg('error:Veuillez saisir le mot de passe actuel.'); return; }
-    if (pw.newPassword.length < 8) { setPwMsg('error:Le nouveau mot de passe doit contenir au moins 8 caractères.'); return; }
-    if (pw.newPassword !== pw.confirmPassword) { setPwMsg('error:Les mots de passe ne correspondent pas.'); return; }
+    if (!pw.currentPassword) { setPwMsg('error:' + t('profile.security.current')); return; }
+    if (pw.newPassword.length < 8) { setPwMsg('error:' + t('error.passwordMismatch')); return; }
+    if (pw.newPassword !== pw.confirmPassword) { setPwMsg('error:' + t('error.passwordMismatch')); return; }
     setPwSaving(true);
     try {
       const res = await fetch('/api/auth/change-password', {
@@ -254,13 +257,13 @@ export default function ClientProfile() {
       });
       const d = await res.json();
       if (!res.ok) {
-        setPwMsg('error:' + (d.error || 'Erreur lors du changement.'));
+        setPwMsg('error:' + (d.error || t('error.network')));
       } else {
         setPwMsg('success');
         setPw({ currentPassword: '', newPassword: '', confirmPassword: '' });
       }
     } catch {
-      setPwMsg('error:Erreur réseau.');
+      setPwMsg('error:' + t('error.network'));
     }
     setPwSaving(false);
   };
@@ -268,29 +271,29 @@ export default function ClientProfile() {
   return (
     <div style={{ maxWidth: 640, margin: '0 auto' }}>
       <div style={{ fontSize: 22, fontWeight: 700, letterSpacing: '-0.02em', color: 'var(--ink-900)', marginBottom: 24 }}>
-        Mon profil
+        {t('profile.title')}
       </div>
 
-      {/* Card 1 — Mes informations */}
+      {/* Card 1 — info */}
       <div style={card}>
-        <div style={cardTitle}>Mes informations</div>
+        <div style={cardTitle}>{t('profile.info.title')}</div>
         {profileLoading ? (
-          <div style={{ fontSize: 13, color: 'var(--ink-400)' }}>Chargement…</div>
+          <div style={{ fontSize: 13, color: 'var(--ink-400)' }}>{t('loading')}</div>
         ) : (
           <form onSubmit={handleProfileSave}>
             <div style={fieldStyle}>
-              <label style={label}>Nom complet</label>
+              <label style={label}>{t('profile.info.name')}</label>
               <input
                 style={inputStyle}
                 type="text"
                 value={profile.name}
                 onChange={e => setProfile(p => ({ ...p, name: e.target.value }))}
-                placeholder="Votre nom"
+                placeholder={t('profile.info.namePlaceholder')}
                 autoComplete="name"
               />
             </div>
             <div style={fieldStyle}>
-              <label style={label}>Adresse e-mail</label>
+              <label style={label}>{t('profile.info.email')}</label>
               <input
                 style={inputReadOnly}
                 type="email"
@@ -301,7 +304,7 @@ export default function ClientProfile() {
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginBottom: 14 }}>
               <div>
-                <label style={label}>Téléphone</label>
+                <label style={label}>{t('profile.info.phone')}</label>
                 <input
                   style={inputStyle}
                   type="tel"
@@ -312,13 +315,13 @@ export default function ClientProfile() {
                 />
               </div>
               <div>
-                <label style={label}>Ville</label>
+                <label style={label}>{t('profile.info.city')}</label>
                 <input
                   style={inputStyle}
                   type="text"
                   value={profile.city}
                   onChange={e => setProfile(p => ({ ...p, city: e.target.value }))}
-                  placeholder="Montréal"
+                  placeholder={t('profile.info.cityPlaceholder')}
                 />
               </div>
             </div>
@@ -329,34 +332,34 @@ export default function ClientProfile() {
             {profileMsg === 'success' && (
               <div style={alertOk}>
                 <I.Check style={{ width: 14, height: 14, flexShrink: 0 }} />
-                Informations mises à jour.
+                {t('profile.info.saved')}
               </div>
             )}
 
             <button type="submit" style={btnBrand} disabled={profileSaving}>
-              {profileSaving ? 'Enregistrement…' : 'Enregistrer'}
+              {profileSaving ? t('profile.info.saving') : t('profile.info.save')}
             </button>
           </form>
         )}
       </div>
 
-      {/* Card 2 — Adresses de livraison */}
+      {/* Card 2 — Addresses */}
       <div style={card}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
-          <div style={cardTitle}>Adresses de livraison</div>
+          <div style={cardTitle}>{t('profile.addresses.title')}</div>
           <button
             type="button"
             style={{ ...btnGhost, height: 30, fontSize: 12 }}
             onClick={() => setShowAddrForm(v => !v)}
           >
             <I.Plus style={{ width: 12, height: 12 }} />
-            Ajouter
+            {t('profile.addresses.add')}
           </button>
         </div>
 
         {addresses.length === 0 && !showAddrForm && (
           <div style={{ fontSize: 13, color: 'var(--ink-400)', padding: '12px 0' }}>
-            Aucune adresse enregistrée.
+            {t('profile.addresses.empty')}
           </div>
         )}
 
@@ -387,7 +390,7 @@ export default function ClientProfile() {
                 background: 'none', border: 'none', cursor: 'pointer',
                 color: 'var(--ink-400)', padding: 4, marginLeft: 8, flexShrink: 0,
               }}
-              title="Supprimer"
+              title={t('profile.addresses.delete')}
             >
               <I.Trash style={{ width: 14, height: 14 }} />
             </button>
@@ -401,36 +404,36 @@ export default function ClientProfile() {
             border: '1px solid var(--border)',
           }}>
             <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--ink-800)', marginBottom: 12 }}>
-              Nouvelle adresse
+              {t('profile.addresses.new')}
             </div>
             <div style={fieldStyle}>
-              <label style={label}>Étiquette <span style={{ fontWeight: 400, color: 'var(--ink-400)' }}>(optionnel)</span></label>
-              <input style={inputStyle} type="text" placeholder="ex: Maison, Bureau…"
+              <label style={label}>{t('profile.addresses.label')} <span style={{ fontWeight: 400, color: 'var(--ink-400)' }}>({t('profile.addresses.optional')})</span></label>
+              <input style={inputStyle} type="text" placeholder={t('profile.addresses.labelPlaceholder')}
                 value={newAddr.label} onChange={e => setNewAddr(a => ({ ...a, label: e.target.value }))} />
             </div>
             <div style={fieldStyle}>
-              <label style={label}>Adresse</label>
-              <input style={inputStyle} type="text" placeholder="123 rue Exemple"
+              <label style={label}>{t('profile.addresses.address')}</label>
+              <input style={inputStyle} type="text" placeholder={t('profile.addresses.addressPlaceholder')}
                 value={newAddr.address} onChange={e => setNewAddr(a => ({ ...a, address: e.target.value }))} />
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 14 }}>
               <div>
-                <label style={label}>Appartement <span style={{ fontWeight: 400, color: 'var(--ink-400)' }}>(optionnel)</span></label>
-                <input style={inputStyle} type="text" placeholder="Apt. 4B"
+                <label style={label}>{t('profile.addresses.apt')} <span style={{ fontWeight: 400, color: 'var(--ink-400)' }}>({t('profile.addresses.optional')})</span></label>
+                <input style={inputStyle} type="text" placeholder={t('profile.addresses.aptPlaceholder')}
                   value={newAddr.apt} onChange={e => setNewAddr(a => ({ ...a, apt: e.target.value }))} />
               </div>
               <div>
-                <label style={label}>Ville</label>
-                <input style={inputStyle} type="text" placeholder="Montréal"
+                <label style={label}>{t('profile.info.city')}</label>
+                <input style={inputStyle} type="text" placeholder={t('profile.info.cityPlaceholder')}
                   value={newAddr.city} onChange={e => setNewAddr(a => ({ ...a, city: e.target.value }))} />
               </div>
               <div>
-                <label style={label}>Province</label>
+                <label style={label}>{t('profile.addresses.province')}</label>
                 <input style={inputStyle} type="text" placeholder="QC"
                   value={newAddr.province} onChange={e => setNewAddr(a => ({ ...a, province: e.target.value }))} />
               </div>
               <div>
-                <label style={label}>Code postal</label>
+                <label style={label}>{t('profile.addresses.postal')}</label>
                 <input style={inputStyle} type="text" placeholder="H1A 1A1"
                   value={newAddr.postal} onChange={e => setNewAddr(a => ({ ...a, postal: e.target.value }))} />
               </div>
@@ -439,36 +442,36 @@ export default function ClientProfile() {
               <button type="button" style={btnBrand} onClick={handleAddAddress}
                 disabled={!newAddr.address.trim()}>
                 <I.Check style={{ width: 13, height: 13 }} />
-                Ajouter l'adresse
+                {t('profile.addresses.addBtn')}
               </button>
               <button type="button" style={btnGhost} onClick={() => {
                 setShowAddrForm(false);
                 setNewAddr({ label: '', address: '', apt: '', city: '', province: '', postal: '' });
               }}>
-                Annuler
+                {t('profile.addresses.cancel')}
               </button>
             </div>
           </div>
         )}
       </div>
 
-      {/* Card 3 — Destinataires fréquents */}
+      {/* Card 3 — Recipients */}
       <div style={card}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
-          <div style={cardTitle}>Destinataires fréquents</div>
+          <div style={cardTitle}>{t('profile.recipients.title')}</div>
           <button
             type="button"
             style={{ ...btnGhost, height: 30, fontSize: 12 }}
             onClick={() => setShowRecipForm(v => !v)}
           >
             <I.Plus style={{ width: 12, height: 12 }} />
-            Ajouter
+            {t('profile.recipients.add')}
           </button>
         </div>
 
         {recipients.length === 0 && !showRecipForm && (
           <div style={{ fontSize: 13, color: 'var(--ink-400)', padding: '12px 0' }}>
-            Aucun destinataire enregistré.
+            {t('profile.recipients.empty')}
           </div>
         )}
 
@@ -492,7 +495,7 @@ export default function ClientProfile() {
               type="button"
               onClick={() => handleDeleteRecipient(r.id)}
               style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--ink-400)', padding: 4, marginLeft: 8, flexShrink: 0 }}
-              title="Supprimer"
+              title={t('profile.recipients.delete')}
             >
               <I.Trash style={{ width: 14, height: 14 }} />
             </button>
@@ -501,51 +504,51 @@ export default function ClientProfile() {
 
         {showRecipForm && (
           <div style={{ padding: 16, marginTop: 12, background: 'var(--bg-soft)', borderRadius: 10, border: '1px solid var(--border)' }}>
-            <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--ink-800)', marginBottom: 12 }}>Nouveau destinataire</div>
+            <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--ink-800)', marginBottom: 12 }}>{t('profile.recipients.new')}</div>
             <div style={fieldStyle}>
-              <label style={label}>Étiquette <span style={{ fontWeight: 400, color: 'var(--ink-400)' }}>(optionnel)</span></label>
-              <input style={inputStyle} type="text" placeholder="ex: Maman, Bureau Douala…"
+              <label style={label}>{t('profile.recipients.label')} <span style={{ fontWeight: 400, color: 'var(--ink-400)' }}>({t('profile.recipients.optional')})</span></label>
+              <input style={inputStyle} type="text" placeholder={t('profile.recipients.labelPlaceholder')}
                 value={newRecip.label} onChange={e => setNewRecip(r => ({ ...r, label: e.target.value }))} />
             </div>
             <div style={fieldStyle}>
-              <label style={label}>Nom complet</label>
-              <input style={inputStyle} type="text" placeholder="Jean Mbarga"
+              <label style={label}>{t('profile.recipients.name')}</label>
+              <input style={inputStyle} type="text" placeholder={t('profile.recipients.namePlaceholder')}
                 value={newRecip.name} onChange={e => setNewRecip(r => ({ ...r, name: e.target.value }))} />
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 14 }}>
               <div>
-                <label style={label}>Téléphone</label>
+                <label style={label}>{t('profile.recipients.phone')}</label>
                 <input style={inputStyle} type="tel" placeholder="+237 6XX XXX XXX"
                   value={newRecip.phone} onChange={e => setNewRecip(r => ({ ...r, phone: e.target.value }))} />
               </div>
               <div>
-                <label style={label}>Ville</label>
-                <input style={inputStyle} type="text" placeholder="Douala, Yaoundé…"
+                <label style={label}>{t('profile.recipients.city')}</label>
+                <input style={inputStyle} type="text" placeholder={t('profile.recipients.cityPlaceholder')}
                   value={newRecip.city} onChange={e => setNewRecip(r => ({ ...r, city: e.target.value }))} />
               </div>
             </div>
             <div style={{ display: 'flex', gap: 8 }}>
               <button type="button" style={btnBrand} onClick={handleAddRecipient} disabled={!newRecip.name.trim()}>
                 <I.Check style={{ width: 13, height: 13 }} />
-                Ajouter le destinataire
+                {t('profile.recipients.addBtn')}
               </button>
               <button type="button" style={btnGhost} onClick={() => {
                 setShowRecipForm(false);
                 setNewRecip({ label: '', name: '', phone: '', city: '' });
               }}>
-                Annuler
+                {t('profile.recipients.cancel')}
               </button>
             </div>
           </div>
         )}
       </div>
 
-      {/* Card 4 — Sécurité */}
+      {/* Card 4 — Security */}
       <div style={card}>
-        <div style={cardTitle}>Sécurité</div>
+        <div style={cardTitle}>{t('profile.security.title')}</div>
         <form onSubmit={handlePasswordChange}>
           <div style={fieldStyle}>
-            <label style={label}>Mot de passe actuel</label>
+            <label style={label}>{t('profile.security.current')}</label>
             <input
               style={inputStyle}
               type="password"
@@ -556,18 +559,18 @@ export default function ClientProfile() {
             />
           </div>
           <div style={fieldStyle}>
-            <label style={label}>Nouveau mot de passe</label>
+            <label style={label}>{t('profile.security.new')}</label>
             <input
               style={inputStyle}
               type="password"
               value={pw.newPassword}
               onChange={e => setPw(p => ({ ...p, newPassword: e.target.value }))}
-              placeholder="••••••••  (min. 8 caractères)"
+              placeholder={t('profile.security.newHint')}
               autoComplete="new-password"
             />
           </div>
           <div style={{ ...fieldStyle, marginBottom: 18 }}>
-            <label style={label}>Confirmer le nouveau mot de passe</label>
+            <label style={label}>{t('profile.security.confirm')}</label>
             <input
               style={inputStyle}
               type="password"
@@ -584,21 +587,21 @@ export default function ClientProfile() {
           {pwMsg === 'success' && (
             <div style={alertOk}>
               <I.Check style={{ width: 14, height: 14, flexShrink: 0 }} />
-              Mot de passe mis à jour avec succès.
+              {t('profile.security.success')}
             </div>
           )}
 
           <button type="submit" style={btnBrand} disabled={pwSaving}>
-            {pwSaving ? 'Mise à jour…' : 'Mettre à jour le mot de passe'}
+            {pwSaving ? t('profile.security.updating') : t('profile.security.update')}
           </button>
         </form>
       </div>
 
-      {/* Card 4 — Danger */}
+      {/* Card 5 — Danger */}
       <div style={card}>
-        <div style={cardTitle}>Danger</div>
+        <div style={cardTitle}>{t('profile.danger.title')}</div>
         <div style={{ fontSize: 13, color: 'var(--ink-500)', marginBottom: 16 }}>
-          Vous serez redirigé vers la page de connexion.
+          {t('profile.danger.logoutHint')}
         </div>
         <button
           type="button"
@@ -606,7 +609,7 @@ export default function ClientProfile() {
           onClick={() => signOut({ callbackUrl: '/login' })}
         >
           <I.Logout style={{ width: 14, height: 14 }} />
-          Se déconnecter
+          {t('profile.danger.logout')}
         </button>
       </div>
     </div>

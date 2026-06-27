@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { TopBar, SiteNav, SiteFooter } from './SiteLayout.jsx';
+import { useT, useLocale } from '@/src/lib/i18n';
 import '@/src/styles/client-omega.css';
 import '@/src/styles/booking.css';
 
@@ -254,13 +255,6 @@ const CITIES = [
   { label: 'Hors région',         zone: 'other' },
 ];
 
-const STEPS = [
-  { label: 'Route & Départ' },
-  { label: 'Votre colis' },
-  { label: 'Coordonnées' },
-  { label: 'Paiement' },
-];
-
 // ── Atoms ──
 function Field({ label, children }) {
   return (
@@ -298,13 +292,16 @@ function itemIcon(desc, cat) {
 
 // ── Summary panel ──
 function Summary({ route, departure, items, price, form, step, isDone }) {
+  const t = useT();
+  const { locale } = useLocale();
   const city     = CITIES.find(c => c.label === form.recipCity);
   const cityZone = city?.zone || 'montreal-ile';
   const filledItems = items.filter(i => i.desc || parseFloat(i.kg) > 0);
+  const dateLocale = locale === 'fr' ? 'fr-FR' : 'en-CA';
 
   return (
     <div className="co-summary">
-      <div className="co-summary__head">Votre réservation</div>
+      <div className="co-summary__head">{t('booking.summary.title')}</div>
 
       {filledItems.length > 0 && (
         <div className="co-summary__items">
@@ -315,7 +312,7 @@ function Summary({ route, departure, items, price, form, step, isDone }) {
                 {item.pieces > 1 && <span className="co-summary__item-qty">{item.pieces}</span>}
               </div>
               <div className="co-summary__item-info">
-                <div className="co-summary__item-name">{item.desc || 'Article'}</div>
+                <div className="co-summary__item-name">{item.desc || t('booking.summary.article')}</div>
                 <div className="co-summary__item-sub">
                   {ITEM_CATEGORIES.find(c => c.id === item.cat)?.label || 'Standard'}
                   {item.cat !== 'standard' && item.pieces > 1 ? ` · ${item.pieces} pièces` : ''}
@@ -328,19 +325,19 @@ function Summary({ route, departure, items, price, form, step, isDone }) {
       )}
 
       <div className="co-summary__section">
-        <div className="co-summary__label">Itinéraire</div>
+        <div className="co-summary__label">{t('booking.summary.itinerary')}</div>
         <div className={`co-summary__row${route ? '' : ' co-summary__row--muted'}`}>
-          <span>Route</span><span>{route?.label ?? '—'}</span>
+          <span>{t('booking.summary.route')}</span><span>{route?.label ?? '—'}</span>
         </div>
         <div className={`co-summary__row${departure ? '' : ' co-summary__row--muted'}`}>
-          <span>Départ</span><span>{departure?.departureDate ? new Date(departure.departureDate).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', timeZone: 'UTC' }) : departure?.code ?? 'Non sélectionné'}</span>
+          <span>{t('booking.summary.departure')}</span><span>{departure?.departureDate ? new Date(departure.departureDate).toLocaleDateString(dateLocale, { day: 'numeric', month: 'long', timeZone: 'UTC' }) : departure?.code ?? '—'}</span>
         </div>
-        {route && <div className="co-summary__row co-summary__row--muted"><span>Transit estimé</span><span>~{route.transit} jours</span></div>}
+        {route && <div className="co-summary__row co-summary__row--muted"><span>{t('booking.summary.transitEst')}</span><span>~{route.transit} {t('unit.days')}</span></div>}
       </div>
 
       {step >= 1 && (
         <div className="co-summary__section">
-          <div className="co-summary__label">Frais</div>
+          <div className="co-summary__label">{t('booking.summary.fees')}</div>
           {price ? (
             <>
               <div className="co-summary__row">
@@ -349,42 +346,42 @@ function Summary({ route, departure, items, price, form, step, isDone }) {
               </div>
               {price.catSurchargeLines.map(l => (
                 <div key={l.catId} className="co-summary__row">
-                  <span>Suppl. {l.label}</span>
+                  <span>{t('booking.summary.suppl')} {l.label}</span>
                   <span>{l.amount >= 0 ? '+' : ''}{l.amount.toFixed(0)} {route.currency}</span>
                 </div>
               ))}
               {price.saqLines?.length > 0 && (
                 <div className="co-summary__row">
-                  <span>Frais SAQ</span>
+                  <span>{t('booking.summary.saq')}</span>
                   <span>+{price.saqTotal.toFixed(2)} {route.currency}</span>
                 </div>
               )}
-              {price.addonTotal > 0 && <div className="co-summary__row"><span>Accessoires</span><span>+{price.addonTotal.toFixed(0)} {route.currency}</span></div>}
+              {price.addonTotal > 0 && <div className="co-summary__row"><span>{t('booking.summary.accessories')}</span><span>+{price.addonTotal.toFixed(0)} {route.currency}</span></div>}
               {step >= 2 && (
                 price.isExpedition ? (
-                  <div className="co-summary__row co-summary__row--muted"><span>Expédition</span><span>À évaluer</span></div>
+                  <div className="co-summary__row co-summary__row--muted"><span>{t('booking.coords.pickup')}</span><span>{t('booking.summary.toEvaluate')}</span></div>
                 ) : form.delivery === 'pickup' ? (
-                  <div className="co-summary__row"><span>Livraison</span><span>Gratuit</span></div>
+                  <div className="co-summary__row"><span>{t('booking.summary.delivery')}</span><span>{t('booking.summary.deliveryFree')}</span></div>
                 ) : price.isMontrealIle ? (
-                  <div className="co-summary__row"><span>Livraison île de Mtl</span><span>+{price.deliveryFee} {route.currency}</span></div>
+                  <div className="co-summary__row"><span>{t('booking.summary.deliveryIsle')}</span><span>+{price.deliveryFee} {route.currency}</span></div>
                 ) : price.isMontrealGrand ? (
-                  <div className="co-summary__row"><span>Livraison Grand Mtl</span><span>+{price.deliveryFee} {route.currency}</span></div>
+                  <div className="co-summary__row"><span>{t('booking.summary.deliveryGrand')}</span><span>+{price.deliveryFee} {route.currency}</span></div>
                 ) : (
-                  <div className="co-summary__row co-summary__row--muted"><span>Livraison hors région</span><span>À évaluer</span></div>
+                  <div className="co-summary__row co-summary__row--muted"><span>{t('booking.summary.deliveryOther')}</span><span>{t('booking.summary.toEvaluate')}</span></div>
                 )
               )}
-              {step < 2 && <div className="co-summary__row co-summary__row--muted"><span>Livraison</span><span>Étape suivante</span></div>}
+              {step < 2 && <div className="co-summary__row co-summary__row--muted"><span>{t('booking.summary.delivery')}</span><span>{t('booking.summary.nextStep')}</span></div>}
             </>
           ) : (
-            <div className="co-summary__row co-summary__row--muted"><span>Aucun article renseigné</span><span>—</span></div>
+            <div className="co-summary__row co-summary__row--muted"><span>{t('booking.summary.noItems')}</span><span>—</span></div>
           )}
         </div>
       )}
 
       <div className="co-summary__total">
         <div>
-          <div className="co-summary__total-label">Total</div>
-          {price && <div style={{ fontSize: 11, color: 'var(--ink-400)', marginTop: 2 }}>TVA non applicable</div>}
+          <div className="co-summary__total-label">{t('booking.summary.total')}</div>
+          {price && <div style={{ fontSize: 11, color: 'var(--ink-400)', marginTop: 2 }}>{t('booking.summary.noTax')}</div>}
         </div>
         <div style={{ textAlign: 'right' }}>
           {route && <div style={{ fontSize: 11, color: 'var(--ink-400)', marginBottom: 2 }}>{route.currency}</div>}
@@ -398,6 +395,7 @@ function Summary({ route, departure, items, price, form, step, isDone }) {
 
 // ── Auth gate ──
 function AuthGate({ onAuth, onNav }) {
+  const t = useT();
   const [tab, setTab]       = useState('login');
   const [fields, setFields] = useState({ email: '', name: '', password: '', confirm: '' });
   const [code, setCode]     = useState('');
@@ -419,7 +417,7 @@ function AuthGate({ onAuth, onNav }) {
 
   const doRegister = () => {
     if (!fields.name || !fields.email || !fields.password) { setError('Remplissez tous les champs.'); return; }
-    if (fields.password !== fields.confirm) { setError('Les mots de passe ne correspondent pas.'); return; }
+    if (fields.password !== fields.confirm) { setError(t('error.passwordMismatch')); return; }
     if (fields.password.length < 6) { setError('Mot de passe trop court (6 caractères min.).'); return; }
     const gen = Math.floor(100000 + Math.random() * 900000).toString();
     setExpected(gen);
@@ -450,17 +448,17 @@ function AuthGate({ onAuth, onNav }) {
 
           <div style={{ textAlign: 'center', marginBottom: 26 }}>
             <div style={{ width: 48, height: 48, background: 'var(--brand-500)', borderRadius: 'var(--radius)', display: 'grid', placeItems: 'center', fontSize: 22, fontWeight: 900, color: 'white', margin: '0 auto 10px' }}>J</div>
-            <div style={{ fontSize: 17, fontWeight: 800, color: 'var(--ink-900)' }}>Réserver un envoi</div>
-            <div style={{ fontSize: 13, color: 'var(--ink-400)', marginTop: 3 }}>Connectez-vous ou créez un compte pour continuer</div>
+            <div style={{ fontSize: 17, fontWeight: 800, color: 'var(--ink-900)' }}>{t('booking.auth.title')}</div>
+            <div style={{ fontSize: 13, color: 'var(--ink-400)', marginTop: 3 }}>{t('booking.auth.subtitle')}</div>
           </div>
 
           {tab !== 'verify' && (
             <div style={{ display: 'flex', border: '1.5px solid var(--border)', borderRadius: 'var(--radius)', overflow: 'hidden', marginBottom: 22 }}>
-              {[['login', 'Se connecter'], ['register', 'Créer un compte']].map(([t, l]) => (
-                <button key={t} onClick={() => { setTab(t); setError(''); }}
+              {[['login', t('booking.auth.login')], ['register', t('booking.auth.register')]].map(([tabKey, l]) => (
+                <button key={tabKey} onClick={() => { setTab(tabKey); setError(''); }}
                   style={{ flex: 1, padding: '9px 0', fontSize: 13, fontWeight: 600, border: 'none', cursor: 'pointer',
-                    background: tab === t ? 'var(--ink-900)' : 'white',
-                    color: tab === t ? 'white' : 'var(--ink-500)' }}>
+                    background: tab === tabKey ? 'var(--ink-900)' : 'white',
+                    color: tab === tabKey ? 'white' : 'var(--ink-500)' }}>
                   {l}
                 </button>
               ))}
@@ -469,39 +467,39 @@ function AuthGate({ onAuth, onNav }) {
 
           {tab === 'login' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-              <Field label="Adresse email">
+              <Field label={t('booking.auth.emailLabel')}>
                 <input className="co-input" type="email" value={fields.email} onChange={e => upd('email', e.target.value)}
                   placeholder="vous@email.com" onKeyDown={e => e.key === 'Enter' && doLogin()} autoFocus />
               </Field>
-              <Field label="Mot de passe">
+              <Field label={t('booking.auth.passwordLabel')}>
                 <input className="co-input" type="password" value={fields.password} onChange={e => upd('password', e.target.value)}
                   placeholder="••••••••" onKeyDown={e => e.key === 'Enter' && doLogin()} />
               </Field>
               {errBox}
               <button className="co-btn co-btn--brand" onClick={doLogin} disabled={loading} style={{ marginTop: 4 }}>
-                {loading ? '…' : 'Se connecter →'}
+                {loading ? '…' : t('booking.auth.loginBtn')}
               </button>
             </div>
           )}
 
           {tab === 'register' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-              <Field label="Nom complet">
+              <Field label={t('booking.auth.nameLabel')}>
                 <input className="co-input" value={fields.name} onChange={e => upd('name', e.target.value)} placeholder="Awa Nkemdirim" autoFocus />
               </Field>
-              <Field label="Adresse email">
+              <Field label={t('booking.auth.emailLabel')}>
                 <input className="co-input" type="email" value={fields.email} onChange={e => upd('email', e.target.value)} placeholder="vous@email.com" />
               </Field>
-              <Field label="Mot de passe">
+              <Field label={t('booking.auth.passwordLabel')}>
                 <input className="co-input" type="password" value={fields.password} onChange={e => upd('password', e.target.value)} placeholder="6 caractères min." />
               </Field>
-              <Field label="Confirmer le mot de passe">
+              <Field label={t('booking.auth.confirmLabel')}>
                 <input className="co-input" type="password" value={fields.confirm} onChange={e => upd('confirm', e.target.value)}
                   placeholder="••••••••" onKeyDown={e => e.key === 'Enter' && doRegister()} />
               </Field>
               {errBox}
               <button className="co-btn co-btn--brand" onClick={doRegister} style={{ marginTop: 4 }}>
-                Créer mon compte →
+                {t('booking.auth.registerBtn')}
               </button>
             </div>
           )}
@@ -509,12 +507,12 @@ function AuthGate({ onAuth, onNav }) {
           {tab === 'verify' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 14, textAlign: 'center' }}>
               <div style={{ fontSize: 38, marginBottom: 2 }}>📧</div>
-              <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--ink-900)' }}>Vérifiez votre boîte mail</div>
+              <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--ink-900)' }}>{t('booking.auth.verifyTitle')}</div>
               <p style={{ fontSize: 13, color: 'var(--ink-500)', lineHeight: 1.65 }}>
-                Un code a été envoyé à<br /><strong>{fields.email}</strong>
+                {t('booking.auth.verifyDesc')}<br /><strong>{fields.email}</strong>
               </p>
               <div style={{ background: 'var(--brand-50)', border: '1px solid var(--brand-100)', borderRadius: 'var(--radius)', padding: '10px 14px', fontSize: 12.5, color: 'var(--brand-700)' }}>
-                Code de démonstration : <strong style={{ fontFamily: 'ui-monospace, monospace', fontSize: 15 }}>{expected}</strong>
+                {t('booking.auth.demoCode')} <strong style={{ fontFamily: 'ui-monospace, monospace', fontSize: 15 }}>{expected}</strong>
               </div>
               <input className="co-input" value={code} onChange={e => { setCode(e.target.value); setError(''); }}
                 placeholder="· · · · · ·" maxLength={6} autoFocus
@@ -522,11 +520,11 @@ function AuthGate({ onAuth, onNav }) {
                 onKeyDown={e => e.key === 'Enter' && doVerify()} />
               {errBox}
               <button className="co-btn co-btn--brand" onClick={doVerify} disabled={loading}>
-                {loading ? '…' : 'Vérifier →'}
+                {loading ? '…' : t('booking.auth.verifyBtn')}
               </button>
               <button style={{ background: 'none', border: 'none', color: 'var(--ink-400)', fontSize: 12.5, cursor: 'pointer', marginTop: 2 }}
                 onClick={() => { setTab('register'); setCode(''); setError(''); }}>
-                ← Retour
+                {t('booking.auth.backToRegister')}
               </button>
             </div>
           )}
@@ -540,9 +538,6 @@ function AuthGate({ onAuth, onNav }) {
 // ── Main ──
 
 // ── Calendar campaign picker ──
-const MONTH_LABELS_FR = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
-const DAY_LABELS_FR   = ['Dim','Lun','Mar','Mer','Jeu','Ven','Sam'];
-
 function getUTCDateKey(dateStr) {
   if (!dateStr) return null;
   const d = new Date(dateStr);
@@ -550,6 +545,8 @@ function getUTCDateKey(dateStr) {
 }
 
 function CampaignCalendar({ campaigns, selected, onSelect, routeLabel }) {
+  const t = useT();
+  const { locale } = useLocale();
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
@@ -585,7 +582,7 @@ function CampaignCalendar({ campaigns, selected, onSelect, routeLabel }) {
 
   const fmtShort = (dateStr) => {
     if (!dateStr) return null;
-    return new Date(dateStr).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', timeZone: 'UTC' });
+    return new Date(dateStr).toLocaleDateString(locale === 'fr' ? 'fr-FR' : 'en-CA', { day: 'numeric', month: 'short', timeZone: 'UTC' });
   };
 
   return (
@@ -595,13 +592,13 @@ function CampaignCalendar({ campaigns, selected, onSelect, routeLabel }) {
         {/* Header */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 20px', borderBottom: '1px solid var(--border-soft)' }}>
           <button onClick={prevMonth} style={{ width: 32, height: 32, borderRadius: 8, border: '1.5px solid var(--border)', background: 'white', cursor: 'pointer', fontSize: 15, display: 'grid', placeItems: 'center', color: 'var(--ink-600)' }}>←</button>
-          <span style={{ fontSize: 15, fontWeight: 800, color: 'var(--ink-900)' }}>{MONTH_LABELS_FR[viewMonth]} {viewYear}</span>
+          <span style={{ fontSize: 15, fontWeight: 800, color: 'var(--ink-900)' }}>{t('booking.months')[viewMonth]} {viewYear}</span>
           <button onClick={nextMonth} style={{ width: 32, height: 32, borderRadius: 8, border: '1.5px solid var(--border)', background: 'white', cursor: 'pointer', fontSize: 15, display: 'grid', placeItems: 'center', color: 'var(--ink-600)' }}>→</button>
         </div>
 
         {/* Day headers */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', borderBottom: '1px solid var(--border-soft)' }}>
-          {DAY_LABELS_FR.map(d => (
+          {t('booking.days').map(d => (
             <div key={d} style={{ textAlign: 'center', fontSize: 10.5, fontWeight: 700, color: 'var(--ink-400)', textTransform: 'uppercase', letterSpacing: '.05em', padding: '8px 0' }}>{d}</div>
           ))}
         </div>
@@ -755,7 +752,15 @@ function CampaignCalendar({ campaigns, selected, onSelect, routeLabel }) {
 
 export default function BookingScreen({ onNav, embedded = false }) {
   const { data: sessionData } = useSession();
+  const t = useT();
   const [step, setStep] = useState(0);
+
+  const STEPS = [
+    { label: t('booking.steps.route') },
+    { label: t('booking.steps.parcel') },
+    { label: t('booking.steps.coordinates') },
+    { label: t('booking.steps.payment') },
+  ];
   const [dbRoutes, setDbRoutes]         = useState([]);
   const [campaigns, setCampaigns]       = useState([]);
   const [routesLoading, setRoutesLoading] = useState(true);
