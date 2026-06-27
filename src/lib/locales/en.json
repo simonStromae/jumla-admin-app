@@ -272,19 +272,22 @@
     "notFoundDetail": "No parcel found with code {code}. Please check the spelling.",
     "campaign": "Shipment {code}",
     "statusLabel": "Status · {from} → {to}",
+    "currentStatus": "Current status",
+    "paid": "✓ Paid",
+    "paymentPending": "⏳ Payment pending",
     "payment": {
       "confirmed": "✓ Payment confirmed",
       "pending": "⏳ Pending"
     },
     "details": {
-      "title": "Shipment details",
+      "title": "Details",
       "description": "Description",
-      "weight": "Declared weight",
-      "departure": "Scheduled departure",
-      "arrival": "Scheduled arrival"
+      "weight": "Weight",
+      "departure": "Planned departure",
+      "arrival": "Planned arrival"
     },
     "timeline": {
-      "title": "Parcel history",
+      "title": "Event history",
       "empty": "No events recorded yet.",
       "current": "CURRENT"
     },
@@ -292,6 +295,102 @@
       "pre": "For more details,",
       "link": "sign in to your customer portal"
     }
+  },
+  "parcel": {
+    "back": "My parcels",
+    "details": "Parcel details",
+    "timeline": "Timeline",
+    "noEvents": "No events recorded yet.",
+    "edit": "✏️ Edit",
+    "save": "✓ Save",
+    "saving": "Saving…",
+    "cancel": "Cancel",
+    "addItem": "+ Add",
+    "noItems": "No items — click + Add",
+    "notesPlaceholder": "Special instructions, details…",
+    "descPlaceholder": "Clothing, electronics…",
+    "statusCurrent": "CURRENT",
+    "payment": {
+      "title": "Payment",
+      "total": "Total amount",
+      "received": "Already received",
+      "remaining": "Balance due",
+      "none": "No invoice generated yet.",
+      "paidOn": "Paid on {date}",
+      "interac": "💸 Send {amount} CAD via Interac transfer — reference: {code}",
+      "status": {
+        "paid": "✓ Paid",
+        "partial": "Partial",
+        "pending": "Pending",
+        "paidAndSuppl": "Paid · Suppl. due"
+      }
+    },
+    "adjustment": {
+      "title": "Price adjustment",
+      "pendingBadge": "⚠️ Action required",
+      "discountBadge": "✓ Discount applied",
+      "pendingDesc": "After weighing at the warehouse, the actual amount differs from the booking estimate. Please pay the supplement for your parcel to be processed.",
+      "discountDesc": "A discount has been applied by Jumla. The amount to pay has been updated.",
+      "estimate": "Estimate",
+      "actual": "Actual price",
+      "supplement": "Supplement due",
+      "discount": "Discount",
+      "interacInfo": "Interac transfer to {email} · Amount: {amount} CAD · Reference: {code}",
+      "seeAbove": "See the 'Price adjustment' section above to pay the supplement."
+    },
+    "bordereau": {
+      "title": "Manifests",
+      "confirmRequired": "⚠️ Manifest {code} — Confirmation required",
+      "confirmDesc": "Jumla has confirmed your manifest. Check the contents and accept it before dispatch.",
+      "confirmCheck": "I confirm I have verified the declared contents and certify the information is accurate. This confirmation constitutes an electronic signature.",
+      "view": "View manifest",
+      "confirm": "Confirm",
+      "confirming": "Confirming…",
+      "status": {
+        "confirmed": "✓ Confirmed by Jumla",
+        "discordance": "⚠️ Discordance",
+        "pending": "⏳ Pending",
+        "signedByYou": " · ✅ Signed by you"
+      }
+    },
+    "info": {
+      "description": "Description",
+      "weight": "Weight",
+      "type": "Product type",
+      "price": "Price",
+      "departurePlanned": "Planned departure",
+      "arrivalPlanned": "Planned arrival",
+      "recipient": "Recipient & delivery",
+      "mode": "Mode",
+      "name": "Name",
+      "phone": "Phone",
+      "city": "City",
+      "packaging": "Packaging",
+      "items": "Declared items",
+      "notes": "Notes"
+    },
+    "delivery": {
+      "home": "🚚 Home delivery",
+      "ship": "🚢 Shipping",
+      "warehouse": "🏭 Warehouse pickup"
+    }
+  },
+  "journey": {
+    "enr": "Your shipment has been registered in our system",
+    "rec": "Jumla has received your parcel at the warehouse",
+    "pre": "Your parcel has been verified, weighed and prepared",
+    "exp": "Your parcel has left our warehouse",
+    "tra": "Your parcel is currently in transit",
+    "apd": "Your parcel has arrived in the destination country",
+    "dou": "Your parcel has been presented to customs authorities",
+    "ins": "Your parcel is being inspected by customs",
+    "ret": "Your parcel has been temporarily held by customs",
+    "lib": "Your parcel has cleared customs and been released",
+    "ard": "Your parcel has arrived at our destination warehouse",
+    "ver": "Final verification before handover",
+    "pdl": "Your parcel is ready — you can arrange collection",
+    "liv": "The courier is on the way with your parcel",
+    "ok": "Your parcel has been delivered to the recipient"
   },
   "statuses": {
     "enr": "Parcel registered",

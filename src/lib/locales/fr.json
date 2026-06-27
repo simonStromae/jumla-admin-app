@@ -272,26 +272,125 @@
     "notFoundDetail": "Aucun colis trouvé avec le code {code}. Vérifiez l'orthographe.",
     "campaign": "Cargaison {code}",
     "statusLabel": "Statut · {from} → {to}",
+    "currentStatus": "Statut actuel",
+    "paid": "✓ Payé",
+    "paymentPending": "⏳ Paiement en attente",
     "payment": {
       "confirmed": "✓ Paiement confirmé",
       "pending": "⏳ En attente"
     },
     "details": {
-      "title": "Détails de l'envoi",
+      "title": "Détails",
       "description": "Description",
-      "weight": "Poids déclaré",
+      "weight": "Poids",
       "departure": "Départ prévu",
       "arrival": "Arrivée prévue"
     },
     "timeline": {
-      "title": "Historique du colis",
-      "empty": "Aucun événement enregistré pour le moment.",
+      "title": "Historique des événements",
+      "empty": "Aucun événement enregistré pour l'instant.",
       "current": "ACTUEL"
     },
     "footer": {
       "pre": "Pour plus de détails,",
       "link": "connectez-vous à votre espace client"
     }
+  },
+  "parcel": {
+    "back": "Mes colis",
+    "details": "Détails du colis",
+    "timeline": "Timeline",
+    "noEvents": "Aucun événement enregistré pour l'instant.",
+    "edit": "✏️ Modifier",
+    "save": "✓ Sauvegarder",
+    "saving": "Enregistrement…",
+    "cancel": "Annuler",
+    "addItem": "+ Ajouter",
+    "noItems": "Aucun article — cliquez + Ajouter",
+    "notesPlaceholder": "Instructions particulières, précisions…",
+    "descPlaceholder": "Vêtements, électronique…",
+    "statusCurrent": "ACTUEL",
+    "payment": {
+      "title": "Paiement",
+      "total": "Montant total",
+      "received": "Déjà reçu",
+      "remaining": "Reste à régler",
+      "none": "Aucune facture générée pour l'instant.",
+      "paidOn": "Payé le {date}",
+      "interac": "💸 Envoyez {amount} CAD par Virement Interac — référence : {code}",
+      "status": {
+        "paid": "✓ Payé",
+        "partial": "Partiel",
+        "pending": "En attente",
+        "paidAndSuppl": "Payé · Suppl. dû"
+      }
+    },
+    "adjustment": {
+      "title": "Ajustement de prix",
+      "pendingBadge": "⚠️ Action requise",
+      "discountBadge": "✓ Remise appliquée",
+      "pendingDesc": "Après pesée à l'entrepôt, le montant réel diffère de l'estimation de réservation. Veuillez régler le supplément pour que votre colis soit traité.",
+      "discountDesc": "Une remise a été appliquée par Jumla. Le montant à payer a été mis à jour.",
+      "estimate": "Estimation",
+      "actual": "Prix réel",
+      "supplement": "Supplément dû",
+      "discount": "Remise",
+      "interacInfo": "Virement Interac à {email} · Montant : {amount} CAD · Référence : {code}",
+      "seeAbove": "Voir la section « Ajustement de prix » ci-dessus pour régler le supplément."
+    },
+    "bordereau": {
+      "title": "Bordereaux",
+      "confirmRequired": "⚠️ Bordereau {code} — Confirmation requise",
+      "confirmDesc": "Jumla a confirmé votre bordereau. Vérifiez le contenu et acceptez-le avant l'expédition.",
+      "confirmCheck": "Je confirme avoir vérifié le contenu déclaré et atteste que les informations sont exactes. Cette confirmation vaut signature électronique.",
+      "view": "Voir le bordereau",
+      "confirm": "Confirmer",
+      "confirming": "Confirmation…",
+      "status": {
+        "confirmed": "✓ Confirmé par Jumla",
+        "discordance": "⚠️ Discordance",
+        "pending": "⏳ En attente",
+        "signedByYou": " · ✅ Signé par vous"
+      }
+    },
+    "info": {
+      "description": "Description",
+      "weight": "Poids",
+      "type": "Type produit",
+      "price": "Prix",
+      "departurePlanned": "Départ prévu",
+      "arrivalPlanned": "Arrivée prévue",
+      "recipient": "Destinataire & livraison",
+      "mode": "Mode",
+      "name": "Nom",
+      "phone": "Téléphone",
+      "city": "Ville",
+      "packaging": "Emballages",
+      "items": "Articles déclarés",
+      "notes": "Notes"
+    },
+    "delivery": {
+      "home": "🚚 Livraison domicile",
+      "ship": "🚢 Expédition",
+      "warehouse": "🏭 Retrait entrepôt"
+    }
+  },
+  "journey": {
+    "enr": "Votre envoi a été enregistré dans notre système",
+    "rec": "Jumla a réceptionné votre colis à l'entrepôt",
+    "pre": "Votre colis a été vérifié, pesé et préparé",
+    "exp": "Votre colis a quitté notre entrepôt",
+    "tra": "Votre colis est actuellement en transit",
+    "apd": "Votre colis est arrivé au pays de destination",
+    "dou": "Votre colis est présenté aux autorités douanières",
+    "ins": "Votre colis est en cours d'inspection par les douanes",
+    "ret": "Votre colis a été temporairement retenu par les douanes",
+    "lib": "Votre colis a été dédouané et libéré",
+    "ard": "Votre colis est arrivé à notre entrepôt de destination",
+    "ver": "Vérification finale avant remise",
+    "pdl": "Votre colis est prêt — vous pouvez organiser la réception",
+    "liv": "Le livreur est en route avec votre colis",
+    "ok": "Votre colis a été remis au destinataire"
   },
   "statuses": {
     "enr": "Colis enregistré",

@@ -1,44 +1,22 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-
-const JOURNEY = [
-  { key: 'enr', label: 'Enregistré',                        icon: '📝', desc: 'Votre envoi a été enregistré dans notre système' },
-  { key: 'rec', label: 'Reçu à l\'entrepôt',               icon: '📥', desc: 'Jumla a réceptionné votre colis à l\'entrepôt' },
-  { key: 'pre', label: 'Vérifié et préparé',                icon: '🔍', desc: 'Votre colis a été vérifié, pesé et préparé' },
-  { key: 'exp', label: 'Expédié',                           icon: '🚀', desc: 'Votre colis a quitté notre entrepôt' },
-  { key: 'tra', label: 'En transit',                        icon: '✈️', desc: 'Votre colis est actuellement en transit' },
-  { key: 'apd', label: 'Arrivé au pays de destination',     icon: '🛬', desc: 'Votre colis est arrivé au pays de destination' },
-  { key: 'dou', label: 'Présenté aux douanes',              icon: '🛃', desc: 'Votre colis est présenté aux autorités douanières' },
-  { key: 'ins', label: 'En inspection douanière',           icon: '🔎', desc: 'Votre colis est en cours d\'inspection par les douanes' },
-  { key: 'ret', label: 'Retenu par les douanes',            icon: '⚠️', desc: 'Votre colis a été temporairement retenu par les douanes' },
-  { key: 'lib', label: 'Libéré par les douanes',            icon: '✅', desc: 'Votre colis a été dédouané et libéré' },
-  { key: 'ard', label: 'Arrivé à l\'entrepôt destination', icon: '🏭', desc: 'Votre colis est arrivé à notre entrepôt de destination' },
-  { key: 'ver', label: 'Vérification finale',               icon: '🔬', desc: 'Vérification finale avant remise' },
-  { key: 'pdl', label: 'Prêt pour livraison / retrait',    icon: '📦', desc: 'Votre colis est prêt — vous pouvez organiser la réception' },
-  { key: 'liv', label: 'En cours de livraison',             icon: '🚚', desc: 'Le livreur est en route avec votre colis' },
-  { key: 'ok',  label: 'Livré',                             icon: '🎉', desc: 'Votre colis a été remis au destinataire' },
-];
+import { useT, useLocale } from '@/src/lib/i18n';
 
 const PRODUCT_TYPES = [
-  { id: 'standard',     label: 'Standard' },
-  { id: 'vetements',    label: 'Vêtements / Chaussures / Sacs' },
-  { id: 'cosmetique',   label: 'Cosmétiques / Compléments' },
-  { id: 'alimentaire',  label: 'Alimentaire / Épices' },
-  { id: 'biere',        label: 'Bière' },
-  { id: 'manioc_huile', label: 'Bâton de manioc / Huile rouge' },
-  { id: 'electronique', label: 'Électronique' },
-  { id: 'documents',    label: 'Documents' },
+  { id: 'standard',     labelKey: 'productTypes.standard' },
+  { id: 'vetements',    labelKey: 'productTypes.vetements' },
+  { id: 'cosmetique',   labelKey: 'productTypes.cosmetique' },
+  { id: 'alimentaire',  labelKey: 'productTypes.alimentaire' },
+  { id: 'biere',        labelKey: 'productTypes.biere' },
+  { id: 'manioc_huile', labelKey: 'productTypes.manioc' },
+  { id: 'electronique', labelKey: 'productTypes.electronique' },
+  { id: 'documents',    labelKey: 'productTypes.documents' },
 ];
 
-function fmt(date, opts) {
-  if (!date) return '—';
-  return new Date(date).toLocaleDateString('fr-FR', opts ?? { day: 'numeric', month: 'long', year: 'numeric' });
-}
-function fmtFull(date) {
-  if (!date) return '—';
-  return new Date(date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' });
-}
+const JOURNEY_KEYS = ['enr','rec','pre','exp','tra','apd','dou','ins','ret','lib','ard','ver','pdl','liv','ok'];
+
+const JOURNEY_ICONS = { enr:'📝',rec:'📥',pre:'🔍',exp:'🚀',tra:'✈️',apd:'🛬',dou:'🛃',ins:'🔎',ret:'⚠️',lib:'✅',ard:'🏭',ver:'🔬',pdl:'📦',liv:'🚚',ok:'🎉' };
 
 function InfoCell({ label, value }) {
   return (
@@ -73,6 +51,8 @@ function NumInput({ label, value, onChange }) {
 }
 
 export default function ParcelDetailPage({ params }) {
+  const t = useT();
+  const { locale } = useLocale();
   const router = useRouter();
   const [parcel,    setParcel]    = useState(null);
   const [loading,   setLoading]   = useState(true);
@@ -84,6 +64,23 @@ export default function ParcelDetailPage({ params }) {
   const [saveErr,   setSaveErr]   = useState('');
   const [blConfirm, setBlConfirm] = useState({});
 
+  const fmt = (date, opts) => {
+    if (!date) return '—';
+    return new Date(date).toLocaleDateString(locale === 'fr' ? 'fr-FR' : 'en-CA', opts ?? { day: 'numeric', month: 'long', year: 'numeric' });
+  };
+  const fmtFull = (date) => {
+    if (!date) return '—';
+    return new Date(date).toLocaleDateString(locale === 'fr' ? 'fr-FR' : 'en-CA', { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' });
+  };
+
+  const ptLabel = (id) => {
+    const pt = PRODUCT_TYPES.find(p => p.id === id);
+    if (!pt) return id;
+    const key = pt.labelKey;
+    const v = t(key);
+    return v === key ? (locale === 'fr' ? productTypesFR[id] : productTypesEN[id]) || id : v;
+  };
+
   useEffect(() => {
     fetch('/api/public/config').then(r => r.json()).then(d => {
       if (d.paymentEmail) setPaymentEmail(d.paymentEmail);
@@ -94,33 +91,35 @@ export default function ParcelDetailPage({ params }) {
     fetch('/api/me/parcels/' + params.id)
       .then(r => r.ok ? r.json() : Promise.reject(r.status))
       .then(d => { setParcel(d); setLoading(false); })
-      .catch(() => { setError('Colis introuvable ou accès refusé.'); setLoading(false); });
+      .catch(() => { setError(t('error.notFound') + ' — ' + t('error.network').split(' — ')[1] || 'Accès refusé.'); setLoading(false); });
   }, [params.id]);
 
   if (loading) return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '60vh', gap: 12 }}>
       <div style={{ width: 36, height: 36, border: '3px solid #F5A524', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
       <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
-      <div style={{ fontSize: 13, color: '#6b7280' }}>Chargement…</div>
+      <div style={{ fontSize: 13, color: '#6b7280' }}>{t('loading')}</div>
     </div>
   );
 
   if (error || !parcel) return (
     <div style={{ textAlign: 'center', padding: '60px 20px', color: '#6b7280' }}>
       <div style={{ fontSize: 40, marginBottom: 12 }}>❌</div>
-      <div style={{ fontSize: 16, fontWeight: 600, color: '#374151', marginBottom: 16 }}>{error || 'Colis introuvable'}</div>
+      <div style={{ fontSize: 16, fontWeight: 600, color: '#374151', marginBottom: 16 }}>{error || t('error.notFound')}</div>
       <button onClick={() => router.push('/client/dashboard')} style={{ padding: '10px 20px', borderRadius: 10, border: '1px solid #d1d5db', background: 'white', cursor: 'pointer', fontWeight: 600 }}>
-        ← Mes colis
+        ← {t('parcel.back')}
       </button>
     </div>
   );
 
-  const currentStep   = JOURNEY.findIndex(s => s.key === parcel.status);
+  const currentStep   = JOURNEY_KEYS.findIndex(k => k === parcel.status);
   const visibleTracking = parcel.tracking.filter(e => {
-    const pos = JOURNEY.findIndex(s => s.key === e.status);
+    const pos = JOURNEY_KEYS.findIndex(k => k === e.status);
     return pos === -1 || pos <= currentStep;
   });
-  const s             = JOURNEY[currentStep] ?? JOURNEY[0];
+  const journeyIcon   = JOURNEY_ICONS[parcel.status] ?? '📦';
+  const journeyLabel  = t('statuses.' + parcel.status) || parcel.status;
+  const journeyDesc   = t('journey.' + parcel.status) || '';
   const paid          = parcel.payment?.status === 'completed';
   const partial       = parcel.payment?.status === 'partial';
   const canEdit       = ['enr', 'rec'].includes(parcel.status);
@@ -150,7 +149,7 @@ export default function ParcelDetailPage({ params }) {
   const handleSave = async () => {
     setSaving(true); setSaveErr('');
     const payload = { ...editForm };
-    delete payload.items; // send items separately
+    delete payload.items;
     if (editForm.items?.length) payload.items = editForm.items.map(({ _id, ...i }) => i);
     const res = await fetch('/api/me/parcels/' + parcel.id, {
       method: 'PUT',
@@ -163,7 +162,7 @@ export default function ParcelDetailPage({ params }) {
       setParcel(p => ({ ...p, ...json.parcel, ...payload }));
       setEditing(false);
     } else {
-      setSaveErr(json.error || 'Erreur lors de la sauvegarde');
+      setSaveErr(json.error || t('error.network'));
     }
   };
 
@@ -176,29 +175,34 @@ export default function ParcelDetailPage({ params }) {
         setBlConfirm(c => ({ ...c, [blId]: { checked: true, confirming: false, done: true } }));
         setParcel(p => ({ ...p, bordereaux: p.bordereaux.map(b => b.id === blId ? { ...b, clientConfirmed: true } : b) }));
       } else {
-        setBlConfirm(c => ({ ...c, [blId]: { ...c[blId], confirming: false, error: json.error || 'Erreur' } }));
+        setBlConfirm(c => ({ ...c, [blId]: { ...c[blId], confirming: false, error: json.error || t('error.network') } }));
       }
     } catch {
-      setBlConfirm(c => ({ ...c, [blId]: { ...c[blId], confirming: false, error: 'Erreur réseau' } }));
+      setBlConfirm(c => ({ ...c, [blId]: { ...c[blId], confirming: false, error: t('error.network') } }));
     }
   };
 
-  // Items editor helpers
   const addItem  = () => setEditForm(f => ({ ...f, items: [...(f.items || []), { _id: Math.random(), cat: 'standard', description: '', pieces: 1, weightKg: '' }] }));
   const delItem  = (_id) => setEditForm(f => ({ ...f, items: f.items.filter(i => i._id !== _id) }));
   const updItem  = (_id, k, v) => setEditForm(f => ({ ...f, items: f.items.map(i => i._id === _id ? { ...i, [k]: v } : i) }));
 
   const packagingFields = [
     { key: 'nbCartons',         label: 'Cartons' },
-    { key: 'nbPetitsSacs',      label: 'Petits sacs' },
-    { key: 'nbSacsMoyens',      label: 'Sacs moyens' },
-    { key: 'nbGrandsSacs',      label: 'Grands sacs' },
-    { key: 'nbPlastiques',      label: 'Plastiques' },
-    { key: 'nbPlastiquesBiere', label: 'Plastiques bière' },
+    { key: 'nbPetitsSacs',      label: locale === 'fr' ? 'Petits sacs' : 'Small bags' },
+    { key: 'nbSacsMoyens',      label: locale === 'fr' ? 'Sacs moyens' : 'Medium bags' },
+    { key: 'nbGrandsSacs',      label: locale === 'fr' ? 'Grands sacs' : 'Large bags' },
+    { key: 'nbPlastiques',      label: locale === 'fr' ? 'Plastiques' : 'Plastics' },
+    { key: 'nbPlastiquesBiere', label: locale === 'fr' ? 'Plastiques bière' : 'Beer plastics' },
     { key: 'nbCasiers24x65',    label: 'Casiers 24×65' },
     { key: 'nbCasiers24x33',    label: 'Casiers 24×33' },
     { key: 'nbCasiers12x50',    label: 'Casiers 12×50' },
   ];
+
+  const deliveryLabel = parcel.delivery === 'home'
+    ? t('parcel.delivery.home')
+    : parcel.delivery === 'ship'
+    ? t('parcel.delivery.ship')
+    : t('parcel.delivery.warehouse');
 
   return (
     <div>
@@ -209,51 +213,54 @@ export default function ParcelDetailPage({ params }) {
         color: '#6b7280', fontSize: 13.5, fontWeight: 500,
       }}>
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M19 12H5m5 5-5-5 5-5" /></svg>
-        Mes colis
+        {t('parcel.back')}
       </button>
 
       {/* Hero status card */}
       <div style={{
-        background: 'white',
-        border: '1px solid #e5e7eb',
-        borderLeft: `4px solid ${s.icon === '🎉' ? '#10B981' : '#F5A524'}`,
+        background: 'white', border: '1px solid #e5e7eb',
+        borderLeft: `4px solid ${journeyLabel === t('statuses.ok') ? '#10B981' : '#F5A524'}`,
         borderRadius: 16, padding: '20px', marginBottom: 20,
         display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap',
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
           <div style={{
             width: 48, height: 48, borderRadius: 12, flexShrink: 0,
-            background: s.icon === '🎉' ? '#dcfce7' : '#fffbeb',
+            background: parcel.status === 'ok' ? '#dcfce7' : '#fffbeb',
             display: 'grid', placeItems: 'center', fontSize: 22,
-          }}>{s.icon}</div>
+          }}>{journeyIcon}</div>
           <div>
-            <div style={{ fontSize: 18, fontWeight: 800, color: '#111827', marginBottom: 2 }}>{s.label}</div>
-            <div style={{ fontSize: 12.5, color: '#6b7280' }}>{s.desc}</div>
+            <div style={{ fontSize: 18, fontWeight: 800, color: '#111827', marginBottom: 2 }}>{journeyLabel}</div>
+            <div style={{ fontSize: 12.5, color: '#6b7280' }}>{journeyDesc}</div>
           </div>
         </div>
         <div style={{ textAlign: 'right', flexShrink: 0 }}>
           <div style={{ fontFamily: 'monospace', fontSize: 15, fontWeight: 800, color: '#111827', marginBottom: 3 }}>{parcel.trackingCode}</div>
           <div style={{ fontSize: 12, color: '#6b7280' }}>{parcel.campaign?.from} → {parcel.campaign?.to}</div>
           <div style={{ fontSize: 12, color: '#9ca3af', marginTop: 1 }}>{parcel.campaign?.code}</div>
-          <div style={{ fontSize: 11, color: '#9ca3af', marginTop: 3 }}>Créé le {fmt(parcel.createdAt, { day: 'numeric', month: 'short', year: 'numeric' })}</div>
+          <div style={{ fontSize: 11, color: '#9ca3af', marginTop: 3 }}>
+            {locale === 'fr' ? 'Créé le ' : 'Created '}{fmt(parcel.createdAt, { day: 'numeric', month: 'short', year: 'numeric' })}
+          </div>
         </div>
       </div>
 
-      {/* Action required: bordereau to confirm */}
+      {/* Unconfirmed bordereaux */}
       {unconfirmedBl.map(bl => {
         const conf = blConfirm[bl.id] ?? {};
         return conf.done ? null : (
           <div key={bl.id} style={{ marginBottom: 16, padding: '14px 16px', borderRadius: 12, background: '#fffbeb', border: '1.5px solid #fbbf24' }}>
-            <div style={{ fontWeight: 700, fontSize: 14, color: '#92400e', marginBottom: 6 }}>⚠️ Bordereau {bl.code} — Confirmation requise</div>
+            <div style={{ fontWeight: 700, fontSize: 14, color: '#92400e', marginBottom: 6 }}>
+              {t('parcel.bordereau.confirmRequired').replace('{code}', bl.code)}
+            </div>
             <div style={{ fontSize: 13, color: '#b45309', marginBottom: 12, lineHeight: 1.5 }}>
-              Jumla a confirmé votre bordereau. Vérifiez le contenu et acceptez-le avant l&apos;expédition.
+              {t('parcel.bordereau.confirmDesc')}
             </div>
             <label style={{ display: 'flex', alignItems: 'flex-start', gap: 10, cursor: 'pointer', marginBottom: 12 }}>
               <input type="checkbox" checked={conf.checked ?? false}
                 onChange={e => setBlConfirm(c => ({ ...c, [bl.id]: { ...c[bl.id], checked: e.target.checked } }))}
                 style={{ marginTop: 2, width: 16, height: 16, accentColor: '#d97706', cursor: 'pointer' }} />
               <span style={{ fontSize: 12.5, color: '#374151', lineHeight: 1.5 }}>
-                Je confirme avoir vérifié le contenu déclaré et atteste que les informations sont exactes. Cette confirmation vaut signature électronique.
+                {t('parcel.bordereau.confirmCheck')}
               </span>
             </label>
             {conf.error && (
@@ -263,30 +270,30 @@ export default function ParcelDetailPage({ params }) {
             )}
             <div style={{ display: 'flex', gap: 8 }}>
               <button onClick={() => router.push('/client/bordereau/' + bl.id)} style={{ padding: '8px 14px', borderRadius: 8, border: '1px solid #d97706', background: 'white', color: '#92400e', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
-                Voir le bordereau
+                {t('parcel.bordereau.view')}
               </button>
               <button onClick={() => confirmBl(bl.id)} disabled={!conf.checked || conf.confirming} style={{ padding: '8px 16px', borderRadius: 8, border: 'none', background: conf.checked ? '#d97706' : '#e5e7eb', color: 'white', fontSize: 13, fontWeight: 700, cursor: conf.checked ? 'pointer' : 'not-allowed' }}>
-                {conf.confirming ? 'Confirmation…' : 'Confirmer'}
+                {conf.confirming ? t('parcel.bordereau.confirming') : t('parcel.bordereau.confirm')}
               </button>
             </div>
           </div>
         );
       })}
 
-      {/* ── Grid layout ── */}
+      {/* Grid layout */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))', gap: 14 }}>
 
-        {/* ── Détails principaux + edit ── */}
-        <Section title="Détails du colis" col="1 / -1" badge={
+        {/* Parcel details + edit */}
+        <Section title={t('parcel.details')} col="1 / -1" badge={
           canEdit && !editing ? (
             <button onClick={startEdit} style={{ fontSize: 12, padding: '4px 10px', borderRadius: 6, border: '1px solid #d1d5db', background: 'white', cursor: 'pointer', color: '#374151', fontWeight: 600 }}>
-              ✏️ Modifier
+              {t('parcel.edit')}
             </button>
           ) : editing ? (
             <div style={{ display: 'flex', gap: 6 }}>
-              <button onClick={() => setEditing(false)} style={{ fontSize: 12, padding: '4px 10px', borderRadius: 6, border: '1px solid #d1d5db', background: 'white', cursor: 'pointer', color: '#374151', fontWeight: 600 }}>Annuler</button>
+              <button onClick={() => setEditing(false)} style={{ fontSize: 12, padding: '4px 10px', borderRadius: 6, border: '1px solid #d1d5db', background: 'white', cursor: 'pointer', color: '#374151', fontWeight: 600 }}>{t('parcel.cancel')}</button>
               <button onClick={handleSave} disabled={saving} style={{ fontSize: 12, padding: '4px 12px', borderRadius: 6, border: 'none', background: '#F5A524', color: 'white', cursor: 'pointer', fontWeight: 700 }}>
-                {saving ? 'Enregistrement…' : '✓ Sauvegarder'}
+                {saving ? t('parcel.saving') : t('parcel.save')}
               </button>
             </div>
           ) : null
@@ -295,35 +302,28 @@ export default function ParcelDetailPage({ params }) {
 
           {!editing ? (
             <>
-              {/* View mode */}
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: 12, marginBottom: 14 }}>
-                <InfoCell label="Description"   value={parcel.description} />
-                <InfoCell label="Poids"         value={parcel.weightKg ? `${parcel.weightKg} kg` : null} />
-                <InfoCell label="Type produit"  value={PRODUCT_TYPES.find(p => p.id === parcel.productType)?.label} />
-                <InfoCell label="Prix"          value={parcel.priceXaf ? `${parcel.priceXaf.toLocaleString('fr')} CAD` : null} />
-                <InfoCell label="Départ prévu"  value={fmt(parcel.campaign?.departureDate)} />
-                <InfoCell label="Arrivée prévue" value={fmt(parcel.campaign?.arrivalDate)} />
+                <InfoCell label={t('parcel.info.description')} value={parcel.description} />
+                <InfoCell label={t('parcel.info.weight')}      value={parcel.weightKg ? `${parcel.weightKg} kg` : null} />
+                <InfoCell label={t('parcel.info.type')}        value={ptLabel(parcel.productType)} />
+                <InfoCell label={t('parcel.info.price')}       value={parcel.priceXaf ? `${parcel.priceXaf.toLocaleString(locale === 'fr' ? 'fr-FR' : 'en-CA')} CAD` : null} />
+                <InfoCell label={t('parcel.info.departurePlanned')} value={fmt(parcel.campaign?.departureDate)} />
+                <InfoCell label={t('parcel.info.arrivalPlanned')}   value={fmt(parcel.campaign?.arrivalDate)} />
               </div>
 
-              {/* Recipient / delivery info */}
               <div style={{ marginBottom: 14 }}>
-                <div style={{ fontSize: 10.5, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.06em', color: '#9ca3af', marginBottom: 8 }}>Destinataire &amp; livraison</div>
+                <div style={{ fontSize: 10.5, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.06em', color: '#9ca3af', marginBottom: 8 }}>{t('parcel.info.recipient')}</div>
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: 16 }}>
-                  <InfoCell label="Mode" value={
-                    parcel.delivery === 'home' ? '🚚 Livraison domicile' :
-                    parcel.delivery === 'ship' ? '🚢 Expédition' :
-                    '🏭 Retrait entrepôt'
-                  } />
-                  {parcel.recipName  && <InfoCell label="Nom"       value={parcel.recipName} />}
-                  {parcel.recipPhone && <InfoCell label="Téléphone" value={parcel.recipPhone} />}
-                  {parcel.recipCity  && <InfoCell label="Ville"     value={parcel.recipCity} />}
+                  <InfoCell label={t('parcel.info.mode')} value={deliveryLabel} />
+                  {parcel.recipName  && <InfoCell label={t('parcel.info.name')}  value={parcel.recipName} />}
+                  {parcel.recipPhone && <InfoCell label={t('parcel.info.phone')} value={parcel.recipPhone} />}
+                  {parcel.recipCity  && <InfoCell label={t('parcel.info.city')}  value={parcel.recipCity} />}
                 </div>
               </div>
 
-              {/* Packaging counts */}
               {packagingFields.some(f => (parcel[f.key] ?? 0) > 0) && (
                 <>
-                  <div style={{ fontSize: 10.5, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.06em', color: '#9ca3af', marginBottom: 8 }}>Emballages</div>
+                  <div style={{ fontSize: 10.5, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.06em', color: '#9ca3af', marginBottom: 8 }}>{t('parcel.info.packaging')}</div>
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 14 }}>
                     {packagingFields.filter(f => (parcel[f.key] ?? 0) > 0).map(f => (
                       <span key={f.key} style={{ padding: '4px 10px', borderRadius: 99, background: '#f3f4f6', fontSize: 12.5, fontWeight: 600, color: '#374151' }}>
@@ -334,19 +334,20 @@ export default function ParcelDetailPage({ params }) {
                 </>
               )}
 
-              {/* Items */}
               {Array.isArray(parcel.items) && parcel.items.length > 0 && (
                 <>
-                  <div style={{ fontSize: 10.5, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.06em', color: '#9ca3af', marginBottom: 8 }}>Articles déclarés</div>
+                  <div style={{ fontSize: 10.5, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.06em', color: '#9ca3af', marginBottom: 8 }}>{t('parcel.info.items')}</div>
                   <div style={{ border: '1px solid #e5e7eb', borderRadius: 9, overflow: 'hidden' }}>
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 80px 90px', gap: 0, padding: '7px 12px', background: '#f9fafb', borderBottom: '1px solid #e5e7eb', fontSize: 10.5, fontWeight: 700, letterSpacing: '.05em', textTransform: 'uppercase', color: '#6b7280' }}>
-                      <div>Description / Catégorie</div><div>Pièces</div><div>Poids (kg)</div>
+                      <div>{t('parcel.info.description')} / {t('parcel.info.type')}</div>
+                      <div>{locale === 'fr' ? 'Pièces' : 'Units'}</div>
+                      <div>{locale === 'fr' ? 'Poids (kg)' : 'Weight (kg)'}</div>
                     </div>
                     {parcel.items.map((it, i) => (
                       <div key={i} style={{ display: 'grid', gridTemplateColumns: '1fr 80px 90px', padding: '9px 12px', borderBottom: i < parcel.items.length - 1 ? '1px solid #f3f4f6' : 'none', fontSize: 13, color: '#111827' }}>
                         <div>
                           <div style={{ fontWeight: 600 }}>{it.description || it.desc || '—'}</div>
-                          {(it.cat || it.productType) && <div style={{ fontSize: 11, color: '#9ca3af', marginTop: 1 }}>{PRODUCT_TYPES.find(p => p.id === (it.cat || it.productType))?.label ?? (it.cat || it.productType)}</div>}
+                          {(it.cat || it.productType) && <div style={{ fontSize: 11, color: '#9ca3af', marginTop: 1 }}>{ptLabel(it.cat || it.productType)}</div>}
                         </div>
                         <div style={{ fontWeight: 600 }}>{it.pieces ?? it.nbPieces ?? '—'}</div>
                         <div style={{ fontWeight: 600 }}>{it.kg ?? it.weightKg ?? '—'} {(it.kg || it.weightKg) ? 'kg' : ''}</div>
@@ -358,56 +359,52 @@ export default function ParcelDetailPage({ params }) {
 
               {parcel.notes && (
                 <div style={{ marginTop: 14, padding: '10px 14px', background: '#fafafa', borderRadius: 8, border: '1px solid #f3f4f6' }}>
-                  <div style={{ fontSize: 10.5, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.05em', color: '#9ca3af', marginBottom: 4 }}>Notes</div>
+                  <div style={{ fontSize: 10.5, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.05em', color: '#9ca3af', marginBottom: 4 }}>{t('parcel.info.notes')}</div>
                   <div style={{ fontSize: 13, color: '#374151', lineHeight: 1.5 }}>{parcel.notes}</div>
                 </div>
               )}
             </>
           ) : (
-            /* Edit mode */
             <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-              {/* Description & weight */}
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
                 <div>
-                  <label style={{ fontSize: 11.5, fontWeight: 600, color: '#6b7280', display: 'block', marginBottom: 4 }}>Description</label>
+                  <label style={{ fontSize: 11.5, fontWeight: 600, color: '#6b7280', display: 'block', marginBottom: 4 }}>{t('parcel.info.description')}</label>
                   <input value={editForm.description ?? ''} onChange={e => setEditForm(f => ({ ...f, description: e.target.value }))}
-                    placeholder="Vêtements, électronique…"
+                    placeholder={t('parcel.descPlaceholder')}
                     style={{ width: '100%', padding: '9px 12px', border: '1.5px solid #d1d5db', borderRadius: 8, fontSize: 13 }} />
                 </div>
                 <div>
-                  <label style={{ fontSize: 11.5, fontWeight: 600, color: '#6b7280', display: 'block', marginBottom: 4 }}>Poids total (kg)</label>
+                  <label style={{ fontSize: 11.5, fontWeight: 600, color: '#6b7280', display: 'block', marginBottom: 4 }}>{t('parcel.info.weight')} (kg)</label>
                   <input type="number" step="0.1" value={editForm.weightKg ?? ''} onChange={e => setEditForm(f => ({ ...f, weightKg: e.target.value }))}
                     placeholder="5.0"
                     style={{ width: '100%', padding: '9px 12px', border: '1.5px solid #d1d5db', borderRadius: 8, fontSize: 13 }} />
                 </div>
               </div>
 
-              {/* Product type */}
               <div>
-                <label style={{ fontSize: 11.5, fontWeight: 600, color: '#6b7280', display: 'block', marginBottom: 4 }}>Type de produit principal</label>
+                <label style={{ fontSize: 11.5, fontWeight: 600, color: '#6b7280', display: 'block', marginBottom: 4 }}>{t('parcel.info.type')}</label>
                 <select value={editForm.productType ?? 'standard'} onChange={e => setEditForm(f => ({ ...f, productType: e.target.value }))}
                   style={{ width: '100%', padding: '9px 12px', border: '1.5px solid #d1d5db', borderRadius: 8, fontSize: 13 }}>
-                  {PRODUCT_TYPES.map(p => <option key={p.id} value={p.id}>{p.label}</option>)}
+                  {PRODUCT_TYPES.map(p => <option key={p.id} value={p.id}>{ptLabel(p.id)}</option>)}
                 </select>
               </div>
 
-              {/* Articles */}
               <div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-                  <label style={{ fontSize: 11.5, fontWeight: 600, color: '#6b7280' }}>Articles déclarés</label>
-                  <button onClick={addItem} style={{ fontSize: 12, padding: '3px 10px', borderRadius: 6, border: '1px solid #d1d5db', background: 'white', cursor: 'pointer', fontWeight: 600 }}>+ Ajouter</button>
+                  <label style={{ fontSize: 11.5, fontWeight: 600, color: '#6b7280' }}>{t('parcel.info.items')}</label>
+                  <button onClick={addItem} style={{ fontSize: 12, padding: '3px 10px', borderRadius: 6, border: '1px solid #d1d5db', background: 'white', cursor: 'pointer', fontWeight: 600 }}>{t('parcel.addItem')}</button>
                 </div>
                 <div style={{ border: '1px solid #e5e7eb', borderRadius: 9, overflow: 'hidden' }}>
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 120px 80px 80px 32px', gap: 0, padding: '7px 10px', background: '#f9fafb', borderBottom: '1px solid #e5e7eb', fontSize: 10.5, fontWeight: 700, letterSpacing: '.05em', textTransform: 'uppercase', color: '#6b7280' }}>
-                    <div>Description</div><div>Catégorie</div><div>Pièces</div><div>Poids kg</div><div></div>
+                    <div>{t('parcel.info.description')}</div><div>{t('parcel.info.type')}</div><div>{locale === 'fr' ? 'Pièces' : 'Units'}</div><div>{locale === 'fr' ? 'Poids kg' : 'Weight kg'}</div><div></div>
                   </div>
                   {(editForm.items ?? []).map((it, idx) => (
                     <div key={it._id} style={{ display: 'grid', gridTemplateColumns: '1fr 120px 80px 80px 32px', gap: 0, padding: '6px 10px', borderBottom: idx < editForm.items.length - 1 ? '1px solid #f3f4f6' : 'none', alignItems: 'center', background: 'white' }}>
-                      <input value={it.description ?? it.desc ?? ''} onChange={e => updItem(it._id, 'description', e.target.value)} placeholder="Description…"
+                      <input value={it.description ?? it.desc ?? ''} onChange={e => updItem(it._id, 'description', e.target.value)} placeholder={t('parcel.info.description') + '…'}
                         style={{ padding: '6px 8px', border: '1.5px solid #e5e7eb', borderRadius: 6, fontSize: 12.5, marginRight: 6, width: '100%' }} />
                       <select value={it.cat ?? it.productType ?? 'standard'} onChange={e => updItem(it._id, 'cat', e.target.value)}
                         style={{ padding: '6px 6px', border: '1.5px solid #e5e7eb', borderRadius: 6, fontSize: 12, marginRight: 6, width: '100%' }}>
-                        {PRODUCT_TYPES.map(p => <option key={p.id} value={p.id}>{p.label}</option>)}
+                        {PRODUCT_TYPES.map(p => <option key={p.id} value={p.id}>{ptLabel(p.id)}</option>)}
                       </select>
                       <input type="number" min="1" value={it.pieces ?? 1} onChange={e => updItem(it._id, 'pieces', e.target.value)}
                         style={{ padding: '6px 8px', border: '1.5px solid #e5e7eb', borderRadius: 6, fontSize: 12.5, marginRight: 6, width: '100%' }} />
@@ -418,14 +415,13 @@ export default function ParcelDetailPage({ params }) {
                     </div>
                   ))}
                   {(editForm.items ?? []).length === 0 && (
-                    <div style={{ padding: '16px', textAlign: 'center', fontSize: 12.5, color: '#9ca3af' }}>Aucun article — cliquez + Ajouter</div>
+                    <div style={{ padding: '16px', textAlign: 'center', fontSize: 12.5, color: '#9ca3af' }}>{t('parcel.noItems')}</div>
                   )}
                 </div>
               </div>
 
-              {/* Packaging */}
               <div>
-                <label style={{ fontSize: 11.5, fontWeight: 600, color: '#6b7280', display: 'block', marginBottom: 8 }}>Emballages</label>
+                <label style={{ fontSize: 11.5, fontWeight: 600, color: '#6b7280', display: 'block', marginBottom: 8 }}>{t('parcel.info.packaging')}</label>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))', gap: 10 }}>
                   {packagingFields.map(f => (
                     <NumInput key={f.key} label={f.label} value={editForm[f.key] ?? 0}
@@ -434,69 +430,59 @@ export default function ParcelDetailPage({ params }) {
                 </div>
               </div>
 
-              {/* Notes */}
               <div>
-                <label style={{ fontSize: 11.5, fontWeight: 600, color: '#6b7280', display: 'block', marginBottom: 4 }}>Notes (optionnel)</label>
+                <label style={{ fontSize: 11.5, fontWeight: 600, color: '#6b7280', display: 'block', marginBottom: 4 }}>{t('parcel.info.notes')}</label>
                 <textarea value={editForm.notes ?? ''} onChange={e => setEditForm(f => ({ ...f, notes: e.target.value }))}
-                  placeholder="Instructions particulières, précisions…" rows={3}
+                  placeholder={t('parcel.notesPlaceholder')} rows={3}
                   style={{ width: '100%', padding: '9px 12px', border: '1.5px solid #d1d5db', borderRadius: 8, fontSize: 13, resize: 'vertical' }} />
               </div>
             </div>
           )}
         </Section>
 
-        {/* ── Adjustment ── */}
+        {/* Price adjustment */}
         {parcel.confirmedPriceXaf != null && (parcel.adjustmentStatus === 'pending' || parcel.adjustmentStatus === 'discount') && (() => {
           const isPending  = parcel.adjustmentStatus === 'pending';
           const diff       = parcel.confirmedPriceXaf - (parcel.priceXaf ?? 0);
           const supplement = Math.abs(diff);
           return (
-            <Section title="Ajustement de prix" col="1 / -1" badge={
+            <Section title={t('parcel.adjustment.title')} col="1 / -1" badge={
               isPending
-                ? <span style={{ fontSize: 12, fontWeight: 700, padding: '3px 8px', borderRadius: 99, background: '#fef3c7', color: '#92400e' }}>⚠️ Action requise</span>
-                : <span style={{ fontSize: 12, fontWeight: 700, padding: '3px 8px', borderRadius: 99, background: '#dcfce7', color: '#15803d' }}>✓ Remise appliquée</span>
+                ? <span style={{ fontSize: 12, fontWeight: 700, padding: '3px 8px', borderRadius: 99, background: '#fef3c7', color: '#92400e' }}>{t('parcel.adjustment.pendingBadge')}</span>
+                : <span style={{ fontSize: 12, fontWeight: 700, padding: '3px 8px', borderRadius: 99, background: '#dcfce7', color: '#15803d' }}>{t('parcel.adjustment.discountBadge')}</span>
             }>
               <p style={{ fontSize: 13, color: '#6b7280', margin: '0 0 16px', lineHeight: 1.5 }}>
-                {isPending
-                  ? 'Après pesée à l\'entrepôt, le montant réel diffère de l\'estimation de réservation. Veuillez régler le supplément pour que votre colis soit traité.'
-                  : 'Une remise a été appliquée par Jumla. Le montant à payer a été mis à jour.'}
+                {isPending ? t('parcel.adjustment.pendingDesc') : t('parcel.adjustment.discountDesc')}
               </p>
-
-              {/* 3-col stats */}
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10, marginBottom: 16 }}>
                 <div style={{ padding: '14px 16px', background: '#f9fafb', borderRadius: 12, border: '1px solid #e5e7eb' }}>
-                  <div style={{ fontSize: 10.5, fontWeight: 700, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '.05em', marginBottom: 8 }}>Estimation</div>
-                  <div style={{ fontFamily: 'monospace', fontSize: 22, fontWeight: 700, color: '#9ca3af', textDecoration: 'line-through' }}>
-                    {parcel.priceXaf?.toLocaleString('fr') ?? '—'}
-                  </div>
+                  <div style={{ fontSize: 10.5, fontWeight: 700, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '.05em', marginBottom: 8 }}>{t('parcel.adjustment.estimate')}</div>
+                  <div style={{ fontFamily: 'monospace', fontSize: 22, fontWeight: 700, color: '#9ca3af', textDecoration: 'line-through' }}>{parcel.priceXaf?.toLocaleString(locale === 'fr' ? 'fr-FR' : 'en-CA') ?? '—'}</div>
                   <div style={{ fontSize: 11, color: '#9ca3af', marginTop: 2 }}>CAD</div>
                 </div>
                 <div style={{ padding: '14px 16px', background: '#f9fafb', borderRadius: 12, border: '1px solid #e5e7eb' }}>
-                  <div style={{ fontSize: 10.5, fontWeight: 700, color: '#6b7280', textTransform: 'uppercase', letterSpacing: '.05em', marginBottom: 8 }}>Prix réel</div>
-                  <div style={{ fontFamily: 'monospace', fontSize: 22, fontWeight: 800, color: '#111827' }}>
-                    {parcel.confirmedPriceXaf.toLocaleString('fr')}
-                  </div>
+                  <div style={{ fontSize: 10.5, fontWeight: 700, color: '#6b7280', textTransform: 'uppercase', letterSpacing: '.05em', marginBottom: 8 }}>{t('parcel.adjustment.actual')}</div>
+                  <div style={{ fontFamily: 'monospace', fontSize: 22, fontWeight: 800, color: '#111827' }}>{parcel.confirmedPriceXaf.toLocaleString(locale === 'fr' ? 'fr-FR' : 'en-CA')}</div>
                   <div style={{ fontSize: 11, color: '#9ca3af', marginTop: 2 }}>CAD</div>
                 </div>
                 <div style={{ padding: '14px 16px', borderRadius: 12, border: isPending ? '1.5px solid #fbbf24' : '1.5px solid #86efac', background: isPending ? '#fffbeb' : '#f0fdf4' }}>
                   <div style={{ fontSize: 10.5, fontWeight: 700, color: isPending ? '#92400e' : '#15803d', textTransform: 'uppercase', letterSpacing: '.05em', marginBottom: 8 }}>
-                    {isPending ? 'Supplément dû' : 'Remise'}
+                    {isPending ? t('parcel.adjustment.supplement') : t('parcel.adjustment.discount')}
                   </div>
                   <div style={{ fontFamily: 'monospace', fontSize: 22, fontWeight: 800, color: isPending ? '#92400e' : '#15803d' }}>
-                    {isPending ? '+' : '−'}{supplement.toLocaleString('fr')}
+                    {isPending ? '+' : '−'}{supplement.toLocaleString(locale === 'fr' ? 'fr-FR' : 'en-CA')}
                   </div>
                   <div style={{ fontSize: 11, color: isPending ? '#b45309' : '#16a34a', marginTop: 2 }}>CAD</div>
                 </div>
               </div>
-
-              {/* CTA Interac — seulement pour les suppléments */}
               {isPending && supplement > 0 && (
                 <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12, padding: '12px 16px', background: 'white', border: '1px solid #e5e7eb', borderLeft: '3px solid #F5A524', borderRadius: 10 }}>
                   <span style={{ fontSize: 18, flexShrink: 0, marginTop: 1 }}>💸</span>
                   <div style={{ fontSize: 12.5, color: '#374151', lineHeight: 1.6 }}>
-                    Virement Interac à <strong>{paymentEmail}</strong><br />
-                    Montant : <strong style={{ color: '#92400e' }}>{supplement.toLocaleString('fr')} CAD</strong>
-                    {' '}· Référence : <strong style={{ fontFamily: 'monospace' }}>{parcel.trackingCode}</strong>
+                    {t('parcel.adjustment.interacInfo')
+                      .replace('{email}', paymentEmail)
+                      .replace('{amount}', supplement.toLocaleString(locale === 'fr' ? 'fr-FR' : 'en-CA'))
+                      .replace('{code}', parcel.trackingCode)}
                   </div>
                 </div>
               )}
@@ -504,105 +490,117 @@ export default function ParcelDetailPage({ params }) {
           );
         })()}
 
-        {/* ── Payment ── */}
+        {/* Payment */}
         {(() => {
           const adjPending = parcel.adjustmentStatus === 'pending' && parcel.confirmedPriceXaf != null;
           const supplement = adjPending ? Math.max(0, parcel.confirmedPriceXaf - (parcel.priceXaf ?? 0)) : 0;
-          const badge = paid && adjPending
-            ? <span style={{ fontSize: 12, fontWeight: 700, padding: '3px 8px', borderRadius: 99, background: '#fef3c7', color: '#92400e' }}>Payé · Suppl. dû</span>
-            : <span style={{ fontSize: 12, fontWeight: 700, padding: '3px 8px', borderRadius: 99, background: paid ? '#dcfce7' : partial ? '#fef3c7' : '#fee2e2', color: paid ? '#16a34a' : partial ? '#92400e' : '#dc2626' }}>
-                {paid ? '✓ Payé' : partial ? 'Partiel' : 'En attente'}
-              </span>;
+          const badgeLabel = paid && adjPending
+            ? t('parcel.payment.status.paidAndSuppl')
+            : paid ? t('parcel.payment.status.paid')
+            : partial ? t('parcel.payment.status.partial')
+            : t('parcel.payment.status.pending');
+          const badgeColor = paid ? '#16a34a' : partial ? '#92400e' : '#dc2626';
+          const badgeBg    = paid ? '#dcfce7' : partial ? '#fef3c7' : '#fee2e2';
           return (
-            <Section title="Paiement" col="1 / -1" badge={badge}>
+            <Section title={t('parcel.payment.title')} col="1 / -1" badge={
+              <span style={{ fontSize: 12, fontWeight: 700, padding: '3px 8px', borderRadius: 99, background: badgeBg, color: badgeColor }}>
+                {badgeLabel}
+              </span>
+            }>
               {parcel.payment ? (
                 <div>
                   {paid && adjPending ? (
                     <>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
-                        <span style={{ fontSize: 13, color: '#6b7280' }}>Facture initiale</span>
+                        <span style={{ fontSize: 13, color: '#6b7280' }}>{locale === 'fr' ? 'Facture initiale' : 'Initial invoice'}</span>
                         <div style={{ textAlign: 'right' }}>
-                          <div style={{ fontWeight: 700, fontSize: 15, fontFamily: 'monospace', color: '#16a34a' }}>✓ {parcel.payment.amount.toLocaleString('fr')} CAD</div>
-                          {parcel.payment.paidAt && <div style={{ fontSize: 11, color: '#9ca3af' }}>Payé le {fmt(parcel.payment.paidAt)}</div>}
+                          <div style={{ fontWeight: 700, fontSize: 15, fontFamily: 'monospace', color: '#16a34a' }}>✓ {parcel.payment.amount.toLocaleString(locale === 'fr' ? 'fr-FR' : 'en-CA')} CAD</div>
+                          {parcel.payment.paidAt && <div style={{ fontSize: 11, color: '#9ca3af' }}>{t('parcel.payment.paidOn').replace('{date}', fmt(parcel.payment.paidAt))}</div>}
                         </div>
                       </div>
                       {supplement > 0 && (
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 14px', background: '#fffbeb', border: '1.5px solid #fbbf24', borderRadius: 9, marginBottom: 10 }}>
-                          <span style={{ fontSize: 13, color: '#92400e', fontWeight: 600 }}>⚠️ Supplément dû</span>
-                          <span style={{ fontWeight: 800, fontSize: 15, fontFamily: 'monospace', color: '#92400e' }}>+{supplement.toLocaleString('fr')} CAD</span>
+                          <span style={{ fontSize: 13, color: '#92400e', fontWeight: 600 }}>⚠️ {t('parcel.adjustment.supplement')}</span>
+                          <span style={{ fontWeight: 800, fontSize: 15, fontFamily: 'monospace', color: '#92400e' }}>+{supplement.toLocaleString(locale === 'fr' ? 'fr-FR' : 'en-CA')} CAD</span>
                         </div>
                       )}
-                      <div style={{ fontSize: 12, color: '#6b7280', fontStyle: 'italic' }}>Voir la section &laquo;&nbsp;Ajustement de prix&nbsp;&raquo; ci-dessus pour régler le supplément.</div>
+                      <div style={{ fontSize: 12, color: '#6b7280', fontStyle: 'italic' }}>{t('parcel.adjustment.seeAbove')}</div>
                     </>
                   ) : (
                     <>
                       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
-                        <span style={{ fontSize: 13, color: '#6b7280' }}>Montant total</span>
-                        <span style={{ fontWeight: 700, fontSize: 15, fontFamily: 'monospace' }}>{parcel.payment.amount.toLocaleString('fr')} CAD</span>
+                        <span style={{ fontSize: 13, color: '#6b7280' }}>{t('parcel.payment.total')}</span>
+                        <span style={{ fontWeight: 700, fontSize: 15, fontFamily: 'monospace' }}>{parcel.payment.amount.toLocaleString(locale === 'fr' ? 'fr-FR' : 'en-CA')} CAD</span>
                       </div>
                       {(partial || !paid) && parcel.payment.allocated > 0 && (
                         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
-                          <span style={{ fontSize: 13, color: '#6b7280' }}>Déjà reçu</span>
-                          <span style={{ fontWeight: 600, fontSize: 14, color: '#16a34a', fontFamily: 'monospace' }}>{parcel.payment.allocated.toLocaleString('fr')} CAD</span>
+                          <span style={{ fontSize: 13, color: '#6b7280' }}>{t('parcel.payment.received')}</span>
+                          <span style={{ fontWeight: 600, fontSize: 14, color: '#16a34a', fontFamily: 'monospace' }}>{parcel.payment.allocated.toLocaleString(locale === 'fr' ? 'fr-FR' : 'en-CA')} CAD</span>
                         </div>
                       )}
                       {!paid && (
                         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 12 }}>
-                          <span style={{ fontSize: 13, color: '#6b7280' }}>Reste à régler</span>
-                          <span style={{ fontWeight: 700, fontSize: 15, color: '#dc2626', fontFamily: 'monospace' }}>{parcel.payment.remaining.toLocaleString('fr')} CAD</span>
+                          <span style={{ fontSize: 13, color: '#6b7280' }}>{t('parcel.payment.remaining')}</span>
+                          <span style={{ fontWeight: 700, fontSize: 15, color: '#dc2626', fontFamily: 'monospace' }}>{parcel.payment.remaining.toLocaleString(locale === 'fr' ? 'fr-FR' : 'en-CA')} CAD</span>
                         </div>
                       )}
                       {paid && parcel.payment.paidAt && (
-                        <div style={{ fontSize: 12.5, color: '#6b7280' }}>Payé le {fmt(parcel.payment.paidAt)}</div>
+                        <div style={{ fontSize: 12.5, color: '#6b7280' }}>{t('parcel.payment.paidOn').replace('{date}', fmt(parcel.payment.paidAt))}</div>
                       )}
                       {!paid && (
                         <div style={{ padding: '10px 14px', borderRadius: 8, background: '#fef3c7', border: '1px solid #fde68a', fontSize: 12.5, color: '#92400e', marginTop: 8 }}>
-                          💸 Envoyez <strong>{parcel.payment.remaining.toLocaleString('fr')} CAD</strong> par Virement Interac — référence : <strong>{parcel.trackingCode}</strong>
+                          {t('parcel.payment.interac')
+                            .replace('{amount}', parcel.payment.remaining.toLocaleString(locale === 'fr' ? 'fr-FR' : 'en-CA'))
+                            .replace('{code}', parcel.trackingCode)}
                         </div>
                       )}
                     </>
                   )}
                 </div>
               ) : (
-                <div style={{ fontSize: 13, color: '#9ca3af', fontStyle: 'italic' }}>Aucune facture générée pour l&apos;instant.</div>
+                <div style={{ fontSize: 13, color: '#9ca3af', fontStyle: 'italic' }}>{t('parcel.payment.none')}</div>
               )}
             </Section>
           );
         })()}
 
-        {/* ── Bordereaux ── */}
+        {/* Bordereaux */}
         {parcel.bordereaux?.length > 0 && (
-          <Section title="Bordereaux" col="1 / -1">
+          <Section title={t('parcel.bordereau.title')} col="1 / -1">
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
               {parcel.bordereaux.map(bl => {
                 const conf = blConfirm[bl.id];
                 const confirmed = bl.clientConfirmed || conf?.done;
                 const statusColors = { valide: '#16a34a', en_attente: '#6b7280', discordance: '#dc2626' };
+                const blStatusLabel = bl.status === 'valide'
+                  ? t('parcel.bordereau.status.confirmed')
+                  : bl.status === 'discordance'
+                  ? t('parcel.bordereau.status.discordance')
+                  : t('parcel.bordereau.status.pending');
                 return (
                   <div key={bl.id} style={{ padding: '10px 14px', borderRadius: 9, border: '1px solid #e5e7eb', background: '#f9fafb' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: bl.items?.length ? 8 : 0 }}>
                       <div>
                         <div style={{ fontFamily: 'monospace', fontWeight: 700, fontSize: 13, color: '#111827' }}>{bl.code}</div>
                         <div style={{ fontSize: 11.5, color: statusColors[bl.status] ?? '#6b7280', marginTop: 1, fontWeight: 600 }}>
-                          {bl.status === 'valide' ? '✓ Confirmé par Jumla' : bl.status === 'discordance' ? '⚠️ Discordance' : '⏳ En attente'}
-                          {confirmed && ' · ✅ Signé par vous'}
+                          {blStatusLabel}
+                          {confirmed && t('parcel.bordereau.status.signedByYou')}
                         </div>
                         {(bl.weightKg || bl.nbPieces) && (
                           <div style={{ fontSize: 11.5, color: '#9ca3af', marginTop: 2 }}>
-                            {bl.nbPieces ? `${bl.nbPieces} pièce(s)` : ''}
+                            {bl.nbPieces ? `${bl.nbPieces} ${locale === 'fr' ? 'pièce(s)' : 'unit(s)'}` : ''}
                             {bl.weightKg ? ` · ${bl.weightKg} kg` : ''}
                           </div>
                         )}
                       </div>
-                      <button onClick={() => router.push('/client/bordereau/' + bl.id)} style={{ padding: '6px 12px', borderRadius: 7, border: '1px solid #d1d5db', background: 'white', fontSize: 12, fontWeight: 600, cursor: 'pointer', color: '#374151' }}>Voir</button>
+                      <button onClick={() => router.push('/client/bordereau/' + bl.id)} style={{ padding: '6px 12px', borderRadius: 7, border: '1px solid #d1d5db', background: 'white', fontSize: 12, fontWeight: 600, cursor: 'pointer', color: '#374151' }}>{t('parcel.bordereau.view')}</button>
                     </div>
-                    {/* Bordereau items */}
                     {Array.isArray(bl.items) && bl.items.length > 0 && (
                       <div style={{ border: '1px solid #e5e7eb', borderRadius: 7, overflow: 'hidden', fontSize: 12 }}>
                         {bl.items.map((it, i) => (
                           <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 10px', borderBottom: i < bl.items.length - 1 ? '1px solid #f3f4f6' : 'none', background: 'white' }}>
                             <span style={{ color: '#374151', fontWeight: 500 }}>{it.description || it.label || '—'}</span>
-                            <span style={{ color: '#9ca3af' }}>{it.pieces ?? it.nbPieces ?? ''}{(it.pieces || it.nbPieces) ? ' pcs' : ''} {it.weightKg ? `· ${it.weightKg} kg` : ''}</span>
+                            <span style={{ color: '#9ca3af' }}>{it.pieces ?? it.nbPieces ?? ''}{(it.pieces || it.nbPieces) ? ` ${locale === 'fr' ? 'pcs' : 'units'}` : ''} {it.weightKg ? `· ${it.weightKg} kg` : ''}</span>
                           </div>
                         ))}
                       </div>
@@ -614,16 +612,17 @@ export default function ParcelDetailPage({ params }) {
           </Section>
         )}
 
-        {/* ── Tracking ── */}
-        <Section title="Timeline" col="1 / -1">
+        {/* Timeline */}
+        <Section title={t('parcel.timeline')} col="1 / -1">
           {visibleTracking.length === 0 ? (
             <div style={{ fontSize: 13, color: '#9ca3af', fontStyle: 'italic', textAlign: 'center', padding: '8px 0' }}>
-              Aucun événement enregistré pour l&apos;instant.
+              {t('parcel.noEvents')}
             </div>
           ) : (
             <div>
               {visibleTracking.map((e, i, arr) => {
-                const step   = JOURNEY.find(st => st.key === e.status) ?? { icon: '📦', label: e.status };
+                const icon  = JOURNEY_ICONS[e.status] ?? '📦';
+                const label = t('statuses.' + e.status) || e.status;
                 const isLast = i === arr.length - 1;
                 return (
                   <div key={i} style={{ display: 'flex', gap: 14, position: 'relative', paddingBottom: isLast ? 0 : 20 }}>
@@ -638,25 +637,21 @@ export default function ParcelDetailPage({ params }) {
                       fontSize: isLast ? 17 : 14,
                       boxShadow: isLast ? '0 0 0 3px #fef3c7' : 'none',
                     }}>
-                      {isLast ? step.icon : '✓'}
+                      {isLast ? icon : '✓'}
                     </div>
                     <div style={{ flex: 1, paddingTop: 6 }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 2 }}>
                         <span style={{ fontWeight: isLast ? 700 : 500, fontSize: isLast ? 14 : 13, color: isLast ? '#111827' : '#374151' }}>
-                          {step.label}
+                          {label}
                         </span>
                         {isLast && (
                           <span style={{ fontSize: 10, fontWeight: 700, background: '#F5A524', color: 'white', padding: '1px 7px', borderRadius: 3, letterSpacing: '.04em' }}>
-                            ACTUEL
+                            {t('parcel.statusCurrent')}
                           </span>
                         )}
                       </div>
-                      {e.location && (
-                        <div style={{ fontSize: 12, color: '#6b7280', marginTop: 1 }}>📍 {e.location}</div>
-                      )}
-                      {e.note && (
-                        <div style={{ fontSize: 12, color: '#6b7280', fontStyle: 'italic', marginTop: 1 }}>{e.note}</div>
-                      )}
+                      {e.location && <div style={{ fontSize: 12, color: '#6b7280', marginTop: 1 }}>📍 {e.location}</div>}
+                      {e.note     && <div style={{ fontSize: 12, color: '#6b7280', fontStyle: 'italic', marginTop: 1 }}>{e.note}</div>}
                       <div style={{ fontSize: 11, color: '#9ca3af', marginTop: 3 }}>
                         {e.createdBy ? `${e.createdBy} · ` : ''}{fmtFull(e.createdAt)}
                       </div>
@@ -671,3 +666,7 @@ export default function ParcelDetailPage({ params }) {
     </div>
   );
 }
+
+// Fallback labels for product types (if t() key not found)
+const productTypesFR = { standard:'Standard', vetements:'Vêtements / Chaussures / Sacs', cosmetique:'Cosmétiques / Compléments', alimentaire:'Alimentaire / Épices', biere:'Bière', manioc_huile:'Bâton de manioc / Huile rouge', electronique:'Électronique', documents:'Documents' };
+const productTypesEN = { standard:'Standard', vetements:'Clothing / Shoes / Bags', cosmetique:'Cosmetics / Supplements', alimentaire:'Food / Spices', biere:'Beer', manioc_huile:'Manioc / Palm oil', electronique:'Electronics', documents:'Documents' };
