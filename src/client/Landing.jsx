@@ -4,10 +4,10 @@ import { useSession } from 'next-auth/react';
 import I from '../components/Icons.jsx';
 import { ROUTES, PARCEL_CATEGORIES, getRoute } from '../data.js';
 import { TopBar, SiteNav, SiteFooter } from './SiteLayout.jsx';
-import { useT } from '@/src/lib/i18n';
+import { useT, useLocale } from '@/src/lib/i18n';
 import '@/src/styles/client-omega.css';
 
-const DEFAULT_CONTENT = {
+const DEFAULT_CONTENT_FR = {
   hero: {
     eyebrow:  'Spécialiste du fret aérien · Douala → Montréal',
     line1:    'Chaque colis,',
@@ -48,22 +48,75 @@ const DEFAULT_CONTENT = {
   },
 };
 
+const DEFAULT_CONTENT_EN = {
+  hero: {
+    eyebrow:  'Air freight specialist · Douala → Montréal',
+    line1:    'Every parcel,',
+    line2:    'shipped from Douala',
+    line3:    'to Montréal',
+    subtitle: 'Book online, drop off your parcels in Douala — your recipient receives them in Montréal within 14 days. Real-time tracking and WhatsApp notification at every step.',
+    stats: [
+      { value: '14 days',  label: 'Average transit' },
+      { value: '12,000+',  label: 'Parcels delivered' },
+      { value: '98%',      label: 'Success rate' },
+    ],
+  },
+  services: [
+    { title: 'Express air freight',  description: 'Direct transport Douala → Montréal via our certified partners (Air France Cargo, Ethiopian Airlines). Guaranteed 14-day door-to-door delivery.' },
+    { title: 'Home delivery',        description: 'Your recipient receives their parcel directly at home, anywhere in Quebec. Appointment-based time slot, signature required, payment at the door.' },
+    { title: 'Real-time tracking',   description: 'Automatic WhatsApp & SMS notifications at every step — pickup, departure, transit, arrival, delivery. Sender and recipient always informed.' },
+  ],
+  features: [
+    { title: 'Item-by-item verification',           description: 'Each parcel is photographed and listed on a signed manifest at departure. Upon arrival in Montréal, our agents verify each item. Any discrepancy triggers an immediate WhatsApp alert.' },
+    { title: 'Reliable airline partner network',     description: 'Air France Cargo, Ethiopian Airlines, Turkish Cargo — we choose the most regular rotations to guarantee punctuality regardless of the season.' },
+    { title: 'Automatic notifications at every step', description: 'From pickup to final delivery: you and your recipient receive a WhatsApp notification at every status change. No action required on your part.' },
+    { title: 'Flexible payment on delivery',         description: 'Interac, bank transfer, Mobile Money (Orange Money, MTN) or cash — choose what works for you. No hidden fees, instant quote with our simulator.' },
+    { title: 'Coverage across Canada',               description: 'Home delivery throughout Quebec or pickup at our Montréal warehouse. We also serve Toronto, Ottawa and Vancouver on group orders.' },
+  ],
+  faq: [
+    { question: 'How long does a Douala → Montréal shipment take?', answer: 'The average transit is 14 days door to door. You receive a precise estimate at booking, then WhatsApp notifications at every stage of the journey.' },
+    { question: 'How is the price calculated?', answer: 'The rate is per kilogram with a bracket-based grid (0–5 kg, 5–10 kg, 10–25 kg…). Some categories apply a surcharge: fragile +8%, electronics +5%. Documents get a 10% discount. Use our simulator for an instant quote.' },
+    { question: 'How is the content verified on arrival?', answer: 'Each item is photographed and listed on a manifest at departure. Upon arrival in Montréal, our agents verify item by item. Any discrepancy triggers an immediate WhatsApp alert.' },
+    { question: 'What can I send?', answer: 'Clothing, dry food items, electronics, cosmetics, documents, light furniture. Dangerous products, liquids and goods prohibited in air transport are excluded.' },
+    { question: 'How does my recipient collect the parcel?', answer: 'Choose: home delivery anywhere in Quebec (appointment-based, signature required) or pickup at our Montréal warehouse. Payment on delivery — Interac, bank transfer, cash or Mobile Money.' },
+    { question: 'Can I send from other cities?', answer: 'We primarily operate from Douala. We also have routes from Lagos (Nigeria) and to Brussels. Contact us for a custom quote from other origins.' },
+  ],
+  cta: {
+    line1:    'Send your',
+    line2:    'first parcel',
+    line3:    'today',
+    subtitle: 'Join 2,500+ customers who trust Jumla Shipping for their shipments between Africa and Canada.',
+  },
+};
+
+const DEFAULTS = { fr: DEFAULT_CONTENT_FR, en: DEFAULT_CONTENT_EN };
+
+function merge(base, override) {
+  if (!override) return base;
+  return {
+    hero:     { ...base.hero,     ...override.hero },
+    services: override.services ?? base.services,
+    features: override.features ?? base.features,
+    faq:      override.faq      ?? base.faq,
+    cta:      { ...base.cta,     ...override.cta },
+  };
+}
+
 function useLandingContent() {
-  const [content, setContent] = useState(DEFAULT_CONTENT);
+  const { locale } = useLocale();
+  const [raw, setRaw] = useState(null);
+
   useEffect(() => {
     fetch('/api/public/config').then(r => r.json()).then(d => {
-      if (d.landingContent) {
-        setContent(c => ({
-          hero:     { ...c.hero,     ...d.landingContent.hero },
-          services: d.landingContent.services ?? c.services,
-          features: d.landingContent.features ?? c.features,
-          faq:      d.landingContent.faq      ?? c.faq,
-          cta:      { ...c.cta,      ...d.landingContent.cta },
-        }));
-      }
+      if (d.landingContent) setRaw(d.landingContent);
     }).catch(() => {});
   }, []);
-  return content;
+
+  if (!raw) return DEFAULTS[locale] ?? DEFAULTS.fr;
+  // Bilingual structure { fr: {...}, en: {...} }
+  if (raw.fr || raw.en) return merge(DEFAULTS[locale] ?? DEFAULTS.fr, raw[locale] ?? raw.fr);
+  // Legacy single-language structure — treat as FR
+  return locale === 'fr' ? merge(DEFAULTS.fr, raw) : DEFAULTS.en;
 }
 
 const IMGS = {
