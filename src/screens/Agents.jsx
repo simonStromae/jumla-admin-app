@@ -31,7 +31,7 @@ function Mini({ label, v, unit }) {
   );
 }
 
-function AgentsGridView({ agents, setEditing, onToggleStatus }) {
+function AgentsGridView({ agents, setEditing, onToggleStatus, onDelete }) {
   return (
     <div style={{
       display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(360px, 1fr))', gap: 12,
@@ -62,6 +62,7 @@ function AgentsGridView({ agents, setEditing, onToggleStatus }) {
               </div>
               <div style={{ display: 'flex', gap: 2 }}>
                 <button className="icon-btn" onClick={() => setEditing(a)}><I.Edit /></button>
+                <button className="icon-btn" style={{ color: 'var(--bad-500)' }} onClick={() => onDelete(a)} title="Supprimer"><I.Trash /></button>
               </div>
             </div>
 
@@ -86,12 +87,18 @@ function AgentsGridView({ agents, setEditing, onToggleStatus }) {
                   </span>
                 ))}
               </div>
-              <div style={{ marginTop: 10, display: 'flex', justifyContent: 'flex-end' }}>
+              <div style={{ marginTop: 10, display: 'flex', justifyContent: 'flex-end', gap: 6 }}>
                 <button
                   className="btn btn--ghost btn--xs"
                   style={suspended ? { color: 'var(--ok-700)' } : { color: 'var(--bad-600)' }}
                   onClick={() => onToggleStatus(a)}>
                   {suspended ? 'Réactiver' : 'Suspendre'}
+                </button>
+                <button
+                  className="btn btn--ghost btn--xs"
+                  style={{ color: 'var(--bad-600)' }}
+                  onClick={() => onDelete(a)}>
+                  <I.Trash style={{ width: 11, height: 11 }} />Supprimer
                 </button>
               </div>
             </div>
@@ -114,7 +121,7 @@ function AgentsGridView({ agents, setEditing, onToggleStatus }) {
   );
 }
 
-function AgentsListView({ agents, setEditing, onToggleStatus, page, pageSize }) {
+function AgentsListView({ agents, setEditing, onToggleStatus, onDelete, page, pageSize }) {
   const paged = agents.slice((page - 1) * pageSize, page * pageSize);
   return (
     <table className="tbl" style={{ borderTopLeftRadius: 0, borderTopRightRadius: 0 }}>
@@ -180,6 +187,13 @@ function AgentsListView({ agents, setEditing, onToggleStatus, page, pageSize }) 
                     onClick={() => onToggleStatus(a)}>
                     {suspended ? 'Réactiver' : 'Suspendre'}
                   </button>
+                  <button
+                    className="icon-btn"
+                    style={{ color: 'var(--bad-500)' }}
+                    onClick={() => onDelete(a)}
+                    title="Supprimer">
+                    <I.Trash />
+                  </button>
                 </div>
               </td>
             </tr>
@@ -217,6 +231,17 @@ export default function AgentsScreen({ onNav }) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ status: newStatus }),
     });
+    loadAgents();
+  };
+
+  const handleDeleteAgent = async (agent) => {
+    if (!confirm(`Supprimer définitivement ${agent.name} ? Cette action est irréversible.`)) return;
+    const res = await fetch(`/api/users/${agent.id}`, { method: 'DELETE' });
+    const d = await res.json();
+    if (!res.ok) {
+      alert(d.error || 'Erreur lors de la suppression');
+      return;
+    }
     loadAgents();
   };
 
@@ -294,8 +319,8 @@ export default function AgentsScreen({ onNav }) {
       </div>
 
       {view === 'grid'
-        ? <AgentsGridView agents={filtered} setEditing={setEditing} onToggleStatus={handleToggleStatus} />
-        : <AgentsListView agents={filtered} setEditing={setEditing} onToggleStatus={handleToggleStatus} page={page} pageSize={pageSize} />}
+        ? <AgentsGridView agents={filtered} setEditing={setEditing} onToggleStatus={handleToggleStatus} onDelete={handleDeleteAgent} />
+        : <AgentsListView agents={filtered} setEditing={setEditing} onToggleStatus={handleToggleStatus} onDelete={handleDeleteAgent} page={page} pageSize={pageSize} />}
 
       {view === 'list' && (
         <Pagination total={filtered.length} page={page} pageSize={pageSize}

@@ -30,6 +30,23 @@ export async function DELETE(_: NextRequest, { params }: { params: { id: string 
   const { error } = await requirePermission('agents');
   if (error) return error;
 
-  await prisma.user.delete({ where: { id: params.id } });
+  const target = await prisma.user.findUnique({ where: { id: params.id }, select: { role: true } });
+  if (!target) return NextResponse.json({ error: 'Introuvable' }, { status: 404 });
+
+  if (target.role === 'admin') {
+    const adminCount = await prisma.user.count({ where: { role: 'admin' } });
+    if (adminCount <= 1) {
+      return NextResponse.json({ error: 'Impossible de supprimer le dernier administrateur' }, { status: 400 });
+    }
+  }
+
+  await prisma.$transaction([
+    prisma.campaign.updateMany({ where: { createdById: params.id }, data: { createdById: null } }),
+    prisma.campaignCost.updateMany({ where: { enteredById: params.id }, data: { enteredById: null } }),
+    prisma.trackingEvent.updateMany({ where: { createdById: params.id }, data: { createdById: null } }),
+    prisma.message.deleteMany({ where: { OR: [{ senderId: params.id }, { recipientId: params.id }] } }),
+    prisma.user.delete({ where: { id: params.id } }),
+  ]);
+
   return NextResponse.json({ ok: true });
 }
