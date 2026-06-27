@@ -97,6 +97,7 @@ export function Sidebar({ route, onNav }) {
     { id: 'clients',   label: 'Clients',      icon: I.Users,    route: '/admin/clients',   count: stats.clients || null,        perm: null },
     { id: 'payments',  label: 'Paiements',    icon: I.Wallet,   route: '/admin/payments',  badge: stats.unpaidPayments || null, perm: 'payments' },
     { id: 'costs',     label: 'Coûts',        icon: I.Coins,    route: '/admin/costs',                                          perm: 'costs' },
+    { id: 'airlines',  label: 'Compagnies',   icon: I.Plane,    route: '/admin/airlines',                                       perm: 'campaigns' },
     { id: 'messaging', label: 'Messagerie',   icon: I.Chat,     route: '/admin/messaging',                                      perm: 'whatsapp' },
   ];
   const items = allItems.filter(it => it.perm === null || can(it.perm));

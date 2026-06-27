@@ -12,6 +12,7 @@ export default function AnalyticsScreen({ onNav }) {
   const [topClients, setTopClients]         = useState([]);
   const [topDestinations, setTopDestinations] = useState([]);
   const [topAgents, setTopAgents]           = useState([]);
+  const [airlineStats, setAirlineStats]     = useState([]);
   const [unpaid, setUnpaid]                 = useState([]);
 
   useEffect(() => {
@@ -31,10 +32,11 @@ export default function AnalyticsScreen({ onNav }) {
           costs:   analyticsData.months.costs   || [],
         });
       }
-      setTopClients(analyticsData.topClients       || []);
+      setTopClients(analyticsData.topClients           || []);
       setTopDestinations(analyticsData.topDestinations || []);
-      setTopAgents(analyticsData.topAgents         || []);
-      setUnpaid(analyticsData.unpaid               || []);
+      setTopAgents(analyticsData.topAgents             || []);
+      setAirlineStats(analyticsData.airlineStats        || []);
+      setUnpaid(analyticsData.unpaid                   || []);
       setRoutes(Array.isArray(routesData) ? routesData : []);
     }).catch(() => {});
   }, [year, routeFilter]);
@@ -213,6 +215,66 @@ export default function AnalyticsScreen({ onNav }) {
         <RankingCard title="Top clients" sub="Par chiffre d'affaires" icon={<I.Star style={{ color: 'var(--brand-500)' }} />} items={topClients} />
         <RankingCard title="Top destinations" sub="Par volume expédié" icon={<I.Pin style={{ color: 'var(--info-500)' }} />} items={topDestinations} />
         <RankingCard title="Top agents" sub="Par cargaisons gérées" icon={<I.Users style={{ color: 'var(--ok-500)' }} />} items={topAgents} />
+      </div>
+
+      {/* ── Compagnies aériennes ── */}
+      <div style={{ marginBottom: 14 }}>
+      <ChartCard title="Compagnies aériennes" sub="Volume, coûts et tarif au kg par transporteur">
+        {airlineStats.length === 0 ? (
+          <div style={{ padding: '28px 0', textAlign: 'center', color: 'var(--ink-400)', fontSize: 13 }}>
+            Aucune compagnie assignée aux cargaisons de cette période
+          </div>
+        ) : (
+          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+            <thead>
+              <tr style={{ borderBottom: '1px solid var(--border-soft)' }}>
+                {['Compagnie', 'Cargaisons', 'Volume (kg)', '% du volume', 'Frêt estimé', 'Frêt / kg'].map(h => (
+                  <th key={h} style={{ textAlign: 'left', fontSize: 10.5, fontWeight: 700, color: 'var(--ink-400)', textTransform: 'uppercase', letterSpacing: '.04em', padding: '0 0 8px', paddingRight: 16 }}>{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {airlineStats.map((a, i) => (
+                <tr key={i} style={{ borderBottom: '1px solid var(--border-soft)' }}>
+                  <td style={{ padding: '10px 16px 10px 0' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <div style={{ width: 28, height: 28, borderRadius: 6, background: 'var(--brand-50)', display: 'grid', placeItems: 'center', flexShrink: 0 }}>
+                        <I.Plane style={{ width: 13, height: 13, color: 'var(--brand-500)' }} />
+                      </div>
+                      <div>
+                        <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--ink-900)' }}>{a.name}</div>
+                        {a.iata && <div className="mono" style={{ fontSize: 10.5, color: 'var(--ink-400)' }}>{a.iata}</div>}
+                      </div>
+                    </div>
+                  </td>
+                  <td style={{ padding: '10px 16px 10px 0', fontSize: 13, fontWeight: 600, fontFamily: 'var(--ff-mono)' }}>{a.campaigns}</td>
+                  <td style={{ padding: '10px 16px 10px 0', fontSize: 13, fontFamily: 'var(--ff-mono)', fontWeight: 600 }}>
+                    {a.weightKg.toLocaleString('fr')}
+                  </td>
+                  <td style={{ padding: '10px 16px 10px 0', minWidth: 100 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <div style={{ flex: 1, height: 6, background: 'var(--ink-100)', borderRadius: 999, overflow: 'hidden' }}>
+                        <div style={{ height: '100%', width: a.weightPct + '%', background: 'var(--brand-500)', borderRadius: 999 }} />
+                      </div>
+                      <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--ink-600)', minWidth: 32, textAlign: 'right' }}>{a.weightPct}%</span>
+                    </div>
+                  </td>
+                  <td style={{ padding: '10px 16px 10px 0', fontSize: 13, fontFamily: 'var(--ff-mono)', fontWeight: 600, color: a.fretXaf > 0 ? 'var(--ink-900)' : 'var(--ink-300)' }}>
+                    {a.fretXaf > 0 ? a.fretXaf.toLocaleString('fr') + ' CAD' : '—'}
+                  </td>
+                  <td style={{ padding: '10px 0' }}>
+                    {a.fretPerKg > 0 ? (
+                      <span className="badge" style={{ background: 'var(--ok-50)', color: 'var(--ok-700)', border: '1px solid var(--ok-100)', fontFamily: 'var(--ff-mono)', fontSize: 12 }}>
+                        {a.fretPerKg} CAD/kg
+                      </span>
+                    ) : <span style={{ fontSize: 12, color: 'var(--ink-300)' }}>—</span>}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </ChartCard>
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr', gap: 14 }}>

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import I from '../components/Icons.jsx';
 import { RoutePill, Avatar, Modal } from '../components/Shell.jsx';
 
@@ -297,6 +297,9 @@ export default function CampaignDetailScreen({ id, onNav }) {
         />
       )}
 
+      {/* ── Compagnies aériennes & AWB ── */}
+      <CampaignLegsPanel campaignId={campaign.id} />
+
       {/* ── Campaign Timeline ── */}
       <CampaignTimeline campaign={campaign} route={route} />
 
@@ -384,6 +387,165 @@ export default function CampaignDetailScreen({ id, onNav }) {
       <div style={{ marginTop: 12, fontSize: 12, color: 'var(--ink-400)', marginBottom: 8 }}>
         {parcels.length} colis · Capacité {campaign.capacityKg != null ? campaign.capacityKg + ' kg' : '—'}
       </div>
+    </div>
+  );
+}
+
+/* ── Campaign Legs (airlines + AWB) ── */
+function CampaignLegsPanel({ campaignId }) {
+  const [legs,     setLegs]     = useState(null);
+  const [airlines, setAirlines] = useState([]);
+  const [adding,   setAdding]   = useState(false);
+  const [editId,   setEditId]   = useState(null);
+  const [form,     setForm]     = useState({ airlineId: '', awbNumber: '', weightKg: '', notes: '' });
+  const [saving,   setSaving]   = useState(false);
+  const [err,      setErr]      = useState('');
+
+  const load = useCallback(() => {
+    fetch(`/api/campaigns/${campaignId}/legs`).then(r => r.json()).then(setLegs);
+  }, [campaignId]);
+
+  useEffect(() => {
+    load();
+    fetch('/api/airlines').then(r => r.json()).then(setAirlines);
+  }, [load]);
+
+  function startAdd() {
+    setForm({ airlineId: airlines[0]?.id ?? '', awbNumber: '', weightKg: '', notes: '' });
+    setEditId(null);
+    setAdding(true);
+    setErr('');
+  }
+
+  function startEdit(leg) {
+    setForm({ airlineId: leg.airlineId, awbNumber: leg.awbNumber ?? '', weightKg: leg.weightKg ?? '', notes: leg.notes ?? '' });
+    setEditId(leg.id);
+    setAdding(true);
+    setErr('');
+  }
+
+  async function handleSave() {
+    if (!form.airlineId) { setErr('Sélectionnez une compagnie'); return; }
+    setSaving(true);
+    setErr('');
+    const body = editId
+      ? { legId: editId, ...form }
+      : form;
+    const res  = await fetch(`/api/campaigns/${campaignId}/legs`, {
+      method: editId ? 'PUT' : 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+    const data = await res.json();
+    if (!res.ok) { setErr(data.error ?? 'Erreur'); setSaving(false); return; }
+    setSaving(false);
+    setAdding(false);
+    setEditId(null);
+    load();
+  }
+
+  async function handleDelete(legId) {
+    await fetch(`/api/campaigns/${campaignId}/legs`, {
+      method: 'DELETE', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ legId }),
+    });
+    load();
+  }
+
+  const upd = (k, v) => setForm(f => ({ ...f, [k]: v }));
+
+  return (
+    <div className="card" style={{ marginBottom: 16, padding: '16px 20px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
+        <div className="section-title" style={{ flex: 1, marginBottom: 0 }}>
+          <I.Plane style={{ width: 14, height: 14, color: 'var(--brand-600)' }} /> Compagnies aériennes & AWB
+        </div>
+        {!adding && (
+          <button className="btn btn--ghost btn--sm" onClick={startAdd}>
+            <I.Plus style={{ width: 13, height: 13 }} /> Ajouter
+          </button>
+        )}
+      </div>
+
+      {/* Add / Edit form */}
+      {adding && (
+        <div style={{ marginBottom: 14, padding: '14px 16px', background: 'var(--bg-soft)', borderRadius: 8, border: '1px solid var(--border)' }}>
+          {err && <div style={{ marginBottom: 10, padding: '8px 12px', background: 'var(--bad-50)', borderRadius: 6, fontSize: 12.5, color: 'var(--bad-700)' }}>{err}</div>}
+          <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr 1fr', gap: 10, marginBottom: 10 }}>
+            <div className="field" style={{ marginBottom: 0 }}>
+              <label className="label">Compagnie *</label>
+              <select className="input" value={form.airlineId} onChange={e => upd('airlineId', e.target.value)}>
+                <option value="">— Sélectionner —</option>
+                {airlines.filter(a => a.active).map(a => (
+                  <option key={a.id} value={a.id}>{a.iata ? `${a.iata} — ` : ''}{a.name}</option>
+                ))}
+              </select>
+            </div>
+            <div className="field" style={{ marginBottom: 0 }}>
+              <label className="label">N° AWB</label>
+              <input className="input" value={form.awbNumber} onChange={e => upd('awbNumber', e.target.value)} placeholder="Ex: 220-12345678" />
+            </div>
+            <div className="field" style={{ marginBottom: 0 }}>
+              <label className="label">Poids (kg)</label>
+              <input className="input" type="number" min="0" value={form.weightKg} onChange={e => upd('weightKg', e.target.value)} placeholder="Ex: 120" />
+            </div>
+          </div>
+          <div className="field" style={{ marginBottom: 10 }}>
+            <label className="label">Note</label>
+            <input className="input" value={form.notes} onChange={e => upd('notes', e.target.value)} placeholder="Ex: Poissons fumés, Effets personnels…" />
+          </div>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button className="btn btn--brand btn--sm" disabled={saving} onClick={handleSave}>
+              <I.Check style={{ width: 13, height: 13 }} /> {saving ? '…' : editId ? 'Mettre à jour' : 'Ajouter'}
+            </button>
+            <button className="btn btn--ghost btn--sm" onClick={() => { setAdding(false); setEditId(null); }}>Annuler</button>
+          </div>
+        </div>
+      )}
+
+      {/* Legs list */}
+      {legs === null ? (
+        <div style={{ fontSize: 13, color: 'var(--ink-400)', padding: '8px 0' }}>Chargement…</div>
+      ) : legs.length === 0 ? (
+        <div style={{ fontSize: 13, color: 'var(--ink-400)', padding: '8px 0', textAlign: 'center' }}>
+          Aucune compagnie assignée — cliquez "Ajouter" pour lier des transporteurs.
+        </div>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          {legs.map(leg => (
+            <div key={leg.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 14px', background: 'var(--bg-soft)', borderRadius: 8, border: '1px solid var(--border-soft)' }}>
+              <div style={{ width: 36, height: 36, borderRadius: 8, background: 'var(--brand-50)', display: 'grid', placeItems: 'center', flexShrink: 0 }}>
+                <I.Plane style={{ width: 16, height: 16, color: 'var(--brand-500)' }} />
+              </div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                  <span style={{ fontSize: 14, fontWeight: 700 }}>{leg.airline.name}</span>
+                  {leg.airline.iata && (
+                    <span className="mono" style={{ fontSize: 11, fontWeight: 700, padding: '2px 6px', background: 'var(--brand-50)', color: 'var(--brand-700)', borderRadius: 5, border: '1px solid var(--brand-100)' }}>
+                      {leg.airline.iata}
+                    </span>
+                  )}
+                  {leg.awbNumber && (
+                    <span className="mono" style={{ fontSize: 12, color: 'var(--ink-600)', background: 'var(--ink-50)', padding: '2px 8px', borderRadius: 5, border: '1px solid var(--border)' }}>
+                      AWB {leg.awbNumber}
+                    </span>
+                  )}
+                </div>
+                <div style={{ fontSize: 12, color: 'var(--ink-400)', marginTop: 2 }}>
+                  {leg.weightKg ? `${leg.weightKg} kg` : '— kg'}{leg.notes ? ` · ${leg.notes}` : ''}
+                </div>
+              </div>
+              <button className="btn btn--ghost btn--sm" onClick={() => startEdit(leg)}>
+                <I.Edit style={{ width: 12, height: 12 }} />
+              </button>
+              <button className="btn btn--sm" onClick={() => handleDelete(leg.id)}
+                style={{ background: 'var(--bad-50)', color: 'var(--bad-600)', border: '1px solid var(--bad-100)', padding: '5px 8px' }}>
+                <I.Trash style={{ width: 12, height: 12 }} />
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

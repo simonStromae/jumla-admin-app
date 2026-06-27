@@ -221,6 +221,54 @@ export async function GET(req: NextRequest) {
     meter: Math.round(count / destMax * 100),
   }));
 
+  // ── Analytics par compagnie aérienne ──────────────────────────────────────
+  const legs = await prisma.campaignLeg.findMany({
+    where: { campaignId: { in: yearCampaignIds } },
+    include: { airline: true },
+  });
+
+  // Build per-campaign weight totals (to distribute fret cost proportionally)
+  const campaignLegWeights: Record<string, number> = {};
+  for (const leg of legs) {
+    campaignLegWeights[leg.campaignId] = (campaignLegWeights[leg.campaignId] ?? 0) + (leg.weightKg ?? 0);
+  }
+
+  // Per-airline aggregation
+  const airlineMap: Record<string, { name: string; iata: string | null; weightKg: number; campaigns: Set<string>; fretXaf: number }> = {};
+  for (const leg of legs) {
+    const aid = leg.airlineId;
+    if (!airlineMap[aid]) {
+      airlineMap[aid] = { name: leg.airline.name, iata: leg.airline.iata, weightKg: 0, campaigns: new Set(), fretXaf: 0 };
+    }
+    airlineMap[aid].weightKg += leg.weightKg ?? 0;
+    airlineMap[aid].campaigns.add(leg.campaignId);
+
+    // Distribute campaign fret cost by weight ratio
+    const campCost = costs.find((c: any) => c.campaignId === leg.campaignId);
+    if (campCost && leg.weightKg) {
+      const campTotalWeight = campaignLegWeights[leg.campaignId] || 1;
+      const ratio = leg.weightKg / campTotalWeight;
+      airlineMap[aid].fretXaf += Math.round(campCost.fret * ratio);
+    }
+  }
+
+  const airlineStats = Object.values(airlineMap)
+    .sort((a, b) => b.weightKg - a.weightKg)
+    .map(a => ({
+      name:          a.name,
+      iata:          a.iata,
+      weightKg:      Math.round(a.weightKg * 10) / 10,
+      campaigns:     a.campaigns.size,
+      fretXaf:       a.fretXaf,
+      fretPerKg:     a.weightKg > 0 ? Math.round(a.fretXaf / a.weightKg * 100) / 100 : 0,
+      weightPct:     0, // filled below
+    }));
+
+  const totalAirlineWeight = airlineStats.reduce((s, a) => s + a.weightKg, 0);
+  for (const a of airlineStats) {
+    a.weightPct = totalAirlineWeight > 0 ? Math.round(a.weightKg / totalAirlineWeight * 100) : 0;
+  }
+
   // ── Top agents ─────────────────────────────────────────────────────────────
   const agents = await prisma.user.findMany({
     where: { role: { in: ['admin', 'agent'] } },
@@ -252,6 +300,7 @@ export async function GET(req: NextRequest) {
     topClients,
     topDestinations,
     topAgents,
+    airlineStats,
     unpaid:         unpaidItems.slice(0, 8),
   });
 }

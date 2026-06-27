@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import I from '../components/Icons.jsx';
 import { Bi, RoutePill, useCan } from '../components/Shell.jsx';
 
@@ -29,13 +29,51 @@ function CostModal({ campaign, currentCosts, onSave, onClose }) {
   const [draft, setDraft] = useState(
     Object.fromEntries(COST_FIELDS.map(f => [f.key, currentCosts?.[f.key] || '']))
   );
+  const [costItems,    setCostItems]    = useState([]);
+  const [newItemLabel, setNewItemLabel] = useState('');
+  const [newItemAmt,   setNewItemAmt]   = useState('');
+  const [addingItem,   setAddingItem]   = useState(false);
+
+  const loadItems = useCallback(() => {
+    fetch(`/api/campaigns/${campaign.id}/cost-items`).then(r => r.json()).then(setCostItems);
+  }, [campaign.id]);
+
+  useEffect(() => { loadItems(); }, [loadItems]);
 
   const val  = k => parseInt(draft[k]) || 0;
-  const total = COST_FIELDS.reduce((s, f) => s + val(f.key), 0);
+  const fixedTotal = COST_FIELDS.reduce((s, f) => s + val(f.key), 0);
+  const extraTotal = costItems.reduce((s, it) => s + (it.amountXaf || 0), 0);
+  const total = fixedTotal + extraTotal;
   const col   = campaign.collected ?? 0;
   const mg    = col - total;
   const mp    = col > 0 ? Math.round(mg / col * 100) : 0;
   const upd   = (k, v) => setDraft(d => ({ ...d, [k]: v }));
+
+  async function addItem() {
+    if (!newItemLabel.trim()) return;
+    await fetch(`/api/campaigns/${campaign.id}/cost-items`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ label: newItemLabel, amountXaf: Number(newItemAmt) || 0 }),
+    });
+    setNewItemLabel(''); setNewItemAmt(''); setAddingItem(false);
+    loadItems();
+  }
+
+  async function removeItem(itemId) {
+    await fetch(`/api/campaigns/${campaign.id}/cost-items`, {
+      method: 'DELETE', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ itemId }),
+    });
+    loadItems();
+  }
+
+  async function updateItemAmt(itemId, amountXaf) {
+    await fetch(`/api/campaigns/${campaign.id}/cost-items`, {
+      method: 'PUT', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ itemId, amountXaf: Number(amountXaf) || 0 }),
+    });
+    loadItems();
+  }
 
   const save = () => {
     const saved = Object.fromEntries(COST_FIELDS.map(f => [f.key, val(f.key)]));
@@ -110,6 +148,54 @@ function CostModal({ campaign, currentCosts, onSave, onClose }) {
               </div>
             );
           })}
+        </div>
+
+        {/* Custom cost items */}
+        <div style={{ margin: '0 20px 16px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+            <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--ink-400)', textTransform: 'uppercase', letterSpacing: '.07em' }}>Coûts supplémentaires</span>
+            <div style={{ flex: 1, height: 1, background: 'var(--border-soft)' }} />
+            <button className="btn btn--ghost btn--sm" onClick={() => setAddingItem(v => !v)}>
+              <I.Plus style={{ width: 12, height: 12 }} /> Ajouter
+            </button>
+          </div>
+
+          {addingItem && (
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr auto', gap: 8, marginBottom: 10, alignItems: 'end' }}>
+              <div className="field" style={{ marginBottom: 0 }}>
+                <label className="label">Libellé</label>
+                <input className="input" value={newItemLabel} onChange={e => setNewItemLabel(e.target.value)} placeholder="Ex: Assurance, Emballage..." />
+              </div>
+              <div className="field" style={{ marginBottom: 0 }}>
+                <label className="label">Montant ({currency})</label>
+                <input className="input" type="number" min="0" value={newItemAmt} onChange={e => setNewItemAmt(e.target.value)} placeholder="0" />
+              </div>
+              <button className="btn btn--brand btn--sm" onClick={addItem}>
+                <I.Check style={{ width: 12, height: 12 }} />
+              </button>
+            </div>
+          )}
+
+          {costItems.length > 0 && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+              {costItems.map(it => (
+                <div key={it.id} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr auto', gap: 8, alignItems: 'center' }}>
+                  <span style={{ fontSize: 13, color: 'var(--ink-700)' }}>{it.label}</span>
+                  <input
+                    className="input"
+                    type="number" min="0"
+                    defaultValue={it.amountXaf}
+                    onBlur={e => updateItemAmt(it.id, e.target.value)}
+                    style={{ textAlign: 'right', fontFamily: 'var(--ff-mono)' }}
+                  />
+                  <button onClick={() => removeItem(it.id)}
+                    style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--bad-500)', padding: 4 }}>
+                    <I.Trash style={{ width: 13, height: 13 }} />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Live calculation */}

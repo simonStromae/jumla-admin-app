@@ -63,6 +63,20 @@ model Route {
   @@map("routes")
 }
 
+model Airline {
+  id        String   @id @default(cuid())
+  name      String
+  iata      String?
+  country   String?
+  logoUrl   String?
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+
+  legs CampaignLeg[]
+
+  @@map("airlines")
+}
+
 model Campaign {
   id            String         @id @default(cuid())
   code          String         @unique
@@ -78,9 +92,25 @@ model Campaign {
   createdAt     DateTime       @default(now())
 
   costs         CampaignCost?
+  costItems     CampaignCostItem[]
+  legs          CampaignLeg[]
   parcels       Parcel[]
 
   @@map("campaigns")
+}
+
+model CampaignLeg {
+  id         String   @id @default(cuid())
+  campaignId String
+  campaign   Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  airlineId  String
+  airline    Airline  @relation(fields: [airlineId], references: [id])
+  awbNumber  String?
+  weightKg   Float?
+  notes      String?
+  createdAt  DateTime @default(now())
+
+  @@map("campaign_legs")
 }
 
 model CampaignCost {
@@ -97,6 +127,17 @@ model CampaignCost {
   updatedAt   DateTime @updatedAt
 
   @@map("campaign_costs")
+}
+
+model CampaignCostItem {
+  id         String   @id @default(cuid())
+  campaignId String
+  campaign   Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  label      String
+  amountXaf  Int      @default(0)
+  createdAt  DateTime @default(now())
+
+  @@map("campaign_cost_items")
 }
 
 model Parcel {
