@@ -36,6 +36,7 @@ function LoginForm() {
   const [error, setError]   = useState('');
   const [loading, setLoading] = useState(false);
   const [show, setShow]     = useState(false);
+  const [verifyFromLogin, setVerifyFromLogin] = useState(false);
 
   const lang = locale === 'en' ? 'en' : 'fr';
   const [slides, setSlides] = useState(DEFAULT_SLIDES.fr);
@@ -83,7 +84,23 @@ function LoginForm() {
       email: fields.email, password: fields.password, redirect: false,
     });
     setLoading(false);
-    if (res?.error) { setError(t('error.credentials')); return; }
+    if (res?.error) {
+      // Check if the account exists but email is not verified yet
+      const check = await fetch('/api/auth/resend-verification', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: fields.email }),
+      }).then(r => r.json()).catch(() => ({}));
+      if (check.needsVerification) {
+        setDemoCode('');
+        setError('');
+        setVerifyFromLogin(true);
+        setTab('verify');
+        return;
+      }
+      setError(t('error.credentials'));
+      return;
+    }
     const session = await fetch('/api/auth/session').then(r => r.json());
     const role = session?.user?.role;
     if (role === 'client') router.push('/client/dashboard');
@@ -117,7 +134,7 @@ function LoginForm() {
     const data = await res.json();
     setLoading(false);
     if (!res.ok) { setError(data.error); return; }
-    setDemoCode(''); setTab('login');
+    setDemoCode(''); setVerifyFromLogin(false); setTab('login');
   }
 
   return (
@@ -302,6 +319,16 @@ function LoginForm() {
                   {t('auth.verify.sentTo')} <strong style={{ color: 'var(--ink-700)' }}>{fields.email}</strong>
                 </p>
               </div>
+              {verifyFromLogin && (
+                <div style={{
+                  background: 'var(--info-50)', border: '1px solid var(--info-200)',
+                  borderRadius: 8, padding: '10px 14px', fontSize: 13, color: 'var(--info-700)',
+                  display: 'flex', alignItems: 'flex-start', gap: 8,
+                }}>
+                  <I.Info style={{ width: 15, height: 15, flexShrink: 0, marginTop: 1 }} />
+                  <span>Votre email n'est pas encore vérifié. Un nouveau code vient d'être envoyé à <strong>{fields.email}</strong>.</span>
+                </div>
+              )}
               {demoCode && (
                 <div style={{
                   background: 'var(--warn-50)', border: '1px solid var(--warn-200)',
