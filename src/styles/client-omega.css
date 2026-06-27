@@ -25,7 +25,7 @@
   font-weight: 700; letter-spacing: -.02em; line-height: 1.2;
 }
 
-.jc { max-width: var(--w); margin: 0 auto; padding: 0 32px; }
+.jc { max-width: var(--w); margin: 0 auto; padding: 0 32px; width: 100%; }
 
 /* ── Top info bar ── */
 .jtop-bar {
@@ -389,7 +389,6 @@
   border-radius: var(--radius);
 }
 .jfoot__desc { font-size: 14px; line-height: 1.75; color: rgba(255,255,255,.5); margin-bottom: 20px; }
-.jfoot__contact { display: flex; align-items: center; gap: 7px; font-size: 13.5px; color: #25D366; font-weight: 600; }
 .jfoot__col-title {
   font-family: 'Inter', system-ui, sans-serif; font-size: 12px; font-weight: 800;
   text-transform: uppercase; letter-spacing: .1em;

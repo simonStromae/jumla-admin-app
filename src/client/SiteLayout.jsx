@@ -128,9 +128,6 @@ export function SiteFooter() {
             <p className="jfoot__desc">
               {t('footer.description')}
             </p>
-            <div className="jfoot__contact">
-              <I.Whatsapp style={{ width: 16, height: 16 }} /> {t('footer.contact')}
-            </div>
           </div>
           {cols.map(c => (
             <div key={c.l}>
