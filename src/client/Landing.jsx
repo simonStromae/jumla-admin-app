@@ -526,9 +526,6 @@ function JFAQ({ content }) {
             <p style={{ fontSize: 15, lineHeight: 1.75, color: 'var(--ink-400)' }}>
               {st.subtitle ?? t('faq.subtitle')}
             </p>
-            <a href="#" style={{ display: 'flex', alignItems: 'center', gap: 7, fontSize: 14, color: '#25D366', fontWeight: 600, marginTop: 20, textDecoration: 'none' }}>
-              <I.Whatsapp style={{ width: 18, height: 18 }} /> {t('faq.whatsapp')}
-            </a>
           </div>
           <div className="jfaq">
             {faqs.map((f, i) => (
