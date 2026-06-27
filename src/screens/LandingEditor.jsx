@@ -43,7 +43,7 @@ const DEFAULTS = {
     },
     sectionTitles: {
       services:  { eyebrow: 'Ce que nous proposons', title: 'Nos services', subtitle: "Un seul interlocuteur de Douala jusqu'au Canada. Transparence totale, zéro mauvaise surprise." },
-      features:  { eyebrow: 'Pourquoi Jumla', title1: 'Un service conçu pour', title2: 'la diaspora africaine', description: 'Depuis 2021, nous connectons les familles entre l\'Afrique et le Canada grâce à un service de fret aérien simple, transparent et fiable.' },
+      features:  { eyebrow: 'Pourquoi Jumla', title1: 'Un service conçu pour', title2: 'la diaspora africaine', description: 'Depuis 2021, nous connectons les familles entre l\'Afrique et le Canada grâce à un service de fret aérien simple, transparent et fiable.', stats: [{ value: '2 500+', label: 'Clients fidèles' }, { value: '4', label: 'Routes actives' }, { value: '22', label: 'Cargaisons / an' }] },
       estimator: { eyebrow: 'Simulateur de prix', title: 'Combien coûte mon envoi ?', subtitle: 'Calculez en quelques secondes. Sans inscription, sans engagement.' },
       faq:       { eyebrow: 'FAQ', title: 'Questions fréquentes', subtitle: 'Une autre question ? WhatsApp nous répond en moins d\'une heure.' },
     },
@@ -138,7 +138,7 @@ const DEFAULTS = {
     },
     sectionTitles: {
       services:  { eyebrow: 'What we offer', title: 'Our services', subtitle: 'One contact from Douala to Canada. Complete transparency, zero surprises.' },
-      features:  { eyebrow: 'Why Jumla', title1: 'A service built for', title2: 'the African diaspora', description: 'Since 2021, we connect families between Africa and Canada through a simple, transparent and reliable air freight service.' },
+      features:  { eyebrow: 'Why Jumla', title1: 'A service built for', title2: 'the African diaspora', description: 'Since 2021, we connect families between Africa and Canada through a simple, transparent and reliable air freight service.', stats: [{ value: '2,500+', label: 'Loyal clients' }, { value: '4', label: 'Active routes' }, { value: '22', label: 'Shipments / year' }] },
       estimator: { eyebrow: 'Price simulator', title: 'How much does my shipment cost?', subtitle: 'Calculate in seconds. No registration, no commitment.' },
       faq:       { eyebrow: 'FAQ', title: 'Frequently asked questions', subtitle: 'Another question? WhatsApp us — we reply in under an hour.' },
     },
@@ -514,6 +514,20 @@ export default function LandingEditor() {
               <Field label="Titre ligne 2 (en cyan)"><input className="input" value={c.sectionTitles.features.title2} onChange={e => set('sectionTitles.features.title2', e.target.value)} /></Field>
             </div>
             <Field label="Description"><textarea className="input" rows={2} value={c.sectionTitles.features.description} onChange={e => set('sectionTitles.features.description', e.target.value)} style={{ resize: 'vertical' }} /></Field>
+            <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--ink-600)', margin: '14px 0 8px' }}>Statistiques (chiffres sous la description)</div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10 }}>
+              {(c.sectionTitles.features.stats ?? []).map((s, i) => (
+                <div key={i} style={{ display: 'flex', flexDirection: 'column', gap: 6, padding: '12px 14px', background: 'var(--bg-soft)', borderRadius: 8 }}>
+                  <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.06em', color: 'var(--ink-500)' }}>Stat {i + 1}</div>
+                  <Field label="Valeur">
+                    <input className="input" value={s.value} onChange={e => set(`sectionTitles.features.stats.${i}.value`, e.target.value)} placeholder="2 500+" />
+                  </Field>
+                  <Field label="Label">
+                    <input className="input" value={s.label} onChange={e => set(`sectionTitles.features.stats.${i}.label`, e.target.value)} placeholder="Clients fidèles" />
+                  </Field>
+                </div>
+              ))}
+            </div>
           </EditorCard>
           <EditorCard title="Section Simulateur" icon={I.Calculator}>
             <Field label="Accroche (eyebrow)"><input className="input" value={c.sectionTitles.estimator.eyebrow} onChange={e => set('sectionTitles.estimator.eyebrow', e.target.value)} /></Field>

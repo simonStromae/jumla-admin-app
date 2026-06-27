@@ -357,10 +357,14 @@ function JFeats({ onBook, content }) {
               {t('features.button')} <I.ArrowRight style={{ width: 15, height: 15 }} />
             </button>
             <div className="jfeats3__stats">
-              {[{ n: '2 500+', l: t('features.stats.clients') }, { n: '4', l: t('features.stats.routes') }, { n: '22', l: t('features.stats.cargo') }].map(({ n, l }) => (
-                <div key={l} className="jfeats3__stat">
-                  <div className="jfeats3__stat-n">{n}</div>
-                  <div className="jfeats3__stat-l">{l}</div>
+              {(st.stats ?? [
+                { value: '2 500+', label: t('features.stats.clients') },
+                { value: '4',      label: t('features.stats.routes') },
+                { value: '22',     label: t('features.stats.cargo') },
+              ]).map(({ value, label }) => (
+                <div key={label} className="jfeats3__stat">
+                  <div className="jfeats3__stat-n">{value}</div>
+                  <div className="jfeats3__stat-l">{label}</div>
                 </div>
               ))}
             </div>
