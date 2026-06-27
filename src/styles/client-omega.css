@@ -952,8 +952,8 @@
     gap: 28px;
   }
   .jhero2__left { min-width: 0; }
-  .jhero2__sub { font-size: 14px; margin-bottom: 24px; line-height: 1.65; word-break: break-word; }
-  .jhero2__title { font-size: 38px; }
+  .jhero2__sub { font-size: 13.5px; margin-bottom: 24px; line-height: 1.65; word-break: break-word; }
+  .jhero2__title { font-size: 30px; }
   .jhero2__btns { flex-direction: column; gap: 10px; }
   .jhero2__btn-primary,
   .jhero2__btn-ghost { width: 100%; text-align: center; justify-content: center; box-sizing: border-box; }
@@ -967,7 +967,7 @@
   }
   .jhero2__stat { flex-direction: column; gap: 3px; align-items: flex-start; }
   .jhero2__stat-sep { display: none; }
-  .jhero2__stat-n { font-size: 22px; }
+  .jhero2__stat-n { font-size: 20px; }
   .jhero2__stat-l { font-size: 11px; white-space: normal; }
 
   /* Tracking card — full width, no overflow, after headline */
@@ -977,17 +977,17 @@
   .jhero2__card-city-name { font-size: 15px; }
 
   /* Services */
-  .jsvc3 { padding: 56px 0; }
-  .jsvc3__head { margin-bottom: 36px; }
-  .jsvc3__title { font-size: 30px; }
+  .jsvc3 { padding: 48px 0; }
+  .jsvc3__head { margin-bottom: 28px; }
+  .jsvc3__title { font-size: 24px; }
   .jsvc3__grid { grid-template-columns: 1fr; gap: 0; }
   .jsvc3__item { padding: 28px 24px; }
 
   /* Features accordion */
-  .jfeats3 { padding: 56px 0; }
+  .jfeats3 { padding: 48px 0; }
   .jfeats3__grid { grid-template-columns: 1fr; gap: 40px; }
   .jfeats3__right { position: static; }
-  .jfeats3__title { font-size: 28px; }
+  .jfeats3__title { font-size: 24px; }
   .jfeats3__stats { gap: 20px; flex-wrap: wrap; }
   .jfeats3__btn { width: 100%; justify-content: center; }
 
@@ -1016,9 +1016,9 @@
 
   /* CTA */
   .jcta3 { min-height: auto; }
-  .jcta3__grid { grid-template-columns: 1fr; gap: 28px; padding: 56px 0; }
-  .jcta3__title { font-size: 36px; }
-  .jcta3__sub { font-size: 14px; }
+  .jcta3__grid { grid-template-columns: 1fr; gap: 28px; padding: 48px 0; }
+  .jcta3__title { font-size: 26px; }
+  .jcta3__sub { font-size: 13.5px; }
   .jcta3__btn { width: 100%; justify-content: center; }
   .jcta3__card { padding: 20px; }
 
@@ -1032,15 +1032,22 @@
 @media (max-width: 480px) {
   .jc { padding: 0 14px; }
 
-  .jhero2 { padding: 36px 0 32px; }
-  .jhero2__title { font-size: 34px; }
-  .jhero2__stat-n { font-size: 21px; }
-  .jhero2__stat-l { font-size: 11px; }
+  .jhero2 { padding: 32px 0 28px; }
+  .jhero2__title { font-size: 26px; }
+  .jhero2__sub { font-size: 13px; }
+  .jhero2__stat-n { font-size: 18px; }
+  .jhero2__stat-l { font-size: 10.5px; }
 
+  .jsvc3__title { font-size: 22px; }
   .jsvc3__item { padding: 22px 18px; }
   .jsvc3__item-top { margin-bottom: 16px; }
 
+  .jfeats3__title { font-size: 22px; }
+
+  .jcta3__title { font-size: 22px; }
+
   .jfaq__q { font-size: 14px; padding: 16px 0; }
+  .jfaq-grid .jsvc-sec__tag { font-size: 11px; }
 
   .jfoot__grid { grid-template-columns: 1fr; }
   .jfoot__grid > div:first-child { grid-column: auto; }
