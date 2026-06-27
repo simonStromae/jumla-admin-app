@@ -82,10 +82,7 @@ export function SiteNav({ onNav, onBook, mode = 'landing' }) {
             ) : (
               <>
                 <LanguageSwitcher />
-                <button className="jnav__signin" onClick={() => onNav?.('/login')}>{t('nav.signIn')}</button>
-                <button className="jbtn-nav" onClick={() => onNav?.('/login?tab=register')}>
-                  {t('nav.register')} <I.ArrowRight style={{ width: 15, height: 15 }} />
-                </button>
+                <button className="jbtn-nav" onClick={() => onNav?.('/login')}>{t('nav.signIn')} <I.ArrowRight style={{ width: 15, height: 15 }} /></button>
               </>
             )}
           </div>
