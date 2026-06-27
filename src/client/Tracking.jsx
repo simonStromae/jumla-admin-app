@@ -49,7 +49,7 @@ const DEMO_SHIPMENTS = {
 
 const STATUS_COLORS = {
   ok:   { bg: 'var(--ok-50)',   border: 'var(--ok-200)',   text: 'var(--ok-700)',   dot: 'var(--ok-500)'   },
-  warn: { bg: 'var(--warn-50)', border: 'var(--warn-200)', text: 'var(--warn-700)', dot: 'var(--warn-500)' },
+  warn: { bg: 'var(--info-50)', border: 'var(--info-100)', text: 'var(--info-700)', dot: 'var(--info-500)' },
   info: { bg: 'var(--brand-50)', border: 'var(--brand-100)', text: 'var(--brand-700)', dot: 'var(--brand-500)' },
 };
 

@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, Fragment } from 'react';
 import { useSession, signOut } from 'next-auth/react';
 import I from './Icons.jsx';
 import { useCompanyAssets } from '../lib/useCompanyAssets.js';
+import LanguageSwitcher from './LanguageSwitcher.jsx';
 
 const PERM_ALIAS = { campaigns: 'cargaisons' };
 
@@ -254,6 +255,7 @@ export function Topbar({ title, sub, actions, onNav }) {
           <span>Rechercher cargaisons, clients, colis…</span>
           <kbd>⌘K</kbd>
         </div>
+        <LanguageSwitcher />
         <button className="icon-btn" title="Voir le site public" onClick={() => onNav?.('/')}><I.Globe /></button>
         <button className="icon-btn" title="Aide"><I.Help /></button>
         <button className="icon-btn" title="Paiements en attente" onClick={() => onNav?.('/admin/payments')}><I.Bell /></button>

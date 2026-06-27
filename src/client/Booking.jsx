@@ -631,7 +631,7 @@ function CampaignCalendar({ campaigns, selected, onSelect, routeLabel }) {
                   background: isSel
                     ? 'var(--brand-600)'
                     : has && !isPast && !isFull
-                      ? isLow ? 'var(--warn-50)' : 'var(--brand-50)'
+                      ? isLow ? 'var(--info-50)' : 'var(--brand-50)'
                       : 'white',
                   cursor: has && !isPast && !isFull ? 'pointer' : 'default',
                   padding: '8px 6px',
@@ -651,7 +651,7 @@ function CampaignCalendar({ campaigns, selected, onSelect, routeLabel }) {
                 <span style={{
                   fontSize: 13,
                   fontWeight: has && !isPast ? 700 : 400,
-                  color: isSel ? 'white' : isPast ? 'var(--ink-200)' : has ? (isLow ? 'var(--warn-800)' : 'var(--brand-800)') : 'var(--ink-600)',
+                  color: isSel ? 'white' : isPast ? 'var(--ink-200)' : has ? (isLow ? 'var(--info-700)' : 'var(--brand-800)') : 'var(--ink-600)',
                   lineHeight: 1,
                 }}>
                   {day}
@@ -664,7 +664,7 @@ function CampaignCalendar({ campaigns, selected, onSelect, routeLabel }) {
                     {routeLabel && (
                       <span style={{
                         fontSize: 9, fontWeight: 700, lineHeight: 1,
-                        color: isSel ? 'rgba(255,255,255,.85)' : isLow ? 'var(--warn-700)' : 'var(--brand-600)',
+                        color: isSel ? 'rgba(255,255,255,.85)' : isLow ? 'var(--info-700)' : 'var(--brand-600)',
                         textTransform: 'uppercase', letterSpacing: '.03em',
                         overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
                       }}>✈ {routeLabel}</span>
@@ -686,10 +686,10 @@ function CampaignCalendar({ campaigns, selected, onSelect, routeLabel }) {
                         padding: '2px 5px', borderRadius: 4,
                         background: isSel
                           ? 'rgba(255,255,255,.2)'
-                          : isLow ? 'var(--warn-100)' : 'var(--brand-100)',
+                          : isLow ? 'var(--info-100)' : 'var(--brand-100)',
                         color: isSel
                           ? 'white'
-                          : isLow ? 'var(--warn-800)' : 'var(--brand-700)',
+                          : isLow ? 'var(--info-700)' : 'var(--brand-700)',
                         whiteSpace: 'nowrap',
                       }}>
                         {isLow ? `⚠ ${c.spotsKg} kg` : `${c.spotsKg} kg`}
@@ -737,7 +737,7 @@ function CampaignCalendar({ campaigns, selected, onSelect, routeLabel }) {
             </div>
           </div>
           {selectedCampaign.spotsKg !== null && (
-            <div style={{ fontSize: 12.5, color: selectedCampaign.spotsKg < 50 ? 'var(--warn-700)' : 'var(--brand-600)', fontWeight: 600 }}>
+            <div style={{ fontSize: 12.5, color: selectedCampaign.spotsKg < 50 ? 'var(--info-700)' : 'var(--brand-600)', fontWeight: 600 }}>
               {selectedCampaign.spotsKg < 50
                 ? t('booking.route.spotsLow').replace('{n}', selectedCampaign.spotsKg)
                 : t('booking.route.spotsAvail').replace('{n}', selectedCampaign.spotsKg)
@@ -1065,7 +1065,7 @@ export default function BookingScreen({ onNav, embedded = false }) {
                     </div>
                   ))}
                 </div>
-                <div style={{ background: 'var(--warn-50)', border: '1px solid var(--warn-200)', borderRadius: 'var(--radius)', padding: '12px 14px', fontSize: 12.5, color: 'var(--warn-700)', lineHeight: 1.65 }}>
+                <div style={{ background: 'var(--info-50)', border: '1px solid var(--info-100)', borderRadius: 'var(--radius)', padding: '12px 14px', fontSize: 12.5, color: 'var(--info-700)', lineHeight: 1.65 }}>
                   {t('booking.confirm.warning').replace('{code}', refCode)}
                 </div>
               </div>
@@ -1130,7 +1130,7 @@ export default function BookingScreen({ onNav, embedded = false }) {
               </div>
 
               {(price?.isOutsideDelivery || price?.isExpedition) && (
-                <div style={{ width: '100%', maxWidth: 420, background: 'var(--warn-50)', border: '1px solid var(--warn-200)', borderRadius: 'var(--radius)', padding: '12px 14px', fontSize: 12.5, color: 'var(--warn-700)', lineHeight: 1.6, marginBottom: 8 }}>
+                <div style={{ width: '100%', maxWidth: 420, background: 'var(--info-50)', border: '1px solid var(--info-100)', borderRadius: 'var(--radius)', padding: '12px 14px', fontSize: 12.5, color: 'var(--info-700)', lineHeight: 1.6, marginBottom: 8 }}>
                   {t('booking.confirm.outside').replace('{city}', form.recipCity === 'Hors région' ? form.recipCityCustom : form.recipCity)}
                 </div>
               )}
@@ -1582,7 +1582,7 @@ export default function BookingScreen({ onNav, embedded = false }) {
                       </div>
 
                       {(form.delivery === 'expedition' || cityZone === 'other') && (
-                        <div style={{ marginTop: 12, background: 'var(--warn-50)', border: '1px solid var(--warn-200)', borderRadius: 'var(--radius)', padding: '10px 14px', fontSize: 12.5, color: 'var(--warn-700)', lineHeight: 1.6 }}>
+                        <div style={{ marginTop: 12, background: 'var(--info-50)', border: '1px solid var(--info-100)', borderRadius: 'var(--radius)', padding: '10px 14px', fontSize: 12.5, color: 'var(--info-700)', lineHeight: 1.6 }}>
                           {t('booking.coords.outsideNote').replace('{city}', form.recipCity === 'Hors région' ? (form.recipCityCustom || 'votre ville') : form.recipCity)}
                         </div>
                       )}
@@ -1690,7 +1690,7 @@ export default function BookingScreen({ onNav, embedded = false }) {
                           </div>
                         ) : price.isExpedition || price.isOutsideDelivery ? (
                           <div>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13.5, fontWeight: 700, color: 'var(--warn-700)' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13.5, fontWeight: 700, color: 'var(--info-700)' }}>
                               <span>{price.isExpedition ? t('booking.payment.postalDelivery') : t('booking.payment.outsideDelivery')}</span><span>{t('booking.payment.toEvaluate')}</span>
                             </div>
                             <p style={{ fontSize: 11.5, color: 'var(--ink-400)', marginTop: 4, lineHeight: 1.5 }}>

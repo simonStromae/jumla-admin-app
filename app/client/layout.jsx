@@ -264,11 +264,11 @@ export default function ClientLayout({ children }) {
 
           {suspended && (
             <div style={{
-              background: 'var(--warn-50)', borderBottom: '1px solid var(--warn-200)',
+              background: 'var(--info-50)', borderBottom: '1px solid var(--info-100)',
               padding: '10px 20px', fontSize: 13, display: 'flex', alignItems: 'center', gap: 8,
             }}>
               <span>⚠️</span>
-              <span style={{ color: 'var(--warn-700)', fontWeight: 600 }}>{t('client.suspended.title')}</span>
+              <span style={{ color: 'var(--info-700)', fontWeight: 600 }}>{t('client.suspended.title')}</span>
               <span style={{ color: 'var(--warn-600)' }}>— {t('client.suspended.message')}</span>
             </div>
           )}

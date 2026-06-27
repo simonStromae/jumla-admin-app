@@ -12,7 +12,7 @@ const JOURNEY = [
   { key: 'exp', labelKey: 'statuses.exp',  label: '', icon: '🚀', color: 'var(--info-700)' },
   { key: 'tra', labelKey: 'statuses.tra',  label: '', icon: '✈️', color: 'var(--info-700)' },
   { key: 'apd', labelKey: 'statuses.apd',  label: '', icon: '🛬', color: 'var(--ok-700)' },
-  { key: 'dou', labelKey: 'statuses.dou',  label: '', icon: '🛃', color: 'var(--warn-700)' },
+  { key: 'dou', labelKey: 'statuses.dou',  label: '', icon: '🛃', color: 'var(--ink-500)' },
   { key: 'lib', labelKey: 'statuses.lib',  label: '', icon: '✅', color: 'var(--ok-700)' },
   { key: 'ard', labelKey: 'statuses.ard',  label: '', icon: '🏭', color: 'var(--ok-700)' },
   { key: 'pdl', labelKey: 'statuses.pdl',  label: '', icon: '📦', color: 'var(--info-700)' },
@@ -67,7 +67,7 @@ function ParcelCard({ parcel, onClick }) {
   return (
     <div onClick={onClick} style={{
       background: 'white',
-      border: `1.5px solid ${needsAction ? 'var(--warn-100)' : 'var(--border)'}`,
+      border: `1.5px solid ${needsAction ? 'var(--bad-100)' : 'var(--border)'}`,
       borderRadius: 14,
       padding: '16px',
       cursor: 'pointer',

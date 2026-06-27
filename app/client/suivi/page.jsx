@@ -10,8 +10,8 @@ const STATUS_META = {
   exp: { color: 'var(--info-700)',  bg: 'var(--info-50)',   icon: '🚀' },
   tra: { color: 'var(--info-700)',  bg: 'var(--info-50)',   icon: '✈️' },
   apd: { color: 'var(--ok-700)',    bg: 'var(--ok-50)',     icon: '🛬' },
-  dou: { color: 'var(--warn-700)', bg: 'var(--warn-50)',   icon: '🛃' },
-  ins: { color: 'var(--warn-700)', bg: 'var(--warn-50)',   icon: '🔎' },
+  dou: { color: 'var(--info-700)', bg: 'var(--info-50)',   icon: '🛃' },
+  ins: { color: 'var(--info-700)', bg: 'var(--info-50)',   icon: '🔎' },
   ret: { color: 'var(--bad-700)',   bg: 'var(--bad-50)',    icon: '⚠️' },
   lib: { color: 'var(--ok-700)',    bg: 'var(--ok-50)',     icon: '✅' },
   ard: { color: 'var(--ok-700)',    bg: 'var(--ok-50)',     icon: '🏭' },
@@ -20,7 +20,7 @@ const STATUS_META = {
   liv: { color: 'var(--info-700)',  bg: 'var(--info-50)',   icon: '🚚' },
   ok:  { color: 'var(--ok-700)',    bg: 'var(--ok-50)',     icon: '🎉' },
   adr: { color: 'var(--bad-700)',   bg: 'var(--bad-50)',    icon: '📍' },
-  tdl: { color: 'var(--warn-700)', bg: 'var(--warn-50)',   icon: '🔔' },
+  tdl: { color: 'var(--info-700)', bg: 'var(--info-50)',   icon: '🔔' },
   rte: { color: 'var(--bad-700)',   bg: 'var(--bad-50)',    icon: '↩️' },
   dom: { color: 'var(--bad-700)',   bg: 'var(--bad-50)',    icon: '💥' },
   cla: { color: 'var(--bad-700)',   bg: 'var(--bad-50)',    icon: '📋' },
@@ -123,7 +123,7 @@ function SuiviContent() {
               <div style={{ fontSize: 11, color: 'var(--ink-400)', marginTop: 2 }}>
                 {result.paid
                   ? <span style={{ color: 'var(--ok-600)', fontWeight: 600 }}>{t('tracking.paid')}</span>
-                  : <span style={{ color: 'var(--warn-700)', fontWeight: 600 }}>{t('tracking.paymentPending')}</span>}
+                  : <span style={{ color: 'var(--info-700)', fontWeight: 600 }}>{t('tracking.paymentPending')}</span>}
               </div>
             </div>
           </div>
