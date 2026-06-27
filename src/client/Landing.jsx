@@ -573,9 +573,9 @@ function JCTA({ onBook, content }) {
 
           {/* Right — floating card */}
           <div className="jcta3__card">
-            <div className="jcta3__card-title">{t('cta.card.title')}</div>
+            <div className="jcta3__card-title">{content.ctaCard?.title ?? t('cta.card.title')}</div>
             <div className="jcta3__items">
-              {t('cta.card.reasons').map(reason => (
+              {(content.ctaCard?.reasons ?? t('cta.card.reasons')).map(reason => (
                 <div key={reason} className="jcta3__item">
                   <span className="jcta3__check">✓</span>
                   <span>{reason}</span>
@@ -583,9 +583,9 @@ function JCTA({ onBook, content }) {
               ))}
             </div>
             <div className="jcta3__card-footer">
-              <div style={{ fontSize: 12, color: 'var(--ink-400)', marginBottom: 8 }}>{t('cta.card.footer.question')}</div>
+              <div style={{ fontSize: 12, color: 'var(--ink-400)', marginBottom: 8 }}>{content.ctaCard?.footerQuestion ?? t('cta.card.footer.question')}</div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 7, fontSize: 14, color: '#25D366', fontWeight: 700 }}>
-                <I.Whatsapp style={{ width: 18, height: 18 }} /> {t('cta.card.footer.whatsapp')}
+                <I.Whatsapp style={{ width: 18, height: 18 }} /> {content.ctaCard?.footerWhatsapp ?? t('cta.card.footer.whatsapp')}
               </div>
             </div>
           </div>

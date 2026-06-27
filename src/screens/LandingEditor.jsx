@@ -59,6 +59,36 @@ const DEFAULTS = {
       offices: 'Douala · Montréal · Lagos · Bruxelles',
       col1Title: 'Services', col2Title: 'Entreprise', col3Title: 'Légal',
       email: 'contact@jumla.cargo',
+      col1Links: [
+        { label: 'Fret aérien', href: '#services' },
+        { label: 'Livraison à domicile', href: '#services' },
+        { label: 'Suivi de colis', href: '#jest' },
+        { label: 'Tarifs', href: '#jest' },
+      ],
+      col2Links: [
+        { label: 'À propos', href: '#features' },
+        { label: 'FAQ', href: '#jfaq' },
+        { label: 'Contact', href: '#jfoot' },
+        { label: 'Réserver', href: '#' },
+      ],
+      col3Links: [
+        { label: 'CGU', href: '#' },
+        { label: 'CGV', href: '#' },
+        { label: 'Politique de confidentialité', href: '#' },
+        { label: 'Cookies', href: '#' },
+      ],
+    },
+    ctaCard: {
+      title: 'Pourquoi Jumla ?',
+      reasons: [
+        'Transit garanti 14 jours',
+        'Suivi WhatsApp à chaque étape',
+        'Vérification article par article',
+        'Livraison à domicile au Canada',
+        'Paiement flexible à la livraison',
+      ],
+      footerQuestion: 'Une question ?',
+      footerWhatsapp: 'WhatsApp · Réponse en 1h',
     },
     loginSlides: [
       "Chaque colis, tracé du départ jusqu'à la remise.",
@@ -124,6 +154,36 @@ const DEFAULTS = {
       offices: 'Douala · Montréal · Lagos · Brussels',
       col1Title: 'Services', col2Title: 'Company', col3Title: 'Legal',
       email: 'contact@jumla.cargo',
+      col1Links: [
+        { label: 'Air freight', href: '#services' },
+        { label: 'Home delivery', href: '#services' },
+        { label: 'Parcel tracking', href: '#jest' },
+        { label: 'Rates', href: '#jest' },
+      ],
+      col2Links: [
+        { label: 'About', href: '#features' },
+        { label: 'FAQ', href: '#jfaq' },
+        { label: 'Contact', href: '#jfoot' },
+        { label: 'Book', href: '#' },
+      ],
+      col3Links: [
+        { label: 'Terms of use', href: '#' },
+        { label: 'Terms of sale', href: '#' },
+        { label: 'Privacy policy', href: '#' },
+        { label: 'Cookies', href: '#' },
+      ],
+    },
+    ctaCard: {
+      title: 'Why Jumla?',
+      reasons: [
+        '14-day guaranteed transit',
+        'WhatsApp tracking at every step',
+        'Item-by-item verification',
+        'Home delivery across Canada',
+        'Flexible payment on delivery',
+      ],
+      footerQuestion: 'A question?',
+      footerWhatsapp: 'WhatsApp · Reply in 1h',
     },
     loginSlides: [
       'Every parcel, tracked from departure to delivery.',
@@ -243,6 +303,32 @@ export default function LandingEditor() {
     { id: 'footer',   label: 'Pied de page' },
     { id: 'slides',   label: 'Slides login' },
   ];
+
+  const addColLink = (col) => setContent(c => ({
+    ...c,
+    [langTab]: {
+      ...c[langTab],
+      footer: { ...c[langTab].footer, [col]: [...(c[langTab].footer[col] || []), { label: '', href: '#' }] },
+    },
+  }));
+
+  const removeColLink = (col, i) => setContent(c => ({
+    ...c,
+    [langTab]: {
+      ...c[langTab],
+      footer: { ...c[langTab].footer, [col]: c[langTab].footer[col].filter((_, idx) => idx !== i) },
+    },
+  }));
+
+  const addCtaReason = () => setContent(c => ({
+    ...c,
+    [langTab]: { ...c[langTab], ctaCard: { ...c[langTab].ctaCard, reasons: [...(c[langTab].ctaCard?.reasons || []), ''] } },
+  }));
+
+  const removeCtaReason = (i) => setContent(c => ({
+    ...c,
+    [langTab]: { ...c[langTab], ctaCard: { ...c[langTab].ctaCard, reasons: c[langTab].ctaCard.reasons.filter((_, idx) => idx !== i) } },
+  }));
 
   const addSlide = () => setContent(c => ({
     ...c,
@@ -486,6 +572,43 @@ export default function LandingEditor() {
               <Field label="Titre colonne 3"><input className="input" value={c.footer.col3Title} onChange={e => set('footer.col3Title', e.target.value)} /></Field>
             </div>
           </EditorCard>
+
+          {[
+            { key: 'col1Links', label: `Liens colonne 1 — ${c.footer.col1Title}` },
+            { key: 'col2Links', label: `Liens colonne 2 — ${c.footer.col2Title}` },
+            { key: 'col3Links', label: `Liens colonne 3 — ${c.footer.col3Title}` },
+          ].map(({ key, label }) => (
+            <EditorCard key={key} title={label} icon={I.Globe}>
+              {(c.footer[key] || []).map((link, i) => (
+                <div key={i} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr auto', gap: 8, alignItems: 'end', marginBottom: 8 }}>
+                  <Field label={i === 0 ? 'Libellé' : undefined}>
+                    <input className="input" value={link.label} onChange={e => {
+                      setContent(prev => {
+                        const next = structuredClone(prev);
+                        next[langTab].footer[key][i].label = e.target.value;
+                        return next;
+                      });
+                    }} placeholder="Nom du lien" />
+                  </Field>
+                  <Field label={i === 0 ? 'URL / ancre' : undefined}>
+                    <input className="input" value={link.href} onChange={e => {
+                      setContent(prev => {
+                        const next = structuredClone(prev);
+                        next[langTab].footer[key][i].href = e.target.value;
+                        return next;
+                      });
+                    }} placeholder="#section ou /page" />
+                  </Field>
+                  <button onClick={() => removeColLink(key, i)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--bad-500)', padding: '8px 6px', alignSelf: 'flex-end' }}>
+                    <I.Trash style={{ width: 14, height: 14 }} />
+                  </button>
+                </div>
+              ))}
+              <button onClick={() => addColLink(key)} className="btn btn--ghost btn--sm" style={{ marginTop: 4 }}>
+                <I.Plus style={{ width: 14, height: 14 }} /> Ajouter un lien
+              </button>
+            </EditorCard>
+          ))}
         </>
       )}
 
@@ -530,22 +653,58 @@ export default function LandingEditor() {
 
       {/* CTA */}
       {tab === 'cta' && (
-        <EditorCard title="Section appel à l'action" icon={I.ArrowRight}>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10 }}>
-            <Field label="Titre — ligne 1">
-              <input className="input" value={c.cta.line1} onChange={e => set('cta.line1', e.target.value)} />
+        <>
+          <EditorCard title="Section appel à l'action" icon={I.ArrowRight}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10 }}>
+              <Field label="Titre — ligne 1">
+                <input className="input" value={c.cta.line1} onChange={e => set('cta.line1', e.target.value)} />
+              </Field>
+              <Field label="Titre — ligne 2">
+                <input className="input" value={c.cta.line2} onChange={e => set('cta.line2', e.target.value)} />
+              </Field>
+              <Field label="Titre — ligne 3 (en cyan)">
+                <input className="input" value={c.cta.line3} onChange={e => set('cta.line3', e.target.value)} />
+              </Field>
+            </div>
+            <Field label="Sous-titre">
+              <textarea className="input" rows={2} value={c.cta.subtitle} onChange={e => set('cta.subtitle', e.target.value)} style={{ resize: 'vertical' }} />
             </Field>
-            <Field label="Titre — ligne 2">
-              <input className="input" value={c.cta.line2} onChange={e => set('cta.line2', e.target.value)} />
+          </EditorCard>
+
+          <EditorCard title="Carte flottante (colonne droite)" icon={I.Check}>
+            <Field label="Titre de la carte">
+              <input className="input" value={c.ctaCard?.title ?? ''} onChange={e => set('ctaCard.title', e.target.value)} />
             </Field>
-            <Field label="Titre — ligne 3 (en cyan)">
-              <input className="input" value={c.cta.line3} onChange={e => set('cta.line3', e.target.value)} />
-            </Field>
-          </div>
-          <Field label="Sous-titre">
-            <textarea className="input" rows={2} value={c.cta.subtitle} onChange={e => set('cta.subtitle', e.target.value)} style={{ resize: 'vertical' }} />
-          </Field>
-        </EditorCard>
+            <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--ink-600)', margin: '12px 0 8px' }}>Points de réassurance</div>
+            {(c.ctaCard?.reasons || []).map((reason, i) => (
+              <div key={i} style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: 8, alignItems: 'center', marginBottom: 6 }}>
+                <input className="input" value={reason} onChange={e => {
+                  setContent(prev => {
+                    const next = structuredClone(prev);
+                    if (!next[langTab].ctaCard) next[langTab].ctaCard = {};
+                    if (!next[langTab].ctaCard.reasons) next[langTab].ctaCard.reasons = [];
+                    next[langTab].ctaCard.reasons[i] = e.target.value;
+                    return next;
+                  });
+                }} placeholder="Ex: Transit garanti 14 jours" />
+                <button onClick={() => removeCtaReason(i)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--bad-500)', padding: '8px 6px' }}>
+                  <I.Trash style={{ width: 14, height: 14 }} />
+                </button>
+              </div>
+            ))}
+            <button onClick={addCtaReason} className="btn btn--ghost btn--sm" style={{ marginTop: 4, marginBottom: 16 }}>
+              <I.Plus style={{ width: 14, height: 14 }} /> Ajouter une raison
+            </button>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+              <Field label="Question pied de carte">
+                <input className="input" value={c.ctaCard?.footerQuestion ?? ''} onChange={e => set('ctaCard.footerQuestion', e.target.value)} />
+              </Field>
+              <Field label="Lien WhatsApp (texte)">
+                <input className="input" value={c.ctaCard?.footerWhatsapp ?? ''} onChange={e => set('ctaCard.footerWhatsapp', e.target.value)} />
+              </Field>
+            </div>
+          </EditorCard>
+        </>
       )}
 
       {/* Floating save */}
