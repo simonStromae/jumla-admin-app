@@ -94,52 +94,59 @@ export function SiteNav({ onNav, onBook, mode = 'landing' }) {
 
 /* ─── Footer ─── */
 export function SiteFooter({ content }) {
-  const { logoUrl, logoIconUrl, logoHeight } = useCompanyAssets();
   const t = useT();
   const fc = content?.footer ?? {};
-  const cols = [
-    { l: fc.col1Title ?? t('footer.cols.services'), items: [t('footer.links.airFreight'), t('footer.links.homeDelivery'), t('footer.links.warehousePickup'), t('footer.links.tracking')] },
-    { l: fc.col2Title ?? t('footer.cols.company'), items: [t('footer.links.about'), t('footer.links.blog'), t('footer.links.careers'), t('footer.links.contact')] },
-    { l: fc.col3Title ?? t('footer.cols.legal'), items: [t('footer.links.tos'), t('footer.links.privacy'), t('footer.links.cookies'), t('footer.links.faq')] },
-  ];
   return (
-    <footer className="jfoot" id="jfoot">
+    <footer className="jfoot2" id="jfoot">
       <div className="jc">
-        <div className="jfoot__grid">
-          <div>
-            <div className="jfoot__brand">
-              {logoUrl ? (
-                <img src={logoUrl} alt="Logo" style={{ height: logoHeight, maxWidth: 200, objectFit: 'contain', filter: 'brightness(0) invert(1)' }} />
-              ) : (
-                <>
-                  <div className="jfoot__brand-mark" style={{ background: 'none', fontSize: 0 }}>
-                    <svg width="34" height="34" viewBox="0 0 48 48" fill="none">
-                      <defs><linearGradient id="ftlg" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stopColor="#00B4D8"/><stop offset="100%" stopColor="#1B4FD8"/></linearGradient></defs>
-                      <path d="M8 8 C8 6 10 4 12 5 L38 20 C40 21 40 27 38 28 L12 43 C10 44 8 42 8 40 Z" fill="url(#ftlg)"/>
-                    </svg>
-                  </div>
-                  <span style={{ fontFamily: "'Inter', system-ui, sans-serif", fontWeight: 800, letterSpacing: '.03em', textTransform: 'uppercase', background: 'linear-gradient(90deg,#00B4D8,#1B4FD8)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>JUMLA</span>
-                  <span style={{ fontSize: 16, fontWeight: 500, color: 'rgba(255,255,255,.6)' }}>Shipping</span>
-                </>
-              )}
-            </div>
-            <p className="jfoot__desc">
-              {fc.description ?? t('footer.description')}
-            </p>
+
+        {/* Info row */}
+        <div className="jfoot2__top">
+          <div className="jfoot2__info">
+            <span className="jfoot2__label">Adresse</span>
+            <span className="jfoot2__val">{fc.address ?? 'Douala, Cameroun · Montréal, Canada'}</span>
           </div>
-          {cols.map(c => (
-            <div key={c.l}>
-              <div className="jfoot__col-title">{c.l}</div>
-              <div className="jfoot__col">
-                {c.items.map(item => <a key={item} href="#">{item}</a>)}
-              </div>
-            </div>
-          ))}
+          <div className="jfoot2__info">
+            <span className="jfoot2__label">Contact</span>
+            <span className="jfoot2__val">{fc.email ?? 'support@jumla.cargo'}</span>
+          </div>
+          <div className="jfoot2__info">
+            <span className="jfoot2__label">Itinéraire</span>
+            <span className="jfoot2__val">{fc.route ?? 'Afrique → Canada · Actif depuis 2020'}</span>
+          </div>
         </div>
-        <div className="jfoot__bottom">
+
+        {/* Giant brand name */}
+        <div className="jfoot2__brand">JUMLA SHIPPING</div>
+
+        {/* Bottom legal bar */}
+        <div className="jfoot2__bottom">
           <span>{fc.copyright ?? t('footer.copyright')}</span>
-          <span>{fc.offices ?? t('footer.offices')}</span>
+          <div className="jfoot2__links">
+            <a href="#">CGU</a>
+            <a href="#">CGV</a>
+            <a href="#">Politique de confidentialité</a>
+            <a href="#">Cookies</a>
+          </div>
+          <div className="jfoot2__social">
+            <a href="#" aria-label="Instagram">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r=".8" fill="currentColor" stroke="none"/>
+              </svg>
+            </a>
+            <a href="#" aria-label="LinkedIn">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M16 8a6 6 0 016 6v7h-4v-7a2 2 0 00-2-2 2 2 0 00-2 2v7h-4v-7a6 6 0 016-6z"/><rect x="2" y="9" width="4" height="12"/><circle cx="4" cy="4" r="2"/>
+              </svg>
+            </a>
+            <a href="#" aria-label="Facebook">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M18 2h-3a5 5 0 00-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 011-1h3z"/>
+              </svg>
+            </a>
+          </div>
         </div>
+
       </div>
     </footer>
   );
