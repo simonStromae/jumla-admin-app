@@ -34,7 +34,7 @@ export default function LoginScreen({ onNav }) {
             <path d="M8 8 C8 6 10 4 12 5 L38 20 C40 21 40 27 38 28 L12 43 C10 44 8 42 8 40 Z" fill="url(#llg)"/>
           </svg>
           <div>
-            <div style={{ fontFamily: "'Barlow Condensed', 'Arial Narrow', sans-serif", fontWeight: 800, fontSize: 20, letterSpacing: '.05em', textTransform: 'uppercase' }}>JUMLA Shipping</div>
+            <div style={{ fontFamily: "'Inter', system-ui, sans-serif", fontWeight: 800, fontSize: 18, letterSpacing: '.03em', textTransform: 'uppercase' }}>JUMLA Shipping</div>
             <div style={{ fontSize: 11.5, color: 'rgba(255,255,255,.55)', marginTop: 1 }}>Fret international · Douala</div>
           </div>
         </div>
@@ -46,7 +46,7 @@ export default function LoginScreen({ onNav }) {
           }}>
             <span>DOUALA</span><I.Plane style={{ color: '#00B4D8' }} /><span>MONTRÉAL</span>
           </div>
-          <h1 style={{ fontFamily: "'Barlow Condensed', 'Arial Narrow', sans-serif", fontSize: 48, fontWeight: 800, letterSpacing: '.02em', textTransform: 'uppercase', lineHeight: 1.05, margin: 0, color: 'white' }}>
+          <h1 style={{ fontFamily: "'Inter', system-ui, sans-serif", fontSize: 40, fontWeight: 800, letterSpacing: '-.02em', lineHeight: 1.1, margin: 0, color: 'white' }}>
             Chaque colis,<br />tracé du départ<br />jusqu'à la remise.
           </h1>
           <p style={{ fontSize: 14.5, color: 'rgba(255,255,255,.6)', marginTop: 18, marginBottom: 0, maxWidth: 420, lineHeight: 1.55 }}>

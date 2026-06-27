@@ -21,8 +21,8 @@ const J = {
   gradient: 'linear-gradient(90deg, #00B4D8 0%, #1B4FD8 100%)',
 };
 
-const FONT_DISPLAY = "'Barlow Condensed', 'Arial Narrow', sans-serif";
-const FONT_BODY    = "'Barlow', 'Helvetica Neue', Arial, sans-serif";
+const FONT_DISPLAY = "'Inter', system-ui, sans-serif";
+const FONT_BODY    = "'Inter', system-ui, sans-serif";
 
 const STATUS = {
   enr: { label: 'Colis enregistré',               color: J.gray400,  bg: 'rgba(148,163,184,.1)',  icon: '📝' },

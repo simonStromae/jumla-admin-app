@@ -217,7 +217,6 @@ function JServices({ onBook, content }) {
               </div>
               <h3 className="jsvc3__item-title">{t}</h3>
               <p className="jsvc3__item-desc">{d}</p>
-              <button className="jsvc3__more" onClick={onBook}>En savoir plus →</button>
             </div>
           ))}
         </div>
@@ -310,7 +309,7 @@ function JEstimator({ onBook }) {
       <div className="jc">
         <div style={{ textAlign: 'center', marginBottom: 40 }}>
           <div className="jsvc3__eyebrow" style={{ display: 'block', marginBottom: 10 }}>Simulateur de prix</div>
-          <h2 style={{ fontFamily: "'Barlow', 'Helvetica Neue', Arial, sans-serif", fontSize: '36px', color: 'var(--ink-900)', fontWeight: 700, letterSpacing: '-.03em' }}>
+          <h2 style={{ fontFamily: "'Inter', system-ui, sans-serif", fontSize: '36px', color: 'var(--ink-900)', fontWeight: 800, letterSpacing: '-.03em' }}>
             Combien coûte mon envoi ?
           </h2>
           <p style={{ fontSize: 15, color: 'var(--ink-400)', marginTop: 12, lineHeight: 1.65, maxWidth: 440, margin: '12px auto 0' }}>
@@ -410,15 +409,15 @@ function JFAQ({ content }) {
         <div className="jfaq-grid">
           <div>
             <div className="jsvc3__eyebrow" style={{ display: 'block', marginBottom: 12 }}>FAQ</div>
-            <h2 style={{ fontFamily: "'Barlow', 'Helvetica Neue', Arial, sans-serif", fontSize: '36px', fontWeight: 700, letterSpacing: '-.03em', color: 'var(--ink-900)', marginBottom: 16 }}>
+            <h2 style={{ fontFamily: "'Inter', system-ui, sans-serif", fontSize: '36px', fontWeight: 800, letterSpacing: '-.03em', color: 'var(--ink-900)', marginBottom: 16 }}>
               Questions fréquentes
             </h2>
             <p style={{ fontSize: 15, lineHeight: 1.75, color: 'var(--ink-400)' }}>
               Une autre question ? WhatsApp nous répond en moins d'une heure.
             </p>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 7, fontSize: 14, color: '#25D366', fontWeight: 600, marginTop: 20 }}>
+            <a href="#" style={{ display: 'flex', alignItems: 'center', gap: 7, fontSize: 14, color: '#25D366', fontWeight: 600, marginTop: 20, textDecoration: 'none' }}>
               <I.Whatsapp style={{ width: 18, height: 18 }} /> Écrire sur WhatsApp
-            </div>
+            </a>
           </div>
           <div className="jfaq">
             {faqs.map((f, i) => (
