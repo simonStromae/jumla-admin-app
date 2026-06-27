@@ -191,7 +191,7 @@ export default function ClientLayout({ children }) {
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px', borderRadius: 8, marginBottom: 6, background: 'var(--bg-soft)' }}>
           <div style={{
             width: 30, height: 30, borderRadius: '50%',
-            background: 'linear-gradient(135deg, #F5A524, #D97706)',
+            background: 'linear-gradient(135deg, #00B4D8, #1B4FD8)',
             display: 'grid', placeItems: 'center',
             fontWeight: 700, fontSize: 11, color: 'white', flexShrink: 0,
           }}>{initials}</div>

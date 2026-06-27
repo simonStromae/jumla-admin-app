@@ -6,17 +6,17 @@ import I from '@/src/components/Icons.jsx';
 import { useT, useLocale } from '@/src/lib/i18n';
 
 const JOURNEY = [
-  { key: 'enr', labelKey: 'statuses.enr',  label: '', icon: '📝', color: '#6b7280' },
-  { key: 'rec', labelKey: 'statuses.rec',  label: '', icon: '📥', color: '#D97706' },
-  { key: 'pre', labelKey: 'statuses.pre',  label: '', icon: '🔍', color: '#D97706' },
-  { key: 'exp', labelKey: 'statuses.exp',  label: '', icon: '🚀', color: '#D97706' },
-  { key: 'tra', labelKey: 'statuses.tra',  label: '', icon: '✈️', color: '#D97706' },
-  { key: 'apd', labelKey: 'statuses.apd',  label: '', icon: '🛬', color: '#B45309' },
-  { key: 'dou', labelKey: 'statuses.dou',  label: '', icon: '🛃', color: '#B45309' },
-  { key: 'lib', labelKey: 'statuses.lib',  label: '', icon: '✅', color: '#B45309' },
-  { key: 'ard', labelKey: 'statuses.ard',  label: '', icon: '🏭', color: '#B45309' },
-  { key: 'pdl', labelKey: 'statuses.pdl',  label: '', icon: '📦', color: '#92400e' },
-  { key: 'liv', labelKey: 'statuses.liv',  label: '', icon: '🚚', color: '#92400e' },
+  { key: 'enr', labelKey: 'statuses.enr',  label: '', icon: '📝', color: 'var(--ink-500)' },
+  { key: 'rec', labelKey: 'statuses.rec',  label: '', icon: '📥', color: 'var(--brand-700)' },
+  { key: 'pre', labelKey: 'statuses.pre',  label: '', icon: '🔍', color: 'var(--brand-700)' },
+  { key: 'exp', labelKey: 'statuses.exp',  label: '', icon: '🚀', color: 'var(--info-700)' },
+  { key: 'tra', labelKey: 'statuses.tra',  label: '', icon: '✈️', color: 'var(--info-700)' },
+  { key: 'apd', labelKey: 'statuses.apd',  label: '', icon: '🛬', color: 'var(--ok-700)' },
+  { key: 'dou', labelKey: 'statuses.dou',  label: '', icon: '🛃', color: 'var(--warn-700)' },
+  { key: 'lib', labelKey: 'statuses.lib',  label: '', icon: '✅', color: 'var(--ok-700)' },
+  { key: 'ard', labelKey: 'statuses.ard',  label: '', icon: '🏭', color: 'var(--ok-700)' },
+  { key: 'pdl', labelKey: 'statuses.pdl',  label: '', icon: '📦', color: 'var(--info-700)' },
+  { key: 'liv', labelKey: 'statuses.liv',  label: '', icon: '🚚', color: 'var(--info-700)' },
   { key: 'ok',  labelKey: 'statuses.ok',   label: '', icon: '🎉', color: '#111827' },
 ];
 
@@ -35,11 +35,11 @@ function ProgressDots({ status }) {
             width: i === current ? 8 : 6,
             height: i === current ? 8 : 6,
             borderRadius: '50%',
-            background: i <= current ? (i === current ? s.color : '#fcd34d') : '#e5e7eb',
+            background: i <= current ? (i === current ? s.color : 'var(--brand-200)') : '#e5e7eb',
             transition: 'all .2s',
           }} />
           {i < JOURNEY.length - 2 && (
-            <div style={{ width: 12, height: 2, background: i < current ? '#fcd34d' : '#e5e7eb', borderRadius: 1 }} />
+            <div style={{ width: 12, height: 2, background: i < current ? 'var(--brand-100)' : '#e5e7eb', borderRadius: 1 }} />
           )}
         </div>
       ))}
@@ -67,7 +67,7 @@ function ParcelCard({ parcel, onClick }) {
   return (
     <div onClick={onClick} style={{
       background: 'white',
-      border: `1.5px solid ${needsAction ? '#fbbf24' : 'var(--border)'}`,
+      border: `1.5px solid ${needsAction ? 'var(--warn-100)' : 'var(--border)'}`,
       borderRadius: 14,
       padding: '16px',
       cursor: 'pointer',
@@ -96,7 +96,7 @@ function ParcelCard({ parcel, onClick }) {
               {needsAction && (
                 <span style={{
                   fontSize: 10, fontWeight: 700, padding: '2px 7px', borderRadius: 99,
-                  background: '#fef3c7', color: '#92400e', border: '1px solid #fde68a',
+                  background: 'var(--bad-100)', color: 'var(--bad-700)', border: '1px solid var(--bad-100)',
                   textTransform: 'uppercase', letterSpacing: '.04em',
                 }}>{t('dashboard.parcel.actionRequired')}</span>
               )}
@@ -110,7 +110,7 @@ function ParcelCard({ parcel, onClick }) {
             <div style={{ fontSize: 13.5, fontWeight: 700, color: '#111827' }}>
               {(parcel.payment?.amount ?? parcel.priceXaf)?.toLocaleString('fr') ?? '—'} <span style={{ fontSize: 11, fontWeight: 400, color: '#9ca3af' }}>CAD</span>
             </div>
-            <div style={{ fontSize: 11.5, fontWeight: 600, marginTop: 1, color: paid ? '#16a34a' : partial ? '#d97706' : '#dc2626' }}>
+            <div style={{ fontSize: 11.5, fontWeight: 600, marginTop: 1, color: paid ? 'var(--ok-600)' : partial ? 'var(--warn-700)' : 'var(--bad-600)' }}>
               {paid ? `✓ ${t('dashboard.payment.paid')}` : partial ? `⏳ ${t('dashboard.payment.partial')}` : `⚡ ${t('dashboard.payment.pending')}`}
             </div>
           </div>
@@ -137,7 +137,7 @@ function ParcelCard({ parcel, onClick }) {
             {parcel.weightKg && <span> · {parcel.weightKg} kg</span>}
           </div>
           {hasBl && (
-            <div style={{ fontSize: 11, color: hasUnconfirmedBl ? '#92400e' : '#6b7280', fontWeight: hasUnconfirmedBl ? 700 : 400 }}>
+            <div style={{ fontSize: 11, color: hasUnconfirmedBl ? 'var(--warn-700)' : '#6b7280', fontWeight: hasUnconfirmedBl ? 700 : 400 }}>
               {hasUnconfirmedBl ? t('dashboard.parcel.borderauWarning') : t('dashboard.parcel.borderauOK')}
             </div>
           )}
@@ -147,8 +147,8 @@ function ParcelCard({ parcel, onClick }) {
         {hasUnconfirmedBl && (
           <div style={{
             marginTop: 10, padding: '8px 12px', borderRadius: 8,
-            background: '#fffbeb', border: '1px solid #fde68a',
-            fontSize: 12.5, color: '#92400e', fontWeight: 600,
+            background: 'var(--warn-50)', border: '1px solid var(--warn-100)',
+            fontSize: 12.5, color: 'var(--warn-700)', fontWeight: 600,
           }}>
             {t('dashboard.parcel.borderauPendingAction')}
           </div>
@@ -199,19 +199,19 @@ function ClientDashboardInner() {
       {showBooked && bookedCode && (
         <div style={{
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          background: '#fffbeb', border: '1px solid #fbbf24',
-          padding: '14px 18px', marginBottom: 20,
+          background: 'var(--ok-50)', border: '1px solid var(--ok-100)',
+          borderRadius: 12, padding: '14px 18px', marginBottom: 20,
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
             <span style={{ fontSize: 22 }}>🎉</span>
             <div>
-              <div style={{ fontWeight: 700, fontSize: 14, color: '#92400e' }}>{t('dashboard.success.booking')}</div>
-              <div style={{ fontSize: 12.5, color: '#b45309', marginTop: 1 }}>
+              <div style={{ fontWeight: 700, fontSize: 14, color: 'var(--ok-700)' }}>{t('dashboard.success.booking')}</div>
+              <div style={{ fontSize: 12.5, color: 'var(--ok-600)', marginTop: 1 }}>
                 {t('dashboard.success.trackingNumber')} <span style={{ fontFamily: 'monospace', fontWeight: 700 }}>{bookedCode}</span> · {t('dashboard.parcel.paymentPending')}
               </div>
             </div>
           </div>
-          <button onClick={() => setShowBooked(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 18, color: '#b45309', lineHeight: 1 }}>×</button>
+          <button onClick={() => setShowBooked(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 18, color: 'var(--ok-600)', lineHeight: 1 }}>×</button>
         </div>
       )}
 
@@ -228,10 +228,10 @@ function ClientDashboardInner() {
         {!suspended && (
           <button onClick={() => router.push('/client/booking')} style={{
             flexShrink: 0, padding: '10px 18px', borderRadius: 10, border: 'none',
-            background: 'linear-gradient(135deg, #F5A524, #D97706)',
+            background: 'linear-gradient(90deg, #00B4D8 0%, #1B4FD8 100%)',
             color: 'white', fontWeight: 700, fontSize: 14, cursor: 'pointer',
             display: 'flex', alignItems: 'center', gap: 7,
-            boxShadow: '0 3px 10px rgba(217,119,6,.3)',
+            boxShadow: '0 3px 10px rgba(27,79,216,.25)',
           }}>
             <I.Plus style={{ width: 16, height: 16 }} />
             {t('dashboard.book')}
@@ -243,15 +243,15 @@ function ClientDashboardInner() {
       {actions.length > 0 && !loading && (
         <div style={{
           marginBottom: 20, padding: '12px 16px', borderRadius: 12,
-          background: '#fffbeb', border: '1.5px solid #fbbf24',
+          background: 'var(--warn-50)', border: '1.5px solid var(--warn-100)',
           display: 'flex', alignItems: 'center', gap: 12,
         }}>
           <span style={{ fontSize: 22, flexShrink: 0 }}>⚡</span>
           <div>
-            <div style={{ fontWeight: 700, fontSize: 14, color: '#92400e' }}>
+            <div style={{ fontWeight: 700, fontSize: 14, color: 'var(--warn-700)' }}>
               {t('dashboard.alert.actionsRequired').replace('{n}', actions.length)}
             </div>
-            <div style={{ fontSize: 12.5, color: '#b45309', marginTop: 1 }}>
+            <div style={{ fontSize: 12.5, color: 'var(--warn-700)', marginTop: 1 }}>
               {actions.some(p => p.bordereaux?.some(b => !b.clientConfirmed))
                 ? t('dashboard.alert.borderauPending')
                 : t('dashboard.alert.paymentOverdue')}
@@ -297,7 +297,7 @@ function ClientDashboardInner() {
               <div style={{ fontSize: 13, marginBottom: 16 }}>{t('dashboard.empty.activeHint')}</div>
               <button onClick={() => router.push('/client/booking')} style={{
                 padding: '10px 20px', borderRadius: 10, border: 'none',
-                background: '#F5A524', color: 'white', fontWeight: 700, cursor: 'pointer',
+                background: 'linear-gradient(90deg, #00B4D8 0%, #1B4FD8 100%)', color: 'white', fontWeight: 700, cursor: 'pointer',
               }}>{t('button.bookNow')}</button>
             </>
           )}

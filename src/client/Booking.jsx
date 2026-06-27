@@ -753,6 +753,7 @@ function CampaignCalendar({ campaigns, selected, onSelect, routeLabel }) {
 export default function BookingScreen({ onNav, embedded = false }) {
   const { data: sessionData } = useSession();
   const t = useT();
+  const { locale } = useLocale();
   const [step, setStep] = useState(0);
 
   const STEPS = [

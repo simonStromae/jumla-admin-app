@@ -13,17 +13,6 @@ export default function GlobalError({ error, reset }) {
       fontFamily: 'Inter, system-ui, sans-serif', padding: 24,
     }}>
       <div style={{ textAlign: 'center', maxWidth: 480 }}>
-        {/* Logo */}
-        <div style={{
-          width: 56, height: 56, borderRadius: 14,
-          background: 'var(--brand-500)', color: 'white',
-          fontSize: 24, fontWeight: 800,
-          display: 'grid', placeItems: 'center',
-          margin: '0 auto 28px',
-        }}>
-          J
-        </div>
-
         <div style={{
           width: 56, height: 56, borderRadius: 14,
           background: 'var(--bad-50)', border: '1px solid var(--bad-100)',

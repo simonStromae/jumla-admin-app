@@ -11,7 +11,7 @@ function Row({ parcel }) {
 
   const PAYMENT_COLOR = {
     completed: { bg: 'var(--ok-50)',   color: 'var(--ok-700)',   label: t('invoices.status.paid') },
-    partial:   { bg: '#fef3c7',        color: '#92400e',          label: t('invoices.status.partial') },
+    partial:   { bg: 'var(--warn-100)', color: 'var(--warn-700)',  label: t('invoices.status.partial') },
     pending:   { bg: 'var(--warn-50)', color: 'var(--warn-700)', label: t('invoices.status.pending') },
   };
 
@@ -42,7 +42,7 @@ function Row({ parcel }) {
         </span>
         <span style={{ fontSize: 11, color: 'var(--ink-400)', marginLeft: 4 }}>CAD</span>
         {partial && pay.allocated > 0 && (
-          <div style={{ fontSize: 11, color: '#92400e', marginTop: 2, fontFamily: 'var(--font-mono)' }}>
+          <div style={{ fontSize: 11, color: 'var(--warn-700)', marginTop: 2, fontFamily: 'var(--font-mono)' }}>
             Reçu : {pay.allocated.toLocaleString('fr')} · Reste : {pay.remaining.toLocaleString('fr')}
           </div>
         )}
@@ -72,9 +72,9 @@ function Row({ parcel }) {
             <button
               onClick={() => router.push('/client/invoice/' + parcel.id + '?adj=1')}
               style={{
-                padding: '5px 12px', borderRadius: 7, border: '1px solid #d97706',
-                background: '#fffbeb', cursor: 'pointer', fontSize: 12.5, fontWeight: 600,
-                color: '#92400e',
+                padding: '5px 12px', borderRadius: 7, border: '1px solid var(--border)',
+                background: 'var(--brand-50)', cursor: 'pointer', fontSize: 12.5, fontWeight: 600,
+                color: 'var(--brand-700)',
               }}>
               {t('invoices.button.supplement')}
             </button>
@@ -130,7 +130,7 @@ export default function ClientInvoices() {
             <span style={{ fontSize: 14, fontWeight: 400, color: 'var(--ink-400)', marginLeft: 6 }}>CAD</span>
           </div>
           {totalDue > 0 && (
-            <div style={{ fontSize: 12, color: 'var(--warn-600)', marginTop: 6 }}>
+            <div style={{ fontSize: 12, color: 'var(--warn-700)', marginTop: 6 }}>
               {t('invoices.paymentMethod')}
             </div>
           )}
@@ -158,11 +158,11 @@ export default function ClientInvoices() {
       {/* Interac info box */}
       {totalDue > 0 && (
         <div style={{
-          background: '#fffbeb', border: '1px solid #fde68a',
+          background: 'var(--warn-50)', border: '1px solid var(--warn-100)',
           borderRadius: 10, padding: '14px 18px', marginBottom: 20, fontSize: 13,
         }}>
-          <div style={{ fontWeight: 700, color: '#92400e', marginBottom: 6 }}>{t('invoices.howToPay.title')}</div>
-          <div style={{ color: '#b45309', lineHeight: 1.6 }}
+          <div style={{ fontWeight: 700, color: 'var(--warn-700)', marginBottom: 6 }}>{t('invoices.howToPay.title')}</div>
+          <div style={{ color: 'var(--warn-700)', lineHeight: 1.6 }}
             dangerouslySetInnerHTML={{
               __html: t('invoices.howToPay.description').replace('{email}', `<strong>${paymentEmail}</strong>`),
             }}
