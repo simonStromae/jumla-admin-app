@@ -418,7 +418,7 @@ function JEstimator({ onBook, content }) {
       <div className="jc">
         <div style={{ textAlign: 'center', marginBottom: 40 }}>
           <div className="jsvc3__eyebrow" style={{ display: 'block', marginBottom: 10 }}>{st.eyebrow ?? t('estimator.eyebrow')}</div>
-          <h2 style={{ fontFamily: "'Inter', system-ui, sans-serif", fontSize: '36px', color: 'var(--ink-900)', fontWeight: 800, letterSpacing: '-.03em' }}>
+          <h2 style={{ fontFamily: "'Inter', system-ui, sans-serif", fontSize: 'clamp(26px, 7.5vw, 36px)', color: 'var(--ink-900)', fontWeight: 800, letterSpacing: '-.03em' }}>
             {st.title ?? t('estimator.title')}
           </h2>
           <p style={{ fontSize: 15, color: 'var(--ink-400)', marginTop: 12, lineHeight: 1.65, maxWidth: 440, margin: '12px auto 0' }}>
@@ -520,7 +520,7 @@ function JFAQ({ content }) {
         <div className="jfaq-grid">
           <div>
             <div className="jsvc3__eyebrow" style={{ display: 'block', marginBottom: 12 }}>{st.eyebrow ?? t('faq.eyebrow')}</div>
-            <h2 style={{ fontFamily: "'Inter', system-ui, sans-serif", fontSize: '36px', fontWeight: 800, letterSpacing: '-.03em', color: 'var(--ink-900)', marginBottom: 16 }}>
+            <h2 style={{ fontFamily: "'Inter', system-ui, sans-serif", fontSize: 'clamp(26px, 7.5vw, 36px)', fontWeight: 800, letterSpacing: '-.03em', color: 'var(--ink-900)', marginBottom: 16 }}>
               {st.title ?? t('faq.title')}
             </h2>
             <p style={{ fontSize: 15, lineHeight: 1.75, color: 'var(--ink-400)' }}>
