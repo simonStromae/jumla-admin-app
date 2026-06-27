@@ -41,6 +41,25 @@ const DEFAULTS = {
       line3:    "aujourd'hui",
       subtitle: "Rejoignez 2 500+ clients qui font confiance à Jumla Shipping pour leurs envois entre l'Afrique et le Canada.",
     },
+    sectionTitles: {
+      services:  { eyebrow: 'Ce que nous proposons', title: 'Nos services', subtitle: "Un seul interlocuteur de Douala jusqu'au Canada. Transparence totale, zéro mauvaise surprise." },
+      features:  { eyebrow: 'Pourquoi Jumla', title1: 'Un service conçu pour', title2: 'la diaspora africaine', description: 'Depuis 2021, nous connectons les familles entre l\'Afrique et le Canada grâce à un service de fret aérien simple, transparent et fiable.' },
+      estimator: { eyebrow: 'Simulateur de prix', title: 'Combien coûte mon envoi ?', subtitle: 'Calculez en quelques secondes. Sans inscription, sans engagement.' },
+      faq:       { eyebrow: 'FAQ', title: 'Questions fréquentes', subtitle: 'Une autre question ? WhatsApp nous répond en moins d\'une heure.' },
+    },
+    trackingCard: {
+      title: 'Suivre mon colis', label: 'Numéro de suivi', placeholder: 'JMS-12345', button: 'Suivre mon colis →',
+      badge: 'Transit 14 jours · Notification WhatsApp incluse',
+      cityFrom: 'DOUALA', cityFromSub: 'DLA · Cameroun', cityTo: 'MONTRÉAL', cityToSub: 'YUL · Canada',
+      ctaText: 'Pas encore client ?', ctaLink: 'Créer un envoi maintenant',
+    },
+    footer: {
+      description: "Spécialiste du fret aérien international entre l'Afrique et le Canada depuis 2021. Suivi, sécurité et transparence à chaque étape.",
+      copyright: '© 2026 Jumla Shipping SARL — Tous droits réservés',
+      offices: 'Douala · Montréal · Lagos · Bruxelles',
+      col1Title: 'Services', col2Title: 'Entreprise', col3Title: 'Légal',
+      email: 'contact@jumla.cargo',
+    },
     loginSlides: [
       "Chaque colis, tracé du départ jusqu'à la remise.",
       'Réservez en ligne, déposez à Douala — livré à Montréal en 14 jours.',
@@ -86,6 +105,25 @@ const DEFAULTS = {
       line2:    'first parcel',
       line3:    'today',
       subtitle: 'Join 2,500+ customers who trust Jumla Shipping for their shipments between Africa and Canada.',
+    },
+    sectionTitles: {
+      services:  { eyebrow: 'What we offer', title: 'Our services', subtitle: 'One contact from Douala to Canada. Complete transparency, zero surprises.' },
+      features:  { eyebrow: 'Why Jumla', title1: 'A service built for', title2: 'the African diaspora', description: 'Since 2021, we connect families between Africa and Canada through a simple, transparent and reliable air freight service.' },
+      estimator: { eyebrow: 'Price simulator', title: 'How much does my shipment cost?', subtitle: 'Calculate in seconds. No registration, no commitment.' },
+      faq:       { eyebrow: 'FAQ', title: 'Frequently asked questions', subtitle: 'Another question? WhatsApp us — we reply in under an hour.' },
+    },
+    trackingCard: {
+      title: 'Track my parcel', label: 'Tracking number', placeholder: 'JMS-12345', button: 'Track my parcel →',
+      badge: '14-day transit · WhatsApp notification included',
+      cityFrom: 'DOUALA', cityFromSub: 'DLA · Cameroon', cityTo: 'MONTRÉAL', cityToSub: 'YUL · Canada',
+      ctaText: 'Not a customer yet?', ctaLink: 'Create a shipment now',
+    },
+    footer: {
+      description: 'International air freight specialist between Africa and Canada since 2021. Tracking, security and transparency at every step.',
+      copyright: '© 2026 Jumla Shipping SARL — All rights reserved',
+      offices: 'Douala · Montréal · Lagos · Brussels',
+      col1Title: 'Services', col2Title: 'Company', col3Title: 'Legal',
+      email: 'contact@jumla.cargo',
     },
     loginSlides: [
       'Every parcel, tracked from departure to delivery.',
@@ -200,6 +238,9 @@ export default function LandingEditor() {
     { id: 'features', label: 'Points forts' },
     { id: 'faq',      label: 'FAQ' },
     { id: 'cta',      label: 'CTA' },
+    { id: 'headings', label: 'En-têtes' },
+    { id: 'tracking', label: 'Carte suivi' },
+    { id: 'footer',   label: 'Pied de page' },
     { id: 'slides',   label: 'Slides login' },
   ];
 
@@ -370,6 +411,81 @@ export default function LandingEditor() {
           <button onClick={addFaq} className="btn btn--ghost btn--sm" style={{ marginTop: 4 }}>
             <I.Plus style={{ width: 14, height: 14 }} /> Ajouter une question
           </button>
+        </>
+      )}
+
+      {tab === 'headings' && (
+        <>
+          <EditorCard title="Section Services" icon={I.Plane}>
+            <Field label="Accroche (eyebrow)"><input className="input" value={c.sectionTitles.services.eyebrow} onChange={e => set('sectionTitles.services.eyebrow', e.target.value)} /></Field>
+            <Field label="Titre"><input className="input" value={c.sectionTitles.services.title} onChange={e => set('sectionTitles.services.title', e.target.value)} /></Field>
+            <Field label="Sous-titre"><textarea className="input" rows={2} value={c.sectionTitles.services.subtitle} onChange={e => set('sectionTitles.services.subtitle', e.target.value)} style={{ resize: 'vertical' }} /></Field>
+          </EditorCard>
+          <EditorCard title="Section Points forts" icon={I.Sparkle}>
+            <Field label="Accroche (eyebrow)"><input className="input" value={c.sectionTitles.features.eyebrow} onChange={e => set('sectionTitles.features.eyebrow', e.target.value)} /></Field>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+              <Field label="Titre ligne 1"><input className="input" value={c.sectionTitles.features.title1} onChange={e => set('sectionTitles.features.title1', e.target.value)} /></Field>
+              <Field label="Titre ligne 2 (en cyan)"><input className="input" value={c.sectionTitles.features.title2} onChange={e => set('sectionTitles.features.title2', e.target.value)} /></Field>
+            </div>
+            <Field label="Description"><textarea className="input" rows={2} value={c.sectionTitles.features.description} onChange={e => set('sectionTitles.features.description', e.target.value)} style={{ resize: 'vertical' }} /></Field>
+          </EditorCard>
+          <EditorCard title="Section Simulateur" icon={I.Calculator}>
+            <Field label="Accroche (eyebrow)"><input className="input" value={c.sectionTitles.estimator.eyebrow} onChange={e => set('sectionTitles.estimator.eyebrow', e.target.value)} /></Field>
+            <Field label="Titre"><input className="input" value={c.sectionTitles.estimator.title} onChange={e => set('sectionTitles.estimator.title', e.target.value)} /></Field>
+            <Field label="Sous-titre"><textarea className="input" rows={2} value={c.sectionTitles.estimator.subtitle} onChange={e => set('sectionTitles.estimator.subtitle', e.target.value)} style={{ resize: 'vertical' }} /></Field>
+          </EditorCard>
+          <EditorCard title="Section FAQ" icon={I.Help}>
+            <Field label="Accroche (eyebrow)"><input className="input" value={c.sectionTitles.faq.eyebrow} onChange={e => set('sectionTitles.faq.eyebrow', e.target.value)} /></Field>
+            <Field label="Titre"><input className="input" value={c.sectionTitles.faq.title} onChange={e => set('sectionTitles.faq.title', e.target.value)} /></Field>
+            <Field label="Sous-titre"><textarea className="input" rows={2} value={c.sectionTitles.faq.subtitle} onChange={e => set('sectionTitles.faq.subtitle', e.target.value)} style={{ resize: 'vertical' }} /></Field>
+          </EditorCard>
+        </>
+      )}
+
+      {tab === 'tracking' && (
+        <EditorCard title="Carte de suivi (colonne droite du héro)" icon={I.Search}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+            <Field label="Titre de la carte"><input className="input" value={c.trackingCard.title} onChange={e => set('trackingCard.title', e.target.value)} /></Field>
+            <Field label="Label du champ"><input className="input" value={c.trackingCard.label} onChange={e => set('trackingCard.label', e.target.value)} /></Field>
+            <Field label="Placeholder"><input className="input" value={c.trackingCard.placeholder} onChange={e => set('trackingCard.placeholder', e.target.value)} /></Field>
+            <Field label="Texte du bouton"><input className="input" value={c.trackingCard.button} onChange={e => set('trackingCard.button', e.target.value)} /></Field>
+          </div>
+          <Field label="Badge (ligne sous la route)"><input className="input" value={c.trackingCard.badge} onChange={e => set('trackingCard.badge', e.target.value)} /></Field>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+            <Field label="Ville de départ (ex: DOUALA)"><input className="input" value={c.trackingCard.cityFrom} onChange={e => set('trackingCard.cityFrom', e.target.value)} /></Field>
+            <Field label="Sous-titre départ (ex: DLA · Cameroun)"><input className="input" value={c.trackingCard.cityFromSub} onChange={e => set('trackingCard.cityFromSub', e.target.value)} /></Field>
+            <Field label="Ville d'arrivée (ex: MONTRÉAL)"><input className="input" value={c.trackingCard.cityTo} onChange={e => set('trackingCard.cityTo', e.target.value)} /></Field>
+            <Field label="Sous-titre arrivée (ex: YUL · Canada)"><input className="input" value={c.trackingCard.cityToSub} onChange={e => set('trackingCard.cityToSub', e.target.value)} /></Field>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+            <Field label="Texte CTA (ex: Pas encore client ?)"><input className="input" value={c.trackingCard.ctaText} onChange={e => set('trackingCard.ctaText', e.target.value)} /></Field>
+            <Field label="Lien CTA (ex: Créer un envoi)"><input className="input" value={c.trackingCard.ctaLink} onChange={e => set('trackingCard.ctaLink', e.target.value)} /></Field>
+          </div>
+        </EditorCard>
+      )}
+
+      {tab === 'footer' && (
+        <>
+          <div className="card" style={{ marginBottom: 14, padding: '14px 20px', background: 'var(--brand-50)', border: '1px solid var(--brand-200)' }}>
+            <div style={{ fontSize: 13, color: 'var(--brand-700)' }}>
+              Le logo du pied de page utilise le logo principal configuré dans <strong>Paramètres → Apparence</strong>.
+            </div>
+          </div>
+          <EditorCard title="Textes du pied de page" icon={I.Globe}>
+            <Field label="Description (sous le logo)">
+              <textarea className="input" rows={3} value={c.footer.description} onChange={e => set('footer.description', e.target.value)} style={{ resize: 'vertical' }} />
+            </Field>
+            <Field label="Email de contact"><input className="input" value={c.footer.email} onChange={e => set('footer.email', e.target.value)} /></Field>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+              <Field label="Copyright"><input className="input" value={c.footer.copyright} onChange={e => set('footer.copyright', e.target.value)} /></Field>
+              <Field label="Bureaux / Villes"><input className="input" value={c.footer.offices} onChange={e => set('footer.offices', e.target.value)} /></Field>
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10, marginTop: 4 }}>
+              <Field label="Titre colonne 1"><input className="input" value={c.footer.col1Title} onChange={e => set('footer.col1Title', e.target.value)} /></Field>
+              <Field label="Titre colonne 2"><input className="input" value={c.footer.col2Title} onChange={e => set('footer.col2Title', e.target.value)} /></Field>
+              <Field label="Titre colonne 3"><input className="input" value={c.footer.col3Title} onChange={e => set('footer.col3Title', e.target.value)} /></Field>
+            </div>
+          </EditorCard>
         </>
       )}
 

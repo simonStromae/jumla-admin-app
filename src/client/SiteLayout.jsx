@@ -96,13 +96,14 @@ export function SiteNav({ onNav, onBook, mode = 'landing' }) {
 }
 
 /* ─── Footer ─── */
-export function SiteFooter() {
+export function SiteFooter({ content }) {
   const { logoUrl, logoIconUrl, logoHeight } = useCompanyAssets();
   const t = useT();
+  const fc = content?.footer ?? {};
   const cols = [
-    { l: t('footer.cols.services'), items: [t('footer.links.airFreight'), t('footer.links.homeDelivery'), t('footer.links.warehousePickup'), t('footer.links.tracking')] },
-    { l: t('footer.cols.company'), items: [t('footer.links.about'), t('footer.links.blog'), t('footer.links.careers'), t('footer.links.contact')] },
-    { l: t('footer.cols.legal'), items: [t('footer.links.tos'), t('footer.links.privacy'), t('footer.links.cookies'), t('footer.links.faq')] },
+    { l: fc.col1Title ?? t('footer.cols.services'), items: [t('footer.links.airFreight'), t('footer.links.homeDelivery'), t('footer.links.warehousePickup'), t('footer.links.tracking')] },
+    { l: fc.col2Title ?? t('footer.cols.company'), items: [t('footer.links.about'), t('footer.links.blog'), t('footer.links.careers'), t('footer.links.contact')] },
+    { l: fc.col3Title ?? t('footer.cols.legal'), items: [t('footer.links.tos'), t('footer.links.privacy'), t('footer.links.cookies'), t('footer.links.faq')] },
   ];
   return (
     <footer className="jfoot" id="jfoot">
@@ -126,7 +127,7 @@ export function SiteFooter() {
               )}
             </div>
             <p className="jfoot__desc">
-              {t('footer.description')}
+              {fc.description ?? t('footer.description')}
             </p>
           </div>
           {cols.map(c => (
@@ -139,8 +140,8 @@ export function SiteFooter() {
           ))}
         </div>
         <div className="jfoot__bottom">
-          <span>{t('footer.copyright')}</span>
-          <span>{t('footer.offices')}</span>
+          <span>{fc.copyright ?? t('footer.copyright')}</span>
+          <span>{fc.offices ?? t('footer.offices')}</span>
         </div>
       </div>
     </footer>

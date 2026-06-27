@@ -46,6 +46,25 @@ const DEFAULT_CONTENT_FR = {
     line3:    "aujourd'hui",
     subtitle: "Rejoignez 2 500+ clients qui font confiance à Jumla Shipping pour leurs envois entre l'Afrique et le Canada.",
   },
+  sectionTitles: {
+    services:  { eyebrow: 'Ce que nous proposons', title: 'Nos services', subtitle: "Un seul interlocuteur de Douala jusqu'au Canada. Transparence totale, zéro mauvaise surprise." },
+    features:  { eyebrow: 'Pourquoi Jumla', title1: 'Un service conçu pour', title2: 'la diaspora africaine', description: 'Depuis 2021, nous connectons les familles entre l\'Afrique et le Canada grâce à un service de fret aérien simple, transparent et fiable.' },
+    estimator: { eyebrow: 'Simulateur de prix', title: 'Combien coûte mon envoi ?', subtitle: 'Calculez en quelques secondes. Sans inscription, sans engagement.' },
+    faq:       { eyebrow: 'FAQ', title: 'Questions fréquentes', subtitle: 'Une autre question ? WhatsApp nous répond en moins d\'une heure.' },
+  },
+  trackingCard: {
+    title: 'Suivre mon colis', label: 'Numéro de suivi', placeholder: 'JMS-12345', button: 'Suivre mon colis →',
+    badge: 'Transit 14 jours · Notification WhatsApp incluse',
+    cityFrom: 'DOUALA', cityFromSub: 'DLA · Cameroun', cityTo: 'MONTRÉAL', cityToSub: 'YUL · Canada',
+    ctaText: 'Pas encore client ?', ctaLink: 'Créer un envoi maintenant',
+  },
+  footer: {
+    description: "Spécialiste du fret aérien international entre l'Afrique et le Canada depuis 2021. Suivi, sécurité et transparence à chaque étape.",
+    copyright: '© 2026 Jumla Shipping SARL — Tous droits réservés',
+    offices: 'Douala · Montréal · Lagos · Bruxelles',
+    col1Title: 'Services', col2Title: 'Entreprise', col3Title: 'Légal',
+    email: 'contact@jumla.cargo',
+  },
 };
 
 const DEFAULT_CONTENT_EN = {
@@ -87,18 +106,47 @@ const DEFAULT_CONTENT_EN = {
     line3:    'today',
     subtitle: 'Join 2,500+ customers who trust Jumla Shipping for their shipments between Africa and Canada.',
   },
+  sectionTitles: {
+    services:  { eyebrow: 'What we offer', title: 'Our services', subtitle: 'One contact from Douala to Canada. Complete transparency, zero surprises.' },
+    features:  { eyebrow: 'Why Jumla', title1: 'A service built for', title2: 'the African diaspora', description: 'Since 2021, we connect families between Africa and Canada through a simple, transparent and reliable air freight service.' },
+    estimator: { eyebrow: 'Price simulator', title: 'How much does my shipment cost?', subtitle: 'Calculate in seconds. No registration, no commitment.' },
+    faq:       { eyebrow: 'FAQ', title: 'Frequently asked questions', subtitle: 'Another question? WhatsApp us — we reply in under an hour.' },
+  },
+  trackingCard: {
+    title: 'Track my parcel', label: 'Tracking number', placeholder: 'JMS-12345', button: 'Track my parcel →',
+    badge: '14-day transit · WhatsApp notification included',
+    cityFrom: 'DOUALA', cityFromSub: 'DLA · Cameroon', cityTo: 'MONTRÉAL', cityToSub: 'YUL · Canada',
+    ctaText: 'Not a customer yet?', ctaLink: 'Create a shipment now',
+  },
+  footer: {
+    description: 'International air freight specialist between Africa and Canada since 2021. Tracking, security and transparency at every step.',
+    copyright: '© 2026 Jumla Shipping SARL — All rights reserved',
+    offices: 'Douala · Montréal · Lagos · Brussels',
+    col1Title: 'Services', col2Title: 'Company', col3Title: 'Legal',
+    email: 'contact@jumla.cargo',
+  },
 };
 
 const DEFAULTS = { fr: DEFAULT_CONTENT_FR, en: DEFAULT_CONTENT_EN };
 
 function merge(base, override) {
   if (!override) return base;
+  const mergeObj = (b, o) => o ? { ...b, ...o } : b;
   return {
-    hero:     { ...base.hero,     ...override.hero },
-    services: override.services ?? base.services,
-    features: override.features ?? base.features,
-    faq:      override.faq      ?? base.faq,
-    cta:      { ...base.cta,     ...override.cta },
+    hero:          mergeObj(base.hero, override.hero),
+    services:      override.services ?? base.services,
+    features:      override.features ?? base.features,
+    faq:           override.faq      ?? base.faq,
+    cta:           mergeObj(base.cta, override.cta),
+    sectionTitles: override.sectionTitles ? {
+      services:  mergeObj(base.sectionTitles.services,  override.sectionTitles.services),
+      features:  mergeObj(base.sectionTitles.features,  override.sectionTitles.features),
+      estimator: mergeObj(base.sectionTitles.estimator, override.sectionTitles.estimator),
+      faq:       mergeObj(base.sectionTitles.faq,       override.sectionTitles.faq),
+    } : base.sectionTitles,
+    trackingCard:  mergeObj(base.trackingCard, override.trackingCard),
+    footer:        mergeObj(base.footer, override.footer),
+    loginSlides:   override.loginSlides ?? base.loginSlides,
   };
 }
 
@@ -130,6 +178,7 @@ function JHero({ onBook, onNav, content }) {
   const t = useT();
   const [code, setCode] = useState('');
   const h = content.hero;
+  const tc = content.trackingCard ?? {};
 
   const handleTrack = (e) => {
     e.preventDefault();
@@ -184,19 +233,19 @@ function JHero({ onBook, onNav, content }) {
                 <div className="jhero2__card-icon">
                   <I.Search style={{ width: 16, height: 16 }} />
                 </div>
-                <span className="jhero2__card-title">{t('hero.tracking.title')}</span>
+                <span className="jhero2__card-title">{tc.title ?? t('hero.tracking.title')}</span>
               </div>
 
               <form onSubmit={handleTrack}>
-                <label className="jhero2__card-label">{t('hero.tracking.label')}</label>
+                <label className="jhero2__card-label">{tc.label ?? t('hero.tracking.label')}</label>
                 <input
                   value={code}
                   onChange={e => setCode(e.target.value.toUpperCase())}
-                  placeholder={t('hero.tracking.placeholder')}
+                  placeholder={tc.placeholder ?? t('hero.tracking.placeholder')}
                   className="jhero2__card-input"
                 />
                 <button type="submit" className="jhero2__card-btn">
-                  {t('hero.tracking.button')}
+                  {tc.button ?? t('hero.tracking.button')}
                 </button>
               </form>
 
@@ -204,30 +253,30 @@ function JHero({ onBook, onNav, content }) {
 
               <div className="jhero2__card-route">
                 <div className="jhero2__card-city">
-                  <div className="jhero2__card-city-label">{t('hero.route.departure')}</div>
-                  <div className="jhero2__card-city-name">DOUALA</div>
-                  <div className="jhero2__card-city-sub">DLA · Cameroun</div>
+                  <div className="jhero2__card-city-label">{tc.cityFromLabel ?? t('hero.route.departure')}</div>
+                  <div className="jhero2__card-city-name">{tc.cityFrom ?? 'DOUALA'}</div>
+                  <div className="jhero2__card-city-sub">{tc.cityFromSub ?? 'DLA · Cameroun'}</div>
                 </div>
                 <div className="jhero2__card-plane">
                   <I.Plane style={{ width: 20, height: 20, color: '#00B4D8' }} />
                 </div>
                 <div className="jhero2__card-city" style={{ textAlign: 'right' }}>
-                  <div className="jhero2__card-city-label">{t('hero.route.arrival')}</div>
-                  <div className="jhero2__card-city-name">MONTRÉAL</div>
-                  <div className="jhero2__card-city-sub">YUL · Canada</div>
+                  <div className="jhero2__card-city-label">{tc.cityToLabel ?? t('hero.route.arrival')}</div>
+                  <div className="jhero2__card-city-name">{tc.cityTo ?? 'MONTRÉAL'}</div>
+                  <div className="jhero2__card-city-sub">{tc.cityToSub ?? 'YUL · Canada'}</div>
                 </div>
               </div>
 
               <div className="jhero2__card-badge">
                 <span className="jhero2__card-badge-dot" />
-                {t('hero.route.badge')}
+                {tc.badge ?? t('hero.route.badge')}
               </div>
             </div>
 
             <div className="jhero2__card-book">
-              {t('hero.cta.newCustomer')}{' '}
+              {tc.ctaText ?? t('hero.cta.newCustomer')}{' '}
               <button onClick={onBook} className="jhero2__card-book-link">
-                {t('hero.cta.bookNow')}
+                {tc.ctaLink ?? t('hero.cta.bookNow')}
               </button>
             </div>
           </div>
@@ -243,6 +292,7 @@ const SVC_ICONS = [I.Plane, I.Box, I.Search];
 /* ─── Services 3-column text grid ─── */
 function JServices({ onBook, content }) {
   const t = useT();
+  const st = content.sectionTitles?.services ?? {};
   const svcs = content.services.map((s, i) => ({
     Icon: SVC_ICONS[i] ?? I.Box,
     num: `0${i + 1}`,
@@ -254,12 +304,12 @@ function JServices({ onBook, content }) {
     <section className="jsvc3" id="jsvc">
       <div className="jc">
         <div className="jsvc3__head">
-          <div className="jsvc3__eyebrow">{t('services.eyebrow')}</div>
+          <div className="jsvc3__eyebrow">{st.eyebrow ?? t('services.eyebrow')}</div>
           <h2 className="jsvc3__title">
-            {t('services.title')}
+            {st.title ?? t('services.title')}
           </h2>
           <p className="jsvc3__subtitle">
-            {t('services.subtitle')}
+            {st.subtitle ?? t('services.subtitle')}
           </p>
         </div>
         <div className="jsvc3__grid">
@@ -284,6 +334,7 @@ function JServices({ onBook, content }) {
 /* ─── Features accordion ─── */
 function JFeats({ onBook, content }) {
   const t = useT();
+  const st = content.sectionTitles?.features ?? {};
   const [open, setOpen] = useState(0);
   const feats = content.features.map(f => ({ t: f.title, d: f.description }));
 
@@ -294,13 +345,13 @@ function JFeats({ onBook, content }) {
 
           {/* Left */}
           <div className="jfeats3__left">
-            <div className="jfeats3__eyebrow">{t('features.eyebrow')}</div>
+            <div className="jfeats3__eyebrow">{st.eyebrow ?? t('features.eyebrow')}</div>
             <h2 className="jfeats3__title">
-              {t('features.title1')}<br />
-              <span className="cy">{t('features.title2')}</span>
+              {st.title1 ?? t('features.title1')}<br />
+              <span className="cy">{st.title2 ?? t('features.title2')}</span>
             </h2>
             <p className="jfeats3__body">
-              {t('features.description')}
+              {st.description ?? t('features.description')}
             </p>
             <button className="jfeats3__btn" onClick={onBook}>
               {t('features.button')} <I.ArrowRight style={{ width: 15, height: 15 }} />
@@ -337,8 +388,9 @@ function JFeats({ onBook, content }) {
 }
 
 /* ─── Estimator ─── */
-function JEstimator({ onBook }) {
+function JEstimator({ onBook, content }) {
   const t = useT();
+  const st = content?.sectionTitles?.estimator ?? {};
   const cats = PARCEL_CATEGORIES;
   const routes = ROUTES.filter(r => r.active);
   const [routeId, setRouteId] = useState(routes[0]?.id || 'r-dla-yul');
@@ -365,12 +417,12 @@ function JEstimator({ onBook }) {
     <section className="jest-wrap" id="jest">
       <div className="jc">
         <div style={{ textAlign: 'center', marginBottom: 40 }}>
-          <div className="jsvc3__eyebrow" style={{ display: 'block', marginBottom: 10 }}>{t('estimator.eyebrow')}</div>
+          <div className="jsvc3__eyebrow" style={{ display: 'block', marginBottom: 10 }}>{st.eyebrow ?? t('estimator.eyebrow')}</div>
           <h2 style={{ fontFamily: "'Inter', system-ui, sans-serif", fontSize: '36px', color: 'var(--ink-900)', fontWeight: 800, letterSpacing: '-.03em' }}>
-            {t('estimator.title')}
+            {st.title ?? t('estimator.title')}
           </h2>
           <p style={{ fontSize: 15, color: 'var(--ink-400)', marginTop: 12, lineHeight: 1.65, maxWidth: 440, margin: '12px auto 0' }}>
-            {t('estimator.subtitle')}
+            {st.subtitle ?? t('estimator.subtitle')}
           </p>
         </div>
         <div className="jest">
@@ -459,6 +511,7 @@ function JEstimator({ onBook }) {
 /* ─── FAQ ─── */
 function JFAQ({ content }) {
   const t = useT();
+  const st = content.sectionTitles?.faq ?? {};
   const faqs = content.faq.map(f => ({ q: f.question, a: f.answer }));
   const [open, setOpen] = useState(0);
   return (
@@ -466,12 +519,12 @@ function JFAQ({ content }) {
       <div className="jc">
         <div className="jfaq-grid">
           <div>
-            <div className="jsvc3__eyebrow" style={{ display: 'block', marginBottom: 12 }}>{t('faq.eyebrow')}</div>
+            <div className="jsvc3__eyebrow" style={{ display: 'block', marginBottom: 12 }}>{st.eyebrow ?? t('faq.eyebrow')}</div>
             <h2 style={{ fontFamily: "'Inter', system-ui, sans-serif", fontSize: '36px', fontWeight: 800, letterSpacing: '-.03em', color: 'var(--ink-900)', marginBottom: 16 }}>
-              {t('faq.title')}
+              {st.title ?? t('faq.title')}
             </h2>
             <p style={{ fontSize: 15, lineHeight: 1.75, color: 'var(--ink-400)' }}>
-              {t('faq.subtitle')}
+              {st.subtitle ?? t('faq.subtitle')}
             </p>
             <a href="#" style={{ display: 'flex', alignItems: 'center', gap: 7, fontSize: 14, color: '#25D366', fontWeight: 600, marginTop: 20, textDecoration: 'none' }}>
               <I.Whatsapp style={{ width: 18, height: 18 }} /> {t('faq.whatsapp')}
@@ -570,10 +623,10 @@ export default function LandingPage({ onNav }) {
       <JHero onBook={onBook} onNav={onNav} content={content} />
       <JServices onBook={onBook} content={content} />
       <JFeats onBook={onBook} content={content} />
-      <JEstimator onBook={onBook} />
+      <JEstimator onBook={onBook} content={content} />
       <JFAQ content={content} />
       <JCTA onBook={onBook} content={content} />
-      <SiteFooter />
+      <SiteFooter content={content} />
     </div>
   );
 }
