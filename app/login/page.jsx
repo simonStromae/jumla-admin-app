@@ -1,11 +1,26 @@
 'use client';
-import { useState, Suspense } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { signIn } from 'next-auth/react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import I from '@/src/components/Icons.jsx';
 import { useCompanyAssets } from '@/src/lib/useCompanyAssets.js';
-import { useT } from '@/src/lib/i18n';
+import { useT, useLocale } from '@/src/lib/i18n';
 import LanguageSwitcher from '@/src/components/LanguageSwitcher.jsx';
+
+const DEFAULT_SLIDES = {
+  fr: [
+    'Chaque colis, tracé du départ jusqu\'à la remise.',
+    'Réservez en ligne, déposez à Douala — livré à Montréal en 14 jours.',
+    'Suivi en temps réel et notifications WhatsApp à chaque étape.',
+    'Vérification article par article, bordereau signé au départ.',
+  ],
+  en: [
+    'Every parcel, tracked from departure to delivery.',
+    'Book online, drop off in Douala — delivered to Montréal in 14 days.',
+    'Real-time tracking with WhatsApp notifications at every step.',
+    'Item-by-item verification, signed manifest at departure.',
+  ],
+};
 
 function LoginForm() {
   const router = useRouter();
@@ -13,6 +28,7 @@ function LoginForm() {
   const initialTab = searchParams.get('tab') === 'register' ? 'register' : 'login';
   const { logoIconUrl, logoIconSize } = useCompanyAssets();
   const t = useT();
+  const { locale } = useLocale();
   const [tab, setTab]     = useState(initialTab); // 'login' | 'register' | 'verify'
   const [fields, setFields] = useState({ email: '', name: '', password: '', confirm: '' });
   const [code, setCode]     = useState('');
@@ -20,6 +36,43 @@ function LoginForm() {
   const [error, setError]   = useState('');
   const [loading, setLoading] = useState(false);
   const [show, setShow]     = useState(false);
+
+  const lang = locale === 'en' ? 'en' : 'fr';
+  const [slides, setSlides] = useState(DEFAULT_SLIDES.fr);
+  const [slideIdx, setSlideIdx] = useState(0);
+  const [slideFade, setSlideFade] = useState(true);
+
+  useEffect(() => {
+    fetch('/api/public/config')
+      .then(r => r.json())
+      .then(d => {
+        const fetched = d.landingContent?.[lang]?.loginSlides;
+        if (Array.isArray(fetched) && fetched.length > 0) {
+          setSlides(fetched);
+        } else {
+          setSlides(DEFAULT_SLIDES[lang]);
+        }
+        setSlideIdx(0);
+      })
+      .catch(() => setSlides(DEFAULT_SLIDES[lang]));
+  }, [lang]);
+
+  useEffect(() => {
+    if (slides.length <= 1) return;
+    const timer = setInterval(() => {
+      setSlideFade(false);
+      setTimeout(() => {
+        setSlideIdx(i => (i + 1) % slides.length);
+        setSlideFade(true);
+      }, 450);
+    }, 4500);
+    return () => clearInterval(timer);
+  }, [slides.length]);
+
+  const goToSlide = (i) => {
+    setSlideFade(false);
+    setTimeout(() => { setSlideIdx(i); setSlideFade(true); }, 450);
+  };
 
   const set = (k, v) => setFields(f => ({ ...f, [k]: v }));
 
@@ -115,20 +168,22 @@ function LoginForm() {
           }}>
             <span>DOUALA</span><I.Plane style={{ color: '#00B4D8' }} /><span>MONTRÉAL</span>
           </div>
-          <h1 style={{ fontFamily: "'Inter', system-ui, sans-serif", fontSize: 40, fontWeight: 800, letterSpacing: '-.02em', lineHeight: 1.1, margin: 0, color: 'white' }}>
-            Chaque colis,<br />tracé du départ<br />jusqu'à la remise.
-          </h1>
-          <p style={{ fontSize: 14.5, color: 'rgba(255,255,255,.6)', marginTop: 18, marginBottom: 0, maxWidth: 420, lineHeight: 1.55 }}>
-            Plateforme opérationnelle pour gérer vos cargaisons, vos bordereaux et vos paiements depuis l'Afrique vers le Canada.
-          </p>
-          <div style={{ display: 'flex', gap: 32, marginTop: 36, paddingTop: 24, borderTop: '1px solid rgba(255,255,255,.08)' }}>
-            {[{ k: '4', l: 'Routes actives' }, { k: '22', l: 'Cargaisons / an' }, { k: '312', l: 'Clients fidèles' }].map((s, i) => (
-              <div key={i}>
-                <div style={{ fontSize: 24, fontWeight: 700, letterSpacing: '-.02em' }}>{s.k}</div>
-                <div style={{ fontSize: 11.5, color: 'rgba(255,255,255,.5)', marginTop: 2 }}>{s.l}</div>
-              </div>
-            ))}
+          <div style={{ minHeight: 148, transition: 'opacity 0.45s ease', opacity: slideFade ? 1 : 0 }}>
+            <h1 style={{ fontFamily: "'Inter', system-ui, sans-serif", fontSize: 36, fontWeight: 800, letterSpacing: '-.02em', lineHeight: 1.2, margin: 0, color: 'white' }}>
+              {slides[slideIdx] ?? ''}
+            </h1>
           </div>
+          {slides.length > 1 && (
+            <div style={{ display: 'flex', gap: 6, marginTop: 24 }}>
+              {slides.map((_, i) => (
+                <div key={i} onClick={() => goToSlide(i)} style={{
+                  width: i === slideIdx ? 20 : 6, height: 6, borderRadius: 3,
+                  background: i === slideIdx ? 'rgba(0,180,216,.9)' : 'rgba(255,255,255,.25)',
+                  transition: 'all 0.35s ease', cursor: 'pointer',
+                }} />
+              ))}
+            </div>
+          )}
         </div>
         <div style={{ position: 'absolute', bottom: 20, left: 56, right: 56, display: 'flex', justifyContent: 'space-between', fontSize: 11, color: 'rgba(255,255,255,.4)', zIndex: 2 }}>
           <span>© 2026 Jumla Shipping</span><span>v2.4</span>

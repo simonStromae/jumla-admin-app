@@ -41,6 +41,12 @@ const DEFAULTS = {
       line3:    "aujourd'hui",
       subtitle: "Rejoignez 2 500+ clients qui font confiance à Jumla Shipping pour leurs envois entre l'Afrique et le Canada.",
     },
+    loginSlides: [
+      "Chaque colis, tracé du départ jusqu'à la remise.",
+      'Réservez en ligne, déposez à Douala — livré à Montréal en 14 jours.',
+      'Suivi en temps réel et notifications WhatsApp à chaque étape.',
+      'Vérification article par article, bordereau signé au départ.',
+    ],
   },
   en: {
     hero: {
@@ -81,6 +87,12 @@ const DEFAULTS = {
       line3:    'today',
       subtitle: 'Join 2,500+ customers who trust Jumla Shipping for their shipments between Africa and Canada.',
     },
+    loginSlides: [
+      'Every parcel, tracked from departure to delivery.',
+      'Book online, drop off in Douala — delivered to Montréal in 14 days.',
+      'Real-time tracking with WhatsApp notifications at every step.',
+      'Item-by-item verification, signed manifest at departure.',
+    ],
   },
 };
 
@@ -188,7 +200,18 @@ export default function LandingEditor() {
     { id: 'features', label: 'Points forts' },
     { id: 'faq',      label: 'FAQ' },
     { id: 'cta',      label: 'CTA' },
+    { id: 'slides',   label: 'Slides login' },
   ];
+
+  const addSlide = () => setContent(c => ({
+    ...c,
+    [langTab]: { ...c[langTab], loginSlides: [...(c[langTab].loginSlides || []), ''] },
+  }));
+
+  const removeSlide = (i) => setContent(c => ({
+    ...c,
+    [langTab]: { ...c[langTab], loginSlides: (c[langTab].loginSlides || []).filter((_, idx) => idx !== i) },
+  }));
 
   const c = content[langTab];
 
@@ -346,6 +369,45 @@ export default function LandingEditor() {
           ))}
           <button onClick={addFaq} className="btn btn--ghost btn--sm" style={{ marginTop: 4 }}>
             <I.Plus style={{ width: 14, height: 14 }} /> Ajouter une question
+          </button>
+        </>
+      )}
+
+      {/* Login Slides */}
+      {tab === 'slides' && (
+        <>
+          <div className="card" style={{ marginBottom: 14, padding: '14px 20px', background: 'var(--brand-50)', border: '1px solid var(--brand-200)' }}>
+            <div style={{ fontSize: 13, color: 'var(--brand-700)', lineHeight: 1.5 }}>
+              Ces messages s'affichent en rotation automatique (fade toutes les 4,5 s) dans la colonne gauche de la page connexion / inscription. Chaque message remplace le titre principal.
+            </div>
+          </div>
+          {(c.loginSlides || []).map((slide, i) => (
+            <div key={i} className="card" style={{ marginBottom: 10, padding: 16 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+                <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--ink-400)', textTransform: 'uppercase', letterSpacing: '.06em' }}>Message {i + 1}</span>
+                <div style={{ flex: 1 }} />
+                {(c.loginSlides || []).length > 1 && (
+                  <button onClick={() => removeSlide(i)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--bad-500)', fontSize: 12, display: 'flex', alignItems: 'center', gap: 4 }}>
+                    <I.Trash style={{ width: 13, height: 13 }} /> Supprimer
+                  </button>
+                )}
+              </div>
+              <textarea className="input" rows={2}
+                value={slide}
+                onChange={e => {
+                  setContent(prev => {
+                    const next = structuredClone(prev);
+                    next[langTab].loginSlides[i] = e.target.value;
+                    return next;
+                  });
+                }}
+                placeholder="Entrez un message marketing..."
+                style={{ resize: 'vertical' }}
+              />
+            </div>
+          ))}
+          <button onClick={addSlide} className="btn btn--ghost btn--sm" style={{ marginTop: 4 }}>
+            <I.Plus style={{ width: 14, height: 14 }} /> Ajouter un message
           </button>
         </>
       )}
