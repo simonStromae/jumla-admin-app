@@ -733,8 +733,8 @@
 }
 .jcta3__title {
   font-family: 'Inter', system-ui, sans-serif;
-  font-size: clamp(32px, 3.5vw, 48px);
-  font-weight: 800; letter-spacing: -.03em; line-height: 1.1;
+  font-size: clamp(44px, 7vw, 96px);
+  font-weight: 800; letter-spacing: -.03em; line-height: 1.05;
   color: white; margin-bottom: 20px;
 }
 .jcta3__sub {
