@@ -150,7 +150,18 @@ export async function DELETE(_: NextRequest, { params }: { params: { id: string 
   const { error } = await requireAdmin();
   if (error) return error;
 
-  await prisma.user.delete({ where: { id: params.id } });
+  const parcelCount = await prisma.parcel.count({ where: { clientId: params.id } });
+  if (parcelCount > 0) {
+    return NextResponse.json(
+      { error: 'Ce client a des colis enregistrés. Supprimez-les d\'abord.' },
+      { status: 400 },
+    );
+  }
+
+  await prisma.$transaction([
+    prisma.message.deleteMany({ where: { OR: [{ senderId: params.id }, { recipientId: params.id }] } }),
+    prisma.user.delete({ where: { id: params.id } }),
+  ]);
 
   return NextResponse.json({ ok: true });
 }

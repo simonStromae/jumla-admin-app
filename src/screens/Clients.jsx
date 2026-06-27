@@ -120,6 +120,10 @@ export default function ClientsScreen({ onNav }) {
             setClients(cs => cs.map(c => c.id === id ? { ...c, status: newStatus } : c));
             setOpen(cl => cl?.id === id ? { ...cl, status: newStatus } : cl);
           }}
+          onDeleted={(id) => {
+            setClients(cs => cs.filter(c => c.id !== id));
+            setOpen(null);
+          }}
         />
       )}
 
@@ -272,11 +276,33 @@ const CAMP_STATUS_LBL = {
   ard: 'Entrepôt dest.', pdl: 'Prête livr.', ok:  'Clôturée',
 };
 
-function ClientDrawer({ cl, onClose, onEdit, onNav, onStatusChange }) {
+function ClientDrawer({ cl, onClose, onEdit, onNav, onStatusChange, onDeleted }) {
   const [detail,  setDetail]  = useState(null);
   const [loading, setLoading] = useState(true);
   const [togglingStatus, setTogglingStatus] = useState(false);
   const [showWa, setShowWa] = useState(false);
+  const [deleteConfirm, setDeleteConfirm] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [deleteErr, setDeleteErr] = useState('');
+
+  const handleDelete = async () => {
+    setDeleting(true);
+    setDeleteErr('');
+    try {
+      const res = await fetch(`/api/clients/${cl.id}`, { method: 'DELETE' });
+      const d = await res.json();
+      if (!res.ok) {
+        setDeleteErr(d.error || 'Erreur lors de la suppression');
+        setDeleting(false);
+        return;
+      }
+      onDeleted?.(cl.id);
+      onClose();
+    } catch {
+      setDeleteErr('Erreur réseau');
+      setDeleting(false);
+    }
+  };
 
   const handleToggleStatus = async () => {
     const newStatus = cl.status === 'suspended' ? 'active' : 'suspended';
@@ -487,18 +513,47 @@ function ClientDrawer({ cl, onClose, onEdit, onNav, onStatusChange }) {
         </div>
       </div>
 
-      <div className="drawer__foot">
-        <button className="btn btn--ghost" style={{ flex: 1, justifyContent: 'center' }} onClick={onEdit}><I.Edit />Modifier</button>
-        <button className="btn btn--soft" style={{ flex: 1, justifyContent: 'center' }} onClick={() => setShowWa(true)}>
-          <I.Whatsapp style={{ color: 'var(--ok-600)' }} />WhatsApp
-        </button>
-        <button
-          className="btn btn--ghost"
-          style={{ flex: 1, justifyContent: 'center', color: cl.status === 'suspended' ? 'var(--ok-700)' : 'var(--bad-600)' }}
-          onClick={handleToggleStatus}
-          disabled={togglingStatus}>
-          {cl.status === 'suspended' ? 'Réactiver' : 'Suspendre'}
-        </button>
+      <div className="drawer__foot" style={{ flexDirection: 'column', gap: 8, alignItems: 'stretch' }}>
+        <div style={{ display: 'flex', gap: 6 }}>
+          <button className="btn btn--ghost" style={{ flex: 1, justifyContent: 'center' }} onClick={onEdit}><I.Edit />Modifier</button>
+          <button className="btn btn--soft" style={{ flex: 1, justifyContent: 'center' }} onClick={() => setShowWa(true)}>
+            <I.Whatsapp style={{ color: 'var(--ok-600)' }} />WhatsApp
+          </button>
+          <button
+            className="btn btn--ghost"
+            style={{ flex: 1, justifyContent: 'center', color: cl.status === 'suspended' ? 'var(--ok-700)' : 'var(--bad-600)' }}
+            onClick={handleToggleStatus}
+            disabled={togglingStatus}>
+            {cl.status === 'suspended' ? 'Réactiver' : 'Suspendre'}
+          </button>
+        </div>
+        {deleteErr && (
+          <div style={{ fontSize: 12, color: 'var(--bad-700)', background: 'var(--bad-50)', border: '1px solid var(--bad-200)', borderRadius: 6, padding: '6px 10px' }}>
+            {deleteErr}
+          </div>
+        )}
+        {!deleteConfirm ? (
+          <button
+            className="btn btn--ghost"
+            style={{ justifyContent: 'center', color: 'var(--bad-600)', fontSize: 12 }}
+            onClick={() => setDeleteConfirm(true)}>
+            <I.Trash style={{ width: 13, height: 13 }} />Supprimer ce client
+          </button>
+        ) : (
+          <div style={{ display: 'flex', gap: 6 }}>
+            <button
+              className="btn"
+              style={{ flex: 1, justifyContent: 'center', background: 'var(--bad-600)', color: 'white', fontSize: 12 }}
+              onClick={handleDelete}
+              disabled={deleting}>
+              <I.Trash style={{ width: 13, height: 13 }} />
+              {deleting ? 'Suppression...' : 'Confirmer la suppression'}
+            </button>
+            <button className="btn btn--ghost" style={{ fontSize: 12 }} onClick={() => { setDeleteConfirm(false); setDeleteErr(''); }}>
+              Annuler
+            </button>
+          </div>
+        )}
       </div>
 
       {showWa && detail && (

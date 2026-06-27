@@ -237,6 +237,29 @@ export default function ClientProfile() {
     await saveRecipientsToDB(updated);
   };
 
+  // --- Delete account ---
+  const [deleteConfirm, setDeleteConfirm] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [deleteErr, setDeleteErr] = useState('');
+
+  const handleDeleteAccount = async () => {
+    setDeleting(true);
+    setDeleteErr('');
+    try {
+      const res = await fetch('/api/client/account', { method: 'DELETE' });
+      const d = await res.json();
+      if (!res.ok) {
+        setDeleteErr(d.error || 'Erreur lors de la suppression');
+        setDeleting(false);
+        return;
+      }
+      signOut({ callbackUrl: '/' });
+    } catch {
+      setDeleteErr('Erreur réseau');
+      setDeleting(false);
+    }
+  };
+
   // --- Password ---
   const [pw, setPw] = useState({ currentPassword: '', newPassword: '', confirmPassword: '' });
   const [pwSaving, setPwSaving] = useState(false);
@@ -611,6 +634,44 @@ export default function ClientProfile() {
           <I.Logout style={{ width: 14, height: 14 }} />
           {t('profile.danger.logout')}
         </button>
+
+        <div style={{ marginTop: 24, paddingTop: 20, borderTop: '1px solid var(--border-soft)' }}>
+          <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--bad-700)', marginBottom: 6 }}>
+            Supprimer mon compte
+          </div>
+          <div style={{ fontSize: 13, color: 'var(--ink-500)', marginBottom: 14 }}>
+            Cette action est irréversible. Votre compte et vos données seront définitivement supprimés.
+          </div>
+          {deleteErr && (
+            <div style={{ ...alertBad, marginBottom: 14 }}>{deleteErr}</div>
+          )}
+          {!deleteConfirm ? (
+            <button type="button" style={btnDanger} onClick={() => setDeleteConfirm(true)}>
+              <I.Trash style={{ width: 14, height: 14 }} />
+              Supprimer mon compte
+            </button>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--bad-700)' }}>
+                Êtes-vous sûr ? Cette action ne peut pas être annulée.
+              </div>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <button
+                  type="button"
+                  style={{ ...btnDanger, background: 'var(--bad-600)', color: 'white', border: 'none' }}
+                  onClick={handleDeleteAccount}
+                  disabled={deleting}
+                >
+                  <I.Trash style={{ width: 14, height: 14 }} />
+                  {deleting ? 'Suppression...' : 'Confirmer la suppression'}
+                </button>
+                <button type="button" style={btnGhost} onClick={() => { setDeleteConfirm(false); setDeleteErr(''); }}>
+                  Annuler
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
