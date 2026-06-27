@@ -240,10 +240,10 @@ export default function AnalyticsScreen({ onNav }) {
                     <td style={{ padding: '8px 0', fontSize: 13, fontWeight: 700, color: 'var(--bad-600)', fontFamily: 'var(--ff-mono)' }}>{p.amount.toLocaleString('fr')}</td>
                     <td style={{ padding: '8px 0' }}>
                       <span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 999, fontWeight: 600,
-                        background: p.status === 'supplement_pending' ? '#fffbeb' : p.status === 'pending' ? 'var(--warn-50)' : 'var(--bad-50)',
-                        color:      p.status === 'supplement_pending' ? '#92400e'  : p.status === 'pending' ? 'var(--warn-700)' : 'var(--bad-700)',
+                        background: p.status === 'supplement_pending' ? 'var(--info-50)' : 'var(--bad-50)',
+                        color:      p.status === 'supplement_pending' ? 'var(--info-700)' : 'var(--bad-700)',
                       }}>
-                        {p.status === 'supplement_pending' ? '⚠️ Supplément' : p.status === 'pending' ? 'En attente' : 'Impayé'}
+                        {p.status === 'supplement_pending' ? 'Supplément' : p.status === 'pending' ? 'En attente' : 'Impayé'}
                       </span>
                     </td>
                   </tr>

@@ -11,8 +11,8 @@ function Row({ parcel }) {
 
   const PAYMENT_COLOR = {
     completed: { bg: 'var(--ok-50)',   color: 'var(--ok-700)',   label: t('invoices.status.paid') },
-    partial:   { bg: 'var(--warn-100)', color: 'var(--warn-700)',  label: t('invoices.status.partial') },
-    pending:   { bg: 'var(--warn-50)', color: 'var(--warn-700)', label: t('invoices.status.pending') },
+    partial:   { bg: 'var(--bad-100)',  color: 'var(--bad-700)',   label: t('invoices.status.partial') },
+    pending:   { bg: 'var(--bad-50)',   color: 'var(--bad-700)',  label: t('invoices.status.pending') },
   };
 
   const ps       = PAYMENT_COLOR[pay?.status] ?? { bg: 'var(--bg-soft)', color: 'var(--ink-500)', label: t('invoices.status.unbilled') };
@@ -42,7 +42,7 @@ function Row({ parcel }) {
         </span>
         <span style={{ fontSize: 11, color: 'var(--ink-400)', marginLeft: 4 }}>CAD</span>
         {partial && pay.allocated > 0 && (
-          <div style={{ fontSize: 11, color: 'var(--warn-700)', marginTop: 2, fontFamily: 'var(--font-mono)' }}>
+          <div style={{ fontSize: 11, color: 'var(--bad-600)', marginTop: 2, fontFamily: 'var(--font-mono)' }}>
             Reçu : {pay.allocated.toLocaleString('fr')} · Reste : {pay.remaining.toLocaleString('fr')}
           </div>
         )}
@@ -130,7 +130,7 @@ export default function ClientInvoices() {
             <span style={{ fontSize: 14, fontWeight: 400, color: 'var(--ink-400)', marginLeft: 6 }}>CAD</span>
           </div>
           {totalDue > 0 && (
-            <div style={{ fontSize: 12, color: 'var(--warn-700)', marginTop: 6 }}>
+            <div style={{ fontSize: 12, color: 'var(--bad-600)', marginTop: 6 }}>
               {t('invoices.paymentMethod')}
             </div>
           )}
@@ -158,11 +158,11 @@ export default function ClientInvoices() {
       {/* Interac info box */}
       {totalDue > 0 && (
         <div style={{
-          background: 'var(--warn-50)', border: '1px solid var(--warn-100)',
+          background: 'var(--info-50)', border: '1px solid var(--info-100)',
           borderRadius: 10, padding: '14px 18px', marginBottom: 20, fontSize: 13,
         }}>
-          <div style={{ fontWeight: 700, color: 'var(--warn-700)', marginBottom: 6 }}>{t('invoices.howToPay.title')}</div>
-          <div style={{ color: 'var(--warn-700)', lineHeight: 1.6 }}
+          <div style={{ fontWeight: 700, color: 'var(--info-700)', marginBottom: 6 }}>{t('invoices.howToPay.title')}</div>
+          <div style={{ color: 'var(--info-600)', lineHeight: 1.6 }}
             dangerouslySetInnerHTML={{
               __html: t('invoices.howToPay.description').replace('{email}', `<strong>${paymentEmail}</strong>`),
             }}

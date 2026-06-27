@@ -110,8 +110,8 @@ function ParcelCard({ parcel, onClick }) {
             <div style={{ fontSize: 13.5, fontWeight: 700, color: '#111827' }}>
               {(parcel.payment?.amount ?? parcel.priceXaf)?.toLocaleString('fr') ?? '—'} <span style={{ fontSize: 11, fontWeight: 400, color: '#9ca3af' }}>CAD</span>
             </div>
-            <div style={{ fontSize: 11.5, fontWeight: 600, marginTop: 1, color: paid ? 'var(--ok-600)' : partial ? 'var(--warn-700)' : 'var(--bad-600)' }}>
-              {paid ? `✓ ${t('dashboard.payment.paid')}` : partial ? `⏳ ${t('dashboard.payment.partial')}` : `⚡ ${t('dashboard.payment.pending')}`}
+            <div style={{ fontSize: 11.5, fontWeight: 600, marginTop: 1, color: paid ? 'var(--ok-600)' : 'var(--bad-600)' }}>
+              {paid ? `✓ ${t('dashboard.payment.paid')}` : partial ? t('dashboard.payment.partial') : t('dashboard.payment.pending')}
             </div>
           </div>
         </div>
@@ -137,7 +137,7 @@ function ParcelCard({ parcel, onClick }) {
             {parcel.weightKg && <span> · {parcel.weightKg} kg</span>}
           </div>
           {hasBl && (
-            <div style={{ fontSize: 11, color: hasUnconfirmedBl ? 'var(--warn-700)' : '#6b7280', fontWeight: hasUnconfirmedBl ? 700 : 400 }}>
+            <div style={{ fontSize: 11, color: hasUnconfirmedBl ? 'var(--bad-600)' : '#6b7280', fontWeight: hasUnconfirmedBl ? 700 : 400 }}>
               {hasUnconfirmedBl ? t('dashboard.parcel.borderauWarning') : t('dashboard.parcel.borderauOK')}
             </div>
           )}
@@ -147,8 +147,8 @@ function ParcelCard({ parcel, onClick }) {
         {hasUnconfirmedBl && (
           <div style={{
             marginTop: 10, padding: '8px 12px', borderRadius: 8,
-            background: 'var(--warn-50)', border: '1px solid var(--warn-100)',
-            fontSize: 12.5, color: 'var(--warn-700)', fontWeight: 600,
+            background: 'var(--bad-50)', border: '1px solid var(--bad-100)',
+            fontSize: 12.5, color: 'var(--bad-700)', fontWeight: 600,
           }}>
             {t('dashboard.parcel.borderauPendingAction')}
           </div>
@@ -243,15 +243,15 @@ function ClientDashboardInner() {
       {actions.length > 0 && !loading && (
         <div style={{
           marginBottom: 20, padding: '12px 16px', borderRadius: 12,
-          background: 'var(--warn-50)', border: '1.5px solid var(--warn-100)',
+          background: 'var(--bad-50)', border: '1.5px solid var(--bad-100)',
           display: 'flex', alignItems: 'center', gap: 12,
         }}>
-          <span style={{ fontSize: 22, flexShrink: 0 }}>⚡</span>
+          <span style={{ fontSize: 22, flexShrink: 0 }}>🔔</span>
           <div>
-            <div style={{ fontWeight: 700, fontSize: 14, color: 'var(--warn-700)' }}>
+            <div style={{ fontWeight: 700, fontSize: 14, color: 'var(--bad-700)' }}>
               {t('dashboard.alert.actionsRequired').replace('{n}', actions.length)}
             </div>
-            <div style={{ fontSize: 12.5, color: 'var(--warn-700)', marginTop: 1 }}>
+            <div style={{ fontSize: 12.5, color: 'var(--bad-600)', marginTop: 1 }}>
               {actions.some(p => p.bordereaux?.some(b => !b.clientConfirmed))
                 ? t('dashboard.alert.borderauPending')
                 : t('dashboard.alert.paymentOverdue')}

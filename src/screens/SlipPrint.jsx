@@ -265,7 +265,7 @@ export default function SlipPrintScreen({ code, onNav }) {
                   </td>
                 </tr>
                 <tr>
-                  <td colSpan={2} style={{ ...cell, fontSize: 11, color: paid ? '#059669' : '#D97706', fontWeight: 600 }}>
+                  <td colSpan={2} style={{ ...cell, fontSize: 11, color: paid ? '#059669' : 'var(--info-600)', fontWeight: 600 }}>
                     {paid
                       ? '✓ Réglé · ' + (data.payment?.paidAt ? fmt(data.payment.paidAt) : '') + (data.payment?.interacRef ? ' · ' + data.payment.interacRef : '')
                       : '⏳ Paiement en attente'}

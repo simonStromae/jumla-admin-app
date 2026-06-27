@@ -134,7 +134,7 @@ export default function CampaignLabelsScreen({ id, onNav }) {
           font-size: 11px; font-weight: 600; color: #6B7280;
           text-transform: uppercase; letter-spacing: .06em; padding: 0 12px 14px;
         }
-        .label-route-plane { color: #D97706; font-size: 16px; }
+        .label-route-plane { color: var(--info-600); font-size: 16px; }
         .label-parties {
           display: flex; align-items: stretch;
           border-top: 1.5px solid #E5E7EB; border-bottom: 1.5px solid #E5E7EB;

@@ -248,11 +248,11 @@ export default function ParcelDetailPage({ params }) {
       {unconfirmedBl.map(bl => {
         const conf = blConfirm[bl.id] ?? {};
         return conf.done ? null : (
-          <div key={bl.id} style={{ marginBottom: 16, padding: '14px 16px', borderRadius: 12, background: 'var(--warn-50)', border: '1.5px solid var(--warn-100)' }}>
-            <div style={{ fontWeight: 700, fontSize: 14, color: 'var(--warn-700)', marginBottom: 6 }}>
+          <div key={bl.id} style={{ marginBottom: 16, padding: '14px 16px', borderRadius: 12, background: 'var(--bad-50)', border: '1.5px solid var(--bad-100)' }}>
+            <div style={{ fontWeight: 700, fontSize: 14, color: 'var(--bad-700)', marginBottom: 6 }}>
               {t('parcel.bordereau.confirmRequired').replace('{code}', bl.code)}
             </div>
-            <div style={{ fontSize: 13, color: 'var(--warn-700)', marginBottom: 12, lineHeight: 1.5 }}>
+            <div style={{ fontSize: 13, color: 'var(--bad-600)', marginBottom: 12, lineHeight: 1.5 }}>
               {t('parcel.bordereau.confirmDesc')}
             </div>
             <label style={{ display: 'flex', alignItems: 'flex-start', gap: 10, cursor: 'pointer', marginBottom: 12 }}>
@@ -448,7 +448,7 @@ export default function ParcelDetailPage({ params }) {
           return (
             <Section title={t('parcel.adjustment.title')} col="1 / -1" badge={
               isPending
-                ? <span style={{ fontSize: 12, fontWeight: 700, padding: '3px 8px', borderRadius: 99, background: 'var(--warn-100)', color: 'var(--warn-700)' }}>{t('parcel.adjustment.pendingBadge')}</span>
+                ? <span style={{ fontSize: 12, fontWeight: 700, padding: '3px 8px', borderRadius: 99, background: 'var(--info-100)', color: 'var(--info-700)' }}>{t('parcel.adjustment.pendingBadge')}</span>
                 : <span style={{ fontSize: 12, fontWeight: 700, padding: '3px 8px', borderRadius: 99, background: '#dcfce7', color: '#15803d' }}>{t('parcel.adjustment.discountBadge')}</span>
             }>
               <p style={{ fontSize: 13, color: '#6b7280', margin: '0 0 16px', lineHeight: 1.5 }}>
@@ -465,14 +465,14 @@ export default function ParcelDetailPage({ params }) {
                   <div style={{ fontFamily: 'monospace', fontSize: 22, fontWeight: 800, color: '#111827' }}>{parcel.confirmedPriceXaf.toLocaleString(locale === 'fr' ? 'fr-FR' : 'en-CA')}</div>
                   <div style={{ fontSize: 11, color: '#9ca3af', marginTop: 2 }}>CAD</div>
                 </div>
-                <div style={{ padding: '14px 16px', borderRadius: 12, border: isPending ? '1.5px solid var(--warn-100)' : '1.5px solid #86efac', background: isPending ? 'var(--warn-50)' : '#f0fdf4' }}>
-                  <div style={{ fontSize: 10.5, fontWeight: 700, color: isPending ? 'var(--warn-700)' : '#15803d', textTransform: 'uppercase', letterSpacing: '.05em', marginBottom: 8 }}>
+                <div style={{ padding: '14px 16px', borderRadius: 12, border: isPending ? '1.5px solid var(--info-100)' : '1.5px solid #86efac', background: isPending ? 'var(--info-50)' : '#f0fdf4' }}>
+                  <div style={{ fontSize: 10.5, fontWeight: 700, color: isPending ? 'var(--info-700)' : '#15803d', textTransform: 'uppercase', letterSpacing: '.05em', marginBottom: 8 }}>
                     {isPending ? t('parcel.adjustment.supplement') : t('parcel.adjustment.discount')}
                   </div>
-                  <div style={{ fontFamily: 'monospace', fontSize: 22, fontWeight: 800, color: isPending ? 'var(--warn-700)' : '#15803d' }}>
+                  <div style={{ fontFamily: 'monospace', fontSize: 22, fontWeight: 800, color: isPending ? 'var(--info-700)' : '#15803d' }}>
                     {isPending ? '+' : '−'}{supplement.toLocaleString(locale === 'fr' ? 'fr-FR' : 'en-CA')}
                   </div>
-                  <div style={{ fontSize: 11, color: isPending ? 'var(--warn-700)' : '#16a34a', marginTop: 2 }}>CAD</div>
+                  <div style={{ fontSize: 11, color: isPending ? 'var(--info-600)' : '#16a34a', marginTop: 2 }}>CAD</div>
                 </div>
               </div>
               {isPending && supplement > 0 && (
@@ -499,8 +499,8 @@ export default function ParcelDetailPage({ params }) {
             : paid ? t('parcel.payment.status.paid')
             : partial ? t('parcel.payment.status.partial')
             : t('parcel.payment.status.pending');
-          const badgeColor = paid ? 'var(--ok-700)' : partial ? 'var(--warn-700)' : 'var(--bad-700)';
-          const badgeBg    = paid ? 'var(--ok-100)' : partial ? 'var(--warn-100)' : 'var(--bad-100)';
+          const badgeColor = paid ? 'var(--ok-700)' : 'var(--bad-700)';
+          const badgeBg    = paid ? 'var(--ok-100)' : 'var(--bad-100)';
           return (
             <Section title={t('parcel.payment.title')} col="1 / -1" badge={
               <span style={{ fontSize: 12, fontWeight: 700, padding: '3px 8px', borderRadius: 99, background: badgeBg, color: badgeColor }}>
@@ -519,9 +519,9 @@ export default function ParcelDetailPage({ params }) {
                         </div>
                       </div>
                       {supplement > 0 && (
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 14px', background: 'var(--warn-50)', border: '1.5px solid var(--warn-100)', borderRadius: 9, marginBottom: 10 }}>
-                          <span style={{ fontSize: 13, color: 'var(--warn-700)', fontWeight: 600 }}>⚠️ {t('parcel.adjustment.supplement')}</span>
-                          <span style={{ fontWeight: 800, fontSize: 15, fontFamily: 'monospace', color: 'var(--warn-700)' }}>+{supplement.toLocaleString(locale === 'fr' ? 'fr-FR' : 'en-CA')} CAD</span>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 14px', background: 'var(--info-50)', border: '1.5px solid var(--info-100)', borderRadius: 9, marginBottom: 10 }}>
+                          <span style={{ fontSize: 13, color: 'var(--info-700)', fontWeight: 600 }}>{t('parcel.adjustment.supplement')}</span>
+                          <span style={{ fontWeight: 800, fontSize: 15, fontFamily: 'monospace', color: 'var(--info-700)' }}>+{supplement.toLocaleString(locale === 'fr' ? 'fr-FR' : 'en-CA')} CAD</span>
                         </div>
                       )}
                       <div style={{ fontSize: 12, color: '#6b7280', fontStyle: 'italic' }}>{t('parcel.adjustment.seeAbove')}</div>
@@ -548,7 +548,7 @@ export default function ParcelDetailPage({ params }) {
                         <div style={{ fontSize: 12.5, color: '#6b7280' }}>{t('parcel.payment.paidOn').replace('{date}', fmt(parcel.payment.paidAt))}</div>
                       )}
                       {!paid && (
-                        <div style={{ padding: '10px 14px', borderRadius: 8, background: 'var(--warn-50)', border: '1px solid var(--warn-100)', fontSize: 12.5, color: 'var(--warn-700)', marginTop: 8 }}>
+                        <div style={{ padding: '10px 14px', borderRadius: 8, background: 'var(--info-50)', border: '1px solid var(--info-100)', fontSize: 12.5, color: 'var(--info-700)', marginTop: 8 }}>
                           {t('parcel.payment.interac')
                             .replace('{amount}', parcel.payment.remaining.toLocaleString(locale === 'fr' ? 'fr-FR' : 'en-CA'))
                             .replace('{code}', parcel.trackingCode)}

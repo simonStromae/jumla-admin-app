@@ -299,12 +299,12 @@ function RecordPaymentModal({ preselectedClient, preselectedPaymentId, onClose, 
                     <div key={inv.id} style={{
                       display: 'flex', alignItems: 'center', gap: 10,
                       padding: '10px 12px', borderRadius: 8,
-                      border: `1px solid ${checked ? (isSupp ? '#d97706' : 'var(--brand-300)') : (isSupp ? '#fde68a' : 'var(--border)')}`,
-                      background: checked ? (isSupp ? '#fffbeb' : 'var(--brand-50)') : (isSupp ? '#fffef5' : 'white'),
+                      border: `1px solid ${checked ? (isSupp ? 'var(--info-600)' : 'var(--brand-300)') : (isSupp ? 'var(--info-100)' : 'var(--border)')}`,
+                      background: checked ? (isSupp ? 'var(--info-50)' : 'var(--brand-50)') : (isSupp ? 'var(--info-50)' : 'white'),
                       transition: 'all .12s',
                     }}>
                       <input type="checkbox" checked={checked}
-                        style={{ width: 15, height: 15, cursor: 'pointer', accentColor: isSupp ? '#d97706' : 'var(--brand-600)', flexShrink: 0 }}
+                        style={{ width: 15, height: 15, cursor: 'pointer', accentColor: isSupp ? 'var(--info-600)' : 'var(--brand-600)', flexShrink: 0 }}
                         onChange={e => {
                           if (e.target.checked) setAllocations(a => ({ ...a, [inv.id]: String(inv.remaining) }));
                           else setAllocations(a => { const n = { ...a }; delete n[inv.id]; return n; });
@@ -315,13 +315,13 @@ function RecordPaymentModal({ preselectedClient, preselectedPaymentId, onClose, 
                             {inv.trackingCode}
                           </span>
                           {isSupp && (
-                            <span style={{ fontSize: 10, fontWeight: 700, padding: '1px 6px', borderRadius: 4, background: '#fef3c7', color: '#92400e', textTransform: 'uppercase', letterSpacing: '.04em' }}>
+                            <span style={{ fontSize: 10, fontWeight: 700, padding: '1px 6px', borderRadius: 4, background: 'var(--info-100)', color: 'var(--info-700)', textTransform: 'uppercase', letterSpacing: '.04em' }}>
                               Supplément
                             </span>
                           )}
                         </div>
                         <div style={{ fontSize: 11, color: 'var(--ink-500)', marginTop: 1 }}>
-                          Cargaison <strong>{inv.campaignCode}</strong> · {isSupp ? 'supplément dû' : 'solde dû'} : <strong style={{ color: isSupp ? '#92400e' : 'var(--bad-600)' }}>{inv.remaining.toLocaleString('fr')} CAD</strong>
+                          Cargaison <strong>{inv.campaignCode}</strong> · {isSupp ? 'supplément dû' : 'solde dû'} : <strong style={{ color: isSupp ? 'var(--info-700)' : 'var(--bad-600)' }}>{inv.remaining.toLocaleString('fr')} CAD</strong>
                         </div>
                       </div>
                       {checked && (
@@ -329,7 +329,7 @@ function RecordPaymentModal({ preselectedClient, preselectedPaymentId, onClose, 
                           <input type="number" min="0" max={inv.remaining}
                             value={allocations[inv.id] || ''}
                             onChange={e => setAllocations(a => ({ ...a, [inv.id]: e.target.value }))}
-                            style={{ width: 88, padding: '4px 8px', border: `1px solid ${isSupp ? '#d97706' : 'var(--brand-300)'}`, borderRadius: 6, fontFamily: 'var(--font-mono)', fontSize: 13, textAlign: 'right' }} />
+                            style={{ width: 88, padding: '4px 8px', border: `1px solid ${isSupp ? 'var(--info-600)' : 'var(--brand-300)'}`, borderRadius: 6, fontFamily: 'var(--font-mono)', fontSize: 13, textAlign: 'right' }} />
                           <span style={{ fontSize: 11, color: 'var(--ink-400)' }}>CAD</span>
                         </div>
                       )}
@@ -580,7 +580,7 @@ function InvoicePreviewModal({ parcelId, onClose }) {
 
           <div id="invoice-print-area" style={{ background: 'white', borderRadius: 10, overflow: 'hidden', border: '1px solid #e5e7eb' }}>
             {/* Header */}
-            <div style={{ background: adjMode ? '#92400e' : '#1e3a5f', color: 'white', padding: '28px 36px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+            <div style={{ background: adjMode ? 'var(--info-700)' : '#1e3a5f', color: 'white', padding: '28px 36px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
               <div>
                 <div style={{ fontSize: 22, fontWeight: 800, letterSpacing: '-.02em' }}>Jumla Shipping</div>
                 <div style={{ fontSize: 12, opacity: .7, marginTop: 3 }}>Fret international · Douala · Montréal</div>
@@ -633,7 +633,7 @@ function InvoicePreviewModal({ parcelId, onClose }) {
                     <>
                       <tr>
                         <td style={{ padding: '12px', borderBottom: '1px solid #f3f4f6', color: '#111827', fontSize: 13 }}>
-                          <div style={{ fontFamily: 'monospace', fontWeight: 700, color: '#92400e', marginBottom: 2 }}>{data.trackingCode}</div>
+                          <div style={{ fontFamily: 'monospace', fontWeight: 700, color: 'var(--info-700)', marginBottom: 2 }}>{data.trackingCode}</div>
                           <div style={{ fontSize: 12, color: '#6b7280' }}>Estimation initiale (réservation)</div>
                         </td>
                         <td style={{ padding: '12px', borderBottom: '1px solid #f3f4f6', color: '#9ca3af', fontFamily: 'monospace', fontSize: 13 }}>—</td>
@@ -641,15 +641,15 @@ function InvoicePreviewModal({ parcelId, onClose }) {
                           {(data.priceXaf ?? 0).toLocaleString('fr')} CAD
                         </td>
                       </tr>
-                      <tr style={{ background: '#fffbeb' }}>
-                        <td style={{ padding: '12px', borderBottom: '1px solid #f3f4f6', color: '#92400e', fontSize: 13 }}>
+                      <tr style={{ background: 'var(--info-50)' }}>
+                        <td style={{ padding: '12px', borderBottom: '1px solid #f3f4f6', color: 'var(--info-700)', fontSize: 13 }}>
                           <div style={{ fontWeight: 700 }}>Ajustement de prix</div>
-                          <div style={{ fontSize: 12, color: '#b45309', marginTop: 2 }}>Poids réel mesuré à l'entrepôt — supplément dû</div>
+                          <div style={{ fontSize: 12, color: 'var(--info-600)', marginTop: 2 }}>Poids réel mesuré à l'entrepôt — supplément dû</div>
                         </td>
-                        <td style={{ padding: '12px', borderBottom: '1px solid #f3f4f6', color: '#b45309', fontFamily: 'monospace', fontSize: 13 }}>
+                        <td style={{ padding: '12px', borderBottom: '1px solid #f3f4f6', color: 'var(--info-600)', fontFamily: 'monospace', fontSize: 13 }}>
                           {data.weightKg ? data.weightKg + ' kg' : '—'}
                         </td>
-                        <td style={{ padding: '12px', borderBottom: '1px solid #f3f4f6', textAlign: 'right', fontFamily: 'monospace', fontSize: 14, fontWeight: 700, color: '#92400e' }}>
+                        <td style={{ padding: '12px', borderBottom: '1px solid #f3f4f6', textAlign: 'right', fontFamily: 'monospace', fontSize: 14, fontWeight: 700, color: 'var(--info-700)' }}>
                           +{supplement.toLocaleString('fr')} CAD
                         </td>
                       </tr>
@@ -679,7 +679,7 @@ function InvoicePreviewModal({ parcelId, onClose }) {
               {/* Total */}
               <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 24 }}>
                 <div style={{ minWidth: 240 }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 14px', background: adjMode ? '#92400e' : '#1e3a5f', borderRadius: 8, color: 'white' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 14px', background: adjMode ? 'var(--info-700)' : '#1e3a5f', borderRadius: 8, color: 'white' }}>
                     <span style={{ fontWeight: 700 }}>{adjMode ? 'Supplément dû' : 'Total'}</span>
                     <span style={{ fontFamily: 'monospace', fontWeight: 800, fontSize: 16 }}>
                       {adjMode ? supplement.toLocaleString('fr') : data.amount.toLocaleString('fr')} CAD
@@ -696,8 +696,8 @@ function InvoicePreviewModal({ parcelId, onClose }) {
 
               {/* Payment instructions if unpaid */}
               {!paid && (
-                <div style={{ background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 8, padding: '14px 18px', marginBottom: 20 }}>
-                  <div style={{ fontWeight: 700, color: '#92400e', marginBottom: 5, fontSize: 13 }}>Modalités de paiement</div>
+                <div style={{ background: 'var(--info-50)', border: '1px solid var(--info-100)', borderRadius: 8, padding: '14px 18px', marginBottom: 20 }}>
+                  <div style={{ fontWeight: 700, color: 'var(--info-700)', marginBottom: 5, fontSize: 13 }}>Modalités de paiement</div>
                   <div style={{ fontSize: 12, color: '#78350f', lineHeight: 1.6 }}>
                     Effectuez un virement Interac e-Transfert à <strong>{paymentEmail}</strong> pour le montant de{' '}
                     <strong>{adjMode ? supplement.toLocaleString('fr') : data.amount.toLocaleString('fr')} CAD</strong>.
@@ -816,21 +816,21 @@ function InvoiceSettleModal({ invoice, onClose, onSave }) {
                   <label key={line.id} style={{
                     display: 'flex', alignItems: 'center', gap: 12, padding: '12px 14px',
                     borderRadius: 8, cursor: 'pointer', transition: 'all .12s',
-                    border: `1px solid ${on ? (sup ? '#d97706' : 'var(--brand-300)') : 'var(--border)'}`,
-                    background: on ? (sup ? '#fffbeb' : 'var(--brand-50)') : 'white',
+                    border: `1px solid ${on ? (sup ? 'var(--info-600)' : 'var(--brand-300)') : 'var(--border)'}`,
+                    background: on ? (sup ? 'var(--info-50)' : 'var(--brand-50)') : 'white',
                   }}>
                     <input type="checkbox" checked={on}
-                      style={{ width: 15, height: 15, accentColor: sup ? '#d97706' : 'var(--brand-600)', flexShrink: 0 }}
+                      style={{ width: 15, height: 15, accentColor: sup ? 'var(--info-600)' : 'var(--brand-600)', flexShrink: 0 }}
                       onChange={e => setChecked(c => ({ ...c, [line.id]: e.target.checked }))} />
                     <div style={{ flex: 1 }}>
-                      <div style={{ fontSize: 13, fontWeight: 600, color: sup ? '#92400e' : 'var(--ink-900)', display: 'flex', alignItems: 'center', gap: 6 }}>
+                      <div style={{ fontSize: 13, fontWeight: 600, color: sup ? 'var(--info-700)' : 'var(--ink-900)', display: 'flex', alignItems: 'center', gap: 6 }}>
                         {sup ? 'Supplément — ajustement de prix' : 'Facture principale'}
-                        {sup && <span style={{ fontSize: 10, padding: '1px 6px', background: '#fef3c7', color: '#92400e', borderRadius: 4, fontWeight: 700 }}>SUP</span>}
+                        {sup && <span style={{ fontSize: 10, padding: '1px 6px', background: 'var(--info-100)', color: 'var(--info-700)', borderRadius: 4, fontWeight: 700 }}>SUP</span>}
                       </div>
                       <div style={{ fontSize: 11, color: 'var(--ink-400)', marginTop: 2 }}>Solde restant</div>
                     </div>
                     <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                      <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: 15, color: sup ? '#92400e' : 'var(--ink-900)' }}>
+                      <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: 15, color: sup ? 'var(--info-700)' : 'var(--ink-900)' }}>
                         {line.remaining.toLocaleString('fr')}
                       </span>
                       <span style={{ fontSize: 11, color: 'var(--ink-400)', marginLeft: 3 }}>CAD</span>
@@ -1049,18 +1049,18 @@ function InvoicesTab({ onReload }) {
             // Supplement child row
             const suppRow = suppAmt > 0
               ? (
-              <tr key={'sup_' + p.parcelId} style={{ background: '#fffef5', borderBottom: '1px solid #fef3c7' }}>
-                <td style={{ paddingLeft: 24, fontSize: 13, color: '#d97706' }}>↳</td>
+              <tr key={'sup_' + p.parcelId} style={{ background: 'var(--info-50)', borderBottom: '1px solid var(--info-100)' }}>
+                <td style={{ paddingLeft: 24, fontSize: 13, color: 'var(--info-600)' }}>↳</td>
                 <td>
-                  <span style={{ fontSize: 12, fontWeight: 600, color: '#92400e' }}>
+                  <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--info-700)' }}>
                     Ajustement de prix
                   </span>
-                  <span style={{ marginLeft: 6, fontSize: 10, padding: '1px 6px', background: '#fef3c7', color: '#92400e', borderRadius: 4, fontWeight: 700 }}>SUP</span>
+                  <span style={{ marginLeft: 6, fontSize: 10, padding: '1px 6px', background: 'var(--info-100)', color: 'var(--info-700)', borderRadius: 4, fontWeight: 700 }}>SUP</span>
                 </td>
                 <td className="mono" style={{ fontSize: 12, color: 'var(--ink-400)' }}>{p.campaign}</td>
-                <td className="mono" style={{ fontSize: 12, color: '#92400e' }}>{p.parcel}</td>
+                <td className="mono" style={{ fontSize: 12, color: 'var(--info-700)' }}>{p.parcel}</td>
                 <td style={{ textAlign: 'right' }}>
-                  <span className="mono" style={{ fontWeight: 700, color: '#92400e' }}>{suppAmt.toLocaleString('fr')}</span>
+                  <span className="mono" style={{ fontWeight: 700, color: 'var(--info-700)' }}>{suppAmt.toLocaleString('fr')}</span>
                   <span style={{ fontSize: 11, color: 'var(--ink-400)', marginLeft: 3 }}>CAD</span>
                 </td>
                 <td><span className="badge badge--dot badge--warn">En attente</span></td>
@@ -1074,7 +1074,7 @@ function InvoicesTab({ onReload }) {
                     {can('payments', 'validate') && (
                       <button
                         onClick={() => setSettleInvoice({ ...p, id: 'sup_' + p.parcelId, due: suppAmt, status: 'pending' })}
-                        style={{ padding: '4px 12px', borderRadius: 6, border: '1px solid #d97706', background: '#fffbeb', color: '#92400e', cursor: 'pointer', fontSize: 12, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 4 }}>
+                        style={{ padding: '4px 12px', borderRadius: 6, border: '1px solid var(--info-600)', background: 'var(--info-50)', color: 'var(--info-700)', cursor: 'pointer', fontSize: 12, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 4 }}>
                         <I.Wallet style={{ width: 12, height: 12 }} />Régler suppl.
                       </button>
                     )}

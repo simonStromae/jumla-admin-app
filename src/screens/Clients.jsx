@@ -467,7 +467,7 @@ function ClientDrawer({ cl, onClose, onEdit, onNav, onStatusChange }) {
                         <span className="badge badge--dot badge--ok">Payé</span>
                       )}
                       {p.displayStatus === 'paid_supp_pending' && (
-                        <span className="badge badge--dot" style={{ background: '#fef3c7', color: '#92400e', borderColor: '#fde68a' }}>Payé · Suppl.</span>
+                        <span className="badge badge--dot" style={{ background: 'var(--info-100)', color: 'var(--info-700)', borderColor: 'var(--info-100)' }}>Payé · Suppl.</span>
                       )}
                       {p.displayStatus === 'partial' && (
                         <span className="badge badge--dot badge--warn">Partiel</span>
