@@ -4,12 +4,15 @@ import { signIn } from 'next-auth/react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import I from '@/src/components/Icons.jsx';
 import { useCompanyAssets } from '@/src/lib/useCompanyAssets.js';
+import { useT } from '@/src/lib/i18n';
+import LanguageSwitcher from '@/src/components/LanguageSwitcher.jsx';
 
 function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const initialTab = searchParams.get('tab') === 'register' ? 'register' : 'login';
   const { logoIconUrl, logoIconSize } = useCompanyAssets();
+  const t = useT();
   const [tab, setTab]     = useState(initialTab); // 'login' | 'register' | 'verify'
   const [fields, setFields] = useState({ email: '', name: '', password: '', confirm: '' });
   const [code, setCode]     = useState('');
@@ -27,7 +30,7 @@ function LoginForm() {
       email: fields.email, password: fields.password, redirect: false,
     });
     setLoading(false);
-    if (res?.error) { setError('Email ou mot de passe incorrect'); return; }
+    if (res?.error) { setError(t('error.credentials')); return; }
     const session = await fetch('/api/auth/session').then(r => r.json());
     const role = session?.user?.role;
     if (role === 'client') router.push('/client/dashboard');
@@ -37,7 +40,7 @@ function LoginForm() {
   async function doRegister(e) {
     e.preventDefault();
     setError('');
-    if (fields.password !== fields.confirm) { setError('Les mots de passe ne correspondent pas'); return; }
+    if (fields.password !== fields.confirm) { setError(t('error.passwordMismatch')); return; }
     setLoading(true);
     const res  = await fetch('/api/auth/register', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -134,8 +137,9 @@ function LoginForm() {
 
       {/* Right — form */}
       <div style={{ display: 'flex', flexDirection: 'column', padding: '36px 56px', position: 'relative' }}>
-        <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-          <button className="btn btn--ghost btn--sm"><I.Help />Besoin d'aide ?</button>
+        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, alignItems: 'center' }}>
+          <LanguageSwitcher />
+          <button className="btn btn--ghost btn--sm"><I.Help />{t('button.help')}</button>
         </div>
 
         <div style={{ margin: 'auto 0', maxWidth: 380, width: '100%', alignSelf: 'center' }}>
@@ -144,13 +148,13 @@ function LoginForm() {
           {tab !== 'verify' && (
             <>
               <div style={{ display: 'flex', borderBottom: '1px solid var(--border)', marginBottom: 24 }}>
-                {[['login', 'Connexion'], ['register', 'Créer un compte']].map(([t, label]) => (
-                  <button key={t} onClick={() => { setTab(t); setError(''); }}
+                {[['login', t('auth.login.title')], ['register', t('auth.register.title')]].map(([tabKey, label]) => (
+                  <button key={tabKey} onClick={() => { setTab(tabKey); setError(''); }}
                     style={{
                       flex: 1, paddingBottom: 12, background: 'none', border: 'none',
-                      borderBottom: tab === t ? '2px solid var(--brand-500)' : '2px solid transparent',
-                      color: tab === t ? 'var(--ink-900)' : 'var(--ink-400)',
-                      fontWeight: tab === t ? 700 : 400, fontSize: 15, cursor: 'pointer',
+                      borderBottom: tab === tabKey ? '2px solid var(--brand-500)' : '2px solid transparent',
+                      color: tab === tabKey ? 'var(--ink-900)' : 'var(--ink-400)',
+                      fontWeight: tab === tabKey ? 700 : 400, fontSize: 15, cursor: 'pointer',
                       marginBottom: -1, textAlign: 'left',
                     }}>
                     {label}
@@ -158,7 +162,7 @@ function LoginForm() {
                 ))}
               </div>
               <p style={{ color: 'var(--ink-400)', fontSize: 13.5, marginTop: 0, marginBottom: 20 }}>
-                {tab === 'login' ? 'Accédez à votre espace opérations.' : 'Créez votre compte client Jumla.'}
+                {tab === 'login' ? t('auth.login.subtitle') : t('auth.register.subtitle')}
               </p>
             </>
           )}
@@ -174,18 +178,18 @@ function LoginForm() {
           {tab === 'login' && (
             <form onSubmit={doLogin} style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
               <div className="field">
-                <label className="label">Email </label>
+                <label className="label">{t('form.email')} </label>
                 <input className="input" type="email" value={fields.email}
-                  onChange={e => set('email', e.target.value)} required placeholder="vous@exemple.com" />
+                  onChange={e => set('email', e.target.value)} required placeholder={t('form.emailPlaceholder')} />
               </div>
               <div className="field">
                 <label className="label" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span>Mot de passe</span>
-                  <a href="/forgot-password" style={{ fontSize: 12, color: 'var(--brand-600)', textDecoration: 'none', fontWeight: 500 }}>Mot de passe oublié ?</a>
+                  <span>{t('form.password')}</span>
+                  <a href="/forgot-password" style={{ fontSize: 12, color: 'var(--brand-600)', textDecoration: 'none', fontWeight: 500 }}>{t('auth.login.forgotPassword')}</a>
                 </label>
                 <div style={{ position: 'relative' }}>
                   <input className="input" type={show ? 'text' : 'password'} value={fields.password}
-                    onChange={e => set('password', e.target.value)} required placeholder="••••••••"
+                    onChange={e => set('password', e.target.value)} required placeholder={t('form.passwordPlaceholder')}
                     style={{ paddingRight: 38 }} />
                   <button type="button" className="icon-btn" style={{ position: 'absolute', right: 3, top: 3 }}
                     onClick={() => setShow(!show)}>
@@ -196,7 +200,7 @@ function LoginForm() {
               <button type="submit" disabled={loading}
                 className="btn btn--brand btn--lg"
                 style={{ width: '100%', justifyContent: 'center', fontSize: 14, fontWeight: 600, marginTop: 8, opacity: loading ? 0.7 : 1 }}>
-                {loading ? 'Connexion…' : <><span>Se connecter</span><I.ArrowRight /></>}
+                {loading ? t('button.signingIn') : <><span>{t('button.signIn')}</span><I.ArrowRight /></>}
               </button>
             </form>
           )}
@@ -205,29 +209,29 @@ function LoginForm() {
           {tab === 'register' && (
             <form onSubmit={doRegister} style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
               <div className="field">
-                <label className="label">Nom complet</label>
+                <label className="label">{t('form.fullName')}</label>
                 <input className="input" type="text" value={fields.name}
-                  onChange={e => set('name', e.target.value)} required placeholder="Jean Dupont" />
+                  onChange={e => set('name', e.target.value)} required placeholder={t('form.fullNamePlaceholder')} />
               </div>
               <div className="field">
-                <label className="label">Email </label>
+                <label className="label">{t('form.email')} </label>
                 <input className="input" type="email" value={fields.email}
-                  onChange={e => set('email', e.target.value)} required placeholder="vous@exemple.com" />
+                  onChange={e => set('email', e.target.value)} required placeholder={t('form.emailPlaceholder')} />
               </div>
               <div className="field">
-                <label className="label">Mot de passe</label>
+                <label className="label">{t('form.password')}</label>
                 <input className="input" type="password" value={fields.password}
-                  onChange={e => set('password', e.target.value)} required placeholder="6 caractères minimum" />
+                  onChange={e => set('password', e.target.value)} required placeholder={t('form.passwordHint')} />
               </div>
               <div className="field">
-                <label className="label">Confirmer</label>
+                <label className="label">{t('form.passwordConfirm')}</label>
                 <input className="input" type="password" value={fields.confirm}
-                  onChange={e => set('confirm', e.target.value)} required placeholder="••••••••" />
+                  onChange={e => set('confirm', e.target.value)} required placeholder={t('form.passwordPlaceholder')} />
               </div>
               <button type="submit" disabled={loading}
                 className="btn btn--brand btn--lg"
                 style={{ width: '100%', justifyContent: 'center', fontSize: 14, fontWeight: 600, marginTop: 8, opacity: loading ? 0.7 : 1 }}>
-                {loading ? 'Création…' : <><span>Créer mon compte</span><I.ArrowRight /></>}
+                {loading ? t('button.registering') : <><span>{t('button.register')}</span><I.ArrowRight /></>}
               </button>
             </form>
           )}
@@ -237,10 +241,10 @@ function LoginForm() {
             <form onSubmit={doVerify} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
               <div>
                 <h2 style={{ fontSize: 22, fontWeight: 700, margin: '0 0 6px', color: 'var(--ink-900)' }}>
-                  Vérification email
+                  {t('auth.verify.title')}
                 </h2>
                 <p style={{ color: 'var(--ink-400)', fontSize: 13.5, margin: 0 }}>
-                  Code envoyé à <strong style={{ color: 'var(--ink-700)' }}>{fields.email}</strong>
+                  {t('auth.verify.sentTo')} <strong style={{ color: 'var(--ink-700)' }}>{fields.email}</strong>
                 </p>
               </div>
               {demoCode && (
@@ -249,7 +253,7 @@ function LoginForm() {
                   borderRadius: 8, padding: '10px 14px', fontSize: 13,
                 }}>
                   <span style={{ color: 'var(--warn-700)' }}>
-                    Mode démo — votre code : <strong style={{ fontSize: 18, letterSpacing: 2 }}>{demoCode}</strong>
+                    {t('auth.verify.demoCode')} <strong style={{ fontSize: 18, letterSpacing: 2 }}>{demoCode}</strong>
                   </span>
                 </div>
               )}
@@ -269,7 +273,7 @@ function LoginForm() {
               <button type="submit" disabled={loading}
                 className="btn btn--brand btn--lg"
                 style={{ width: '100%', justifyContent: 'center', fontSize: 14, fontWeight: 600, opacity: loading ? 0.7 : 1 }}>
-                {loading ? 'Vérification…' : <><span>Vérifier mon email</span><I.ArrowRight /></>}
+                {loading ? t('button.verifying') : <><span>{t('button.verify')}</span><I.ArrowRight /></>}
               </button>
             </form>
           )}
@@ -278,15 +282,15 @@ function LoginForm() {
             <I.Info style={{ flex: '0 0 16px', color: 'var(--ink-400)', marginTop: 1 }} />
             <div style={{ fontSize: 12, color: 'var(--ink-500)', lineHeight: 1.45 }}>
               {tab === 'register'
-                ? <><strong style={{ color: 'var(--ink-700)' }}>Compte client.</strong> Pour réserver et suivre vos colis Jumla.</>
-                : <><strong style={{ color: 'var(--ink-700)' }}>Accès sécurisé.</strong> Plateforme Jumla — agents, admins et clients.</>
+                ? <span dangerouslySetInnerHTML={{ __html: t('auth.info.register') }} />
+                : <span dangerouslySetInnerHTML={{ __html: t('auth.info.login') }} />
               }
             </div>
           </div>
         </div>
 
         <div style={{ fontSize: 11, color: 'var(--ink-400)', display: 'flex', justifyContent: 'space-between' }}>
-          <span>Conditions · Confidentialité</span><span>support@jumla.cargo</span>
+          <span>{t('auth.footer.legal')}</span><span>{t('auth.footer.support')}</span>
         </div>
       </div>
     </div>

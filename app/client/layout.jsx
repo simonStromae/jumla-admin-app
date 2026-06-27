@@ -5,16 +5,19 @@ import { useEffect, useState, useRef } from 'react';
 import '@/src/styles/tokens.css';
 import I from '@/src/components/Icons.jsx';
 import { useCompanyAssets } from '@/src/lib/useCompanyAssets.js';
+import { useT } from '@/src/lib/i18n';
+import LanguageSwitcher from '@/src/components/LanguageSwitcher.jsx';
 
 const NAV_ALL = [
-  { label: 'Mes colis',      icon: I.Box,        href: '/client/dashboard', suspendedOk: true  },
-  { label: 'Réserver',       icon: I.Plus,       href: '/client/booking',   suspendedOk: false },
-  { label: 'Suivi',          icon: I.Search,     href: '/client/suivi',     suspendedOk: true  },
-  { label: 'Paiements',      icon: I.CreditCard, href: '/client/invoices',  suspendedOk: true  },
-  { label: 'Profil',         icon: I.Users,      href: '/client/profile',   suspendedOk: true  },
+  { labelKey: 'client.nav.parcels',  icon: I.Box,        href: '/client/dashboard', suspendedOk: true  },
+  { labelKey: 'client.nav.book',     icon: I.Plus,       href: '/client/booking',   suspendedOk: false },
+  { labelKey: 'client.nav.tracking', icon: I.Search,     href: '/client/suivi',     suspendedOk: true  },
+  { labelKey: 'client.nav.payments', icon: I.CreditCard, href: '/client/invoices',  suspendedOk: true  },
+  { labelKey: 'client.nav.profile',  icon: I.Users,      href: '/client/profile',   suspendedOk: true  },
 ];
 
 function NotificationBell({ router }) {
+  const t = useT();
   const [notifs, setNotifs]   = useState([]);
   const [open, setOpen]       = useState(false);
   const dropRef               = useRef(null);
@@ -29,8 +32,8 @@ function NotificationBell({ router }) {
 
   useEffect(() => { load(); }, []);
   useEffect(() => {
-    const t = setInterval(load, 60_000);
-    return () => clearInterval(t);
+    const timer = setInterval(load, 60_000);
+    return () => clearInterval(timer);
   }, []);
   useEffect(() => {
     const h = (e) => { if (dropRef.current && !dropRef.current.contains(e.target)) setOpen(false); };
@@ -50,9 +53,9 @@ function NotificationBell({ router }) {
 
   const fmtTime = (d) => {
     const diff = (Date.now() - new Date(d).getTime()) / 1000;
-    if (diff < 60)    return 'À l\'instant';
-    if (diff < 3600)  return `il y a ${Math.floor(diff / 60)} min`;
-    if (diff < 86400) return `il y a ${Math.floor(diff / 3600)} h`;
+    if (diff < 60)    return t('notifications.now');
+    if (diff < 3600)  return t('notifications.minutesAgo').replace('{n}', Math.floor(diff / 60));
+    if (diff < 86400) return t('notifications.hoursAgo').replace('{n}', Math.floor(diff / 3600));
     return new Date(d).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' });
   };
 
@@ -81,12 +84,12 @@ function NotificationBell({ router }) {
           boxShadow: '0 8px 32px rgba(0,0,0,.12)', zIndex: 200, overflow: 'hidden',
         }}>
           <div style={{ padding: '12px 16px', borderBottom: '1px solid var(--border-soft)', fontWeight: 700, fontSize: 13 }}>
-            Notifications
+            {t('notifications.title')}
           </div>
           <div style={{ maxHeight: 340, overflowY: 'auto' }}>
             {notifs.length === 0 ? (
               <div style={{ padding: '24px 20px', textAlign: 'center', color: 'var(--ink-400)', fontSize: 13 }}>
-                Aucune notification.
+                {t('notifications.empty')}
               </div>
             ) : notifs.map(n => (
               <div key={n.id} onClick={() => { setOpen(false); if (n.parcelId) router.push('/client/dashboard'); }}
@@ -113,6 +116,7 @@ function NotificationBell({ router }) {
 }
 
 export default function ClientLayout({ children }) {
+  const t = useT();
   const { data: session, status } = useSession();
   const { logoIconUrl, logoIconSize } = useCompanyAssets();
   const router   = useRouter();
@@ -124,7 +128,7 @@ export default function ClientLayout({ children }) {
 
   if (status === 'loading') return (
     <div style={{ minHeight: '100vh', display: 'grid', placeItems: 'center', background: 'var(--bg-soft)' }}>
-      <div style={{ color: 'var(--ink-400)', fontSize: 14 }}>Chargement…</div>
+      <div style={{ color: 'var(--ink-400)', fontSize: 14 }}>{t('loading')}</div>
     </div>
   );
 
@@ -160,13 +164,13 @@ export default function ClientLayout({ children }) {
             }
           </div>
           <div style={{ textAlign: 'left' }}>
-            <div style={{ fontWeight: 700, fontSize: 13, color: 'var(--ink-900)' }}>Jumla Shipping</div>
-            <div style={{ fontSize: 10.5, color: 'var(--ink-400)' }}>Espace client</div>
+            <div style={{ fontWeight: 700, fontSize: 13, color: 'var(--ink-900)' }}>{t('client.sidebar.brand')}</div>
+            <div style={{ fontSize: 10.5, color: 'var(--ink-400)' }}>{t('client.sidebar.space')}</div>
           </div>
         </button>
       </div>
       <nav style={{ flex: 1, padding: '10px 8px' }}>
-        {NAV.map(({ label, icon: Icon, href }) => {
+        {NAV.map(({ labelKey, icon: Icon, href }) => {
           const active = pathname === href || pathname.startsWith(href + '/');
           return (
             <button key={href} onClick={() => router.push(href)} style={{
@@ -178,7 +182,7 @@ export default function ClientLayout({ children }) {
               fontWeight: active ? 600 : 400, fontSize: 13.5,
             }}>
               <Icon style={{ width: 16, height: 16, flexShrink: 0 }} />
-              {label}
+              {t(labelKey)}
             </button>
           );
         })}
@@ -203,7 +207,7 @@ export default function ClientLayout({ children }) {
           fontSize: 12.5, fontWeight: 500, cursor: 'pointer', color: 'var(--ink-600)',
         }}>
           <I.Logout style={{ width: 14, height: 14 }} />
-          Déconnexion
+          {t('button.logout')}
         </button>
       </div>
     </aside>
@@ -246,11 +250,15 @@ export default function ClientLayout({ children }) {
               </div>
             </div>
             <div style={{ flex: 1, fontSize: 14, fontWeight: 600, color: 'var(--ink-700)' }}>
-              {NAV.find(n => pathname === n.href || pathname.startsWith(n.href + '/'))?.label ?? 'Espace client'}
+              {(() => {
+                const active = NAV.find(n => pathname === n.href || pathname.startsWith(n.href + '/'));
+                return active ? t(active.labelKey) : t('client.topbar.default');
+              })()}
             </div>
             <NotificationBell router={router} />
+            <LanguageSwitcher />
             <span className="topbar-greeting" style={{ fontSize: 12.5, color: 'var(--ink-500)' }}>
-              Bonjour, <span style={{ fontWeight: 600, color: 'var(--ink-800)' }}>{user?.name?.split(' ')[0]}</span>
+              {t('client.topbar.greeting')} <span style={{ fontWeight: 600, color: 'var(--ink-800)' }}>{user?.name?.split(' ')[0]}</span>
             </span>
           </header>
 
@@ -260,8 +268,8 @@ export default function ClientLayout({ children }) {
               padding: '10px 20px', fontSize: 13, display: 'flex', alignItems: 'center', gap: 8,
             }}>
               <span>⚠️</span>
-              <span style={{ color: 'var(--warn-700)', fontWeight: 600 }}>Compte suspendu</span>
-              <span style={{ color: 'var(--warn-600)' }}>— Contactez-nous pour régulariser.</span>
+              <span style={{ color: 'var(--warn-700)', fontWeight: 600 }}>{t('client.suspended.title')}</span>
+              <span style={{ color: 'var(--warn-600)' }}>— {t('client.suspended.message')}</span>
             </div>
           )}
 
@@ -280,7 +288,7 @@ export default function ClientLayout({ children }) {
           padding: '8px 0 env(safe-area-inset-bottom, 8px)',
           justifyContent: 'space-around', alignItems: 'center',
         }}>
-          {NAV.map(({ label, icon: Icon, href }) => {
+          {NAV.map(({ labelKey, icon: Icon, href }) => {
             const active = pathname === href || pathname.startsWith(href + '/');
             return (
               <button key={href} onClick={() => router.push(href)} style={{
@@ -290,7 +298,7 @@ export default function ClientLayout({ children }) {
                 minWidth: 56,
               }}>
                 <Icon style={{ width: 20, height: 20 }} />
-                <span style={{ fontSize: 10, fontWeight: active ? 700 : 400 }}>{label}</span>
+                <span style={{ fontSize: 10, fontWeight: active ? 700 : 400 }}>{t(labelKey)}</span>
               </button>
             );
           })}

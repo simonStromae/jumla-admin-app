@@ -3,20 +3,21 @@ import { useState, useEffect, useCallback, Suspense } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import I from '@/src/components/Icons.jsx';
+import { useT, useLocale } from '@/src/lib/i18n';
 
 const JOURNEY = [
-  { key: 'enr', label: 'Enregistré',   icon: '📝', color: '#6b7280' },
-  { key: 'rec', label: 'Reçu',         icon: '📥', color: '#D97706' },
-  { key: 'pre', label: 'Préparé',      icon: '🔍', color: '#D97706' },
-  { key: 'exp', label: 'Expédié',      icon: '🚀', color: '#D97706' },
-  { key: 'tra', label: 'En transit',   icon: '✈️', color: '#D97706' },
-  { key: 'apd', label: 'Arrivé pays',  icon: '🛬', color: '#B45309' },
-  { key: 'dou', label: 'Douanes',      icon: '🛃', color: '#B45309' },
-  { key: 'lib', label: 'Libéré',       icon: '✅', color: '#B45309' },
-  { key: 'ard', label: 'Entrepôt',    icon: '🏭', color: '#B45309' },
-  { key: 'pdl', label: 'Prêt',        icon: '📦', color: '#92400e' },
-  { key: 'liv', label: 'En chemin',   icon: '🚚', color: '#92400e' },
-  { key: 'ok',  label: 'Livré',       icon: '🎉', color: '#111827' },
+  { key: 'enr', labelKey: 'statuses.enr',  label: '', icon: '📝', color: '#6b7280' },
+  { key: 'rec', labelKey: 'statuses.rec',  label: '', icon: '📥', color: '#D97706' },
+  { key: 'pre', labelKey: 'statuses.pre',  label: '', icon: '🔍', color: '#D97706' },
+  { key: 'exp', labelKey: 'statuses.exp',  label: '', icon: '🚀', color: '#D97706' },
+  { key: 'tra', labelKey: 'statuses.tra',  label: '', icon: '✈️', color: '#D97706' },
+  { key: 'apd', labelKey: 'statuses.apd',  label: '', icon: '🛬', color: '#B45309' },
+  { key: 'dou', labelKey: 'statuses.dou',  label: '', icon: '🛃', color: '#B45309' },
+  { key: 'lib', labelKey: 'statuses.lib',  label: '', icon: '✅', color: '#B45309' },
+  { key: 'ard', labelKey: 'statuses.ard',  label: '', icon: '🏭', color: '#B45309' },
+  { key: 'pdl', labelKey: 'statuses.pdl',  label: '', icon: '📦', color: '#92400e' },
+  { key: 'liv', labelKey: 'statuses.liv',  label: '', icon: '🚚', color: '#92400e' },
+  { key: 'ok',  labelKey: 'statuses.ok',   label: '', icon: '🎉', color: '#111827' },
 ];
 
 function getJourneyStep(status) {
@@ -46,20 +47,22 @@ function ProgressDots({ status }) {
   );
 }
 
-function fmt(date) {
-  if (!date) return null;
-  return new Date(date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' });
-}
-
 function ParcelCard({ parcel, onClick }) {
-  const s        = JOURNEY[getJourneyStep(parcel.status)] ?? JOURNEY[0];
-  const paid     = parcel.payment?.status === 'completed';
-  const partial  = parcel.payment?.status === 'partial';
+  const t         = useT();
+  const s         = JOURNEY[getJourneyStep(parcel.status)] ?? JOURNEY[0];
+  const paid      = parcel.payment?.status === 'completed';
+  const partial   = parcel.payment?.status === 'partial';
   const hasUnconfirmedBl = parcel.bordereaux?.some(b => !b.clientConfirmed);
-  const hasBl    = parcel.bordereaux?.length > 0;
-  const isLivré  = parcel.status === 'ok';
+  const hasBl     = parcel.bordereaux?.length > 0;
+  const isLivré   = parcel.status === 'ok';
+  const { locale } = useLocale();
 
   const needsAction = hasUnconfirmedBl || (!paid && parcel.payment);
+
+  function fmt(date) {
+    if (!date) return null;
+    return new Date(date).toLocaleDateString(locale === 'fr' ? 'fr-FR' : 'en-CA', { day: 'numeric', month: 'short' });
+  }
 
   return (
     <div onClick={onClick} style={{
@@ -95,7 +98,7 @@ function ParcelCard({ parcel, onClick }) {
                   fontSize: 10, fontWeight: 700, padding: '2px 7px', borderRadius: 99,
                   background: '#fef3c7', color: '#92400e', border: '1px solid #fde68a',
                   textTransform: 'uppercase', letterSpacing: '.04em',
-                }}>Action requise</span>
+                }}>{t('dashboard.parcel.actionRequired')}</span>
               )}
             </div>
             <div style={{ fontSize: 12, color: '#6b7280', marginTop: 2 }}>
@@ -108,7 +111,7 @@ function ParcelCard({ parcel, onClick }) {
               {(parcel.payment?.amount ?? parcel.priceXaf)?.toLocaleString('fr') ?? '—'} <span style={{ fontSize: 11, fontWeight: 400, color: '#9ca3af' }}>CAD</span>
             </div>
             <div style={{ fontSize: 11.5, fontWeight: 600, marginTop: 1, color: paid ? '#16a34a' : partial ? '#d97706' : '#dc2626' }}>
-              {paid ? '✓ Payé' : partial ? '⏳ Partiel' : '⚡ À régler'}
+              {paid ? `✓ ${t('dashboard.payment.paid')}` : partial ? `⏳ ${t('dashboard.payment.partial')}` : `⚡ ${t('dashboard.payment.pending')}`}
             </div>
           </div>
         </div>
@@ -116,7 +119,7 @@ function ParcelCard({ parcel, onClick }) {
         {/* Status row */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
           <span style={{ fontSize: 16 }}>{s.icon}</span>
-          <span style={{ fontSize: 13, fontWeight: 600, color: s.color }}>{s.label}</span>
+          <span style={{ fontSize: 13, fontWeight: 600, color: s.color }}>{t(s.labelKey)}</span>
         </div>
 
         {/* Progress */}
@@ -126,16 +129,16 @@ function ParcelCard({ parcel, onClick }) {
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginTop: 10 }}>
           <div style={{ fontSize: 11.5, color: '#9ca3af' }}>
             {parcel.campaign?.departureDate && !isLivré && (
-              <span>Départ {fmt(parcel.campaign.departureDate)}</span>
+              <span>{t('dashboard.parcel.departure').replace('{date}', fmt(parcel.campaign.departureDate))}</span>
             )}
             {parcel.campaign?.arrivalDate && !isLivré && (
-              <span> · Arrivée ~{fmt(parcel.campaign.arrivalDate)}</span>
+              <span> · {t('dashboard.parcel.arrival').replace('{date}', fmt(parcel.campaign.arrivalDate))}</span>
             )}
             {parcel.weightKg && <span> · {parcel.weightKg} kg</span>}
           </div>
           {hasBl && (
             <div style={{ fontSize: 11, color: hasUnconfirmedBl ? '#92400e' : '#6b7280', fontWeight: hasUnconfirmedBl ? 700 : 400 }}>
-              {hasUnconfirmedBl ? '⚠️ Bordereau à signer' : '📋 Bordereau OK'}
+              {hasUnconfirmedBl ? t('dashboard.parcel.borderauWarning') : t('dashboard.parcel.borderauOK')}
             </div>
           )}
         </div>
@@ -147,7 +150,7 @@ function ParcelCard({ parcel, onClick }) {
             background: '#fffbeb', border: '1px solid #fde68a',
             fontSize: 12.5, color: '#92400e', fontWeight: 600,
           }}>
-            ⚠️ Votre bordereau attend votre confirmation avant l&apos;expédition
+            {t('dashboard.parcel.borderauPendingAction')}
           </div>
         )}
       </div>
@@ -165,6 +168,10 @@ function ClientDashboardInner() {
   const [loading,  setLoading]  = useState(true);
   const [tab,      setTab]      = useState('active'); // 'active' | 'done'
   const [showBooked, setShowBooked] = useState(!!bookedCode);
+  const t = useT();
+  const { locale } = useLocale();
+
+  const name = session?.user?.name?.split(' ')[0];
 
   const load = useCallback(async () => {
     try {
@@ -198,9 +205,9 @@ function ClientDashboardInner() {
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
             <span style={{ fontSize: 22 }}>🎉</span>
             <div>
-              <div style={{ fontWeight: 700, fontSize: 14, color: '#92400e' }}>Réservation enregistrée !</div>
+              <div style={{ fontWeight: 700, fontSize: 14, color: '#92400e' }}>{t('dashboard.success.booking')}</div>
               <div style={{ fontSize: 12.5, color: '#b45309', marginTop: 1 }}>
-                Numéro de suivi : <span style={{ fontFamily: 'monospace', fontWeight: 700 }}>{bookedCode}</span> · En attente de confirmation du paiement.
+                {t('dashboard.success.trackingNumber')} <span style={{ fontFamily: 'monospace', fontWeight: 700 }}>{bookedCode}</span> · {t('dashboard.parcel.paymentPending')}
               </div>
             </div>
           </div>
@@ -212,10 +219,10 @@ function ClientDashboardInner() {
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, marginBottom: 20 }}>
         <div>
           <h1 style={{ fontSize: 22, fontWeight: 800, margin: '0 0 2px', color: '#111827' }}>
-            Bonjour {session?.user?.name?.split(' ')[0]} 👋
+            {t('dashboard.greeting').replace('{name}', name)}
           </h1>
           <p style={{ fontSize: 13.5, color: '#6b7280', margin: 0 }}>
-            {loading ? '…' : `${active.length} colis en cours · ${done.length} livré${done.length > 1 ? 's' : ''}`}
+            {loading ? t('loading') : `${active.length} colis en cours · ${done.length} livré${done.length > 1 ? 's' : ''}`}
           </p>
         </div>
         {!suspended && (
@@ -227,7 +234,7 @@ function ClientDashboardInner() {
             boxShadow: '0 3px 10px rgba(217,119,6,.3)',
           }}>
             <I.Plus style={{ width: 16, height: 16 }} />
-            Réserver
+            {t('dashboard.book')}
           </button>
         )}
       </div>
@@ -242,12 +249,12 @@ function ClientDashboardInner() {
           <span style={{ fontSize: 22, flexShrink: 0 }}>⚡</span>
           <div>
             <div style={{ fontWeight: 700, fontSize: 14, color: '#92400e' }}>
-              {actions.length} action{actions.length > 1 ? 's' : ''} requise{actions.length > 1 ? 's' : ''}
+              {t('dashboard.alert.actionsRequired').replace('{n}', actions.length)}
             </div>
             <div style={{ fontSize: 12.5, color: '#b45309', marginTop: 1 }}>
               {actions.some(p => p.bordereaux?.some(b => !b.clientConfirmed))
-                ? 'Des bordereaux attendent votre signature avant expédition'
-                : 'Des paiements sont en attente de règlement'}
+                ? t('dashboard.alert.borderauPending')
+                : t('dashboard.alert.paymentOverdue')}
             </div>
           </div>
         </div>
@@ -257,17 +264,17 @@ function ClientDashboardInner() {
       {!loading && parcels.length > 0 && (
         <div style={{ display: 'flex', gap: 4, marginBottom: 16, background: '#f3f4f6', borderRadius: 10, padding: 4 }}>
           {[
-            { key: 'active', label: `En cours (${active.length})` },
-            { key: 'done',   label: `Livrés (${done.length})` },
-          ].map(t => (
-            <button key={t.key} onClick={() => setTab(t.key)} style={{
+            { key: 'active', label: t('dashboard.tabs.active').replace('{n}', active.length) },
+            { key: 'done',   label: t('dashboard.tabs.delivered').replace('{n}', done.length) },
+          ].map(tabItem => (
+            <button key={tabItem.key} onClick={() => setTab(tabItem.key)} style={{
               flex: 1, padding: '8px 0', borderRadius: 7, border: 'none', cursor: 'pointer',
-              fontWeight: tab === t.key ? 700 : 500,
+              fontWeight: tab === tabItem.key ? 700 : 500,
               fontSize: 13.5,
-              background: tab === t.key ? 'white' : 'transparent',
-              color: tab === t.key ? '#111827' : '#6b7280',
-              boxShadow: tab === t.key ? '0 1px 4px rgba(0,0,0,.1)' : 'none',
-            }}>{t.label}</button>
+              background: tab === tabItem.key ? 'white' : 'transparent',
+              color: tab === tabItem.key ? '#111827' : '#6b7280',
+              boxShadow: tab === tabItem.key ? '0 1px 4px rgba(0,0,0,.1)' : 'none',
+            }}>{tabItem.label}</button>
           ))}
         </div>
       )}
@@ -283,15 +290,15 @@ function ClientDashboardInner() {
         <div style={{ textAlign: 'center', padding: '48px 20px', color: '#6b7280' }}>
           <div style={{ fontSize: 40, marginBottom: 12 }}>{tab === 'done' ? '🎉' : '📦'}</div>
           <div style={{ fontSize: 16, fontWeight: 600, color: '#374151', marginBottom: 6 }}>
-            {tab === 'done' ? 'Aucun colis livré' : 'Aucun colis en cours'}
+            {tab === 'done' ? t('dashboard.empty.delivered') : t('dashboard.empty.active')}
           </div>
           {tab === 'active' && !suspended && (
             <>
-              <div style={{ fontSize: 13, marginBottom: 16 }}>Commencez par réserver votre premier envoi.</div>
+              <div style={{ fontSize: 13, marginBottom: 16 }}>{t('dashboard.empty.activeHint')}</div>
               <button onClick={() => router.push('/client/booking')} style={{
                 padding: '10px 20px', borderRadius: 10, border: 'none',
                 background: '#F5A524', color: 'white', fontWeight: 700, cursor: 'pointer',
-              }}>Réserver maintenant</button>
+              }}>{t('button.bookNow')}</button>
             </>
           )}
         </div>

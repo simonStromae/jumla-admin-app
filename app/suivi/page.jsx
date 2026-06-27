@@ -3,6 +3,7 @@ import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import '@/src/styles/tokens.css';
 import { useCompanyAssets } from '@/src/lib/useCompanyAssets.js';
+import { useT, useLocale } from '@/src/lib/i18n';
 
 /* ── Jumla brand tokens ──────────────────────────────── */
 const J = {
@@ -25,38 +26,31 @@ const FONT_DISPLAY = "'Inter', system-ui, sans-serif";
 const FONT_BODY    = "'Inter', system-ui, sans-serif";
 
 const STATUS = {
-  enr: { label: 'Colis enregistré',               color: J.gray400,  bg: 'rgba(148,163,184,.1)',  icon: '📝' },
-  rec: { label: "Reçu à l'entrepôt",              color: J.blue,     bg: 'rgba(27,79,216,.08)',   icon: '📥' },
-  pre: { label: 'Vérifié et préparé',              color: J.blue,     bg: 'rgba(27,79,216,.08)',   icon: '🔍' },
-  exp: { label: 'Expédié',                         color: J.teal,     bg: 'rgba(0,180,216,.08)',   icon: '🚀' },
-  tra: { label: 'En transit',                      color: J.teal,     bg: 'rgba(0,180,216,.08)',   icon: '✈️' },
-  apd: { label: 'Arrivé au pays de destination',   color: '#059669',  bg: 'rgba(16,185,129,.08)',  icon: '🛬' },
-  dou: { label: 'Présenté aux douanes',            color: '#D97706',  bg: 'rgba(245,158,11,.08)',  icon: '🛃' },
-  ins: { label: 'En inspection douanière',         color: '#D97706',  bg: 'rgba(245,158,11,.08)',  icon: '🔎' },
-  ret: { label: 'Retenu par les douanes',          color: '#DC2626',  bg: 'rgba(239,68,68,.08)',   icon: '⚠️' },
-  lib: { label: 'Libéré par les douanes',          color: '#059669',  bg: 'rgba(16,185,129,.08)',  icon: '✅' },
-  ard: { label: "Arrivé à l'entrepôt destination", color: '#059669',  bg: 'rgba(16,185,129,.08)',  icon: '🏭' },
-  ver: { label: 'Vérification finale',             color: J.blue,     bg: 'rgba(27,79,216,.08)',   icon: '🔬' },
-  pdl: { label: 'Prêt pour livraison ou retrait',  color: J.teal,     bg: 'rgba(0,180,216,.08)',   icon: '📦' },
-  liv: { label: 'En cours de livraison',           color: J.teal,     bg: 'rgba(0,180,216,.08)',   icon: '🚚' },
-  ok:  { label: 'Livré',                           color: '#059669',  bg: 'rgba(16,185,129,.1)',   icon: '🎉' },
-  adr: { label: 'Adresse incomplète',              color: '#DC2626',  bg: 'rgba(239,68,68,.08)',   icon: '📍' },
-  tdl: { label: 'Tentative de livraison',          color: '#D97706',  bg: 'rgba(245,158,11,.08)',  icon: '🔔' },
-  rte: { label: "Retour à l'entrepôt",             color: '#DC2626',  bg: 'rgba(239,68,68,.08)',   icon: '↩️' },
-  dom: { label: 'Colis endommagé',                 color: '#DC2626',  bg: 'rgba(239,68,68,.08)',   icon: '💥' },
-  cla: { label: 'Réclamation ouverte',             color: '#DC2626',  bg: 'rgba(239,68,68,.08)',   icon: '📋' },
+  enr: { color: J.gray400,  bg: 'rgba(148,163,184,.1)',  icon: '📝' },
+  rec: { color: J.blue,     bg: 'rgba(27,79,216,.08)',   icon: '📥' },
+  pre: { color: J.blue,     bg: 'rgba(27,79,216,.08)',   icon: '🔍' },
+  exp: { color: J.teal,     bg: 'rgba(0,180,216,.08)',   icon: '🚀' },
+  tra: { color: J.teal,     bg: 'rgba(0,180,216,.08)',   icon: '✈️' },
+  apd: { color: '#059669',  bg: 'rgba(16,185,129,.08)',  icon: '🛬' },
+  dou: { color: '#D97706',  bg: 'rgba(245,158,11,.08)',  icon: '🛃' },
+  ins: { color: '#D97706',  bg: 'rgba(245,158,11,.08)',  icon: '🔎' },
+  ret: { color: '#DC2626',  bg: 'rgba(239,68,68,.08)',   icon: '⚠️' },
+  lib: { color: '#059669',  bg: 'rgba(16,185,129,.08)',  icon: '✅' },
+  ard: { color: '#059669',  bg: 'rgba(16,185,129,.08)',  icon: '🏭' },
+  ver: { color: J.blue,     bg: 'rgba(27,79,216,.08)',   icon: '🔬' },
+  pdl: { color: J.teal,     bg: 'rgba(0,180,216,.08)',   icon: '📦' },
+  liv: { color: J.teal,     bg: 'rgba(0,180,216,.08)',   icon: '🚚' },
+  ok:  { color: '#059669',  bg: 'rgba(16,185,129,.1)',   icon: '🎉' },
+  adr: { color: '#DC2626',  bg: 'rgba(239,68,68,.08)',   icon: '📍' },
+  tdl: { color: '#D97706',  bg: 'rgba(245,158,11,.08)',  icon: '🔔' },
+  rte: { color: '#DC2626',  bg: 'rgba(239,68,68,.08)',   icon: '↩️' },
+  dom: { color: '#DC2626',  bg: 'rgba(239,68,68,.08)',   icon: '💥' },
+  cla: { color: '#DC2626',  bg: 'rgba(239,68,68,.08)',   icon: '📋' },
 };
 
-function fmt(d) {
-  if (!d) return '—';
-  return new Date(d).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
-}
-function fmtFull(d) {
-  if (!d) return '—';
-  return new Date(d).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' });
-}
-
 function TrackContent() {
+  const t = useT();
+  const { locale } = useLocale();
   const { logoUrl, logoIconUrl } = useCompanyAssets();
   const router       = useRouter();
   const searchParams = useSearchParams();
@@ -65,15 +59,25 @@ function TrackContent() {
   const [loading, setLoading] = useState(false);
   const [error,   setError]   = useState('');
 
+  function fmt(d) {
+    if (!d) return '—';
+    return new Date(d).toLocaleDateString(locale === 'fr' ? 'fr-FR' : 'en-CA', { day: 'numeric', month: 'long', year: 'numeric' });
+  }
+
+  function fmtFull(d) {
+    if (!d) return '—';
+    return new Date(d).toLocaleDateString(locale === 'fr' ? 'fr-FR' : 'en-CA', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+  }
+
   const search = async (code) => {
     if (!code.trim()) return;
     setLoading(true); setError(''); setResult(null);
     try {
       const res  = await fetch('/api/public/track?code=' + encodeURIComponent(code.trim().toUpperCase()));
       const json = await res.json();
-      if (!res.ok) setError(json.error || 'Colis introuvable');
+      if (!res.ok) setError(json.error || 'not_found');
       else setResult(json);
-    } catch { setError('Erreur réseau — réessayez.'); }
+    } catch { setError('network'); }
     setLoading(false);
   };
 
@@ -88,7 +92,7 @@ function TrackContent() {
     search(input);
   };
 
-  const s = result ? (STATUS[result.status] ?? { label: result.status, color: J.gray400, bg: 'rgba(148,163,184,.1)', icon: '📦' }) : null;
+  const s = result ? (STATUS[result.status] ?? { color: J.gray400, bg: 'rgba(148,163,184,.1)', icon: '📦' }) : null;
 
   return (
     <div style={{ fontFamily: FONT_BODY, minHeight: '100vh', background: J.gray100, WebkitFontSmoothing: 'antialiased', color: J.gray700 }}>
@@ -112,7 +116,7 @@ function TrackContent() {
           )}
         </div>
         <a href="/login" style={{ fontFamily: FONT_DISPLAY, fontSize: 14, fontWeight: 700, letterSpacing: '.08em', textTransform: 'uppercase', color: 'white', textDecoration: 'none', padding: '8px 18px', border: '2px solid rgba(255,255,255,.25)', borderRadius: 8, transition: 'all .2s' }}>
-          Connexion →
+          {t('button.signIn')}
         </a>
       </header>
 
@@ -120,10 +124,10 @@ function TrackContent() {
 
         {/* Title */}
         <div style={{ marginBottom: 28 }}>
-          <div style={{ fontFamily: FONT_DISPLAY, fontSize: 11, fontWeight: 700, letterSpacing: '.2em', textTransform: 'uppercase', color: J.cyan, marginBottom: 6 }}>Suivi en temps réel</div>
-          <h1 style={{ fontFamily: FONT_DISPLAY, fontSize: 36, fontWeight: 800, margin: '0 0 8px', color: J.black, textTransform: 'uppercase', letterSpacing: '.02em', lineHeight: 1.1 }}>Suivi de colis</h1>
+          <div style={{ fontFamily: FONT_DISPLAY, fontSize: 11, fontWeight: 700, letterSpacing: '.2em', textTransform: 'uppercase', color: J.cyan, marginBottom: 6 }}>{t('tracking.eyebrow')}</div>
+          <h1 style={{ fontFamily: FONT_DISPLAY, fontSize: 36, fontWeight: 800, margin: '0 0 8px', color: J.black, textTransform: 'uppercase', letterSpacing: '.02em', lineHeight: 1.1 }}>{t('tracking.title')}</h1>
           <p style={{ fontSize: 15, color: J.gray400, margin: 0 }}>
-            Entrez votre numéro de suivi pour voir l'état de votre envoi.
+            {t('tracking.subtitle')}
           </p>
         </div>
 
@@ -132,7 +136,7 @@ function TrackContent() {
           <input
             value={input}
             onChange={e => setInput(e.target.value.toUpperCase())}
-            placeholder="JMS-12345"
+            placeholder={t('tracking.placeholder')}
             style={{
               flex: 1, height: 50, padding: '0 16px',
               border: '2px solid ' + J.gray200, borderRadius: 8,
@@ -160,7 +164,7 @@ function TrackContent() {
               boxShadow: loading ? 'none' : '0 4px 14px rgba(27,79,216,.3)',
               transition: 'all .2s',
             }}>
-            {loading ? '…' : 'Suivre'}
+            {loading ? t('loading') : t('tracking.track')}
           </button>
         </form>
 
@@ -169,9 +173,9 @@ function TrackContent() {
           <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, padding: '14px 16px', background: 'rgba(239,68,68,.08)', border: '1px solid rgba(239,68,68,.2)', borderLeft: '4px solid ' + J.danger, borderRadius: 8, color: '#DC2626', fontSize: 14, marginBottom: 20, fontWeight: 500 }}>
             <span>🚫</span>
             <div>
-              {error === 'Colis introuvable'
-                ? <>Aucun colis trouvé avec le code <strong style={{ fontFamily: 'monospace' }}>{input}</strong>. Vérifiez l'orthographe.</>
-                : error}
+              {error === 'not_found'
+                ? <>{t('tracking.notFoundDetail', { code: input })}</>
+                : t('error.network')}
             </div>
           </div>
         )}
@@ -193,30 +197,30 @@ function TrackContent() {
               <div style={{ width: 52, height: 52, borderRadius: 12, background: s.bg, display: 'grid', placeItems: 'center', fontSize: 26, flexShrink: 0 }}>{s.icon}</div>
               <div style={{ flex: 1, minWidth: 160 }}>
                 <div style={{ fontFamily: FONT_DISPLAY, fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.15em', color: J.gray400, marginBottom: 4 }}>
-                  Statut · {result.campaign.from} → {result.campaign.to}
+                  {t('tracking.statusLabel', { from: result.campaign.from, to: result.campaign.to })}
                 </div>
-                <div style={{ fontFamily: FONT_DISPLAY, fontSize: 24, fontWeight: 700, color: s.color, letterSpacing: '.02em', lineHeight: 1.15, textTransform: 'uppercase' }}>{s.label}</div>
-                <div style={{ fontSize: 12, color: J.gray400, marginTop: 3 }}>Cargaison {result.campaign.code}</div>
+                <div style={{ fontFamily: FONT_DISPLAY, fontSize: 24, fontWeight: 700, color: s.color, letterSpacing: '.02em', lineHeight: 1.15, textTransform: 'uppercase' }}>{t('statuses.' + result.status)}</div>
+                <div style={{ fontSize: 12, color: J.gray400, marginTop: 3 }}>{t('tracking.campaign', { code: result.campaign.code })}</div>
               </div>
               <div style={{ textAlign: 'right', flexShrink: 0 }}>
                 <div style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 18, fontWeight: 700, color: J.blue, letterSpacing: '.03em' }}>{result.trackingCode}</div>
                 <div style={{ marginTop: 8 }}>
                   {result.paid
-                    ? <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 11, fontWeight: 700, color: '#059669', background: 'rgba(16,185,129,.1)', padding: '3px 10px', borderRadius: 9999, letterSpacing: '.05em', textTransform: 'uppercase' }}>✓ Paiement confirmé</span>
-                    : <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 11, fontWeight: 700, color: '#D97706', background: 'rgba(245,158,11,.1)', padding: '3px 10px', borderRadius: 9999, letterSpacing: '.05em', textTransform: 'uppercase' }}>⏳ En attente</span>}
+                    ? <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 11, fontWeight: 700, color: '#059669', background: 'rgba(16,185,129,.1)', padding: '3px 10px', borderRadius: 9999, letterSpacing: '.05em', textTransform: 'uppercase' }}>✓ {t('tracking.payment.confirmed')}</span>
+                    : <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 11, fontWeight: 700, color: '#D97706', background: 'rgba(245,158,11,.1)', padding: '3px 10px', borderRadius: 9999, letterSpacing: '.05em', textTransform: 'uppercase' }}>⏳ {t('tracking.payment.pending')}</span>}
                 </div>
               </div>
             </div>
 
             {/* Details grid */}
             <div style={{ background: 'white', border: '1px solid ' + J.gray200, borderRadius: 16, padding: '18px 22px', boxShadow: '0 1px 3px rgba(0,0,0,.08)' }}>
-              <div style={{ fontFamily: FONT_DISPLAY, fontSize: 11, fontWeight: 700, letterSpacing: '.15em', textTransform: 'uppercase', color: J.cyan, marginBottom: 14 }}>Détails de l'envoi</div>
+              <div style={{ fontFamily: FONT_DISPLAY, fontSize: 11, fontWeight: 700, letterSpacing: '.15em', textTransform: 'uppercase', color: J.cyan, marginBottom: 14 }}>{t('tracking.details.title')}</div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px 32px' }}>
                 {[
-                  { l: 'Description',    v: result.description || '—' },
-                  { l: 'Poids déclaré',  v: result.weightKg ? result.weightKg + ' kg' : '—' },
-                  { l: 'Départ prévu',   v: fmt(result.campaign.departureDate) },
-                  { l: 'Arrivée prévue', v: fmt(result.campaign.arrivalDate) },
+                  { l: t('tracking.details.description'), v: result.description || '—' },
+                  { l: t('tracking.details.weight'),      v: result.weightKg ? result.weightKg + ' ' + t('unit.kg') : '—' },
+                  { l: t('tracking.details.departure'),   v: fmt(result.campaign.departureDate) },
+                  { l: t('tracking.details.arrival'),     v: fmt(result.campaign.arrivalDate) },
                 ].map(r => (
                   <div key={r.l}>
                     <div style={{ fontSize: 10, fontWeight: 700, color: J.gray400, textTransform: 'uppercase', letterSpacing: '.1em', marginBottom: 4 }}>{r.l}</div>
@@ -228,13 +232,13 @@ function TrackContent() {
 
             {/* Timeline */}
             <div style={{ background: 'white', border: '1px solid ' + J.gray200, borderRadius: 16, padding: '18px 22px', boxShadow: '0 1px 3px rgba(0,0,0,.08)' }}>
-              <div style={{ fontFamily: FONT_DISPLAY, fontSize: 11, fontWeight: 700, letterSpacing: '.15em', textTransform: 'uppercase', color: J.cyan, marginBottom: 20 }}>Historique du colis</div>
+              <div style={{ fontFamily: FONT_DISPLAY, fontSize: 11, fontWeight: 700, letterSpacing: '.15em', textTransform: 'uppercase', color: J.cyan, marginBottom: 20 }}>{t('tracking.timeline.title')}</div>
               {result.tracking.length === 0 ? (
-                <div style={{ color: J.gray400, fontSize: 14, fontStyle: 'italic', padding: '8px 0' }}>Aucun événement enregistré pour le moment.</div>
+                <div style={{ color: J.gray400, fontSize: 14, fontStyle: 'italic', padding: '8px 0' }}>{t('tracking.timeline.empty')}</div>
               ) : (
                 <div>
                   {[...result.tracking].reverse().map((e, i, arr) => {
-                    const es      = STATUS[e.status] ?? { label: e.status, color: J.gray400, icon: '📦', bg: 'rgba(148,163,184,.1)' };
+                    const es      = STATUS[e.status] ?? { color: J.gray400, icon: '📦', bg: 'rgba(148,163,184,.1)' };
                     const isFirst = i === 0;
                     return (
                       <div key={i} style={{ display: 'flex', gap: 14, paddingBottom: i < arr.length - 1 ? 22 : 0, position: 'relative' }}>
@@ -263,11 +267,11 @@ function TrackContent() {
                         <div style={{ paddingTop: isFirst ? 7 : 5 }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 2 }}>
                             <span style={{ fontFamily: isFirst ? FONT_DISPLAY : FONT_BODY, fontSize: isFirst ? 16 : 13.5, fontWeight: isFirst ? 700 : 500, color: isFirst ? J.blue : J.gray700, textTransform: isFirst ? 'uppercase' : 'none', letterSpacing: isFirst ? '.02em' : 0 }}>
-                              {es.label}
+                              {t('statuses.' + e.status)}
                             </span>
                             {isFirst && (
                               <span style={{ fontFamily: FONT_DISPLAY, fontSize: 10, fontWeight: 700, background: J.gradient, color: 'white', padding: '2px 8px', borderRadius: 9999, letterSpacing: '.08em', textTransform: 'uppercase' }}>
-                                ACTUEL
+                                {t('tracking.timeline.current')}
                               </span>
                             )}
                           </div>
@@ -284,9 +288,9 @@ function TrackContent() {
 
             {/* Footer CTA */}
             <div style={{ textAlign: 'center', fontSize: 13, color: J.gray400, padding: '8px 0' }}>
-              Pour plus de détails,{' '}
+              {t('tracking.footer.pre')}{' '}
               <a href="/login" style={{ color: J.blue, fontWeight: 600, textDecoration: 'none', borderBottom: '1.5px solid ' + J.cyan }}>
-                connectez-vous à votre espace client
+                {t('tracking.footer.link')}
               </a>.
             </div>
           </div>

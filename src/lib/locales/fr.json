@@ -1,0 +1,323 @@
+{
+  "nav": {
+    "signIn": "Se connecter",
+    "register": "Créer un compte"
+  },
+  "topbar": {
+    "hours": "Lundi–Vendredi · 09h à 20h",
+    "availability": "Disponible 24h/7j · +1 514 000 0000"
+  },
+  "footer": {
+    "description": "Spécialiste du fret aérien international entre l'Afrique et le Canada depuis 2021. Suivi, sécurité et transparence à chaque étape.",
+    "contact": "WhatsApp · Douala & Montréal",
+    "copyright": "© 2026 Jumla Shipping SARL — Tous droits réservés",
+    "offices": "Douala · Montréal · Lagos · Bruxelles",
+    "cols": {
+      "services": "Services",
+      "company": "Entreprise",
+      "legal": "Légal"
+    },
+    "links": {
+      "airFreight": "Fret aérien Douala → Montréal",
+      "homeDelivery": "Livraison à domicile",
+      "warehousePickup": "Retrait entrepôt",
+      "tracking": "Suivi en temps réel",
+      "about": "À propos",
+      "blog": "Blog",
+      "careers": "Carrières",
+      "contact": "Contact",
+      "tos": "Conditions générales",
+      "privacy": "Confidentialité",
+      "cookies": "Cookies",
+      "faq": "FAQ"
+    }
+  },
+  "hero": {
+    "tracking": {
+      "label": "Numéro de suivi",
+      "placeholder": "JMS-12345",
+      "title": "Suivre mon colis",
+      "button": "Suivre mon colis →"
+    },
+    "route": {
+      "departure": "Départ",
+      "arrival": "Arrivée",
+      "badge": "Transit 14 jours · Notification WhatsApp incluse"
+    },
+    "cta": {
+      "newCustomer": "Pas encore client ?",
+      "bookNow": "Créer un envoi maintenant"
+    },
+    "button": {
+      "book": "Réserver un envoi",
+      "estimate": "Calculer mon tarif →"
+    }
+  },
+  "services": {
+    "eyebrow": "Ce que nous proposons",
+    "title": "Nos services",
+    "subtitle": "Un seul interlocuteur de Douala jusqu'au Canada. Transparence totale, zéro mauvaise surprise."
+  },
+  "features": {
+    "eyebrow": "Pourquoi Jumla",
+    "title1": "Un service conçu pour",
+    "title2": "la diaspora africaine",
+    "description": "Depuis 2021, nous connectons les familles entre l'Afrique et le Canada grâce à un service de fret aérien simple, transparent et fiable.",
+    "button": "Réserver maintenant",
+    "stats": {
+      "clients": "Clients fidèles",
+      "routes": "Routes actives",
+      "cargo": "Cargaisons / an"
+    }
+  },
+  "estimator": {
+    "eyebrow": "Simulateur de prix",
+    "title": "Combien coûte mon envoi ?",
+    "subtitle": "Calculez en quelques secondes. Sans inscription, sans engagement.",
+    "header": "Estimateur d'envoi",
+    "hint": "Ajoutez autant d'articles que nécessaire",
+    "field": {
+      "origin": "Départ",
+      "destination": "Destination",
+      "transit": "Transit",
+      "transitUnit": "j",
+      "rate": "Tarif en"
+    },
+    "table": {
+      "category": "Catégorie",
+      "weight": "Poids (kg)",
+      "base": "Base",
+      "surcharge": "Supplément",
+      "subtotal": "Sous-total"
+    },
+    "addItem": "Ajouter un article",
+    "book": "Réserver cet envoi",
+    "item": "article",
+    "items": "articles"
+  },
+  "faq": {
+    "eyebrow": "FAQ",
+    "title": "Questions fréquentes",
+    "subtitle": "Une autre question ? WhatsApp nous répond en moins d'une heure.",
+    "whatsapp": "Écrire sur WhatsApp"
+  },
+  "cta": {
+    "eyebrow": "Prêt à commencer ?",
+    "card": {
+      "title": "Pourquoi Jumla ?",
+      "reasons": [
+        "Transit garanti 14 jours",
+        "Suivi WhatsApp à chaque étape",
+        "Vérification article par article",
+        "Livraison à domicile au Canada",
+        "Paiement flexible à la livraison"
+      ],
+      "footer": {
+        "question": "Une question ?",
+        "whatsapp": "WhatsApp · Réponse en 1h"
+      }
+    },
+    "button": "Réserver un envoi"
+  },
+  "auth": {
+    "login": {
+      "title": "Connexion",
+      "subtitle": "Accédez à votre espace opérations.",
+      "forgotPassword": "Mot de passe oublié ?"
+    },
+    "register": {
+      "title": "Créer un compte",
+      "subtitle": "Créez votre compte client Jumla."
+    },
+    "verify": {
+      "title": "Vérification email",
+      "sentTo": "Code envoyé à",
+      "demoCode": "Mode démo — votre code :"
+    },
+    "info": {
+      "login": "Accès sécurisé. Plateforme Jumla — agents, admins et clients.",
+      "register": "Compte client. Pour réserver et suivre vos colis Jumla."
+    },
+    "footer": {
+      "legal": "Conditions · Confidentialité",
+      "support": "support@jumla.cargo"
+    }
+  },
+  "form": {
+    "email": "Email",
+    "emailPlaceholder": "vous@exemple.com",
+    "password": "Mot de passe",
+    "passwordPlaceholder": "••••••••",
+    "passwordHint": "6 caractères minimum",
+    "passwordConfirm": "Confirmer",
+    "fullName": "Nom complet",
+    "fullNamePlaceholder": "Jean Dupont"
+  },
+  "button": {
+    "signIn": "Se connecter",
+    "signingIn": "Connexion…",
+    "register": "Créer mon compte",
+    "registering": "Création…",
+    "verify": "Vérifier mon email",
+    "verifying": "Vérification…",
+    "logout": "Déconnexion",
+    "bookNow": "Réserver maintenant",
+    "help": "Besoin d'aide ?"
+  },
+  "error": {
+    "credentials": "Email ou mot de passe incorrect",
+    "passwordMismatch": "Les mots de passe ne correspondent pas",
+    "notFound": "Colis introuvable",
+    "network": "Erreur réseau — réessayez."
+  },
+  "client": {
+    "nav": {
+      "parcels": "Mes colis",
+      "book": "Réserver",
+      "tracking": "Suivi",
+      "payments": "Paiements",
+      "profile": "Profil"
+    },
+    "sidebar": {
+      "brand": "Jumla Shipping",
+      "space": "Espace client"
+    },
+    "topbar": {
+      "default": "Espace client",
+      "greeting": "Bonjour,"
+    },
+    "suspended": {
+      "title": "Compte suspendu",
+      "message": "Contactez-nous pour régulariser."
+    }
+  },
+  "notifications": {
+    "title": "Notifications",
+    "empty": "Aucune notification.",
+    "now": "À l'instant",
+    "minutesAgo": "il y a {n} min",
+    "hoursAgo": "il y a {n} h"
+  },
+  "dashboard": {
+    "greeting": "Bonjour {name} 👋",
+    "book": "Réserver",
+    "tabs": {
+      "active": "En cours ({n})",
+      "delivered": "Livrés ({n})"
+    },
+    "success": {
+      "booking": "Réservation enregistrée !",
+      "trackingNumber": "Numéro de suivi :"
+    },
+    "alert": {
+      "actionsRequired": "{n} action(s) requise(s)",
+      "borderauPending": "Des bordereaux attendent votre signature avant expédition",
+      "paymentOverdue": "Des paiements sont en attente de règlement"
+    },
+    "parcel": {
+      "actionRequired": "Action requise",
+      "departure": "Départ {date}",
+      "arrival": "Arrivée ~{date}",
+      "borderauWarning": "⚠️ Bordereau à signer",
+      "borderauOK": "📋 Bordereau OK",
+      "borderauPendingAction": "Votre bordereau attend votre confirmation avant l'expédition",
+      "paymentPending": "En attente de confirmation du paiement."
+    },
+    "payment": {
+      "paid": "✓ Payé",
+      "partial": "⏳ Partiel",
+      "pending": "⚡ À régler"
+    },
+    "empty": {
+      "active": "Aucun colis en cours",
+      "activeHint": "Commencez par réserver votre premier envoi.",
+      "delivered": "Aucun colis livré"
+    }
+  },
+  "invoices": {
+    "title": "Paiements & Factures",
+    "subtitle": "Historique de vos paiements et accès à vos factures.",
+    "amountDue": "Montant dû",
+    "totalPaid": "Total payé",
+    "paymentMethod": "Paiement par Virement Interac",
+    "howToPay": {
+      "title": "Comment payer ?",
+      "description": "Envoyez votre virement Interac à {email}. Indiquez votre numéro de colis dans le message. Notre équipe confirmera votre paiement sous 24h."
+    },
+    "table": {
+      "parcel": "Colis",
+      "status": "Statut",
+      "amount": "Montant",
+      "payment": "Paiement",
+      "action": "Action"
+    },
+    "status": {
+      "paid": "Payé",
+      "partial": "Partiel",
+      "pending": "En attente",
+      "notBilled": "Non facturé"
+    },
+    "button": {
+      "invoice": "📄 Facture",
+      "supplement": "📄 Supplément"
+    },
+    "empty": "Aucun colis enregistré."
+  },
+  "tracking": {
+    "eyebrow": "Suivi en temps réel",
+    "title": "Suivi de colis",
+    "subtitle": "Entrez votre numéro de suivi pour voir l'état de votre envoi.",
+    "placeholder": "JMS-12345",
+    "track": "Suivre",
+    "notFoundDetail": "Aucun colis trouvé avec le code {code}. Vérifiez l'orthographe.",
+    "campaign": "Cargaison {code}",
+    "statusLabel": "Statut · {from} → {to}",
+    "payment": {
+      "confirmed": "✓ Paiement confirmé",
+      "pending": "⏳ En attente"
+    },
+    "details": {
+      "title": "Détails de l'envoi",
+      "description": "Description",
+      "weight": "Poids déclaré",
+      "departure": "Départ prévu",
+      "arrival": "Arrivée prévue"
+    },
+    "timeline": {
+      "title": "Historique du colis",
+      "empty": "Aucun événement enregistré pour le moment.",
+      "current": "ACTUEL"
+    },
+    "footer": {
+      "pre": "Pour plus de détails,",
+      "link": "connectez-vous à votre espace client"
+    }
+  },
+  "statuses": {
+    "enr": "Colis enregistré",
+    "rec": "Reçu à l'entrepôt",
+    "pre": "Vérifié et préparé",
+    "exp": "Expédié",
+    "tra": "En transit",
+    "apd": "Arrivé au pays de destination",
+    "dou": "Présenté aux douanes",
+    "ins": "En inspection douanière",
+    "ret": "Retenu par les douanes",
+    "lib": "Libéré par les douanes",
+    "ard": "Arrivé à l'entrepôt de destination",
+    "ver": "Vérification finale",
+    "pdl": "Prêt pour livraison ou retrait",
+    "liv": "En cours de livraison",
+    "ok": "Livré",
+    "adr": "Adresse incomplète",
+    "tdl": "Tentative de livraison",
+    "rte": "Retour à l'entrepôt",
+    "dom": "Colis endommagé",
+    "cla": "Réclamation ouverte"
+  },
+  "loading": "Chargement…",
+  "unit": {
+    "kg": "kg",
+    "days": "j"
+  }
+}

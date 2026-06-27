@@ -1,0 +1,323 @@
+{
+  "nav": {
+    "signIn": "Sign in",
+    "register": "Create account"
+  },
+  "topbar": {
+    "hours": "Monday–Friday · 9am to 8pm",
+    "availability": "Available 24/7 · +1 514 000 0000"
+  },
+  "footer": {
+    "description": "International air freight specialist between Africa and Canada since 2021. Tracking, security and transparency at every step.",
+    "contact": "WhatsApp · Douala & Montréal",
+    "copyright": "© 2026 Jumla Shipping SARL — All rights reserved",
+    "offices": "Douala · Montréal · Lagos · Brussels",
+    "cols": {
+      "services": "Services",
+      "company": "Company",
+      "legal": "Legal"
+    },
+    "links": {
+      "airFreight": "Air freight Douala → Montréal",
+      "homeDelivery": "Home delivery",
+      "warehousePickup": "Warehouse pickup",
+      "tracking": "Real-time tracking",
+      "about": "About us",
+      "blog": "Blog",
+      "careers": "Careers",
+      "contact": "Contact",
+      "tos": "Terms of service",
+      "privacy": "Privacy policy",
+      "cookies": "Cookies",
+      "faq": "FAQ"
+    }
+  },
+  "hero": {
+    "tracking": {
+      "label": "Tracking number",
+      "placeholder": "JMS-12345",
+      "title": "Track my parcel",
+      "button": "Track my parcel →"
+    },
+    "route": {
+      "departure": "Departure",
+      "arrival": "Arrival",
+      "badge": "14-day transit · WhatsApp notification included"
+    },
+    "cta": {
+      "newCustomer": "Not a customer yet?",
+      "bookNow": "Create a shipment now"
+    },
+    "button": {
+      "book": "Book a shipment",
+      "estimate": "Calculate my rate →"
+    }
+  },
+  "services": {
+    "eyebrow": "What we offer",
+    "title": "Our services",
+    "subtitle": "One contact from Douala to Canada. Complete transparency, zero surprises."
+  },
+  "features": {
+    "eyebrow": "Why Jumla",
+    "title1": "A service built for",
+    "title2": "the African diaspora",
+    "description": "Since 2021, we connect families between Africa and Canada through a simple, transparent and reliable air freight service.",
+    "button": "Book now",
+    "stats": {
+      "clients": "Loyal customers",
+      "routes": "Active routes",
+      "cargo": "Shipments / year"
+    }
+  },
+  "estimator": {
+    "eyebrow": "Price simulator",
+    "title": "How much does my shipment cost?",
+    "subtitle": "Calculate in seconds. No registration, no commitment.",
+    "header": "Shipment estimator",
+    "hint": "Add as many items as needed",
+    "field": {
+      "origin": "Origin",
+      "destination": "Destination",
+      "transit": "Transit",
+      "transitUnit": "d",
+      "rate": "Rate in"
+    },
+    "table": {
+      "category": "Category",
+      "weight": "Weight (kg)",
+      "base": "Base",
+      "surcharge": "Surcharge",
+      "subtotal": "Subtotal"
+    },
+    "addItem": "Add an item",
+    "book": "Book this shipment",
+    "item": "item",
+    "items": "items"
+  },
+  "faq": {
+    "eyebrow": "FAQ",
+    "title": "Frequently asked questions",
+    "subtitle": "Another question? WhatsApp replies within an hour.",
+    "whatsapp": "Message on WhatsApp"
+  },
+  "cta": {
+    "eyebrow": "Ready to start?",
+    "card": {
+      "title": "Why Jumla?",
+      "reasons": [
+        "Guaranteed 14-day transit",
+        "WhatsApp tracking at every step",
+        "Item-by-item verification",
+        "Home delivery across Canada",
+        "Flexible payment on delivery"
+      ],
+      "footer": {
+        "question": "Any questions?",
+        "whatsapp": "WhatsApp · Response within 1h"
+      }
+    },
+    "button": "Book a shipment"
+  },
+  "auth": {
+    "login": {
+      "title": "Sign in",
+      "subtitle": "Access your operations space.",
+      "forgotPassword": "Forgot password?"
+    },
+    "register": {
+      "title": "Create an account",
+      "subtitle": "Create your Jumla customer account."
+    },
+    "verify": {
+      "title": "Email verification",
+      "sentTo": "Code sent to",
+      "demoCode": "Demo mode — your code:"
+    },
+    "info": {
+      "login": "Secure access. Jumla platform — agents, admins and customers.",
+      "register": "Customer account. To book and track your Jumla parcels."
+    },
+    "footer": {
+      "legal": "Terms · Privacy",
+      "support": "support@jumla.cargo"
+    }
+  },
+  "form": {
+    "email": "Email",
+    "emailPlaceholder": "you@example.com",
+    "password": "Password",
+    "passwordPlaceholder": "••••••••",
+    "passwordHint": "Minimum 6 characters",
+    "passwordConfirm": "Confirm",
+    "fullName": "Full name",
+    "fullNamePlaceholder": "John Smith"
+  },
+  "button": {
+    "signIn": "Sign in",
+    "signingIn": "Signing in…",
+    "register": "Create my account",
+    "registering": "Creating…",
+    "verify": "Verify my email",
+    "verifying": "Verifying…",
+    "logout": "Sign out",
+    "bookNow": "Book now",
+    "help": "Need help?"
+  },
+  "error": {
+    "credentials": "Incorrect email or password",
+    "passwordMismatch": "Passwords do not match",
+    "notFound": "Parcel not found",
+    "network": "Network error — please try again."
+  },
+  "client": {
+    "nav": {
+      "parcels": "My parcels",
+      "book": "Book",
+      "tracking": "Tracking",
+      "payments": "Payments",
+      "profile": "Profile"
+    },
+    "sidebar": {
+      "brand": "Jumla Shipping",
+      "space": "Customer portal"
+    },
+    "topbar": {
+      "default": "Customer portal",
+      "greeting": "Hello,"
+    },
+    "suspended": {
+      "title": "Account suspended",
+      "message": "Contact us to resolve this."
+    }
+  },
+  "notifications": {
+    "title": "Notifications",
+    "empty": "No notifications.",
+    "now": "Just now",
+    "minutesAgo": "{n} min ago",
+    "hoursAgo": "{n} h ago"
+  },
+  "dashboard": {
+    "greeting": "Hello {name} 👋",
+    "book": "Book",
+    "tabs": {
+      "active": "Active ({n})",
+      "delivered": "Delivered ({n})"
+    },
+    "success": {
+      "booking": "Booking registered!",
+      "trackingNumber": "Tracking number:"
+    },
+    "alert": {
+      "actionsRequired": "{n} action(s) required",
+      "borderauPending": "Manifests are awaiting your signature before dispatch",
+      "paymentOverdue": "Payments are pending settlement"
+    },
+    "parcel": {
+      "actionRequired": "Action required",
+      "departure": "Departure {date}",
+      "arrival": "Arrival ~{date}",
+      "borderauWarning": "⚠️ Manifest to sign",
+      "borderauOK": "📋 Manifest OK",
+      "borderauPendingAction": "Your manifest is awaiting confirmation before dispatch",
+      "paymentPending": "Awaiting payment confirmation."
+    },
+    "payment": {
+      "paid": "✓ Paid",
+      "partial": "⏳ Partial",
+      "pending": "⚡ To pay"
+    },
+    "empty": {
+      "active": "No active parcels",
+      "activeHint": "Start by booking your first shipment.",
+      "delivered": "No delivered parcels"
+    }
+  },
+  "invoices": {
+    "title": "Payments & Invoices",
+    "subtitle": "Your payment history and invoice access.",
+    "amountDue": "Amount due",
+    "totalPaid": "Total paid",
+    "paymentMethod": "Payment by Interac transfer",
+    "howToPay": {
+      "title": "How to pay?",
+      "description": "Send your Interac transfer to {email}. Include your parcel number in the message. Our team will confirm your payment within 24h."
+    },
+    "table": {
+      "parcel": "Parcel",
+      "status": "Status",
+      "amount": "Amount",
+      "payment": "Payment",
+      "action": "Action"
+    },
+    "status": {
+      "paid": "Paid",
+      "partial": "Partial",
+      "pending": "Pending",
+      "notBilled": "Not billed"
+    },
+    "button": {
+      "invoice": "📄 Invoice",
+      "supplement": "📄 Supplement"
+    },
+    "empty": "No parcels registered."
+  },
+  "tracking": {
+    "eyebrow": "Real-time tracking",
+    "title": "Parcel tracking",
+    "subtitle": "Enter your tracking number to see the status of your shipment.",
+    "placeholder": "JMS-12345",
+    "track": "Track",
+    "notFoundDetail": "No parcel found with code {code}. Please check the spelling.",
+    "campaign": "Shipment {code}",
+    "statusLabel": "Status · {from} → {to}",
+    "payment": {
+      "confirmed": "✓ Payment confirmed",
+      "pending": "⏳ Pending"
+    },
+    "details": {
+      "title": "Shipment details",
+      "description": "Description",
+      "weight": "Declared weight",
+      "departure": "Scheduled departure",
+      "arrival": "Scheduled arrival"
+    },
+    "timeline": {
+      "title": "Parcel history",
+      "empty": "No events recorded yet.",
+      "current": "CURRENT"
+    },
+    "footer": {
+      "pre": "For more details,",
+      "link": "sign in to your customer portal"
+    }
+  },
+  "statuses": {
+    "enr": "Parcel registered",
+    "rec": "Received at warehouse",
+    "pre": "Verified and prepared",
+    "exp": "Shipped",
+    "tra": "In transit",
+    "apd": "Arrived in destination country",
+    "dou": "Presented to customs",
+    "ins": "Under customs inspection",
+    "ret": "Held by customs",
+    "lib": "Released by customs",
+    "ard": "Arrived at destination warehouse",
+    "ver": "Final verification",
+    "pdl": "Ready for delivery or pickup",
+    "liv": "Out for delivery",
+    "ok": "Delivered",
+    "adr": "Incomplete address",
+    "tdl": "Delivery attempt",
+    "rte": "Returned to warehouse",
+    "dom": "Damaged parcel",
+    "cla": "Claim opened"
+  },
+  "loading": "Loading…",
+  "unit": {
+    "kg": "kg",
+    "days": "d"
+  }
+}

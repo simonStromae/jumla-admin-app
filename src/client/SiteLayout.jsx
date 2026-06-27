@@ -2,9 +2,12 @@
 import { useSession } from 'next-auth/react';
 import I from '../components/Icons.jsx';
 import { useCompanyAssets } from '../lib/useCompanyAssets.js';
+import { useT } from '@/src/lib/i18n';
+import LanguageSwitcher from '@/src/components/LanguageSwitcher.jsx';
 
 /* ─── Top info bar ─── */
 export function TopBar() {
+  const t = useT();
   return (
     <div className="jtop-bar">
       <div className="jc">
@@ -12,7 +15,7 @@ export function TopBar() {
           <div className="jtop-bar__left">
             <span className="jtop-bar__item">
               <I.Calendar style={{ width: 13, height: 13 }} />
-              Lundi–Vendredi · 09h à 20h
+              {t('topbar.hours')}
             </span>
             <span className="jtop-bar__item">
               <I.Send style={{ width: 13, height: 13 }} />
@@ -22,10 +25,7 @@ export function TopBar() {
           <div className="jtop-bar__right">
             <span className="jtop-bar__item">
               <I.Phone style={{ width: 13, height: 13 }} />
-              Disponible 24h/7j · +1 514 000 0000
-            </span>
-            <span className="jtop-bar__item" style={{ fontWeight: 700, color: 'var(--ink-600)' }}>
-              🇫🇷 Français
+              {t('topbar.availability')}
             </span>
           </div>
         </div>
@@ -38,6 +38,7 @@ export function TopBar() {
 export function SiteNav({ onNav, onBook, mode = 'landing' }) {
   const { data: session, status } = useSession();
   const { logoUrl, logoIconUrl, logoHeight } = useCompanyAssets();
+  const t = useT();
   const user = session?.user;
   const role = user?.role;
 
@@ -69,17 +70,21 @@ export function SiteNav({ onNav, onBook, mode = 'landing' }) {
           </button>
           <div className="jnav__right" style={{ marginLeft: 'auto' }}>
             {status === 'loading' ? null : user ? (
-              <button onClick={() => onNav?.(dashHref)} style={{
-                width: 36, height: 36, borderRadius: '50%',
-                background: 'var(--brand-500)', color: '#fff',
-                fontSize: 13, fontWeight: 700, border: 'none', cursor: 'pointer',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-              }}>{initials}</button>
+              <>
+                <button onClick={() => onNav?.(dashHref)} style={{
+                  width: 36, height: 36, borderRadius: '50%',
+                  background: 'var(--brand-500)', color: '#fff',
+                  fontSize: 13, fontWeight: 700, border: 'none', cursor: 'pointer',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                }}>{initials}</button>
+                <LanguageSwitcher />
+              </>
             ) : (
               <>
-                <button className="jnav__signin" onClick={() => onNav?.('/login')}>Se connecter</button>
+                <LanguageSwitcher />
+                <button className="jnav__signin" onClick={() => onNav?.('/login')}>{t('nav.signIn')}</button>
                 <button className="jbtn-nav" onClick={() => onNav?.('/login?tab=register')}>
-                  Créer un compte <I.ArrowRight style={{ width: 15, height: 15 }} />
+                  {t('nav.register')} <I.ArrowRight style={{ width: 15, height: 15 }} />
                 </button>
               </>
             )}
@@ -93,10 +98,11 @@ export function SiteNav({ onNav, onBook, mode = 'landing' }) {
 /* ─── Footer ─── */
 export function SiteFooter() {
   const { logoUrl, logoIconUrl, logoHeight } = useCompanyAssets();
+  const t = useT();
   const cols = [
-    { l: 'Services',   items: ['Fret aérien Douala → Montréal', 'Livraison à domicile', 'Retrait entrepôt', 'Suivi en temps réel'] },
-    { l: 'Entreprise', items: ['À propos', 'Blog', 'Carrières', 'Contact'] },
-    { l: 'Légal',      items: ['Conditions générales', 'Confidentialité', 'Cookies', 'FAQ'] },
+    { l: t('footer.cols.services'), items: [t('footer.links.airFreight'), t('footer.links.homeDelivery'), t('footer.links.warehousePickup'), t('footer.links.tracking')] },
+    { l: t('footer.cols.company'), items: [t('footer.links.about'), t('footer.links.blog'), t('footer.links.careers'), t('footer.links.contact')] },
+    { l: t('footer.cols.legal'), items: [t('footer.links.tos'), t('footer.links.privacy'), t('footer.links.cookies'), t('footer.links.faq')] },
   ];
   return (
     <footer className="jfoot" id="jfoot">
@@ -120,11 +126,10 @@ export function SiteFooter() {
               )}
             </div>
             <p className="jfoot__desc">
-              Spécialiste du fret aérien international entre l'Afrique et le Canada depuis 2021.
-              Suivi, sécurité et transparence à chaque étape.
+              {t('footer.description')}
             </p>
             <div className="jfoot__contact">
-              <I.Whatsapp style={{ width: 16, height: 16 }} /> WhatsApp · Douala &amp; Montréal
+              <I.Whatsapp style={{ width: 16, height: 16 }} /> {t('footer.contact')}
             </div>
           </div>
           {cols.map(c => (
@@ -137,8 +142,8 @@ export function SiteFooter() {
           ))}
         </div>
         <div className="jfoot__bottom">
-          <span>© 2026 Jumla Shipping SARL — Tous droits réservés</span>
-          <span>Douala · Montréal · Lagos · Bruxelles</span>
+          <span>{t('footer.copyright')}</span>
+          <span>{t('footer.offices')}</span>
         </div>
       </div>
     </footer>
