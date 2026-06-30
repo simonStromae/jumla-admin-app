@@ -137,6 +137,10 @@ function LoginForm() {
     setDemoCode(''); setVerifyFromLogin(false); setTab('login');
   }
 
+  const doOAuth = (provider) => {
+    signIn(provider, { callbackUrl: '/client/dashboard' });
+  };
+
   return (
     <div style={{ minHeight: '100vh', display: 'grid', gridTemplateColumns: '1fr 1fr', background: 'var(--bg-page)' }}>
 
@@ -236,6 +240,45 @@ function LoginForm() {
               <p style={{ color: 'var(--ink-400)', fontSize: 13.5, marginTop: 0, marginBottom: 20 }}>
                 {tab === 'login' ? t('auth.login.subtitle') : t('auth.register.subtitle')}
               </p>
+            </>
+          )}
+
+          {/* OAuth buttons */}
+          {tab !== 'verify' && (
+            <>
+              <div style={{ display: 'flex', gap: 10, marginBottom: 16 }}>
+                <button
+                  type="button"
+                  onClick={() => doOAuth('google')}
+                  className="btn btn--ghost"
+                  style={{ flex: 1, justifyContent: 'center', gap: 8, fontSize: 13, fontWeight: 600 }}>
+                  <svg width="18" height="18" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M43.611 20.083H42V20H24v8h11.303C33.654 32.657 29.332 36 24 36c-6.627 0-12-5.373-12-12s5.373-12 12-12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.268 4 24 4 12.955 4 4 12.955 4 24s8.955 20 20 20 20-8.955 20-20c0-1.341-.138-2.65-.389-3.917z" fill="#FFC107"/>
+                    <path d="M6.306 14.691l6.571 4.819C14.655 15.108 19.001 12 24 12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.268 4 24 4 16.318 4 9.656 8.337 6.306 14.691z" fill="#FF3D00"/>
+                    <path d="M24 44c5.166 0 9.86-1.977 13.409-5.192l-6.19-5.238A11.91 11.91 0 0 1 24 36c-5.316 0-9.817-3.58-11.296-8.42l-6.522 5.025C9.505 39.556 16.227 44 24 44z" fill="#4CAF50"/>
+                    <path d="M43.611 20.083H42V20H24v8h11.303a12.04 12.04 0 0 1-4.087 5.571l.003-.002 6.19 5.238C36.971 39.205 44 34 44 24c0-1.341-.138-2.65-.389-3.917z" fill="#1976D2"/>
+                  </svg>
+                  Google
+                </button>
+                <button
+                  type="button"
+                  onClick={() => doOAuth('facebook')}
+                  className="btn btn--ghost"
+                  style={{ flex: 1, justifyContent: 'center', gap: 8, fontSize: 13, fontWeight: 600 }}>
+                  <svg width="18" height="18" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M24 4C12.954 4 4 12.954 4 24c0 9.893 6.835 18.185 16 20.473V30h-5v-6h5v-4.5C20 15.014 22.716 12 27.5 12c2.291 0 4.5.2 4.5.2V17h-2.535C27.034 17 26 18.168 26 19.75V24h6l-1 6h-5v14.473C35.165 42.185 42 33.893 42 24c0-11.046-8.954-20-18-20z" fill="#1877F2"/>
+                    <path d="M31 30l1-6h-6v-4.25C26 18.168 27.034 17 29.465 17H32v-4.8S29.791 12 27.5 12C22.716 12 20 15.014 20 19.5V24h-5v6h5v14.473a20.1 20.1 0 0 0 8 0V30h-5z" fill="white"/>
+                  </svg>
+                  Facebook
+                </button>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20 }}>
+                <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />
+                <span style={{ fontSize: 12, color: 'var(--ink-400)', whiteSpace: 'nowrap' }}>
+                  {tab === 'login' ? 'ou se connecter avec email' : 'ou s\'inscrire avec email'}
+                </span>
+                <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />
+              </div>
             </>
           )}
 
