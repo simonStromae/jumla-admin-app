@@ -178,6 +178,9 @@ export default function CampaignDetailScreen({ id, onNav }) {
           </div>
         </div>
         <div className="page__actions">
+          <button className="btn btn--ghost" onClick={() => onNav('/admin/campaigns/' + campaign.id + '/edit')}>
+            <I.Edit />Modifier
+          </button>
           <button onClick={() => onNav('/messaging?campaignId=' + campaign.id)} style={{
             display: 'flex', alignItems: 'center', gap: 8,
             padding: '8px 14px', borderRadius: 8,

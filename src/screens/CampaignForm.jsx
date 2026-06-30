@@ -18,15 +18,17 @@ export default function CampaignFormPage({ mode = 'create', campaign, onNav }) {
   const [saving, setSaving]   = useState(false);
   const [err, setErr]         = useState('');
 
+  const toInputDate = (d) => d ? new Date(d).toISOString().slice(0, 10) : '';
+
   const [data, setData] = useState({
-    routeId:     campaign?.route    || '',
-    code:        campaign?.code     || '',
-    depDate:     campaign?.dep      || '',
-    arrDate:     '',
-    capacityKg:  '',
-    agentOrigin: '',
-    agentDest:   '',
-    notes:       '',
+    routeId:     campaign?.routeId ?? campaign?.route?.id ?? '',
+    code:        campaign?.code        || '',
+    depDate:     toInputDate(campaign?.departureDate),
+    arrDate:     toInputDate(campaign?.arrivalDate),
+    capacityKg:  campaign?.capacityKg?.toString() ?? '',
+    agentOrigin: campaign?.agentOrigin || '',
+    agentDest:   campaign?.agentDest   || '',
+    notes:       campaign?.notes       || '',
   });
 
   useEffect(() => {
@@ -55,24 +57,50 @@ export default function CampaignFormPage({ mode = 'create', campaign, onNav }) {
   }
 
   async function handleSubmit() {
-    if (!data.routeId) { setErr('Veuillez sélectionner une route'); return; }
+    if (!data.routeId)    { setErr('Veuillez sélectionner une route'); return; }
     if (!data.code.trim()) { setErr('Le code de cargaison est obligatoire'); return; }
+
+    // Date validations
+    const today = new Date(); today.setHours(0, 0, 0, 0);
+    if (data.depDate) {
+      const dep = new Date(data.depDate);
+      if (!isEdit && dep < today) {
+        setErr('La date de départ ne peut pas être dans le passé'); return;
+      }
+    }
+    if (data.arrDate) {
+      if (!data.depDate) {
+        setErr('Veuillez renseigner la date de départ avant la date d\'arrivée'); return;
+      }
+      if (new Date(data.arrDate) <= new Date(data.depDate)) {
+        setErr('La date d\'arrivée doit être postérieure à la date de départ'); return;
+      }
+    }
+    if (data.capacityKg && Number(data.capacityKg) <= 0) {
+      setErr('La capacité doit être supérieure à 0'); return;
+    }
+
     setSaving(true); setErr('');
     try {
-      const res = await fetch('/api/campaigns', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          code:          data.code.trim(),
-          routeId:       data.routeId,
-          departureDate: data.depDate || null,
-          arrivalDate:   data.arrDate || null,
-          capacityKg:    data.capacityKg ? Number(data.capacityKg) : null,
-        }),
-      });
+      const payload = {
+        code:          data.code.trim(),
+        routeId:       data.routeId,
+        departureDate: data.depDate || null,
+        arrivalDate:   data.arrDate || null,
+        capacityKg:    data.capacityKg ? Number(data.capacityKg) : null,
+      };
+
+      const res = await fetch(
+        isEdit ? `/api/campaigns/${campaign.id}` : '/api/campaigns',
+        {
+          method:  isEdit ? 'PUT' : 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body:    JSON.stringify(payload),
+        },
+      );
       const json = await res.json();
-      if (!res.ok) { setErr(json.error || 'Erreur lors de la création'); setSaving(false); return; }
-      onNav('/');
+      if (!res.ok) { setErr(json.error || (isEdit ? 'Erreur lors de la modification' : 'Erreur lors de la création')); setSaving(false); return; }
+      onNav(isEdit ? '/campaign/' + campaign.id : '/');
     } catch { setErr('Erreur réseau'); setSaving(false); }
   }
 
@@ -189,11 +217,13 @@ export default function CampaignFormPage({ mode = 'create', campaign, onNav }) {
               <div className="field" style={{ marginBottom: 0 }}>
                 <label className="label">Date de départ <span className="opt">/ Departure</span></label>
                 <input className="input" type="date" value={data.depDate}
+                  min={isEdit ? undefined : new Date().toISOString().slice(0, 10)}
                   onChange={e => upd('depDate', e.target.value)} />
               </div>
               <div className="field" style={{ marginBottom: 0 }}>
                 <label className="label">Arrivée estimée <span className="opt">/ ETA</span></label>
                 <input className="input" type="date" value={data.arrDate}
+                  min={data.depDate || new Date().toISOString().slice(0, 10)}
                   onChange={e => upd('arrDate', e.target.value)} />
               </div>
             </div>
