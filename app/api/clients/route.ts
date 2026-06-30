@@ -57,22 +57,23 @@ export async function GET(req: NextRequest) {
     const campaigns     = new Set(u.parcels.map(p => p.campaignId)).size;
 
     return {
-      id:           u.id,
-      name:         u.name,
-      email:        u.email,
-      status:       (u as any).status ?? 'active',
-      code:         'CL-' + String(i + 1).padStart(4, '0'),
-      phone:        u.phone ?? '—',
-      city:         u.city  ?? '—',
+      id:            u.id,
+      name:          u.name,
+      email:         u.email,
+      status:        (u as any).status ?? 'active',
+      emailVerified: (u as any).emailVerified ?? false,
+      code:          'CL-' + String(i + 1).padStart(4, '0'),
+      phone:         u.phone ?? '—',
+      city:          u.city  ?? '—',
       campaigns,
-      weight:       Math.round(totalWeight * 10) / 10,
-      amount:       totalAmount,
-      parcelsCount: u.parcels.length,
-      lastCampaign: lastParcel?.campaign.code ?? '—',
-      lastStatus:   lastParcel?.status ?? '—',
-      loyal:        campaigns >= 3,
-      color:        (i % 8) + 1,
-      createdAt:    u.createdAt,
+      weight:        Math.round(totalWeight * 10) / 10,
+      amount:        totalAmount,
+      parcelsCount:  u.parcels.length,
+      lastCampaign:  lastParcel?.campaign.code ?? '—',
+      lastStatus:    lastParcel?.status ?? '—',
+      loyal:         campaigns >= 3,
+      color:         (i % 8) + 1,
+      createdAt:     u.createdAt,
     };
   });
 
