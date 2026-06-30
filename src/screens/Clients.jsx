@@ -150,6 +150,7 @@ function ClientsGridView({ clients, setOpen }) {
         <div key={cl.id} className="card" style={{ padding: 14, position: 'relative', cursor: 'pointer', opacity: cl.status === 'suspended' ? .7 : 1 }} onClick={() => setOpen(cl)}>
           <div style={{ position: 'absolute', top: 12, right: 12, display: 'flex', gap: 4 }}>
             {cl.status === 'suspended' && <span className="badge" style={{ background: 'var(--bad-50)', color: 'var(--bad-700)', border: '1px solid var(--bad-200)', fontSize: 10 }}>Suspendu</span>}
+            {!cl.emailVerified && <span className="badge" style={{ background: 'var(--warn-50)', color: 'var(--warn-700)', border: '1px solid var(--warn-200)', fontSize: 10 }}>Non vérifié</span>}
             {cl.loyal && <I.Star style={{ width: 14, height: 14, color: 'var(--brand-500)' }} />}
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
@@ -222,9 +223,12 @@ function ClientsListView({ clients, setOpen, onToggleStatus, page, pageSize }) {
                 </div>
               </td>
               <td>
-                {suspended
-                  ? <span className="badge" style={{ background: 'var(--bad-50)', color: 'var(--bad-700)', border: '1px solid var(--bad-200)' }}>Suspendu</span>
-                  : <span className="badge" style={{ background: 'var(--ok-50)', color: 'var(--ok-700)', border: '1px solid var(--ok-100)' }}>Actif</span>}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 4, alignItems: 'flex-start' }}>
+                  {suspended
+                    ? <span className="badge" style={{ background: 'var(--bad-50)', color: 'var(--bad-700)', border: '1px solid var(--bad-200)' }}>Suspendu</span>
+                    : <span className="badge" style={{ background: 'var(--ok-50)', color: 'var(--ok-700)', border: '1px solid var(--ok-100)' }}>Actif</span>}
+                  {!cl.emailVerified && <span className="badge" style={{ background: 'var(--warn-50)', color: 'var(--warn-700)', border: '1px solid var(--warn-200)', fontSize: 10 }}>Email non vérifié</span>}
+                </div>
               </td>
               <td style={{ fontSize: 12.5 }}>{cl.city}, Cameroun</td>
               <td className="mono" style={{ fontSize: 12 }}>{cl.phone}</td>
@@ -284,6 +288,9 @@ function ClientDrawer({ cl, onClose, onEdit, onNav, onStatusChange, onDeleted })
   const [deleteConfirm, setDeleteConfirm] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [deleteErr, setDeleteErr] = useState('');
+  const [resending, setResending] = useState(false);
+  const [resendOk, setResendOk] = useState(false);
+  const [resendErr, setResendErr] = useState('');
 
   const handleDelete = async () => {
     setDeleting(true);
@@ -302,6 +309,19 @@ function ClientDrawer({ cl, onClose, onEdit, onNav, onStatusChange, onDeleted })
       setDeleteErr('Erreur réseau');
       setDeleting(false);
     }
+  };
+
+  const handleResendVerification = async () => {
+    setResending(true);
+    setResendOk(false);
+    setResendErr('');
+    try {
+      const res = await fetch(`/api/admin/clients/${cl.id}/resend-verification`, { method: 'POST' });
+      const d = await res.json();
+      if (!res.ok) { setResendErr(d.error || 'Erreur'); }
+      else { setResendOk(true); }
+    } catch { setResendErr('Erreur réseau'); }
+    setResending(false);
   };
 
   const handleToggleStatus = async () => {
@@ -355,6 +375,9 @@ function ClientDrawer({ cl, onClose, onEdit, onNav, onStatusChange, onDeleted })
               </div>
               {cl.status === 'suspended' && (
                 <span className="badge" style={{ background: 'var(--bad-50)', color: 'var(--bad-700)', border: '1px solid var(--bad-200)' }}>Suspendu</span>
+              )}
+              {!cl.emailVerified && (
+                <span className="badge" style={{ background: 'var(--warn-50)', color: 'var(--warn-700)', border: '1px solid var(--warn-200)' }}>Email non vérifié</span>
               )}
             </div>
             <div style={{ fontSize: 12, color: 'var(--ink-400)', marginTop: 2 }}>
@@ -527,6 +550,23 @@ function ClientDrawer({ cl, onClose, onEdit, onNav, onStatusChange, onDeleted })
             {cl.status === 'suspended' ? 'Réactiver' : 'Suspendre'}
           </button>
         </div>
+        {!cl.emailVerified && (
+          <div>
+            <button
+              className="btn btn--ghost"
+              style={{ width: '100%', justifyContent: 'center', fontSize: 12, color: 'var(--warn-700)' }}
+              onClick={handleResendVerification}
+              disabled={resending || resendOk}>
+              <I.Mail style={{ width: 13, height: 13 }} />
+              {resending ? 'Envoi en cours…' : resendOk ? 'Email envoyé ✓' : 'Renvoyer l\'email de vérification'}
+            </button>
+            {resendErr && (
+              <div style={{ fontSize: 12, color: 'var(--bad-700)', background: 'var(--bad-50)', border: '1px solid var(--bad-200)', borderRadius: 6, padding: '6px 10px', marginTop: 4 }}>
+                {resendErr}
+              </div>
+            )}
+          </div>
+        )}
         {deleteErr && (
           <div style={{ fontSize: 12, color: 'var(--bad-700)', background: 'var(--bad-50)', border: '1px solid var(--bad-200)', borderRadius: 6, padding: '6px 10px' }}>
             {deleteErr}
