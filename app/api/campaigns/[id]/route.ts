@@ -42,7 +42,7 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
   if (error) return error;
 
   const body = await req.json();
-  const { status, departureDate, arrivalDate, capacityKg, statusNote } = body;
+  const { status, departureDate, arrivalDate, capacityKg, statusNote, code, routeId } = body;
 
   try {
     const prismaStatus = status ? toPrismaStatus(status) : undefined;
@@ -69,6 +69,8 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
         [prismaStatus]: { at: new Date().toISOString(), ...(statusNote ? { note: statusNote } : {}) },
       };
     }
+    if (code          !== undefined) data.code          = code;
+    if (routeId       !== undefined) data.routeId       = routeId;
     if (departureDate !== undefined) data.departureDate = departureDate ? new Date(departureDate) : null;
     if (arrivalDate   !== undefined) data.arrivalDate   = arrivalDate   ? new Date(arrivalDate)   : null;
     if (capacityKg    !== undefined) data.capacityKg    = capacityKg    ? Number(capacityKg)      : null;

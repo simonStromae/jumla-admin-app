@@ -403,15 +403,6 @@ function LoginForm() {
             </form>
           )}
 
-          <div style={{ marginTop: 28, padding: 14, background: 'var(--bg-soft)', border: '1px solid var(--border-soft)', borderRadius: 10, display: 'flex', gap: 10 }}>
-            <I.Info style={{ flex: '0 0 16px', color: 'var(--ink-400)', marginTop: 1 }} />
-            <div style={{ fontSize: 12, color: 'var(--ink-500)', lineHeight: 1.45 }}>
-              {tab === 'register'
-                ? <span dangerouslySetInnerHTML={{ __html: t('auth.info.register') }} />
-                : <span dangerouslySetInnerHTML={{ __html: t('auth.info.login') }} />
-              }
-            </div>
-          </div>
         </div>
 
         <div style={{ fontSize: 11, color: 'var(--ink-400)', display: 'flex', justifyContent: 'space-between' }}>
