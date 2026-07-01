@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 
 import I from '../components/Icons.jsx';
 import { Bi, Avatar, Drawer, Skel, Modal, useCan } from '../components/Shell.jsx';
+import { HelpTip } from '../components/HelpCenter.jsx';
 import { Pagination, ViewToggle } from '../components/Pagination.jsx';
 import ClientFormModal from './ClientForm.jsx';
 
@@ -377,7 +378,10 @@ function ClientDrawer({ cl, onClose, onEdit, onNav, onStatusChange, onDeleted })
                 <span className="badge" style={{ background: 'var(--bad-50)', color: 'var(--bad-700)', border: '1px solid var(--bad-200)' }}>Suspendu</span>
               )}
               {!cl.emailVerified && (
-                <span className="badge" style={{ background: 'var(--warn-50)', color: 'var(--warn-700)', border: '1px solid var(--warn-200)' }}>Email non vérifié</span>
+                <span className="badge" style={{ background: 'var(--warn-50)', color: 'var(--warn-700)', border: '1px solid var(--warn-200)' }}>
+                  Email non vérifié
+                  <HelpTip text="Le client n'a pas encore confirmé son adresse email. Utilisez le bouton ci-dessous pour renvoyer le code de vérification." position="left" />
+                </span>
               )}
             </div>
             <div style={{ fontSize: 12, color: 'var(--ink-400)', marginTop: 2 }}>

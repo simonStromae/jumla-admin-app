@@ -4,6 +4,7 @@ import I from './Icons.jsx';
 import { useCompanyAssets } from '../lib/useCompanyAssets.js';
 import LanguageSwitcher from './LanguageSwitcher.jsx';
 import AdminOnboarding from './AdminOnboarding.jsx';
+import HelpCenter from './HelpCenter.jsx';
 
 const PERM_ALIAS = { campaigns: 'cargaisons' };
 
@@ -338,6 +339,7 @@ export function Shell({ route, onNav, title, sub, actions, children, hideChrome 
     <>
       <AdminMobileBlock />
       <AdminOnboarding />
+      <HelpCenter variant="admin" />
       <div className="app">
         <Sidebar route={route} onNav={onNav} />
         <main style={{ minWidth: 0 }}>

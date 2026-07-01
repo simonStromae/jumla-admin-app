@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import I from '../components/Icons.jsx';
 import { RoutePill, Avatar } from '../components/Shell.jsx';
+import { HelpTip } from '../components/HelpCenter.jsx';
 
 function autoCode(route) {
   if (!route) return '';
@@ -197,11 +198,11 @@ export default function CampaignFormPage({ mode = 'create', campaign, onNav }) {
 
             <div className="field-row field-row--2">
               <div className="field" style={{ marginBottom: 0 }}>
-                <label className="label">Code cargaison <span className="opt">/ Auto</span></label>
+                <label className="label">Code cargaison <span className="opt">/ Auto</span><HelpTip text="Identifiant unique de la cargaison. Généré automatiquement (ex: DLA-MTL-JUL-01). Modifiable." /></label>
                 <input className="input mono" value={data.code} onChange={e => upd('code', e.target.value)} />
               </div>
               <div className="field" style={{ marginBottom: 0 }}>
-                <label className="label">Capacité (kg) <span className="opt">/ optionnel</span></label>
+                <label className="label">Capacité (kg) <span className="opt">/ optionnel</span><HelpTip text="Poids maximum accepté pour cette cargaison. Permet de visualiser le taux de remplissage." /></label>
                 <input className="input mono" type="number" value={data.capacityKg}
                   onChange={e => upd('capacityKg', e.target.value)} placeholder="ex: 500" />
               </div>
@@ -215,7 +216,7 @@ export default function CampaignFormPage({ mode = 'create', campaign, onNav }) {
             </div>
             <div className="field-row field-row--2">
               <div className="field" style={{ marginBottom: 0 }}>
-                <label className="label">Date de départ <span className="opt">/ Departure</span></label>
+                <label className="label">Date de départ <span className="opt">/ Departure</span><HelpTip text="Date prévue d'envoi depuis l'origine. Ne peut pas être dans le passé lors de la création." /></label>
                 <input className="input" type="date" value={data.depDate}
                   min={isEdit ? undefined : new Date().toISOString().slice(0, 10)}
                   onChange={e => upd('depDate', e.target.value)} />
