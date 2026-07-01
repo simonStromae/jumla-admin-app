@@ -1,6 +1,5 @@
 'use client';
-import { useState, useEffect, useRef } from 'react';
-import { usePathname } from 'next/navigation';
+import { useState, useEffect } from 'react';
 
 // ─── Content ────────────────────────────────────────────────────────────────
 
@@ -13,70 +12,58 @@ const ADMIN_ARTICLES = [
 2. Sélectionnez la route (ex: DLA → MTL)
 3. Le code est généré automatiquement, vous pouvez le personnaliser
 4. Renseignez les dates de départ et d'arrivée estimée
-5. La capacité en kg est optionnelle mais utile pour le suivi de remplissage
-6. Cliquez **Créer la cargaison**`,
-    tags: ['campaigns', 'new'],
+5. La capacité en kg est optionnelle mais utile pour le suivi de remplissage`,
   },
   {
     id: 'cargaison-statuts', section: 'Cargaisons', icon: '📋',
     title: 'Comprendre les statuts',
     body: `Les statuts suivent le cycle de vie de la cargaison :
 
-• **Ouverte (ENR)** — en cours d'enregistrement, on peut ajouter des colis
-• **Expédiée (EXP)** — la cargaison a quitté l'origine
-• **En transit (TRA)** — en cours de transport
-• **Arrivée au pays (APD)** — arrivée à destination
-• **En douane (DOU)** — présentée aux douanes
-• **Libérée (LIB)** — dédouanée
-• **Entrepôt destination (ARD)** — en attente de retrait/livraison
-• **Prête livraison (PDL)** — prête à être remise au client
-• **Clôturée (OK)** — terminée
+**Ouverte (ENR)** — en cours d'enregistrement, on peut ajouter des colis
+**Expédiée (EXP)** — partie de l'origine
+**En transit (TRA)** — en cours de transport
+**Arrivée au pays (APD)** — arrivée à destination
+**En douane (DOU)** — présentée aux douanes canadiennes
+**Libérée (LIB)** — dédouanée
+**Entrepôt destination (ARD)** — disponible à notre entrepôt
+**Prête livraison (PDL)** — livraison imminente
+**Clôturée (OK)** — terminée
 
-Changer le statut d'une cargaison met automatiquement à jour les statuts des colis associés.`,
-    tags: ['campaigns', 'status'],
+Changer le statut d'une cargaison met automatiquement à jour les colis associés.`,
   },
   {
     id: 'cargaison-airlines', section: 'Cargaisons', icon: '🏢',
-    title: 'Compagnies aériennes & legs',
-    body: `Un leg = un tronçon de vol avec une compagnie aérienne.
+    title: 'Compagnies aériennes & AWB',
+    body: `Un leg = un tronçon avec une compagnie aérienne.
 
 Une cargaison peut être divisée sur plusieurs compagnies (ex: Lufthansa pour les effets, Air France pour les marchandises).
 
-**Ajouter une compagnie :**
-→ Menu *Compagnies* pour créer les compagnies d'abord
-→ Dans le détail de la cargaison, section *Legs de transport*
-→ Associez compagnie + numéro AWB + poids + notes
+**Ajouter un leg :** depuis le détail de la cargaison → section *Legs de transport* → associez compagnie + numéro AWB + poids.
 
-Le numéro **AWB** (Air Waybill) est le numéro de connaissement aérien fourni par la compagnie.`,
-    tags: ['campaigns', 'airlines'],
+Le numéro **AWB** (Air Waybill) est le connaissement aérien fourni par la compagnie.`,
   },
   {
     id: 'cargaison-costs', section: 'Cargaisons', icon: '💰',
     title: 'Coûts d\'une cargaison',
-    body: `Les coûts se gèrent depuis **Coûts → icône calculatrice** sur la cargaison.
+    body: `Gérez les coûts depuis **Coûts → icône calculatrice** sur la cargaison.
 
-**Postes fixes :**
-• Fret aérien, Douanes & dédouanement, Entreposage, Transport local, Manutention, Assurance
+**Postes fixes :** Fret aérien, Douanes, Entreposage, Transport local, Manutention, Assurance.
 
 **Coûts supplémentaires :** ajoutez des lignes libres (label + montant) pour tout frais spécifique.
 
 La marge est calculée automatiquement : CA facturé − Total des coûts.`,
-    tags: ['costs', 'campaigns'],
   },
   {
     id: 'clients-manage', section: 'Clients', icon: '👥',
     title: 'Gérer les clients',
     body: `L'écran **Expéditeurs** liste tous les clients enregistrés.
 
-**Depuis la fiche client (drawer) vous pouvez :**
+**Depuis la fiche client vous pouvez :**
 • Voir l'historique complet de colis
 • Contacter par WhatsApp avec un modèle pré-rempli
 • Suspendre / réactiver le compte
-• Renvoyer l'email de vérification si l'email n'est pas encore vérifié
-• Supprimer le compte (supprime aussi tous ses colis)
-
-**Filtres :** utilisez la vue Liste pour voir le statut, la ville, et les métriques.`,
-    tags: ['clients'],
+• Renvoyer l'email de vérification si le compte n'est pas encore vérifié
+• Supprimer le compte`,
   },
   {
     id: 'colis-add', section: 'Colis', icon: '📦',
@@ -84,68 +71,51 @@ La marge est calculée automatiquement : CA facturé − Total des coûts.`,
     body: `Depuis le détail d'une cargaison → **Ajouter un colis**.
 
 **Champs importants :**
-• **Client** — cherchez par nom, email ou téléphone (auto-complétion)
-• **Poids réel (kg)** — sert au calcul du prix si tarif au kg
+• **Client** — recherche par nom, email ou téléphone
+• **Poids réel (kg)** — sert au calcul du prix
 • **Code de suivi** — généré automatiquement, modifiable
-• **Prix** — peut être calculé automatiquement selon la grille tarifaire de la route
-
-Une fois créé, le colis apparaît dans la liste de la cargaison et dans l'espace client.`,
-    tags: ['parcels'],
+• **Prix** — peut être calculé selon la grille tarifaire de la route`,
   },
   {
     id: 'paiement', section: 'Colis', icon: '💳',
     title: 'Enregistrer un paiement',
     body: `Depuis la fiche d'un colis → section **Paiement**.
 
-**Modes disponibles :** Virement, Chèque, Espèces, Mobile Money, Autre
+**Types :** Paiement complet, Acompte (partiel), Paiement supplémentaire (surpoids).
 
-**Types de paiement :**
-• Paiement complet
-• Acompte (partiel) → le reste reste dû
-• Paiement supplémentaire (surpoids détecté après pesée)
+**Modes :** Virement, Chèque, Espèces, Mobile Money.
 
-Un reçu PDF peut être généré et envoyé au client depuis la fiche de paiement.`,
-    tags: ['parcels', 'payment'],
+Un reçu PDF peut être généré et envoyé au client.`,
   },
   {
     id: 'analytics', section: 'Analyses', icon: '📊',
     title: 'Lire les analyses',
     body: `L'écran **Analyses** présente les données de l'année en cours.
 
-**Métriques disponibles :**
-• CA total, poids total, nombre de colis et clients actifs
-• Évolution mensuelle (revenus + volume)
-• Top destinations et top clients fidèles
-• Répartition par compagnie aérienne : volume, % du volume, frêt estimé, coût/kg
+**Métriques :** CA total, poids total, nombre de colis et clients actifs, évolution mensuelle, top destinations, top clients fidèles, répartition par compagnie aérienne.
 
-**Changer d'année :** utilisez le sélecteur en haut à droite.`,
-    tags: ['analytics'],
+**Changer d'année :** sélecteur en haut à droite.`,
   },
   {
     id: 'settings-routes', section: 'Paramètres', icon: '🗺️',
     title: 'Routes & tarifs',
     body: `Dans **Paramètres → Routes & tarifs** :
 
-• Créez des routes (ex: DLA → MTL avec codes IATA)
-• Définissez une grille tarifaire par tranche de poids (ex: 0-5kg = 12 CAD/kg, 5-20kg = 10 CAD/kg)
+• Créez des routes avec codes IATA (ex: DLA → MTL)
+• Définissez une grille tarifaire par tranche de poids
 • Activez/désactivez une route sans la supprimer
 
-Le tarif s'applique automatiquement à la création d'un colis si la route a une grille configurée.`,
-    tags: ['settings'],
+Le tarif s'applique automatiquement lors de la création d'un colis.`,
   },
   {
     id: 'settings-whatsapp', section: 'Paramètres', icon: '💬',
     title: 'Modèles WhatsApp',
-    body: `Dans **Paramètres → WhatsApp** :
-
-Personnalisez les 5 modèles de messages envoyés aux clients :
-• Avis d'arrivée, Relance paiement, Livraison confirmée, Facture/Récap, Annonce cargaison
+    body: `Dans **Paramètres → WhatsApp**, personnalisez les 5 modèles de messages.
 
 **Variables disponibles :**
 \`{first_name}\` \`{parcel_code}\` \`{amount}\` \`{weight}\` \`{arrival_date}\`
 
 Les messages sont envoyés depuis la fiche client ou en masse depuis une cargaison.`,
-    tags: ['settings', 'whatsapp'],
   },
 ];
 
@@ -155,82 +125,61 @@ const CLIENT_ARTICLES = [
     title: 'Consulter mes colis',
     body: `L'écran **Mes colis** affiche tous vos envois en cours et passés.
 
-Cliquez sur un colis pour voir :
-• Son statut actuel et l'historique des événements
-• Le détail de la facture (poids, montant, paiements effectués)
-• Le bordereau de livraison
-• Les coordonnées de votre agent
+Cliquez sur un colis pour voir son statut, la facture, le bordereau et les coordonnées de votre agent.
 
 Un code couleur indique l'état du paiement : vert = payé, orange = partiel, rouge = impayé.`,
-    tags: ['dashboard'],
   },
   {
     id: 'cl-statuts', section: 'Mes colis', icon: '📋',
     title: 'Statuts de livraison',
-    body: `Voici ce que signifient les statuts de votre colis :
-
-• **Enregistré** — votre colis est pris en charge
-• **Expédié** — parti de Douala
-• **En transit** — en cours de transport
-• **Arrivé au pays** — arrivé au Canada
-• **En douane** — examiné par les douanes canadiennes
-• **Libéré** — dédouané, prêt pour la suite
-• **Entrepôt destination** — disponible à notre entrepôt
-• **Prêt pour livraison** — livraison imminente
-• **Livré** — remis en main propre`,
-    tags: ['dashboard', 'tracking'],
+    body: `**Enregistré** — pris en charge
+**Expédié** — parti de Douala
+**En transit** — en cours de transport
+**Arrivé au pays** — arrivé au Canada
+**En douane** — examiné par les douanes
+**Libéré** — dédouané
+**Entrepôt destination** — disponible à notre entrepôt
+**Prêt pour livraison** — livraison imminente
+**Livré** — remis en main propre`,
   },
   {
     id: 'cl-tracking', section: 'Suivi', icon: '🔍',
     title: 'Suivre un colis',
-    body: `**Sans se connecter :** allez sur le site public → Suivi → entrez votre code de suivi.
+    body: `**Sans se connecter :** allez sur le site public → Suivi → entrez votre code.
 
-**Depuis votre espace :** Menu → Suivi → entrez le code ou cliquez directement sur un colis.
+**Depuis votre espace :** Menu → Suivi → entrez le code ou cliquez sur un colis.
 
-Votre code de suivi ressemble à : **JML-2024-0042**
+Votre code ressemble à : **JML-2024-0042**
 
-Si vous avez perdu votre code, retrouvez-le dans la liste **Mes colis** ou contactez-nous par WhatsApp.`,
-    tags: ['tracking'],
+Si vous avez perdu votre code, retrouvez-le dans **Mes colis** ou contactez-nous.`,
   },
   {
     id: 'cl-booking', section: 'Réservation', icon: '✈️',
     title: 'Réserver un envoi',
-    body: `Pour pré-réserver un envoi :
-
-1. Menu → **Réserver un envoi**
-2. Indiquez la cargaison souhaitée, le contenu, le poids estimé
+    body: `1. Menu → **Réserver un envoi**
+2. Indiquez la cargaison, le contenu, le poids estimé
 3. Soumettez la demande
 
-Notre équipe vous contacte sous 24h pour confirmer les détails, le prix définitif et les modalités de dépôt à Douala.
-
-**Note :** la réservation ne garantit pas une place, elle permet à notre équipe de vous planifier.`,
-    tags: ['booking'],
+Notre équipe vous contacte sous 24h pour confirmer les détails et le prix définitif.`,
   },
   {
     id: 'cl-payment', section: 'Paiements', icon: '💳',
     title: 'Payer ma facture',
     body: `Depuis la fiche de votre colis → section **Facture**.
 
-Les modes de paiement acceptés dépendent de votre accord avec votre agent :
-• Virement bancaire (Canada)
-• Mobile Money (Cameroun)
-• Espèces (dépôt en agence)
+**Modes acceptés :** Virement bancaire (Canada), Mobile Money (Cameroun), Espèces.
 
 Si vous avez payé partiellement, le solde restant s'affiche en rouge. Contactez votre agent pour régulariser.`,
-    tags: ['payments'],
   },
   {
     id: 'cl-profile', section: 'Mon profil', icon: '👤',
     title: 'Modifier mon profil',
     body: `Menu → **Mon profil** pour mettre à jour :
-• Votre nom et numéro de téléphone
-• Votre adresse de livraison par défaut
-• Vos destinataires fréquents (gain de temps à la prochaine réservation)
+• Nom et numéro de téléphone
+• Adresse de livraison par défaut
+• Destinataires fréquents
 
-Pour changer votre mot de passe : profil → Changer le mot de passe.
-
-Pour changer votre email : contactez votre agent (modification manuelle requise).`,
-    tags: ['profile'],
+Pour changer votre mot de passe : profil → Changer le mot de passe.`,
   },
   {
     id: 'cl-support', section: 'Support', icon: '💬',
@@ -238,31 +187,20 @@ Pour changer votre email : contactez votre agent (modification manuelle requise)
     body: `**WhatsApp** — le moyen le plus rapide.
 Disponible **lundi–vendredi, 9h–20h** (heure de Montréal).
 
-Donnez toujours votre **code de suivi** et votre **nom** pour un traitement rapide.
+Donnez toujours votre **code de suivi** et votre **nom**.
 
-**Email :** support@jumlas.com
-
-Depuis votre espace client, vous pouvez aussi envoyer un message depuis la fiche d'un colis → icône WhatsApp.`,
-    tags: ['support'],
+**Email :** support@jumlas.com`,
   },
 ];
 
-// ─── HelpTip (exported inline tooltip) ──────────────────────────────────────
+// ─── HelpTip (inline tooltip) ────────────────────────────────────────────────
 
 export function HelpTip({ text, position = 'top' }) {
   const [show, setShow] = useState(false);
-  const ref = useRef(null);
-
-  useEffect(() => {
-    if (!show) return;
-    const handler = (e) => { if (ref.current && !ref.current.contains(e.target)) setShow(false); };
-    document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
-  }, [show]);
 
   const tipStyle = {
     position: 'absolute',
-    zIndex: 900,
+    zIndex: 1300,
     background: 'var(--ink-900)',
     color: 'white',
     fontSize: 12,
@@ -275,12 +213,12 @@ export function HelpTip({ text, position = 'top' }) {
     whiteSpace: 'pre-wrap',
     ...(position === 'top'    ? { bottom: 'calc(100% + 6px)', left: '50%', transform: 'translateX(-50%)' } : {}),
     ...(position === 'bottom' ? { top:    'calc(100% + 6px)', left: '50%', transform: 'translateX(-50%)' } : {}),
-    ...(position === 'right'  ? { left:   'calc(100% + 6px)', top: '50%', transform: 'translateY(-50%)'  } : {}),
-    ...(position === 'left'   ? { right:  'calc(100% + 6px)', top: '50%', transform: 'translateY(-50%)'  } : {}),
+    ...(position === 'right'  ? { left:   'calc(100% + 6px)', top: '50%',  transform: 'translateY(-50%)'  } : {}),
+    ...(position === 'left'   ? { right:  'calc(100% + 6px)', top: '50%',  transform: 'translateY(-50%)'  } : {}),
   };
 
   return (
-    <span ref={ref} style={{ position: 'relative', display: 'inline-flex', alignItems: 'center', verticalAlign: 'middle' }}>
+    <span style={{ position: 'relative', display: 'inline-flex', alignItems: 'center', verticalAlign: 'middle' }}>
       <span
         onMouseEnter={() => setShow(true)}
         onMouseLeave={() => setShow(false)}
@@ -291,8 +229,7 @@ export function HelpTip({ text, position = 'top' }) {
           background: 'var(--info-100)', color: 'var(--info-700)',
           fontSize: 9.5, fontWeight: 800, cursor: 'pointer',
           border: '1px solid var(--info-200)',
-          marginLeft: 5, flexShrink: 0,
-          userSelect: 'none',
+          marginLeft: 5, flexShrink: 0, userSelect: 'none',
         }}>
         i
       </span>
@@ -301,13 +238,13 @@ export function HelpTip({ text, position = 'top' }) {
   );
 }
 
-// ─── Help Panel ──────────────────────────────────────────────────────────────
+// ─── Article item ─────────────────────────────────────────────────────────────
 
 function ArticleItem({ article }) {
   const [open, setOpen] = useState(false);
 
   const renderBody = (text) =>
-    text.split('\n').map((line, i) => {
+    text.split('\n').map((line, i, arr) => {
       const parts = line.split(/(\*\*[^*]+\*\*|`[^`]+`)/g);
       return (
         <span key={i}>
@@ -315,10 +252,10 @@ function ArticleItem({ article }) {
             if (p.startsWith('**') && p.endsWith('**'))
               return <strong key={j}>{p.slice(2, -2)}</strong>;
             if (p.startsWith('`') && p.endsWith('`'))
-              return <code key={j} style={{ fontFamily: 'var(--ff-mono)', fontSize: 11.5, background: 'var(--bg-soft)', padding: '1px 4px', borderRadius: 4 }}>{p.slice(1, -1)}</code>;
+              return <code key={j} style={{ fontFamily: 'monospace', fontSize: 11.5, background: 'var(--bg-soft)', padding: '1px 5px', borderRadius: 4 }}>{p.slice(1, -1)}</code>;
             return p;
           })}
-          {i < text.split('\n').length - 1 && <br />}
+          {i < arr.length - 1 && <br />}
         </span>
       );
     });
@@ -329,18 +266,15 @@ function ArticleItem({ article }) {
         onClick={() => setOpen(o => !o)}
         style={{
           width: '100%', display: 'flex', alignItems: 'center', gap: 10,
-          padding: '11px 16px', background: 'none', border: 'none',
+          padding: '12px 16px', background: 'none', border: 'none',
           cursor: 'pointer', textAlign: 'left',
         }}>
         <span style={{ fontSize: 18, flexShrink: 0 }}>{article.icon}</span>
         <span style={{ flex: 1, fontSize: 13, fontWeight: 600, color: 'var(--ink-800)' }}>{article.title}</span>
-        <span style={{ fontSize: 11, color: 'var(--ink-400)', transform: open ? 'rotate(180deg)' : 'none', transition: 'transform .2s' }}>▾</span>
+        <span style={{ fontSize: 11, color: 'var(--ink-400)', transform: open ? 'rotate(180deg)' : 'none', transition: 'transform .2s', flexShrink: 0 }}>▾</span>
       </button>
       {open && (
-        <div style={{
-          padding: '0 16px 14px 44px',
-          fontSize: 12.5, color: 'var(--ink-600)', lineHeight: 1.7,
-        }}>
+        <div style={{ padding: '0 16px 14px 44px', fontSize: 12.5, color: 'var(--ink-600)', lineHeight: 1.7 }}>
           {renderBody(article.body)}
         </div>
       )}
@@ -348,32 +282,13 @@ function ArticleItem({ article }) {
   );
 }
 
-// ─── Main HelpCenter component ───────────────────────────────────────────────
+// ─── Main HelpCenter popup ────────────────────────────────────────────────────
 
 export default function HelpCenter({ variant = 'admin' }) {
   const [open,   setOpen]   = useState(false);
   const [search, setSearch] = useState('');
-  const pathname = usePathname();
 
   const articles = variant === 'admin' ? ADMIN_ARTICLES : CLIENT_ARTICLES;
-
-  // Determine context-relevant articles based on current path
-  const contextTags = (() => {
-    if (!pathname) return [];
-    if (pathname.includes('campaigns') || pathname.includes('campaign')) return ['campaigns'];
-    if (pathname.includes('clients'))    return ['clients'];
-    if (pathname.includes('parcels'))    return ['parcels'];
-    if (pathname.includes('costs'))      return ['costs'];
-    if (pathname.includes('analytics'))  return ['analytics'];
-    if (pathname.includes('settings'))   return ['settings'];
-    if (pathname.includes('airlines'))   return ['airlines'];
-    if (pathname.includes('dashboard'))  return ['dashboard'];
-    if (pathname.includes('suivi'))      return ['tracking'];
-    if (pathname.includes('booking'))    return ['booking'];
-    if (pathname.includes('invoices'))   return ['payments'];
-    if (pathname.includes('profile'))    return ['profile'];
-    return [];
-  })();
 
   const filtered = search.trim()
     ? articles.filter(a =>
@@ -390,10 +305,13 @@ export default function HelpCenter({ variant = 'admin' }) {
     return acc;
   }, {});
 
-  // Contextually relevant articles shown first
-  const contextArticles = !search.trim() && contextTags.length > 0
-    ? articles.filter(a => a.tags?.some(t => contextTags.includes(t)))
-    : [];
+  // Close on Escape
+  useEffect(() => {
+    if (!open) return;
+    const handler = (e) => { if (e.key === 'Escape') setOpen(false); };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [open]);
 
   return (
     <>
@@ -403,119 +321,112 @@ export default function HelpCenter({ variant = 'admin' }) {
         title="Centre d'aide"
         style={{
           position: 'fixed', bottom: 24, right: 24, zIndex: 800,
-          width: 44, height: 44, borderRadius: '50%',
+          width: 46, height: 46, borderRadius: '50%',
           background: 'linear-gradient(135deg, #00B4D8, #1B4FD8)',
           color: 'white', border: 'none', cursor: 'pointer',
-          fontSize: 20, fontWeight: 800,
-          boxShadow: '0 4px 16px rgba(27,79,216,.4)',
+          fontSize: 22, fontWeight: 800,
+          boxShadow: '0 4px 20px rgba(27,79,216,.45)',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           transition: 'transform .15s, box-shadow .15s',
+          lineHeight: 1,
         }}
-        onMouseEnter={e => { e.currentTarget.style.transform = 'scale(1.08)'; e.currentTarget.style.boxShadow = '0 6px 24px rgba(27,79,216,.5)'; }}
-        onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)';    e.currentTarget.style.boxShadow = '0 4px 16px rgba(27,79,216,.4)'; }}>
+        onMouseEnter={e => { e.currentTarget.style.transform = 'scale(1.1)'; }}
+        onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)'; }}>
         ?
       </button>
 
-      {/* Backdrop */}
+      {/* Popup modal */}
       {open && (
         <div
-          onClick={() => setOpen(false)}
-          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.3)', zIndex: 900 }}
-        />
-      )}
-
-      {/* Panel */}
-      <div style={{
-        position: 'fixed', top: 0, right: 0, bottom: 0, zIndex: 901,
-        width: 380, maxWidth: '92vw',
-        background: 'white', boxShadow: '-4px 0 32px rgba(0,0,0,.12)',
-        display: 'flex', flexDirection: 'column',
-        transform: open ? 'translateX(0)' : 'translateX(100%)',
-        transition: 'transform .28s cubic-bezier(.4,0,.2,1)',
-      }}>
-        {/* Header */}
-        <div style={{
-          padding: '18px 16px 14px',
-          borderBottom: '1px solid var(--border-soft)',
-          background: 'linear-gradient(135deg, #0D2E6E, #1B4FD8)',
-          color: 'white', flexShrink: 0,
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
-            <span style={{ fontSize: 20 }}>💡</span>
-            <div style={{ flex: 1 }}>
-              <div style={{ fontSize: 15, fontWeight: 800 }}>Centre d'aide</div>
-              <div style={{ fontSize: 11, color: 'rgba(255,255,255,.6)', marginTop: 1 }}>
-                {variant === 'admin' ? 'Documentation opérateur' : 'Guide client'}
-              </div>
-            </div>
-            <button onClick={() => setOpen(false)} style={{
-              background: 'rgba(255,255,255,.15)', border: 'none', borderRadius: 7,
-              width: 28, height: 28, cursor: 'pointer', color: 'white', fontSize: 14,
-              display: 'grid', placeItems: 'center',
-            }}>✕</button>
-          </div>
-          <input
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-            placeholder="Rechercher une aide…"
-            style={{
-              width: '100%', boxSizing: 'border-box',
-              padding: '9px 12px', borderRadius: 8,
-              border: 'none', fontSize: 13,
-              background: 'rgba(255,255,255,.15)',
-              color: 'white', outline: 'none',
-            }}
-          />
-        </div>
-
-        {/* Body */}
-        <div style={{ flex: 1, overflowY: 'auto' }}>
-          {/* Contextual articles */}
-          {!search.trim() && contextArticles.length > 0 && (
-            <div>
-              <div style={{
-                padding: '10px 16px 6px', fontSize: 10.5, fontWeight: 700,
-                textTransform: 'uppercase', letterSpacing: '.07em',
-                color: 'var(--brand-600)', background: 'var(--brand-50)',
-              }}>
-                📍 Suggérés pour cette page
-              </div>
-              {contextArticles.map(a => <ArticleItem key={a.id + '_ctx'} article={a} />)}
-              <div style={{ height: 6, background: 'var(--bg-soft)' }} />
-            </div>
-          )}
-
-          {/* All sections */}
-          {Object.entries(sections).map(([section, arts]) => (
-            <div key={section}>
-              <div style={{
-                padding: '10px 16px 6px', fontSize: 10.5, fontWeight: 700,
-                textTransform: 'uppercase', letterSpacing: '.07em',
-                color: 'var(--ink-400)',
-              }}>
-                {section}
-              </div>
-              {arts.map(a => <ArticleItem key={a.id} article={a} />)}
-            </div>
-          ))}
-
-          {filtered.length === 0 && (
-            <div style={{ padding: 32, textAlign: 'center', color: 'var(--ink-400)', fontSize: 13 }}>
-              Aucun résultat pour « {search} »
-            </div>
-          )}
-
-          {/* Footer */}
-          <div style={{
-            margin: 16, padding: 14,
-            background: 'var(--bg-soft)', border: '1px solid var(--border-soft)', borderRadius: 10,
-            fontSize: 12, color: 'var(--ink-500)', lineHeight: 1.5,
+          onClick={e => e.target === e.currentTarget && setOpen(false)}
+          style={{
+            position: 'fixed', inset: 0, zIndex: 1100,
+            background: 'rgba(10,20,50,.55)',
+            backdropFilter: 'blur(3px)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            padding: '20px 16px',
           }}>
-            Vous ne trouvez pas la réponse ?<br />
-            <strong style={{ color: 'var(--ok-700)' }}>WhatsApp</strong> — équipe disponible lun–ven 9h–20h
+          <div style={{
+            background: 'white',
+            borderRadius: 16,
+            width: '100%', maxWidth: 600,
+            maxHeight: '85vh',
+            display: 'flex', flexDirection: 'column',
+            boxShadow: '0 24px 80px rgba(0,0,0,.22)',
+            overflow: 'hidden',
+            animation: 'helpSlideIn .22s ease',
+          }}>
+            <style>{`@keyframes helpSlideIn { from { opacity: 0; transform: scale(.96) translateY(8px); } to { opacity: 1; transform: none; } }`}</style>
+
+            {/* Header */}
+            <div style={{
+              background: 'linear-gradient(135deg, #0D2E6E, #1B4FD8)',
+              padding: '20px 20px 16px', flexShrink: 0,
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
+                <span style={{ fontSize: 22 }}>💡</span>
+                <div style={{ flex: 1, color: 'white' }}>
+                  <div style={{ fontSize: 16, fontWeight: 800 }}>Centre d'aide</div>
+                  <div style={{ fontSize: 11, color: 'rgba(255,255,255,.6)', marginTop: 1 }}>
+                    {variant === 'admin' ? 'Documentation opérateur' : 'Guide client Jumla'}
+                  </div>
+                </div>
+                <button onClick={() => setOpen(false)} style={{
+                  background: 'rgba(255,255,255,.15)', border: 'none', borderRadius: 8,
+                  width: 30, height: 30, cursor: 'pointer', color: 'white',
+                  fontSize: 15, display: 'grid', placeItems: 'center',
+                }}>✕</button>
+              </div>
+              <input
+                value={search}
+                onChange={e => setSearch(e.target.value)}
+                placeholder="Rechercher une aide…"
+                autoFocus
+                style={{
+                  width: '100%', boxSizing: 'border-box',
+                  padding: '9px 14px', borderRadius: 9,
+                  border: 'none', fontSize: 13,
+                  background: 'rgba(255,255,255,.15)',
+                  color: 'white', outline: 'none',
+                  '::placeholder': { color: 'rgba(255,255,255,.5)' },
+                }}
+              />
+            </div>
+
+            {/* Scrollable body */}
+            <div style={{ flex: 1, overflowY: 'auto' }}>
+              {Object.entries(sections).map(([section, arts]) => (
+                <div key={section}>
+                  <div style={{
+                    padding: '10px 16px 5px', fontSize: 10.5, fontWeight: 700,
+                    textTransform: 'uppercase', letterSpacing: '.07em',
+                    color: 'var(--ink-400)', background: 'var(--bg-soft)',
+                    borderBottom: '1px solid var(--border-soft)',
+                  }}>
+                    {section}
+                  </div>
+                  {arts.map(a => <ArticleItem key={a.id} article={a} />)}
+                </div>
+              ))}
+
+              {filtered.length === 0 && (
+                <div style={{ padding: '40px 20px', textAlign: 'center', color: 'var(--ink-400)', fontSize: 13 }}>
+                  Aucun résultat pour « {search} »
+                </div>
+              )}
+
+              <div style={{
+                margin: 16, padding: 14,
+                background: 'var(--bg-soft)', border: '1px solid var(--border-soft)', borderRadius: 10,
+                fontSize: 12, color: 'var(--ink-500)', lineHeight: 1.6,
+              }}>
+                Vous ne trouvez pas la réponse ?<br />
+                <strong style={{ color: 'var(--ok-700)' }}>WhatsApp</strong> — équipe disponible lun–ven 9h–20h · support@jumlas.com
+              </div>
+            </div>
           </div>
         </div>
-      </div>
+      )}
     </>
   );
 }
