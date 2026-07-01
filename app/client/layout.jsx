@@ -7,6 +7,7 @@ import I from '@/src/components/Icons.jsx';
 import { useCompanyAssets } from '@/src/lib/useCompanyAssets.js';
 import { useT } from '@/src/lib/i18n';
 import LanguageSwitcher from '@/src/components/LanguageSwitcher.jsx';
+import ClientOnboarding from '@/src/components/ClientOnboarding.jsx';
 
 const NAV_ALL = [
   { labelKey: 'client.nav.parcels',  icon: I.Box,        href: '/client/dashboard', suspendedOk: true  },
@@ -215,6 +216,7 @@ export default function ClientLayout({ children }) {
 
   return (
     <>
+      <ClientOnboarding />
       <style>{`
         @media (max-width: 767px) {
           .desktop-sidebar { display: none !important; }

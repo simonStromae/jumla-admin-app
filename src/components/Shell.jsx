@@ -3,6 +3,7 @@ import { useSession, signOut } from 'next-auth/react';
 import I from './Icons.jsx';
 import { useCompanyAssets } from '../lib/useCompanyAssets.js';
 import LanguageSwitcher from './LanguageSwitcher.jsx';
+import AdminOnboarding from './AdminOnboarding.jsx';
 
 const PERM_ALIAS = { campaigns: 'cargaisons' };
 
@@ -134,9 +135,9 @@ export function Sidebar({ route, onNav }) {
   return (
     <aside className="sidebar">
       <div className="sidebar__brand">
-        <div className="sidebar__logo" style={{ display: 'grid', placeItems: 'center', background: 'none' }}>
+        <div className="sidebar__logo" style={logoIconUrl ? { background: 'white', border: '1px solid var(--border-soft)' } : {}}>
           {logoIconUrl
-            ? <img src={logoIconUrl} alt="Logo" style={{ width: logoIconSize, height: logoIconSize, objectFit: 'contain' }} />
+            ? <img src={logoIconUrl} alt="Logo" style={{ width: '100%', height: '100%', objectFit: 'contain', padding: 2 }} />
             : <svg width="18" height="18" viewBox="0 0 48 48" fill="none">
                 <defs><linearGradient id="slg" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stopColor="#00B4D8"/><stop offset="100%" stopColor="#1B4FD8"/></linearGradient></defs>
                 <path d="M8 8 C8 6 10 4 12 5 L38 20 C40 21 40 27 38 28 L12 43 C10 44 8 42 8 40 Z" fill="url(#slg)"/>
@@ -284,16 +285,67 @@ export function Topbar({ title, sub, actions, onNav }) {
   );
 }
 
+function AdminMobileBlock() {
+  return (
+    <>
+      <style>{`
+        @media (max-width: 900px) { .admin-mobile-block { display: flex !important; } .app { display: none !important; } }
+        @media (min-width: 901px) { .admin-mobile-block { display: none !important; } }
+      `}</style>
+      <div className="admin-mobile-block" style={{
+        display: 'none', position: 'fixed', inset: 0, zIndex: 9999,
+        background: 'linear-gradient(155deg, #1A1A2E 0%, #0D2E6E 55%, #1B4FD8 100%)',
+        flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+        padding: 32, textAlign: 'center', color: 'white',
+      }}>
+        <div style={{ fontSize: 56, marginBottom: 24 }}>💻</div>
+        <div style={{ fontSize: 22, fontWeight: 800, letterSpacing: '-.01em', marginBottom: 12 }}>
+          Interface non disponible sur mobile
+        </div>
+        <div style={{ fontSize: 14, color: 'rgba(255,255,255,.65)', lineHeight: 1.7, maxWidth: 340, marginBottom: 32 }}>
+          L'espace d'administration Jumla est optimisé pour les grands écrans. Veuillez l'ouvrir sur un appareil adapté.
+        </div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10, width: '100%', maxWidth: 280 }}>
+          {[
+            { icon: '🖥️', label: 'Ordinateur de bureau' },
+            { icon: '💻', label: 'Ordinateur portable' },
+            { icon: '📱', label: 'Tablette en mode paysage (≥ 900px)' },
+          ].map(({ icon, label }) => (
+            <div key={label} style={{
+              display: 'flex', alignItems: 'center', gap: 12,
+              background: 'rgba(255,255,255,.1)', borderRadius: 10,
+              padding: '12px 16px', fontSize: 13.5, color: 'rgba(255,255,255,.9)',
+            }}>
+              <span style={{ fontSize: 20 }}>{icon}</span>
+              <span>{label}</span>
+            </div>
+          ))}
+        </div>
+        <a href="/" style={{
+          marginTop: 32, fontSize: 13, color: 'rgba(255,255,255,.5)',
+          textDecoration: 'underline', cursor: 'pointer',
+        }}>
+          Retour au site public →
+        </a>
+      </div>
+    </>
+  );
+}
+
 export function Shell({ route, onNav, title, sub, actions, children, hideChrome }) {
   if (hideChrome) return children;
   return (
-    <div className="app">
-      <Sidebar route={route} onNav={onNav} />
-      <main style={{ minWidth: 0 }}>
-        <Topbar title={title} sub={sub} actions={actions} onNav={onNav} />
-        {children}
-      </main>
-    </div>
+    <>
+      <AdminMobileBlock />
+      <AdminOnboarding />
+      <div className="app">
+        <Sidebar route={route} onNav={onNav} />
+        <main style={{ minWidth: 0 }}>
+          <Topbar title={title} sub={sub} actions={actions} onNav={onNav} />
+          {children}
+        </main>
+      </div>
+    </>
   );
 }
 
