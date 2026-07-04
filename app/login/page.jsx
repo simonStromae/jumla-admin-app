@@ -226,6 +226,30 @@ function LoginForm() {
           <button className="btn btn--ghost btn--sm"><I.Help />{t('button.help')}</button>
         </div>
 
+        {/* Mobile logo — only visible when hero panel is hidden */}
+        <div className="mobile-login-logo" style={{ display: 'none', flexDirection: 'column', alignItems: 'center', marginTop: 24, marginBottom: 8 }}>
+          <style>{`.mobile-login-logo { display: none !important; } @media (max-width: 767px) { .mobile-login-logo { display: flex !important; } }`}</style>
+          <button onClick={() => router.push('/')} style={{ display: 'flex', alignItems: 'center', gap: 12, background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
+            <div style={{
+              width: 48, height: 48, borderRadius: 14, overflow: 'hidden',
+              background: 'linear-gradient(135deg, #0D2E6E, #1B4FD8)',
+              display: 'grid', placeItems: 'center', flexShrink: 0,
+            }}>
+              {logoIconUrl
+                ? <img src={logoIconUrl} alt="Logo" style={{ width: '80%', height: '80%', objectFit: 'contain' }} />
+                : <svg width="28" height="28" viewBox="0 0 48 48" fill="none">
+                    <defs><linearGradient id="mllg" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stopColor="#00B4D8"/><stop offset="100%" stopColor="white"/></linearGradient></defs>
+                    <path d="M8 8 C8 6 10 4 12 5 L38 20 C40 21 40 27 38 28 L12 43 C10 44 8 42 8 40 Z" fill="url(#mllg)"/>
+                  </svg>
+              }
+            </div>
+            <div style={{ textAlign: 'left' }}>
+              <div style={{ fontWeight: 800, fontSize: 17, color: 'var(--ink-900)', letterSpacing: '.02em' }}>Jumla Shipping</div>
+              <div style={{ fontSize: 11.5, color: 'var(--ink-400)', marginTop: 1 }}>Douala → Montréal</div>
+            </div>
+          </button>
+        </div>
+
         <div style={{ margin: 'auto 0', maxWidth: 380, width: '100%', alignSelf: 'center' }}>
 
           {/* Tabs — login / register */}
