@@ -11,11 +11,12 @@ import ClientOnboarding from '@/src/components/ClientOnboarding.jsx';
 import HelpCenter from '@/src/components/HelpCenter.jsx';
 
 const NAV_ALL = [
-  { labelKey: 'client.nav.parcels',  icon: I.Box,        href: '/client/dashboard', suspendedOk: true  },
-  { labelKey: 'client.nav.book',     icon: I.Plus,       href: '/client/booking',   suspendedOk: false },
-  { labelKey: 'client.nav.tracking', icon: I.Search,     href: '/client/suivi',     suspendedOk: true  },
-  { labelKey: 'client.nav.payments', icon: I.CreditCard, href: '/client/invoices',  suspendedOk: true  },
-  { labelKey: 'client.nav.profile',  icon: I.Users,      href: '/client/profile',   suspendedOk: true  },
+  { labelKey: 'client.nav.parcels',    icon: I.Box,        href: '/client/dashboard',    suspendedOk: true  },
+  { labelKey: 'client.nav.book',       icon: I.Plus,       href: '/client/booking',      suspendedOk: false },
+  { labelKey: 'client.nav.tracking',   icon: I.Search,     href: '/client/suivi',        suspendedOk: true  },
+  { labelKey: 'client.nav.payments',   icon: I.CreditCard, href: '/client/invoices',     suspendedOk: true  },
+  { labelKey: 'client.nav.claims',     icon: I.Alert,      href: '/client/reclamations', suspendedOk: true  },
+  { labelKey: 'client.nav.profile',    icon: I.Users,      href: '/client/profile',      suspendedOk: true  },
 ];
 
 function NotificationBell({ router }) {

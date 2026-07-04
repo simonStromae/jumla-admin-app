@@ -140,7 +140,7 @@
     },
     "footer": {
       "legal": "Terms · Privacy",
-      "support": "support@jumla.cargo"
+      "support": "info@jumlas.com"
     }
   },
   "form": {
@@ -176,6 +176,7 @@
       "book": "Book",
       "tracking": "Tracking",
       "payments": "Payments",
+      "claims": "Claims",
       "profile": "Profile"
     },
     "sidebar": {

@@ -124,7 +124,7 @@ export default function LoginScreen({ onNav }) {
         </div>
 
         <div style={{ fontSize: 11, color: 'var(--ink-400)', textAlign: 'center', display: 'flex', justifyContent: 'space-between' }}>
-          <span>Conditions · Confidentialité</span><span>support@jumla.cargo</span>
+          <span>Conditions · Confidentialité</span><span>info@jumlas.com</span>
         </div>
       </div>
     </div>

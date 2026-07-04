@@ -58,15 +58,15 @@ export default function ClientOnboarding() {
     <div style={{
       position: 'fixed', inset: 0, zIndex: 1200,
       background: 'rgba(10, 20, 50, 0.6)',
-      display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
       backdropFilter: 'blur(2px)',
-      padding: '0 0 env(safe-area-inset-bottom, 0)',
+      padding: '16px',
     }}>
       <div style={{
         background: 'white',
-        borderRadius: '20px 20px 0 0',
-        width: '100%', maxWidth: 500,
-        boxShadow: '0 -12px 48px rgba(0,0,0,.18)',
+        borderRadius: 20,
+        width: '100%', maxWidth: 460,
+        boxShadow: '0 24px 64px rgba(0,0,0,.22)',
         overflow: 'hidden',
       }}>
         {/* Progress bar */}

@@ -184,12 +184,14 @@ Pour changer votre mot de passe : profil → Changer le mot de passe.`,
   {
     id: 'cl-support', section: 'Support', icon: '💬',
     title: 'Contacter le support',
-    body: `**WhatsApp** — le moyen le plus rapide.
+    body: `**WhatsApp / Téléphone** — le moyen le plus rapide.
 Disponible **lundi–vendredi, 9h–20h** (heure de Montréal).
+
+📞 **+1 514 998 0709**
 
 Donnez toujours votre **code de suivi** et votre **nom**.
 
-**Email :** support@jumlas.com`,
+**Email :** info@jumlas.com`,
   },
 ];
 
@@ -421,7 +423,7 @@ export default function HelpCenter({ variant = 'admin' }) {
                 fontSize: 12, color: 'var(--ink-500)', lineHeight: 1.6,
               }}>
                 Vous ne trouvez pas la réponse ?<br />
-                <strong style={{ color: 'var(--ok-700)' }}>WhatsApp</strong> — équipe disponible lun–ven 9h–20h · support@jumlas.com
+                <strong style={{ color: 'var(--ok-700)' }}>WhatsApp / Tél.</strong> — +1 514 998 0709 · lun–ven 9h–20h · info@jumlas.com
               </div>
             </div>
           </div>

@@ -156,7 +156,7 @@ function ResetForm() {
         </div>
 
         <div style={{ fontSize: 11, color: 'var(--ink-400)', display: 'flex', justifyContent: 'space-between' }}>
-          <span>Conditions · Confidentialité</span><span>support@jumla.cargo</span>
+          <span>Conditions · Confidentialité</span><span>info@jumlas.com</span>
         </div>
       </div>
     </div>

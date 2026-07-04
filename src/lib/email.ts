@@ -8,7 +8,7 @@ const HEADER = `
 `;
 
 const FOOTER_TEXT = `<p style="margin:0;font-size:12px;color:#9ca3af;font-family:sans-serif">
-  Vous recevez cet email car vous êtes client Jumla Shipping. Pour toute question : support@jumla.cargo
+  Vous recevez cet email car vous êtes client Jumla Shipping. Pour toute question : info@jumlas.com · +1 514 998 0709
 </p>`;
 
 export async function sendVerificationEmail(email: string, name: string, code: string) {
