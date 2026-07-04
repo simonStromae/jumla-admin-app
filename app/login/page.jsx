@@ -142,10 +142,18 @@ function LoginForm() {
   };
 
   return (
-    <div style={{ minHeight: '100vh', display: 'grid', gridTemplateColumns: '1fr 1fr', background: 'var(--bg-page)' }}>
+    <>
+    <style>{`
+      @media (max-width: 767px) {
+        .login-layout { grid-template-columns: 1fr !important; }
+        .login-hero { display: none !important; }
+        .login-form-panel { padding: 32px 24px 24px !important; }
+      }
+    `}</style>
+    <div className="login-layout" style={{ minHeight: '100vh', display: 'grid', gridTemplateColumns: '1fr 1fr', background: 'var(--bg-page)' }}>
 
       {/* Left — visual */}
-      <div style={{
+      <div className="login-hero" style={{
         position: 'relative',
         background: 'linear-gradient(155deg, #1A1A2E 0%, #0D2E6E 55%, #1B4FD8 100%)',
         color: 'white', padding: '48px 56px',
@@ -212,7 +220,7 @@ function LoginForm() {
       </div>
 
       {/* Right — form */}
-      <div style={{ display: 'flex', flexDirection: 'column', padding: '36px 56px', position: 'relative' }}>
+      <div className="login-form-panel" style={{ display: 'flex', flexDirection: 'column', padding: '36px 56px', position: 'relative' }}>
         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, alignItems: 'center' }}>
           <LanguageSwitcher />
           <button className="btn btn--ghost btn--sm"><I.Help />{t('button.help')}</button>
@@ -410,6 +418,7 @@ function LoginForm() {
         </div>
       </div>
     </div>
+    </>
   );
 }
 

@@ -468,3 +468,48 @@
   .co-dates { grid-template-columns: 1fr 1fr; }
   .co-btn { padding: 11px 18px; font-size: 13px; }
 }
+
+/* ── Items table → card layout on mobile ── */
+@media (max-width: 640px) {
+  .co-items-head { display: none !important; }
+
+  .co-item-row {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr 36px !important;
+    grid-template-rows: auto auto !important;
+    gap: 6px !important;
+    padding: 12px !important;
+  }
+
+  .co-item-cat {
+    grid-column: 1 / 3;
+    grid-row: 1;
+    margin-right: 0 !important;
+    font-size: 13px !important;
+  }
+  .co-item-del {
+    grid-column: 3;
+    grid-row: 1;
+    align-self: start;
+    margin-right: 0 !important;
+  }
+  .co-item-desc {
+    grid-column: 1 / 3;
+    grid-row: 2;
+    margin-right: 0 !important;
+  }
+  .co-item-pieces {
+    grid-column: 1;
+    grid-row: 3;
+    margin-right: 0 !important;
+  }
+  .co-item-kg {
+    grid-column: 2 / 4;
+    grid-row: 3;
+    margin-right: 0 !important;
+  }
+
+  /* Pseudo-labels via placeholder enhancement */
+  .co-item-pieces::placeholder { content: attr(title); }
+  .co-items-table .co-item-pieces { background-image: none; }
+}
