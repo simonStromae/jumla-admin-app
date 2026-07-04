@@ -44,7 +44,7 @@ export default function ReclamationsPage() {
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10, maxWidth: 300, margin: '0 auto' }}>
           <a
-            href="https://wa.me/15142929261"
+            href="https://wa.me/15149980709"
             target="_blank"
             rel="noreferrer"
             style={{
@@ -58,11 +58,27 @@ export default function ReclamationsPage() {
             <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
               <path d="M17.5 14.4c-.3-.1-1.7-.9-2-1s-.5-.1-.7.1c-.2.3-.7 1-.9 1.1-.2.2-.3.2-.6 0-.3-.1-1.2-.5-2.3-1.4-.8-.7-1.4-1.7-1.6-2-.2-.3 0-.5.1-.6l.5-.5c.1-.2.2-.3.3-.5 0-.2 0-.4-.1-.5 0-.1-.7-1.6-1-2.2-.2-.6-.5-.5-.7-.5h-.6c-.2 0-.5.1-.7.4-.3.3-1 1-1 2.4s1 2.8 1.2 3.1c.2.2 2 3 4.8 4.3.7.3 1.2.4 1.6.6.7.2 1.3.2 1.8.1.6-.1 1.7-.7 1.9-1.3.3-.7.3-1.2.2-1.3-.1-.2-.3-.3-.6-.4zM12 21a9 9 0 0 1-4.6-1.3L3 21l1.3-4.3A9 9 0 1 1 12 21z" />
             </svg>
-            Contacter par WhatsApp
+            WhatsApp · +1 514 998 0709
           </a>
 
           <a
-            href="mailto:support@jumla.cargo"
+            href="tel:+15149980709"
+            style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
+              padding: '12px 20px', borderRadius: 10,
+              background: 'white', color: 'var(--ink-700)',
+              border: '1.5px solid var(--border)',
+              fontSize: 14, fontWeight: 600, textDecoration: 'none',
+            }}
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6 19.8 19.8 0 0 1-3.1-8.7A2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .3 1.9.6 2.8.2.6 0 1.3-.4 1.7L8 9.4a16 16 0 0 0 6 6l1.2-1.3a2 2 0 0 1 1.7-.4c.9.3 1.8.5 2.8.6a2 2 0 0 1 1.7 2z" />
+            </svg>
+            +1 514 998 0709
+          </a>
+
+          <a
+            href="mailto:info@jumlas.com"
             style={{
               display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
               padding: '12px 20px', borderRadius: 10,
@@ -75,7 +91,7 @@ export default function ReclamationsPage() {
               <rect x="2" y="4" width="20" height="16" rx="2" />
               <path d="m2 7 10 7 10-7" />
             </svg>
-            support@jumla.cargo
+            info@jumlas.com
           </a>
         </div>
 
