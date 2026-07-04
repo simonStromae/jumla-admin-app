@@ -1210,8 +1210,8 @@ export default function BookingScreen({ onNav, embedded = false }) {
 
                   {/* Items */}
                   <div className="co-label" style={{ marginBottom: 10 }}>{t('booking.parcel.items')}</div>
-                  <div style={{ border: '1px solid var(--border)', borderRadius: 'var(--radius)', overflow: 'hidden' }}>
-                    <div style={{ display: 'grid', gridTemplateColumns: '180px 1fr 80px 100px 36px', gap: 0, padding: '8px 12px', background: 'var(--bg-soft)', borderBottom: '1px solid var(--border)', fontSize: 10.5, fontWeight: 700, letterSpacing: '.06em', textTransform: 'uppercase', color: 'var(--ink-500)' }}>
+                  <div className="co-items-table" style={{ border: '1px solid var(--border)', borderRadius: 'var(--radius)', overflow: 'hidden' }}>
+                    <div className="co-items-head" style={{ display: 'grid', gridTemplateColumns: '180px 1fr 80px 100px 36px', gap: 0, padding: '8px 12px', background: 'var(--bg-soft)', borderBottom: '1px solid var(--border)', fontSize: 10.5, fontWeight: 700, letterSpacing: '.06em', textTransform: 'uppercase', color: 'var(--ink-500)' }}>
                       <div>{t('booking.parcel.category')}</div>
                       <div>{t('booking.parcel.desc')}</div>
                       <div>{t('booking.parcel.pieces')}</div>
@@ -1224,13 +1224,13 @@ export default function BookingScreen({ onNav, embedded = false }) {
                       const isLast = idx === items.length - 1;
                       return (
                         <div key={item.id}>
-                          <div style={{
+                          <div className="co-item-row" style={{
                             display: 'grid', gridTemplateColumns: '180px 1fr 80px 100px 36px', gap: 0,
                             padding: '8px 12px', borderBottom: (!isBeer && !isLast) ? '1px solid var(--border-soft)' : 'none',
                             alignItems: 'center', background: 'white',
                           }}>
                             <select
-                              className="co-input"
+                              className="co-input co-item-cat"
                               value={item.cat}
                               onChange={e => updItem(item.id, 'cat', e.target.value)}
                               style={{ fontSize: 12.5, marginRight: 6 }}
@@ -1239,19 +1239,19 @@ export default function BookingScreen({ onNav, embedded = false }) {
                                 <option key={c.id} value={c.id}>{c.icon} {c.label}</option>
                               ))}
                             </select>
-                            <input className="co-input" value={item.desc}
+                            <input className="co-input co-item-desc" value={item.desc}
                               onChange={e => updItem(item.id, 'desc', e.target.value)}
                               placeholder={ITEM_CATEGORIES.find(c => c.id === item.cat)?.hint || 'Description…'}
                               style={{ marginRight: 6 }} />
-                            <input className="co-input" type="number" min="1" value={item.pieces}
+                            <input className="co-input co-item-pieces" type="number" min="1" value={item.pieces}
                               disabled={isStd}
                               onChange={e => updItem(item.id, 'pieces', e.target.value)}
                               style={{ opacity: isStd ? .35 : 1, cursor: isStd ? 'not-allowed' : 'text', marginRight: 6 }}
                               title={isStd ? 'Non requis pour Standard' : ''} />
-                            <input className="co-input" type="number" min="0" step="0.5" value={item.kg}
+                            <input className="co-input co-item-kg" type="number" min="0" step="0.5" value={item.kg}
                               onChange={e => updItem(item.id, 'kg', e.target.value)} placeholder="0"
                               style={{ marginRight: 6 }} />
-                            <button style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--ink-300)', fontSize: 20, display: 'grid', placeItems: 'center', opacity: items.length === 1 ? .25 : 1 }}
+                            <button className="co-item-del" style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--ink-300)', fontSize: 20, display: 'grid', placeItems: 'center', opacity: items.length === 1 ? .25 : 1 }}
                               disabled={items.length === 1}
                               onClick={() => removeItem(item.id)}>×</button>
                           </div>
