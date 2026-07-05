@@ -124,6 +124,12 @@ export default function ClientLayout({ children }) {
   const { logoIconUrl, logoIconSize } = useCompanyAssets();
   const router   = useRouter();
   const pathname = usePathname();
+  const [plusOpen, setPlusOpen] = useState(false);
+
+  const openHelp = () => {
+    window.dispatchEvent(new CustomEvent('jumla:open-help'));
+    setPlusOpen(false);
+  };
 
   useEffect(() => {
     if (status === 'unauthenticated') router.push('/login');
@@ -172,7 +178,7 @@ export default function ClientLayout({ children }) {
           </div>
         </button>
       </div>
-      <nav style={{ flex: 1, padding: '10px 8px' }}>
+      <nav style={{ flex: 1, padding: '10px 8px', overflowY: 'auto' }}>
         {NAV.map(({ labelKey, icon: Icon, href }) => {
           const active = pathname === href || pathname.startsWith(href + '/');
           return (
@@ -190,28 +196,30 @@ export default function ClientLayout({ children }) {
           );
         })}
       </nav>
-      <div style={{ padding: '12px 10px', borderTop: '1px solid var(--border-soft)' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px', borderRadius: 8, marginBottom: 6, background: 'var(--bg-soft)' }}>
+      <div style={{ padding: '8px 10px', borderTop: '1px solid var(--border-soft)' }}>
+        {/* Help link */}
+        <button onClick={openHelp} style={{
+          display: 'flex', alignItems: 'center', gap: 8,
+          width: '100%', padding: '7px 10px', borderRadius: 7, marginBottom: 6,
+          border: 'none', background: 'transparent',
+          fontSize: 12.5, fontWeight: 500, cursor: 'pointer', color: 'var(--ink-400)',
+        }}>
+          <I.Help style={{ width: 14, height: 14 }} />
+          Centre d'aide
+        </button>
+        {/* User identity */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px', borderRadius: 8, background: 'var(--bg-soft)' }}>
           <div style={{
             width: 30, height: 30, borderRadius: '50%',
             background: 'linear-gradient(135deg, #00B4D8, #1B4FD8)',
             display: 'grid', placeItems: 'center',
             fontWeight: 700, fontSize: 11, color: 'white', flexShrink: 0,
           }}>{initials}</div>
-          <div style={{ minWidth: 0 }}>
+          <div style={{ minWidth: 0, flex: 1 }}>
             <div style={{ fontSize: 12.5, fontWeight: 600, color: 'var(--ink-800)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{user?.name}</div>
             <div style={{ fontSize: 10.5, color: 'var(--ink-400)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{user?.email}</div>
           </div>
         </div>
-        <button onClick={() => signOut({ callbackUrl: '/login' })} style={{
-          display: 'flex', alignItems: 'center', gap: 8,
-          width: '100%', padding: '7px 10px', borderRadius: 7,
-          border: '1px solid var(--border)', background: 'white',
-          fontSize: 12.5, fontWeight: 500, cursor: 'pointer', color: 'var(--ink-600)',
-        }}>
-          <I.Logout style={{ width: 14, height: 14 }} />
-          {t('button.logout')}
-        </button>
       </div>
     </aside>
   );
@@ -224,8 +232,9 @@ export default function ClientLayout({ children }) {
         @media (max-width: 767px) {
           .desktop-sidebar { display: none !important; }
           .mobile-bottomnav { display: flex !important; }
-          .main-content { padding: 16px 14px 72px !important; }
+          .main-content { padding: 16px 14px 80px !important; }
           .topbar-greeting { display: none !important; }
+          .topbar-logout { display: none !important; }
         }
         @media (min-width: 768px) {
           .desktop-sidebar { display: flex !important; }
@@ -265,6 +274,18 @@ export default function ClientLayout({ children }) {
             <span className="topbar-greeting" style={{ fontSize: 12.5, color: 'var(--ink-500)' }}>
               {t('client.topbar.greeting')} <span style={{ fontWeight: 600, color: 'var(--ink-800)' }}>{user?.name?.split(' ')[0]}</span>
             </span>
+            <button
+              className="topbar-logout"
+              onClick={() => signOut({ callbackUrl: '/login' })}
+              title={t('button.logout')}
+              style={{
+                width: 34, height: 34, borderRadius: 8,
+                border: '1px solid var(--border)', background: 'white',
+                cursor: 'pointer', display: 'grid', placeItems: 'center',
+                color: 'var(--ink-500)', flexShrink: 0,
+              }}>
+              <I.Logout style={{ width: 15, height: 15 }} />
+            </button>
           </header>
 
           {suspended && (
@@ -285,29 +306,145 @@ export default function ClientLayout({ children }) {
           </div>
         </main>
 
-        {/* Mobile bottom nav */}
+        {/* Mobile bottom nav — FAB center layout */}
         <nav className="mobile-bottomnav" style={{
           display: 'none',
           position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 100,
           background: 'white', borderTop: '1px solid var(--border)',
-          padding: '8px 0 env(safe-area-inset-bottom, 8px)',
-          justifyContent: 'space-around', alignItems: 'center',
+          paddingBottom: 'env(safe-area-inset-bottom, 0)',
+          height: 60,
+          alignItems: 'center',
+          justifyContent: 'space-around',
+          overflow: 'visible',
         }}>
-          {NAV.map(({ labelKey, icon: Icon, href }) => {
+          {/* Left: Mes colis */}
+          {[
+            { labelKey: 'client.nav.parcels',  icon: I.Box,        href: '/client/dashboard' },
+            { labelKey: 'client.nav.tracking', icon: I.Search,     href: '/client/suivi'     },
+          ].map(({ labelKey, icon: Icon, href }) => {
             const active = pathname === href || pathname.startsWith(href + '/');
             return (
               <button key={href} onClick={() => router.push(href)} style={{
                 display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3,
-                background: 'none', border: 'none', cursor: 'pointer', padding: '4px 12px',
-                color: active ? 'var(--brand-600)' : 'var(--ink-400)',
-                minWidth: 56,
+                background: 'none', border: 'none', cursor: 'pointer', padding: '4px 0',
+                color: active ? 'var(--brand-600)' : 'var(--ink-400)', flex: 1,
               }}>
                 <Icon style={{ width: 20, height: 20 }} />
                 <span style={{ fontSize: 10, fontWeight: active ? 700 : 400 }}>{t(labelKey)}</span>
               </button>
             );
           })}
+
+          {/* Center FAB — Réserver */}
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flex: '0 0 68px' }}>
+            <button
+              disabled={suspended}
+              onClick={() => !suspended && router.push('/client/booking')}
+              style={{
+                width: 52, height: 52, borderRadius: '50%',
+                background: suspended
+                  ? 'var(--ink-200)'
+                  : 'linear-gradient(135deg, #00B4D8, #1B4FD8)',
+                border: '3px solid white',
+                boxShadow: suspended ? 'none' : '0 -2px 20px rgba(27,79,216,.35)',
+                color: 'white', cursor: suspended ? 'not-allowed' : 'pointer',
+                display: 'grid', placeItems: 'center',
+                marginTop: -22,
+                flexShrink: 0,
+              }}>
+              <I.Plus style={{ width: 24, height: 24, strokeWidth: 2.5 }} />
+            </button>
+            <span style={{ fontSize: 9.5, fontWeight: 600, color: 'var(--brand-600)', marginTop: 2 }}>
+              {t('client.nav.book')}
+            </span>
+          </div>
+
+          {/* Right: Paiements */}
+          {[
+            { labelKey: 'client.nav.payments', icon: I.CreditCard, href: '/client/invoices' },
+          ].map(({ labelKey, icon: Icon, href }) => {
+            const active = pathname === href || pathname.startsWith(href + '/');
+            return (
+              <button key={href} onClick={() => router.push(href)} style={{
+                display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3,
+                background: 'none', border: 'none', cursor: 'pointer', padding: '4px 0',
+                color: active ? 'var(--brand-600)' : 'var(--ink-400)', flex: 1,
+              }}>
+                <Icon style={{ width: 20, height: 20 }} />
+                <span style={{ fontSize: 10, fontWeight: active ? 700 : 400 }}>{t(labelKey)}</span>
+              </button>
+            );
+          })}
+
+          {/* Plus button */}
+          <button
+            onClick={() => setPlusOpen(true)}
+            style={{
+              display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3,
+              background: 'none', border: 'none', cursor: 'pointer', padding: '4px 0',
+              color: plusOpen ? 'var(--brand-600)' : 'var(--ink-400)', flex: 1,
+            }}>
+            <I.More style={{ width: 20, height: 20 }} />
+            <span style={{ fontSize: 10 }}>Plus</span>
+          </button>
         </nav>
+
+        {/* Plus overlay (mobile) */}
+        {plusOpen && (
+          <div
+            onClick={() => setPlusOpen(false)}
+            style={{
+              position: 'fixed', inset: 0, zIndex: 200,
+              background: 'rgba(0,0,0,.45)',
+            }}>
+            <div
+              onClick={e => e.stopPropagation()}
+              style={{
+                position: 'absolute', bottom: 0, left: 0, right: 0,
+                background: 'white', borderRadius: '20px 20px 0 0',
+                paddingBottom: 'env(safe-area-inset-bottom, 16px)',
+                boxShadow: '0 -8px 32px rgba(0,0,0,.15)',
+              }}>
+              {/* Handle */}
+              <div style={{ width: 40, height: 4, borderRadius: 2, background: 'var(--border)', margin: '14px auto 8px' }} />
+              {[
+                { icon: I.Alert, label: 'Réclamations',   href: '/client/reclamations' },
+                { icon: I.Help,  label: 'Centre d\'aide', action: openHelp },
+                { icon: I.Users, label: 'Mon profil',     href: '/client/profile' },
+              ].map(({ icon: Icon, label, href, action }) => {
+                const active = href && (pathname === href || pathname.startsWith(href + '/'));
+                return (
+                  <button
+                    key={label}
+                    onClick={() => { if (href) router.push(href); if (action) action(); setPlusOpen(false); }}
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: 14,
+                      width: '100%', padding: '14px 24px', border: 'none',
+                      background: active ? 'var(--brand-50)' : 'transparent',
+                      cursor: 'pointer', fontSize: 15,
+                      color: active ? 'var(--brand-700)' : 'var(--ink-800)',
+                      fontWeight: active ? 600 : 400,
+                    }}>
+                    <Icon style={{ width: 20, height: 20, color: active ? 'var(--brand-600)' : 'var(--ink-400)', flexShrink: 0 }} />
+                    {label}
+                  </button>
+                );
+              })}
+              <div style={{ height: 1, background: 'var(--border-soft)', margin: '4px 20px' }} />
+              <button
+                onClick={() => signOut({ callbackUrl: '/login' })}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 14,
+                  width: '100%', padding: '14px 24px', border: 'none',
+                  background: 'transparent', cursor: 'pointer', fontSize: 15,
+                  color: 'var(--bad-600)', fontWeight: 500,
+                }}>
+                <I.Logout style={{ width: 20, height: 20, flexShrink: 0 }} />
+                {t('button.logout')}
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </>
   );
