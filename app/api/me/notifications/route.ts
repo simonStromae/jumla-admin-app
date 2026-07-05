@@ -9,16 +9,19 @@ export async function GET() {
 
   const userId = (session!.user as any).id;
 
-  const rows = await prisma.$queryRawUnsafe<any[]>(
-    `SELECT id, type, title, body, "parcelId", read, "createdAt"
-     FROM notifications
-     WHERE "userId" = $1
-     ORDER BY "createdAt" DESC
-     LIMIT 50`,
-    userId,
-  );
-
-  return NextResponse.json({ notifications: rows });
+  try {
+    const rows = await prisma.$queryRawUnsafe<any[]>(
+      `SELECT id, type, title, body, "parcelId", read, "createdAt"
+       FROM notifications
+       WHERE "userId" = $1
+       ORDER BY "createdAt" DESC
+       LIMIT 50`,
+      userId,
+    );
+    return NextResponse.json({ notifications: rows });
+  } catch {
+    return NextResponse.json({ notifications: [] });
+  }
 }
 
 export async function PATCH() {
@@ -27,10 +30,12 @@ export async function PATCH() {
 
   const userId = (session!.user as any).id;
 
-  await prisma.$executeRawUnsafe(
-    `UPDATE notifications SET read = true WHERE "userId" = $1 AND read = false`,
-    userId,
-  );
+  try {
+    await prisma.$executeRawUnsafe(
+      `UPDATE notifications SET read = true WHERE "userId" = $1 AND read = false`,
+      userId,
+    );
+  } catch {}
 
   return NextResponse.json({ ok: true });
 }
