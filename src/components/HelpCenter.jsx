@@ -315,25 +315,54 @@ export default function HelpCenter({ variant = 'admin' }) {
     return () => window.removeEventListener('keydown', handler);
   }, [open]);
 
+  // External trigger (from Plus menu or sidebar)
+  useEffect(() => {
+    const handler = () => setOpen(true);
+    window.addEventListener('jumla:open-help', handler);
+    return () => window.removeEventListener('jumla:open-help', handler);
+  }, []);
+
   return (
     <>
-      {/* Floating button */}
+      {/* Floating button — admin: prominent. client: subtle desktop-only */}
+      <style>{`
+        .help-float-btn { display: flex !important; }
+        @media (max-width: 767px) { .help-float-btn { display: none !important; } }
+      `}</style>
       <button
+        className="help-float-btn"
         onClick={() => setOpen(true)}
         title="Centre d'aide"
-        style={{
+        style={variant === 'admin' ? {
           position: 'fixed', bottom: 24, right: 24, zIndex: 800,
           width: 46, height: 46, borderRadius: '50%',
           background: 'linear-gradient(135deg, #00B4D8, #1B4FD8)',
           color: 'white', border: 'none', cursor: 'pointer',
           fontSize: 22, fontWeight: 800,
           boxShadow: '0 4px 20px rgba(27,79,216,.45)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          alignItems: 'center', justifyContent: 'center',
           transition: 'transform .15s, box-shadow .15s',
           lineHeight: 1,
+        } : {
+          position: 'fixed', bottom: 24, right: 24, zIndex: 800,
+          width: 36, height: 36, borderRadius: '50%',
+          background: 'white',
+          color: 'var(--brand-600)',
+          border: '1.5px solid var(--brand-200)',
+          cursor: 'pointer', fontSize: 16, fontWeight: 700,
+          boxShadow: '0 2px 8px rgba(0,0,0,.08)',
+          alignItems: 'center', justifyContent: 'center',
+          transition: 'border-color .15s, box-shadow .15s',
+          lineHeight: 1,
         }}
-        onMouseEnter={e => { e.currentTarget.style.transform = 'scale(1.1)'; }}
-        onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)'; }}>
+        onMouseEnter={e => {
+          if (variant === 'admin') e.currentTarget.style.transform = 'scale(1.1)';
+          else { e.currentTarget.style.borderColor = 'var(--brand-400)'; e.currentTarget.style.boxShadow = '0 2px 12px rgba(27,79,216,.2)'; }
+        }}
+        onMouseLeave={e => {
+          if (variant === 'admin') e.currentTarget.style.transform = 'scale(1)';
+          else { e.currentTarget.style.borderColor = 'var(--brand-200)'; e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,.08)'; }
+        }}>
         ?
       </button>
 
