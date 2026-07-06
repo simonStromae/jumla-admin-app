@@ -93,6 +93,27 @@ export function SiteNav({ onNav, onBook, mode = 'landing' }) {
 }
 
 /* ─── Footer ─── */
+const ANCHOR_TO_ROUTE = {
+  '#jfaq':  '/faq',
+  '#jfoot': '/contact',
+  '#jest':  '/suivi',
+};
+const LABEL_TO_ROUTE = {
+  'Réserver': '/login', 'Book': '/login',
+  'CGU': '/cgu', 'Terms of use': '/cgu',
+  'CGV': '/cgv', 'Terms of sale': '/cgv',
+  'Politique de confidentialité': '/politique-de-confidentialite', 'Privacy policy': '/politique-de-confidentialite',
+  'Cookies': '/cookies',
+};
+function normalizeLinks(links) {
+  if (!links) return null;
+  return links.map(lk => ({
+    ...lk,
+    href: ANCHOR_TO_ROUTE[lk.href]
+      ?? (lk.href === '#' ? (LABEL_TO_ROUTE[lk.label] ?? lk.href) : lk.href),
+  }));
+}
+
 const DEFAULT_COL_LINKS = {
   col1: [
     { label: 'Fret aérien', href: '#services' },
@@ -119,9 +140,9 @@ export function SiteFooter({ content }) {
   const t = useT();
   const fc = content?.footer ?? {};
 
-  const col1Links = fc.col1Links ?? DEFAULT_COL_LINKS.col1;
-  const col2Links = fc.col2Links ?? DEFAULT_COL_LINKS.col2;
-  const col3Links = fc.col3Links ?? DEFAULT_COL_LINKS.col3;
+  const col1Links = normalizeLinks(fc.col1Links) ?? DEFAULT_COL_LINKS.col1;
+  const col2Links = normalizeLinks(fc.col2Links) ?? DEFAULT_COL_LINKS.col2;
+  const col3Links = normalizeLinks(fc.col3Links) ?? DEFAULT_COL_LINKS.col3;
   const cols = [
     { title: fc.col1Title ?? t('footer.cols.services'), links: col1Links },
     { title: fc.col2Title ?? t('footer.cols.company'),  links: col2Links },
