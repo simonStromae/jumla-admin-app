@@ -61,9 +61,9 @@ export async function POST(req: NextRequest) {
       );
 
       await prisma.whatsappLog.create({
-        data: { parcelId: p.id, toPhone: phone, body: finalBody, status: 'sent', twilioSid: msg.sid },
+        data: { parcelId: p.id, toPhone: phone, body: finalBody, status: msg.status ?? 'queued', twilioSid: msg.sid },
       });
-      results.push({ parcelId: p.id, status: 'sent' });
+      results.push({ parcelId: p.id, status: msg.status ?? 'queued' });
     } catch (e: any) {
       const errMsg = e?.message ?? 'Erreur inconnue';
       await prisma.whatsappLog.create({
