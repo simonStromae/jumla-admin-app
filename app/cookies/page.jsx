@@ -22,7 +22,7 @@ export default function CookiesPage() {
             </p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginTop: 24 }}>
               {[
-                { name: 'next-auth.session-token', desc: 'Session d'authentification — expire à la fermeture du navigateur ou après 30 jours.', essential: true },
+                { name: 'next-auth.session-token', desc: "Session d'authentification — expire à la fermeture du navigateur ou après 30 jours.", essential: true },
                 { name: 'NEXT_LOCALE', desc: 'Préférence de langue (fr / en) — expire après 1 an.', essential: true },
               ].map(c => (
                 <div key={c.name} style={{ padding: '14px 16px', background: 'var(--bg-soft)', borderRadius: 10, border: '1px solid var(--border-soft)', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 16, flexWrap: 'wrap' }}>
