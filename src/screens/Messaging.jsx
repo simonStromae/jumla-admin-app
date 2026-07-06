@@ -380,9 +380,15 @@ export default function MessagingScreen({ onNav, campaignId }) {
                           {parcel?.trackingCode ?? '—'}
                         </td>
                         <td>
-                          <span className={`badge badge--dot badge--${log.status === 'sent' ? 'ok' : 'bad'}`}>
-                            {log.status === 'sent' ? 'Envoyé' : 'Échec'}
-                          </span>
+                          {(() => {
+                            const ok = ['sent','delivered','queued','accepted','read'].includes(log.status);
+                            const label = log.status === 'delivered' ? 'Livré'
+                              : log.status === 'queued' || log.status === 'accepted' ? 'En attente'
+                              : ok ? 'Envoyé' : 'Échec';
+                            return (
+                              <span className={`badge badge--dot badge--${ok ? 'ok' : 'bad'}`}>{label}</span>
+                            );
+                          })()}
                           {log.error && <div style={{ fontSize: 10.5, color: 'var(--bad-600)', marginTop: 2 }}>{log.error}</div>}
                         </td>
                         <td className="mono" style={{ fontSize: 10.5, color: 'var(--ink-400)' }}>
