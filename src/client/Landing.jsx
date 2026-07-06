@@ -588,9 +588,10 @@ function JCTA({ onBook, content }) {
             </div>
             <div className="jcta3__card-footer">
               <div style={{ fontSize: 12, color: 'var(--ink-400)', marginBottom: 8 }}>{content.ctaCard?.footerQuestion ?? t('cta.card.footer.question')}</div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 7, fontSize: 14, color: '#25D366', fontWeight: 700 }}>
+              <a href="https://wa.me/15149980709" target="_blank" rel="noreferrer"
+                style={{ display: 'flex', alignItems: 'center', gap: 7, fontSize: 14, color: '#25D366', fontWeight: 700, textDecoration: 'none' }}>
                 <I.Whatsapp style={{ width: 18, height: 18 }} /> {content.ctaCard?.footerWhatsapp ?? t('cta.card.footer.whatsapp')}
-              </div>
+              </a>
             </div>
           </div>
 

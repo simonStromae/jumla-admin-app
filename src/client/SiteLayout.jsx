@@ -19,7 +19,7 @@ export function TopBar() {
             </span>
             <span className="jtop-bar__item">
               <I.Send style={{ width: 13, height: 13 }} />
-              contact@jumla.cargo
+              info@jumlas.com
             </span>
           </div>
           <div className="jtop-bar__right">
@@ -93,24 +93,45 @@ export function SiteNav({ onNav, onBook, mode = 'landing' }) {
 }
 
 /* ─── Footer ─── */
+const ANCHOR_TO_ROUTE = {
+  '#jfaq':  '/faq',
+  '#jfoot': '/contact',
+  '#jest':  '/suivi',
+};
+const LABEL_TO_ROUTE = {
+  'Réserver': '/login', 'Book': '/login',
+  'CGU': '/cgu', 'Terms of use': '/cgu',
+  'CGV': '/cgv', 'Terms of sale': '/cgv',
+  'Politique de confidentialité': '/politique-de-confidentialite', 'Privacy policy': '/politique-de-confidentialite',
+  'Cookies': '/cookies',
+};
+function normalizeLinks(links) {
+  if (!links) return null;
+  return links.map(lk => ({
+    ...lk,
+    href: ANCHOR_TO_ROUTE[lk.href]
+      ?? (lk.href === '#' ? (LABEL_TO_ROUTE[lk.label] ?? lk.href) : lk.href),
+  }));
+}
+
 const DEFAULT_COL_LINKS = {
   col1: [
     { label: 'Fret aérien', href: '#services' },
     { label: 'Livraison à domicile', href: '#services' },
-    { label: 'Suivi de colis', href: '#jest' },
-    { label: 'Tarifs', href: '#jest' },
+    { label: 'Suivi de colis', href: '/suivi' },
+    { label: 'Tarifs', href: '#estimator' },
   ],
   col2: [
     { label: 'À propos', href: '#features' },
-    { label: 'FAQ', href: '#jfaq' },
-    { label: 'Contact', href: '#jfoot' },
-    { label: 'Réserver', href: '#' },
+    { label: 'FAQ', href: '/faq' },
+    { label: 'Contact', href: '/contact' },
+    { label: 'Réserver', href: '/login' },
   ],
   col3: [
-    { label: 'CGU', href: '#' },
-    { label: 'CGV', href: '#' },
-    { label: 'Politique de confidentialité', href: '#' },
-    { label: 'Cookies', href: '#' },
+    { label: 'CGU', href: '/cgu' },
+    { label: 'CGV', href: '/cgv' },
+    { label: 'Politique de confidentialité', href: '/politique-de-confidentialite' },
+    { label: 'Cookies', href: '/cookies' },
   ],
 };
 
@@ -119,9 +140,9 @@ export function SiteFooter({ content }) {
   const t = useT();
   const fc = content?.footer ?? {};
 
-  const col1Links = fc.col1Links ?? DEFAULT_COL_LINKS.col1;
-  const col2Links = fc.col2Links ?? DEFAULT_COL_LINKS.col2;
-  const col3Links = fc.col3Links ?? DEFAULT_COL_LINKS.col3;
+  const col1Links = normalizeLinks(fc.col1Links) ?? DEFAULT_COL_LINKS.col1;
+  const col2Links = normalizeLinks(fc.col2Links) ?? DEFAULT_COL_LINKS.col2;
+  const col3Links = normalizeLinks(fc.col3Links) ?? DEFAULT_COL_LINKS.col3;
   const cols = [
     { title: fc.col1Title ?? t('footer.cols.services'), links: col1Links },
     { title: fc.col2Title ?? t('footer.cols.company'),  links: col2Links },
@@ -133,21 +154,23 @@ export function SiteFooter({ content }) {
       <div className="jc">
         <div className="jfoot__grid">
           <div>
-            <div className="jfoot__brand">
-              {logoUrl
-                ? <img src={logoUrl} alt="Logo" style={{ height: logoHeight, maxWidth: 200, objectFit: 'contain', filter: 'brightness(0) invert(1)' }} />
-                : <>
-                    <div className="jfoot__brand-mark" style={{ background: 'none', fontSize: 0 }}>
-                      <svg width="34" height="34" viewBox="0 0 48 48" fill="none">
-                        <defs><linearGradient id="ftlg" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stopColor="#00B4D8"/><stop offset="100%" stopColor="#1B4FD8"/></linearGradient></defs>
-                        <path d="M8 8 C8 6 10 4 12 5 L38 20 C40 21 40 27 38 28 L12 43 C10 44 8 42 8 40 Z" fill="url(#ftlg)"/>
-                      </svg>
-                    </div>
-                    <span style={{ fontFamily: "'Inter',system-ui,sans-serif", fontWeight: 800, letterSpacing: '.03em', textTransform: 'uppercase', background: 'linear-gradient(90deg,#00B4D8,#1B4FD8)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>JUMLA</span>
-                    <span style={{ fontSize: 16, fontWeight: 500, color: 'rgba(255,255,255,.6)' }}>Shipping</span>
-                  </>
-              }
-            </div>
+            <a href="/" style={{ textDecoration: 'none' }}>
+              <div className="jfoot__brand">
+                {logoUrl
+                  ? <img src={logoUrl} alt="Logo" style={{ height: logoHeight, maxWidth: 200, objectFit: 'contain', filter: 'brightness(0) invert(1)' }} />
+                  : <>
+                      <div className="jfoot__brand-mark" style={{ background: 'none', fontSize: 0 }}>
+                        <svg width="34" height="34" viewBox="0 0 48 48" fill="none">
+                          <defs><linearGradient id="ftlg" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stopColor="#00B4D8"/><stop offset="100%" stopColor="#1B4FD8"/></linearGradient></defs>
+                          <path d="M8 8 C8 6 10 4 12 5 L38 20 C40 21 40 27 38 28 L12 43 C10 44 8 42 8 40 Z" fill="url(#ftlg)"/>
+                        </svg>
+                      </div>
+                      <span style={{ fontFamily: "'Inter',system-ui,sans-serif", fontWeight: 800, letterSpacing: '.03em', textTransform: 'uppercase', background: 'linear-gradient(90deg,#00B4D8,#1B4FD8)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>JUMLA</span>
+                      <span style={{ fontSize: 16, fontWeight: 500, color: 'rgba(255,255,255,.6)' }}>Shipping</span>
+                    </>
+                }
+              </div>
+            </a>
             <p className="jfoot__desc">{fc.description ?? t('footer.description')}</p>
           </div>
           {cols.map(col => (
