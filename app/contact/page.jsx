@@ -15,7 +15,7 @@ const CONTACTS = [
     border: '#BBF7D0',
     label: 'WhatsApp',
     value: '+1 514 998 0709',
-    sub: 'Réponse en moins d'une heure',
+    sub: "Réponse en moins d'une heure",
     href: 'https://wa.me/15149980709',
     external: true,
   },
