@@ -66,11 +66,18 @@ export async function twilioSendWhatsapp(
 }
 
 export function formatWhatsappNumber(phone: string): string {
-  const clean = phone.trim();
-  if (clean.startsWith('+')) return 'whatsapp:' + clean.replace(/\s/g, '');
+  const clean = phone.trim().replace(/\s/g, '');
+  // Already E.164 with +
+  if (clean.startsWith('+')) return 'whatsapp:' + clean;
+  // Already prefixed
+  if (clean.startsWith('whatsapp:')) return clean;
   const digits = clean.replace(/\D/g, '');
-  const e164 = digits.startsWith('1') ? '+' + digits : '+1' + digits;
-  return 'whatsapp:' + e164;
+  // 10-digit → North American (+1)
+  // 11+ digits starting with 1 → North American (already has country code)
+  // 11+ digits NOT starting with 1 → international (already has country code, just add +)
+  if (digits.length === 10) return 'whatsapp:+1' + digits;
+  if (digits.length >= 11 && digits.startsWith('1')) return 'whatsapp:+' + digits;
+  return 'whatsapp:+' + digits;
 }
 
 // ─── Status label maps ─────────────────────────────────────────────────────
@@ -125,7 +132,7 @@ export async function sendWhatsappNotification(
   try {
     const result = await twilioSendWhatsapp(accountSid, authToken, fromNumber, to, message);
     await prisma.whatsappLog.create({
-      data: { parcelId: parcelId ?? null, toPhone: to, body: message, status: 'sent', twilioSid: result.sid },
+      data: { parcelId: parcelId ?? null, toPhone: to, body: message, status: result.status ?? 'queued', twilioSid: result.sid },
     }).catch(() => {});
   } catch (e: any) {
     await prisma.whatsappLog.create({
