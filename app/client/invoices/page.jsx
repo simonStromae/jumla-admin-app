@@ -101,7 +101,7 @@ export default function ClientInvoices() {
     fetch('/api/me/parcels').then(r => r.json()).then(data => {
       setParcels(Array.isArray(data) ? data : []);
       setLoading(false);
-    });
+    }).catch(() => setLoading(false));
   }, []);
 
   const totalDue  = parcels.reduce((s, p) => s + (p.payment?.remaining ?? (p.payment?.status !== 'completed' ? (p.priceXaf ?? 0) : 0)), 0);
