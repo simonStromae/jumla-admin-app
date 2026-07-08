@@ -142,7 +142,7 @@ export default function ClientLayout({ children }) {
   );
 
   // Print pages: no chrome
-  if (pathname.startsWith('/client/invoice/') || pathname.startsWith('/client/bordereau/')) {
+  if (pathname.startsWith('/client/invoice/') || pathname.startsWith('/client/bordereau/') || pathname.includes('/labels')) {
     return <>{children}</>;
   }
 
