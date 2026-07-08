@@ -4,12 +4,20 @@ import I from '../components/Icons.jsx';
 import { Skel } from '../components/Shell.jsx';
 
 const PRODUCT_TYPE = {
-  standard:  { icon: '📦', label: 'Standard' },
-  food:      { icon: '🍲', label: 'Alimentaire' },
-  fragile:   { icon: '⚠️', label: 'Fragile' },
-  cosmetics: { icon: '💄', label: 'Cosmétiques' },
-  clothes:   { icon: '👕', label: 'Vêtements' },
-  electronics: { icon: '📱', label: 'Électronique' },
+  standard:     { icon: '📦', label: 'Standard' },
+  vetements:    { icon: '👗', label: 'Vêtements' },
+  cosmetique:   { icon: '💄', label: 'Cosmétiques' },
+  alimentaire:  { icon: '🥘', label: 'Alimentaire' },
+  biere:        { icon: '🍺', label: 'Bière' },
+  manioc_huile: { icon: '🌿', label: 'Manioc / Huile' },
+  electronique: { icon: '📱', label: 'Électronique' },
+  documents:    { icon: '📄', label: 'Documents' },
+  // anciens codes
+  food:         { icon: '🍲', label: 'Alimentaire' },
+  fragile:      { icon: '⚠️', label: 'Fragile' },
+  clothes:      { icon: '👕', label: 'Vêtements' },
+  electronics:  { icon: '📱', label: 'Électronique' },
+  cosmetics:    { icon: '💄', label: 'Cosmétiques' },
 };
 
 export default function ParcelLabelsScreen({ id, onNav }) {
@@ -73,7 +81,7 @@ export default function ParcelLabelsScreen({ id, onNav }) {
       {!loading && !error && items.length > 0 && (
         <div className="item-labels-grid">
           {items.map((item, idx) => {
-            const type      = PRODUCT_TYPE[item.productType] ?? PRODUCT_TYPE.standard;
+            const type      = PRODUCT_TYPE[item.cat ?? item.productType] ?? PRODUCT_TYPE.standard;
             const labelCode = parcel.trackingCode + '-' + String(idx + 1).padStart(2, '0');
 
             return (
