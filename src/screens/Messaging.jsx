@@ -27,6 +27,8 @@ export default function MessagingScreen({ onNav, campaignId }) {
   const [logs,            setLogs]            = useState([]);
   const [sending,         setSending]         = useState(false);
   const [sendResult,      setSendResult]      = useState(null);
+  const [refreshing,      setRefreshing]      = useState(false);
+  const [refreshResult,   setRefreshResult]   = useState(null);
 
   const loadData = useCallback(() => {
     Promise.all([
@@ -113,6 +115,22 @@ export default function MessagingScreen({ onNav, campaignId }) {
       setSendResult({ error: 'Erreur réseau' });
     } finally {
       setSending(false);
+    }
+  }
+
+  async function handleRefreshStatuses() {
+    setRefreshing(true);
+    setRefreshResult(null);
+    try {
+      const res  = await fetch('/api/messaging/refresh', { method: 'POST' });
+      const data = await res.json();
+      setRefreshResult(data);
+      // Reload logs after refresh
+      fetch('/api/messaging/logs').then(r => r.json()).then(ls => setLogs(Array.isArray(ls) ? ls : []));
+    } catch {
+      setRefreshResult({ error: 'Erreur réseau' });
+    } finally {
+      setRefreshing(false);
     }
   }
 
@@ -346,7 +364,30 @@ export default function MessagingScreen({ onNav, campaignId }) {
               <I.History style={{ width: 14, height: 14, color: 'var(--brand-600)' }} />
               <div style={{ flex: 1, fontSize: 13, fontWeight: 700 }}>Journal d'envois</div>
               <span style={{ fontSize: 12, color: 'var(--ink-400)' }}>{logs.length} message{logs.length !== 1 ? 's' : ''}</span>
+              {logs.some(l => ['queued','accepted','sending'].includes(l.status)) && (
+                <button
+                  className="btn btn--ghost btn--sm"
+                  onClick={handleRefreshStatuses}
+                  disabled={refreshing}
+                  title="Interroger Twilio pour mettre à jour les statuts en attente"
+                >
+                  <I.Refresh style={{ width: 13, height: 13 }} />
+                  {refreshing ? 'Actualisation…' : 'Rafraîchir statuts'}
+                </button>
+              )}
             </div>
+            {refreshResult && (
+              <div style={{ padding: '8px 16px', background: refreshResult.error ? 'var(--bad-50)' : 'var(--ok-50)', borderBottom: '1px solid var(--border)', fontSize: 12.5, color: refreshResult.error ? 'var(--bad-700)' : 'var(--ok-700)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <span>
+                  {refreshResult.error
+                    ? `Erreur : ${refreshResult.error}`
+                    : refreshResult.updated > 0
+                    ? `✓ ${refreshResult.updated} statut${refreshResult.updated > 1 ? 's' : ''} mis à jour sur ${refreshResult.total}`
+                    : refreshResult.message ?? 'Aucun statut mis à jour'}
+                </span>
+                <button onClick={() => setRefreshResult(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 16, lineHeight: 1, color: 'inherit', opacity: .6 }}>×</button>
+              </div>
+            )}
             {logs.length === 0 ? (
               <div style={{ padding: 40, textAlign: 'center', color: 'var(--ink-400)' }}>
                 <I.Chat style={{ width: 32, height: 32, opacity: .25, marginBottom: 10 }} />
