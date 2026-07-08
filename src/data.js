@@ -166,7 +166,7 @@ export const AGENTS = [
 ];
 
 export const PARCEL_CATEGORIES = [
-  { id: 'standard',     label: 'Standard',                      en: 'Standard',    pct: 0,   color: '#9CA3AF', icon: '📦', desc: 'Savons, pagnes, épices, articles généraux' },
+  { id: 'standard',     label: 'Autres',                        en: 'Other',       pct: 0,   color: '#9CA3AF', icon: '📦', desc: 'Savons, pagnes, épices, articles généraux' },
   { id: 'vetements',    label: 'Vêtements / Chaussures / Sacs', en: 'Clothing',    pct: 2,   color: '#8B5CF6', icon: '👗', desc: 'Robes, pantalons, chaussures, sacs à main' },
   { id: 'cosmetique',   label: 'Cosmétiques / Compléments',     en: 'Cosmetics',   pct: 3,   color: '#EC4899', icon: '💄', desc: 'Crèmes, parfums, produits capillaires' },
   { id: 'alimentaire',  label: 'Alimentaire / Épices',          en: 'Food',        pct: 0,   color: '#10B981', icon: '🥘', desc: 'Ndolè, poisson fumé, café, cacao, safou' },

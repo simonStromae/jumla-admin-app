@@ -467,7 +467,7 @@ function JEstimator({ onBook, content }) {
                 <div className="jest__line" key={ln.id}>
                   <div className="jest__f">
                     <select value={ln.cat} onChange={e => updLine(ln.id, 'cat', e.target.value)}>
-                      {cats.map(ct => <option key={ct.id} value={ct.id}>{ct.icon} {ct.label} ({ct.pct > 0 ? '+' : ''}{ct.pct}%)</option>)}
+                      {cats.map(ct => <option key={ct.id} value={ct.id}>{ct.icon} {ct.label}</option>)}
                     </select>
                   </div>
                   <div className="jest__f">
