@@ -27,6 +27,20 @@ export default function MessagingScreen({ onNav, campaignId }) {
   const [logs,            setLogs]            = useState([]);
   const [sending,         setSending]         = useState(false);
   const [sendResult,      setSendResult]      = useState(null);
+  const [refreshing,      setRefreshing]      = useState(false);
+  const [refreshResult,   setRefreshResult]   = useState(null);
+  const [waTemplates,     setWaTemplates]     = useState([]);   // Twilio template status
+  const [creatingTmpls,   setCreatingTmpls]   = useState(false);
+  const [createResult,    setCreateResult]    = useState(null);
+  const [showTemplates,   setShowTemplates]   = useState(false);
+
+  const loadWaTemplates = useCallback(() => {
+    fetch('/api/messaging/templates').then(r => r.json()).then(d => {
+      if (Array.isArray(d)) setWaTemplates(d);
+    }).catch(() => {});
+  }, []);
+
+  useEffect(() => { loadWaTemplates(); }, [loadWaTemplates]);
 
   const loadData = useCallback(() => {
     Promise.all([
@@ -102,7 +116,7 @@ export default function MessagingScreen({ onNav, campaignId }) {
       const res = await fetch('/api/messaging/send', {
         method:  'POST',
         headers: { 'Content-Type': 'application/json' },
-        body:    JSON.stringify({ parcelIds: selected, body }),
+        body:    JSON.stringify({ parcelIds: selected, body, templateId: template }),
       });
       const data = await res.json();
       setSendResult(data);
@@ -113,6 +127,37 @@ export default function MessagingScreen({ onNav, campaignId }) {
       setSendResult({ error: 'Erreur réseau' });
     } finally {
       setSending(false);
+    }
+  }
+
+  async function handleCreateTemplates() {
+    setCreatingTmpls(true);
+    setCreateResult(null);
+    try {
+      const res  = await fetch('/api/messaging/templates', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({}) });
+      const data = await res.json();
+      setCreateResult(data);
+      loadWaTemplates();
+    } catch {
+      setCreateResult({ error: 'Erreur réseau' });
+    } finally {
+      setCreatingTmpls(false);
+    }
+  }
+
+  async function handleRefreshStatuses() {
+    setRefreshing(true);
+    setRefreshResult(null);
+    try {
+      const res  = await fetch('/api/messaging/refresh', { method: 'POST' });
+      const data = await res.json();
+      setRefreshResult(data);
+      // Reload logs after refresh
+      fetch('/api/messaging/logs').then(r => r.json()).then(ls => setLogs(Array.isArray(ls) ? ls : []));
+    } catch {
+      setRefreshResult({ error: 'Erreur réseau' });
+    } finally {
+      setRefreshing(false);
     }
   }
 
@@ -188,6 +233,31 @@ export default function MessagingScreen({ onNav, campaignId }) {
           <button onClick={() => setSendResult(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 14, color: 'var(--ink-400)' }}>✕</button>
         </div>
       )}
+
+      {/* Sandbox / Production notice */}
+      {apiStatus?.configured && (() => {
+        const from = apiStatus.fromNumber ?? '';
+        if (!from) return null;
+        const isSandbox = from.includes('14155238886');
+        return (
+          <div style={{
+            marginBottom: 14, padding: '12px 16px', borderRadius: 10,
+            background: isSandbox ? '#fffbeb' : 'var(--bad-50)',
+            border: `1.5px solid ${isSandbox ? '#fde68a' : 'var(--bad-200)'}`,
+          }}>
+            {isSandbox ? (
+              <div style={{ fontSize: 13, color: '#92400e', lineHeight: 1.6 }}>
+                <strong>⚠️ Mode sandbox actif</strong> — Pour recevoir les messages, chaque destinataire doit d'abord envoyer <code style={{ background: '#fef3c7', padding: '2px 6px', borderRadius: 4, fontFamily: 'monospace', fontWeight: 700 }}>join pride-upon</code> au <strong>+1 415 523 8886</strong> sur WhatsApp (une seule fois par numéro).
+              </div>
+            ) : (
+              <div style={{ fontSize: 13, color: 'var(--bad-700)', lineHeight: 1.6 }}>
+                <strong>❌ Numéro de production ({from})</strong> — Ce numéro génère l'erreur 63016 (messages libres hors session 24h refusés par WhatsApp). Pour envoyer des messages libres, changez le numéro d'envoi pour <strong>+14155238886</strong> dans{' '}
+                <button onClick={() => onNav('/admin/settings?tab=whatsapp')} style={{ background: 'none', border: 'none', color: 'var(--brand-600)', fontWeight: 700, cursor: 'pointer', padding: 0, fontSize: 13 }}>Paramètres → WhatsApp</button>.
+              </div>
+            )}
+          </div>
+        );
+      })()}
 
       <div style={{ display: 'grid', gridTemplateColumns: '420px 1fr', gap: 14 }}>
         {/* Recipient list */}
@@ -346,7 +416,30 @@ export default function MessagingScreen({ onNav, campaignId }) {
               <I.History style={{ width: 14, height: 14, color: 'var(--brand-600)' }} />
               <div style={{ flex: 1, fontSize: 13, fontWeight: 700 }}>Journal d'envois</div>
               <span style={{ fontSize: 12, color: 'var(--ink-400)' }}>{logs.length} message{logs.length !== 1 ? 's' : ''}</span>
+              {logs.some(l => ['queued','accepted','sending'].includes(l.status)) && (
+                <button
+                  className="btn btn--ghost btn--sm"
+                  onClick={handleRefreshStatuses}
+                  disabled={refreshing}
+                  title="Interroger Twilio pour mettre à jour les statuts en attente"
+                >
+                  <I.Refresh style={{ width: 13, height: 13 }} />
+                  {refreshing ? 'Actualisation…' : 'Rafraîchir statuts'}
+                </button>
+              )}
             </div>
+            {refreshResult && (
+              <div style={{ padding: '8px 16px', background: refreshResult.error ? 'var(--bad-50)' : 'var(--ok-50)', borderBottom: '1px solid var(--border)', fontSize: 12.5, color: refreshResult.error ? 'var(--bad-700)' : 'var(--ok-700)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <span>
+                  {refreshResult.error
+                    ? `Erreur : ${refreshResult.error}`
+                    : refreshResult.updated > 0
+                    ? `✓ ${refreshResult.updated} statut${refreshResult.updated > 1 ? 's' : ''} mis à jour sur ${refreshResult.total}`
+                    : refreshResult.message ?? 'Aucun statut mis à jour'}
+                </span>
+                <button onClick={() => setRefreshResult(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 16, lineHeight: 1, color: 'inherit', opacity: .6 }}>×</button>
+              </div>
+            )}
             {logs.length === 0 ? (
               <div style={{ padding: 40, textAlign: 'center', color: 'var(--ink-400)' }}>
                 <I.Chat style={{ width: 32, height: 32, opacity: .25, marginBottom: 10 }} />
@@ -381,13 +474,16 @@ export default function MessagingScreen({ onNav, campaignId }) {
                         </td>
                         <td>
                           {(() => {
-                            const ok = ['sent','delivered','queued','accepted','read'].includes(log.status);
-                            const label = log.status === 'delivered' ? 'Livré'
-                              : log.status === 'queued' || log.status === 'accepted' ? 'En attente'
-                              : ok ? 'Envoyé' : 'Échec';
-                            return (
-                              <span className={`badge badge--dot badge--${ok ? 'ok' : 'bad'}`}>{label}</span>
-                            );
+                            const ok  = ['sent','delivered','read'].includes(log.status);
+                            const pnd = ['queued','accepted','sending'].includes(log.status);
+                            const undeliv = log.status === 'undelivered';
+                            const label = log.status === 'delivered' || log.status === 'read' ? 'Livré'
+                              : log.status === 'sent' ? 'Envoyé'
+                              : pnd ? 'En attente'
+                              : undeliv ? 'Non livré'
+                              : 'Échec';
+                            const cls = ok ? 'ok' : pnd ? 'info' : 'bad';
+                            return <span className={`badge badge--dot badge--${cls}`}>{label}</span>;
                           })()}
                           {log.error && <div style={{ fontSize: 10.5, color: 'var(--bad-600)', marginTop: 2 }}>{log.error}</div>}
                         </td>
@@ -402,6 +498,60 @@ export default function MessagingScreen({ onNav, campaignId }) {
               </div>
             )}
           </div>
+        </div>
+
+        {/* WhatsApp Templates panel */}
+        <div className="card" style={{ marginTop: 14 }}>
+          <div style={{ padding: '12px 16px', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: 10 }}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--brand-600)" strokeWidth="1.7"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+            <div style={{ flex: 1, fontSize: 13, fontWeight: 700 }}>Templates WhatsApp approuvés</div>
+            <button className="btn btn--ghost btn--sm" onClick={() => setShowTemplates(v => !v)}>
+              {showTemplates ? 'Masquer ▲' : 'Afficher ▼'}
+            </button>
+          </div>
+
+          {showTemplates && (
+            <div style={{ padding: '14px 16px' }}>
+              <p style={{ fontSize: 12.5, color: 'var(--ink-500)', marginBottom: 14, lineHeight: 1.5 }}>
+                Les templates approuvés par Meta permettent d'envoyer des messages <strong>sans fenêtre 24h</strong>. Créez-les une fois, soumettez pour approbation (24–48h), ensuite tous les envois les utilisent automatiquement.
+              </p>
+
+              {createResult && (
+                <div style={{ marginBottom: 12, padding: '8px 14px', borderRadius: 8, background: createResult.error ? 'var(--bad-50)' : 'var(--ok-50)', border: '1px solid ' + (createResult.error ? 'var(--bad-200)' : 'var(--ok-200)'), fontSize: 12.5, color: createResult.error ? 'var(--bad-700)' : 'var(--ok-700)', display: 'flex', justifyContent: 'space-between' }}>
+                  <span>{createResult.error ? `Erreur : ${createResult.error}` : '✓ Templates créés et soumis pour approbation Meta (24–48h)'}</span>
+                  <button onClick={() => setCreateResult(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 16, opacity: .6 }}>×</button>
+                </div>
+              )}
+
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 8, marginBottom: 14 }}>
+                {waTemplates.map(tmpl => {
+                  const approved  = tmpl.approvalStatus === 'approved';
+                  const pending   = tmpl.approvalStatus === 'pending' || tmpl.approvalStatus === 'submitted';
+                  const rejected  = tmpl.approvalStatus === 'rejected';
+                  const notYet    = tmpl.approvalStatus === 'not_created';
+                  const color = approved ? 'var(--ok-700)' : pending ? 'var(--info-700)' : rejected ? 'var(--bad-700)' : 'var(--ink-400)';
+                  const bg    = approved ? 'var(--ok-50)'  : pending ? 'var(--info-50)' : rejected ? 'var(--bad-50)'  : 'var(--bg-soft)';
+                  const label = approved ? '✓ Approuvé' : pending ? '⏳ En attente' : rejected ? '✕ Rejeté' : notYet ? 'Non créé' : tmpl.approvalStatus;
+                  return (
+                    <div key={tmpl.id} style={{ padding: '10px 12px', borderRadius: 8, border: '1px solid var(--border)', background: bg }}>
+                      <div style={{ fontWeight: 600, fontSize: 12.5, color: 'var(--ink-800)', marginBottom: 3 }}>{tmpl.label || tmpl.id}</div>
+                      <div style={{ fontSize: 11, color, fontWeight: 600 }}>{label}</div>
+                      {tmpl.contentSid && <div className="mono" style={{ fontSize: 10, color: 'var(--ink-400)', marginTop: 2 }}>{tmpl.contentSid.slice(0, 20)}…</div>}
+                    </div>
+                  );
+                })}
+              </div>
+
+              <button
+                className="btn btn--brand"
+                disabled={creatingTmpls}
+                onClick={handleCreateTemplates}
+                style={{ width: '100%', justifyContent: 'center' }}
+              >
+                {creatingTmpls ? 'Création en cours…' : waTemplates.some(t => t.approvalStatus !== 'not_created') ? '↻ Soumettre les templates manquants' : '📤 Créer et soumettre tous les templates à Meta'}
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </div>
