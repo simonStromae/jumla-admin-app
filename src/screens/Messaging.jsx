@@ -207,6 +207,31 @@ export default function MessagingScreen({ onNav, campaignId }) {
         </div>
       )}
 
+      {/* Sandbox / Production notice */}
+      {apiStatus?.configured && (() => {
+        const from = apiStatus.fromNumber ?? '';
+        if (!from) return null;
+        const isSandbox = from.includes('14155238886');
+        return (
+          <div style={{
+            marginBottom: 14, padding: '12px 16px', borderRadius: 10,
+            background: isSandbox ? '#fffbeb' : 'var(--bad-50)',
+            border: `1.5px solid ${isSandbox ? '#fde68a' : 'var(--bad-200)'}`,
+          }}>
+            {isSandbox ? (
+              <div style={{ fontSize: 13, color: '#92400e', lineHeight: 1.6 }}>
+                <strong>⚠️ Mode sandbox actif</strong> — Pour recevoir les messages, chaque destinataire doit d'abord envoyer <code style={{ background: '#fef3c7', padding: '2px 6px', borderRadius: 4, fontFamily: 'monospace', fontWeight: 700 }}>join pride-upon</code> au <strong>+1 415 523 8886</strong> sur WhatsApp (une seule fois par numéro).
+              </div>
+            ) : (
+              <div style={{ fontSize: 13, color: 'var(--bad-700)', lineHeight: 1.6 }}>
+                <strong>❌ Numéro de production ({from})</strong> — Ce numéro génère l'erreur 63016 (messages libres hors session 24h refusés par WhatsApp). Pour envoyer des messages libres, changez le numéro d'envoi pour <strong>+14155238886</strong> dans{' '}
+                <button onClick={() => onNav('/admin/settings?tab=whatsapp')} style={{ background: 'none', border: 'none', color: 'var(--brand-600)', fontWeight: 700, cursor: 'pointer', padding: 0, fontSize: 13 }}>Paramètres → WhatsApp</button>.
+              </div>
+            )}
+          </div>
+        );
+      })()}
+
       <div style={{ display: 'grid', gridTemplateColumns: '420px 1fr', gap: 14 }}>
         {/* Recipient list */}
         <div className="card" style={{ display: 'flex', flexDirection: 'column', maxHeight: 'calc(100vh - 200px)' }}>
@@ -422,13 +447,16 @@ export default function MessagingScreen({ onNav, campaignId }) {
                         </td>
                         <td>
                           {(() => {
-                            const ok = ['sent','delivered','queued','accepted','read'].includes(log.status);
-                            const label = log.status === 'delivered' ? 'Livré'
-                              : log.status === 'queued' || log.status === 'accepted' ? 'En attente'
-                              : ok ? 'Envoyé' : 'Échec';
-                            return (
-                              <span className={`badge badge--dot badge--${ok ? 'ok' : 'bad'}`}>{label}</span>
-                            );
+                            const ok  = ['sent','delivered','read'].includes(log.status);
+                            const pnd = ['queued','accepted','sending'].includes(log.status);
+                            const undeliv = log.status === 'undelivered';
+                            const label = log.status === 'delivered' || log.status === 'read' ? 'Livré'
+                              : log.status === 'sent' ? 'Envoyé'
+                              : pnd ? 'En attente'
+                              : undeliv ? 'Non livré'
+                              : 'Échec';
+                            const cls = ok ? 'ok' : pnd ? 'info' : 'bad';
+                            return <span className={`badge badge--dot badge--${cls}`}>{label}</span>;
                           })()}
                           {log.error && <div style={{ fontSize: 10.5, color: 'var(--bad-600)', marginTop: 2 }}>{log.error}</div>}
                         </td>
