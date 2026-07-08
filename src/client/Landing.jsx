@@ -623,9 +623,9 @@ export default function LandingPage({ onNav }) {
       <TopBar />
       <SiteNav onNav={onNav} onBook={onBook} mode="landing" />
       <JHero onBook={onBook} onNav={onNav} content={content} />
+      <JEstimator onBook={onBook} content={content} />
       <JServices onBook={onBook} content={content} />
       <JFeats onBook={onBook} content={content} />
-      <JEstimator onBook={onBook} content={content} />
       <JFAQ content={content} />
       <JCTA onBook={onBook} content={content} />
       <SiteFooter content={content} />
