@@ -65,6 +65,41 @@ export async function twilioSendWhatsapp(
   return data as { sid: string; status: string };
 }
 
+// Send a pre-approved WhatsApp template (works without 24h session)
+export async function twilioSendWhatsappTemplate(
+  accountSid: string,
+  authToken: string,
+  from: string,
+  to: string,
+  contentSid: string,
+  contentVariables: Record<string, string>,
+) {
+  const url    = `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Messages.json`;
+  const params = new URLSearchParams({
+    From:             from.startsWith('whatsapp:') ? from : 'whatsapp:' + from,
+    To:               to.startsWith('whatsapp:')   ? to   : 'whatsapp:' + to,
+    ContentSid:       contentSid,
+    ContentVariables: JSON.stringify(contentVariables),
+  });
+
+  const res  = await fetch(url, {
+    method:  'POST',
+    headers: {
+      Authorization:  basicAuth(accountSid, authToken),
+      'Content-Type': 'application/x-www-form-urlencoded',
+    },
+    body: params.toString(),
+  });
+  const data = await res.json() as any;
+  if (!res.ok) {
+    throw Object.assign(
+      new Error(data.message ?? `HTTP ${res.status}`),
+      { code: data.code ?? res.status }
+    );
+  }
+  return data as { sid: string; status: string };
+}
+
 export function formatWhatsappNumber(phone: string): string {
   const clean = phone.trim().replace(/\s/g, '');
   // Already E.164 with +
@@ -122,15 +157,40 @@ export const PARCEL_STATUS_LABELS: Record<string, string> = {
 // ─── Shared notification helper ────────────────────────────────────────────
 
 export async function sendWhatsappNotification(
-  phone: string,
-  message: string,
-  parcelId?: string | null,
+  phone:      string,
+  message:    string,
+  parcelId?:  string | null,
+  templateId?: string,
+  templateVars?: Record<string, string>,
 ): Promise<void> {
   const { accountSid, authToken, fromNumber } = await getTwilioSettings();
   if (!accountSid || !authToken || !fromNumber) return;
   const to = formatWhatsappNumber(phone);
+
+  // Try template first if templateId provided
+  let contentSid: string | null = null;
+  if (templateId) {
+    try {
+      const { TWILIO_TEMPLATES } = await import('./wa-template');
+      const tmpl = TWILIO_TEMPLATES[templateId];
+      if (tmpl) {
+        const row = await prisma.setting.findUnique({ where: { key: tmpl.settingKey } });
+        contentSid = row?.value ?? null;
+      }
+    } catch { /* no template */ }
+  }
+
   try {
-    const result = await twilioSendWhatsapp(accountSid, authToken, fromNumber, to, message);
+    let result: { sid: string; status: string };
+
+    if (contentSid && templateId && templateVars) {
+      const { buildContentVariables } = await import('./wa-template');
+      const contentVariables = buildContentVariables(templateId, templateVars) ?? {};
+      result = await twilioSendWhatsappTemplate(accountSid, authToken, fromNumber, to, contentSid, contentVariables);
+    } else {
+      result = await twilioSendWhatsapp(accountSid, authToken, fromNumber, to, message);
+    }
+
     await prisma.whatsappLog.create({
       data: { parcelId: parcelId ?? null, toPhone: to, body: message, status: result.status ?? 'queued', twilioSid: result.sid },
     }).catch(() => {});

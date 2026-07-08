@@ -29,6 +29,18 @@ export default function MessagingScreen({ onNav, campaignId }) {
   const [sendResult,      setSendResult]      = useState(null);
   const [refreshing,      setRefreshing]      = useState(false);
   const [refreshResult,   setRefreshResult]   = useState(null);
+  const [waTemplates,     setWaTemplates]     = useState([]);   // Twilio template status
+  const [creatingTmpls,   setCreatingTmpls]   = useState(false);
+  const [createResult,    setCreateResult]    = useState(null);
+  const [showTemplates,   setShowTemplates]   = useState(false);
+
+  const loadWaTemplates = useCallback(() => {
+    fetch('/api/messaging/templates').then(r => r.json()).then(d => {
+      if (Array.isArray(d)) setWaTemplates(d);
+    }).catch(() => {});
+  }, []);
+
+  useEffect(() => { loadWaTemplates(); }, [loadWaTemplates]);
 
   const loadData = useCallback(() => {
     Promise.all([
@@ -104,7 +116,7 @@ export default function MessagingScreen({ onNav, campaignId }) {
       const res = await fetch('/api/messaging/send', {
         method:  'POST',
         headers: { 'Content-Type': 'application/json' },
-        body:    JSON.stringify({ parcelIds: selected, body }),
+        body:    JSON.stringify({ parcelIds: selected, body, templateId: template }),
       });
       const data = await res.json();
       setSendResult(data);
@@ -115,6 +127,21 @@ export default function MessagingScreen({ onNav, campaignId }) {
       setSendResult({ error: 'Erreur réseau' });
     } finally {
       setSending(false);
+    }
+  }
+
+  async function handleCreateTemplates() {
+    setCreatingTmpls(true);
+    setCreateResult(null);
+    try {
+      const res  = await fetch('/api/messaging/templates', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({}) });
+      const data = await res.json();
+      setCreateResult(data);
+      loadWaTemplates();
+    } catch {
+      setCreateResult({ error: 'Erreur réseau' });
+    } finally {
+      setCreatingTmpls(false);
     }
   }
 
@@ -471,6 +498,60 @@ export default function MessagingScreen({ onNav, campaignId }) {
               </div>
             )}
           </div>
+        </div>
+
+        {/* WhatsApp Templates panel */}
+        <div className="card" style={{ marginTop: 14 }}>
+          <div style={{ padding: '12px 16px', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: 10 }}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--brand-600)" strokeWidth="1.7"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+            <div style={{ flex: 1, fontSize: 13, fontWeight: 700 }}>Templates WhatsApp approuvés</div>
+            <button className="btn btn--ghost btn--sm" onClick={() => setShowTemplates(v => !v)}>
+              {showTemplates ? 'Masquer ▲' : 'Afficher ▼'}
+            </button>
+          </div>
+
+          {showTemplates && (
+            <div style={{ padding: '14px 16px' }}>
+              <p style={{ fontSize: 12.5, color: 'var(--ink-500)', marginBottom: 14, lineHeight: 1.5 }}>
+                Les templates approuvés par Meta permettent d'envoyer des messages <strong>sans fenêtre 24h</strong>. Créez-les une fois, soumettez pour approbation (24–48h), ensuite tous les envois les utilisent automatiquement.
+              </p>
+
+              {createResult && (
+                <div style={{ marginBottom: 12, padding: '8px 14px', borderRadius: 8, background: createResult.error ? 'var(--bad-50)' : 'var(--ok-50)', border: '1px solid ' + (createResult.error ? 'var(--bad-200)' : 'var(--ok-200)'), fontSize: 12.5, color: createResult.error ? 'var(--bad-700)' : 'var(--ok-700)', display: 'flex', justifyContent: 'space-between' }}>
+                  <span>{createResult.error ? `Erreur : ${createResult.error}` : '✓ Templates créés et soumis pour approbation Meta (24–48h)'}</span>
+                  <button onClick={() => setCreateResult(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 16, opacity: .6 }}>×</button>
+                </div>
+              )}
+
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 8, marginBottom: 14 }}>
+                {waTemplates.map(tmpl => {
+                  const approved  = tmpl.approvalStatus === 'approved';
+                  const pending   = tmpl.approvalStatus === 'pending' || tmpl.approvalStatus === 'submitted';
+                  const rejected  = tmpl.approvalStatus === 'rejected';
+                  const notYet    = tmpl.approvalStatus === 'not_created';
+                  const color = approved ? 'var(--ok-700)' : pending ? 'var(--info-700)' : rejected ? 'var(--bad-700)' : 'var(--ink-400)';
+                  const bg    = approved ? 'var(--ok-50)'  : pending ? 'var(--info-50)' : rejected ? 'var(--bad-50)'  : 'var(--bg-soft)';
+                  const label = approved ? '✓ Approuvé' : pending ? '⏳ En attente' : rejected ? '✕ Rejeté' : notYet ? 'Non créé' : tmpl.approvalStatus;
+                  return (
+                    <div key={tmpl.id} style={{ padding: '10px 12px', borderRadius: 8, border: '1px solid var(--border)', background: bg }}>
+                      <div style={{ fontWeight: 600, fontSize: 12.5, color: 'var(--ink-800)', marginBottom: 3 }}>{tmpl.label || tmpl.id}</div>
+                      <div style={{ fontSize: 11, color, fontWeight: 600 }}>{label}</div>
+                      {tmpl.contentSid && <div className="mono" style={{ fontSize: 10, color: 'var(--ink-400)', marginTop: 2 }}>{tmpl.contentSid.slice(0, 20)}…</div>}
+                    </div>
+                  );
+                })}
+              </div>
+
+              <button
+                className="btn btn--brand"
+                disabled={creatingTmpls}
+                onClick={handleCreateTemplates}
+                style={{ width: '100%', justifyContent: 'center' }}
+              >
+                {creatingTmpls ? 'Création en cours…' : waTemplates.some(t => t.approvalStatus !== 'not_created') ? '↻ Soumettre les templates manquants' : '📤 Créer et soumettre tous les templates à Meta'}
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </div>
