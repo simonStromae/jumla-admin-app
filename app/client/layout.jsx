@@ -18,7 +18,7 @@ function urlBase64ToUint8Array(b64) {
 }
 
 function usePush(active) {
-  const [state, setState] = useState('idle'); // idle | supported | subscribed | denied
+  const [state, setState] = useState('idle'); // idle | supported | subscribed | denied | ios-install
 
   async function doSubscribe(reg) {
     try {
@@ -40,15 +40,32 @@ function usePush(active) {
   }
 
   useEffect(() => {
-    if (!active || !('serviceWorker' in navigator) || !('PushManager' in window)) return;
+    if (!active || !('serviceWorker' in navigator)) return;
+
+    // iOS detection — PushManager only works after "Add to Home Screen" on iOS 16.4+
+    const isIOS = /iPhone|iPad|iPod/.test(navigator.userAgent) ||
+                  (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    const isStandalone = navigator.standalone === true ||
+                         window.matchMedia('(display-mode: standalone)').matches;
+
+    // Always register SW (needed for iOS PWA install eligibility + offline)
     navigator.serviceWorker.register('/sw.js').then(async reg => {
+      if (!('PushManager' in window)) {
+        // PushManager unavailable — iOS not yet installed as PWA
+        if (isIOS && !isStandalone) setState('ios-install');
+        return;
+      }
+
       const perm = Notification.permission;
       if (perm === 'denied') { setState('denied'); return; }
+
       const existing = await reg.pushManager.getSubscription();
       if (existing) {
-        // Re-sync subscription with server (idempotent upsert)
         fetch('/api/push/vapid').then(r => r.json()).then(({ publicKey }) => {
-          if (publicKey) fetch('/api/push/subscribe', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(existing.toJSON()) }).catch(() => {});
+          if (publicKey) fetch('/api/push/subscribe', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(existing.toJSON()),
+          }).catch(() => {});
         }).catch(() => {});
         setState('subscribed');
         return;
@@ -368,7 +385,7 @@ export default function ClientLayout({ children }) {
             }}>
               <I.Bell style={{ width: 14, height: 14, color: 'var(--brand-500)', flexShrink: 0 }} />
               <span style={{ flex: 1, color: '#1e40af' }}>
-                {t && t('push.banner') ? t('push.banner') : 'Activez les notifications pour recevoir vos alertes de suivi en temps réel.'}
+                Activez les notifications pour recevoir vos alertes de suivi en temps réel.
               </span>
               <button onClick={enablePush} style={{
                 background: 'var(--brand-500)', color: 'white', border: 'none',
@@ -377,6 +394,24 @@ export default function ClientLayout({ children }) {
               <button onClick={dismissPush} style={{
                 background: 'none', border: 'none', cursor: 'pointer', padding: '2px 6px',
                 color: '#60a5fa', fontSize: 13, lineHeight: 1,
+              }}>✕</button>
+            </div>
+          )}
+
+          {pushState === 'ios-install' && (
+            <div style={{
+              background: '#F0FDF4', borderBottom: '1px solid #BBF7D0',
+              padding: '9px 16px', fontSize: 12.5,
+              display: 'flex', alignItems: 'center', gap: 8,
+            }}>
+              <span style={{ fontSize: 15, flexShrink: 0 }}>📲</span>
+              <span style={{ flex: 1, color: '#065f46', lineHeight: 1.4 }}>
+                <strong>Installez l'app</strong> pour activer les notifications :{' '}
+                <span style={{ whiteSpace: 'nowrap' }}>Safari → <strong>⎙ Partager</strong> → <strong>Sur l'écran d'accueil</strong></span>
+              </span>
+              <button onClick={dismissPush} style={{
+                background: 'none', border: 'none', cursor: 'pointer', padding: '2px 6px',
+                color: '#6ee7b7', fontSize: 13, lineHeight: 1, flexShrink: 0,
               }}>✕</button>
             </div>
           )}
