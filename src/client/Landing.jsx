@@ -221,93 +221,147 @@ function JStatsPhoto({ content }) {
 /* ─── 4-step zigzag "Comment ça marche" ─── */
 const STEPS_DATA = [
   {
-    num:'01', duration:'3 min',
-    icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" width="22" height="22" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>,
+    num: '1', duration: '3 min', side: 'left', bg: '#F2FBF4',
+    icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" width="19" height="19" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>,
     title: 'Réservez en ligne',
-    desc:  'Créez votre envoi en 3 minutes. Renseignez les colis et obtenez votre code de suivi instantanément.',
+    desc: 'Créez votre envoi en 3 minutes. Renseignez les colis et obtenez votre code de suivi instantanément.',
   },
   {
-    num:'02', duration:'1 jour',
-    icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" width="22" height="22" strokeLinecap="round" strokeLinejoin="round"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>,
+    num: '2', duration: '1 jour', side: 'right', bg: 'white',
+    icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" width="19" height="19" strokeLinecap="round" strokeLinejoin="round"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>,
     title: 'Déposez à Douala',
-    desc:  'Apportez vos colis à notre entrepôt. Vérification article par article, bordereau signé au départ.',
+    desc: 'Apportez vos colis à notre entrepôt. Vérification article par article, bordereau signé au départ.',
   },
   {
-    num:'03', duration:'~14 jours',
-    icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" width="22" height="22" strokeLinecap="round" strokeLinejoin="round"><path d="M22 2L11 13"/><path d="M22 2l-7 20-4-9-9-4 20-7z"/></svg>,
+    num: '3', duration: '~14 jours', side: 'left', bg: 'white',
+    icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" width="19" height="19" strokeLinecap="round" strokeLinejoin="round"><path d="M22 2L11 13"/><path d="M22 2l-7 20-4-9-9-4 20-7z"/></svg>,
     title: 'Transit aérien',
-    desc:  'Vos colis voyagent avec nos compagnies partenaires certifiées. Notifications WhatsApp à chaque étape.',
+    desc: 'Vos colis voyagent avec nos compagnies partenaires certifiées. Notifications WhatsApp à chaque étape.',
   },
   {
-    num:'04', duration:'Sur RDV',
-    icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" width="22" height="22" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>,
+    num: '4', duration: 'Sur RDV', side: 'right', bg: '#F2FBF4',
+    icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" width="19" height="19" strokeLinecap="round" strokeLinejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>,
     title: 'Livraison à Montréal',
-    desc:  'Retrait à notre entrepôt ou livraison à domicile partout au Québec. Paiement à la remise.',
+    desc: 'Retrait à notre entrepôt ou livraison à domicile partout au Québec. Paiement à la remise.',
   },
 ];
 
 function JSteps({ onBook }) {
   return (
-    <section id="jsteps" style={{ padding:'72px 0', background:'white' }}>
+    <section id="jsteps" style={{ padding: '80px 0', background: '#F9FAF8' }}>
       <style>{`
-        .jsteps-grid {
-          display:grid; grid-template-columns:1fr 1fr;
-          gap:32px 56px; max-width:860px; margin:0 auto;
-          position:relative;
+        .js2-wrap { position: relative; max-width: 780px; margin: 0 auto; }
+        .js2-row  { display: flex; margin-bottom: 56px; position: relative; }
+        .js2-row:last-child { margin-bottom: 0; }
+        .js2-row--l { justify-content: flex-start; }
+        .js2-row--r { justify-content: flex-end; }
+
+        /* Card + badge assembly */
+        .js2-card-wrap { width: 56%; position: relative; }
+        .js2-badge-outer {
+          position: absolute;
+          left: -17px; top: 50%;
+          transform: translateY(-50%);
+          z-index: 2;
         }
-        .jsteps-grid::before {
-          content:''; position:absolute;
-          left:50%; top:24px; bottom:24px; width:0;
-          border-left:2px dashed #E5E7EB;
-          transform:translateX(-50%);
-          pointer-events:none;
+        .js2-badge {
+          writing-mode: vertical-rl;
+          transform: rotate(180deg);
+          background: #1B3A2D;
+          color: white;
+          padding: 10px 5px;
+          border-radius: 99px;
+          font-size: 9px; font-weight: 700;
+          letter-spacing: .06em; white-space: nowrap;
+          font-family: inherit;
         }
-        .jsteps-card {
-          background:#F9FAFB; border:1px solid #E5E7EB;
-          border-radius:16px; padding:22px 18px;
-          display:flex; gap:14px; align-items:flex-start;
+        .js2-inner {
+          border-radius: 14px;
+          padding: 22px 20px 22px 26px;
+          border: 1px solid rgba(0,0,0,.07);
+          box-shadow: 0 1px 6px rgba(0,0,0,.04);
         }
-        .jsteps-card:nth-child(even) { margin-top:44px; }
-        .jsteps-icon {
-          width:44px; height:44px; border-radius:12px;
-          background:#EFF6FF; color:#1B4FD8;
-          display:grid; place-items:center; flex-shrink:0;
+        .js2-head {
+          display: flex; align-items: center; gap: 9px;
+          margin-bottom: 10px;
         }
-        @media(max-width:680px){
-          .jsteps-grid { grid-template-columns:1fr; }
-          .jsteps-grid::before { display:none; }
-          .jsteps-card:nth-child(even) { margin-top:0; }
+        .js2-icon { color: #1F3A2D; flex-shrink: 0; }
+        .js2-title { font-size: 15px; font-weight: 700; color: #111827; margin: 0; line-height: 1.3; }
+        .js2-desc  { font-size: 13px; color: #6B7280; line-height: 1.7; margin: 0; }
+
+        /* Connecting arrows */
+        .js2-arrow { position: absolute; bottom: -48px; pointer-events: none; z-index: 1; }
+        .js2-row--l .js2-arrow { left: 52%; }
+        .js2-row--r .js2-arrow { right: 52%; }
+
+        /* Mobile */
+        @media (max-width: 600px) {
+          .js2-card-wrap { width: 100%; padding-left: 36px; }
+          .js2-badge-outer { left: 2px; }
+          .js2-row--r { justify-content: flex-start; }
+          .js2-arrow  { display: none; }
+          .js2-row    { margin-bottom: 20px; }
         }
       `}</style>
+
       <div className="jc">
-        <div style={{ textAlign:'center', marginBottom:48 }}>
-          <div style={{ display:'inline-flex', alignItems:'center', background:'#ECFDF5', color:'#059669', padding:'4px 14px', borderRadius:99, fontSize:11.5, fontWeight:700, letterSpacing:'.04em', textTransform:'uppercase', marginBottom:14 }}>
+        {/* Header */}
+        <div style={{ textAlign: 'center', marginBottom: 52 }}>
+          <div style={{ display: 'inline-flex', alignItems: 'center', background: '#DCFCE7', color: '#16A34A', padding: '4px 14px', borderRadius: 99, fontSize: 11.5, fontWeight: 700, letterSpacing: '.04em', textTransform: 'uppercase', marginBottom: 14 }}>
             Comment ça marche
           </div>
-          <h2 style={{ fontFamily:"'Inter',system-ui,sans-serif", fontSize:'clamp(26px,6vw,38px)', fontWeight:800, color:'#111827', letterSpacing:'-.03em', margin:0, lineHeight:1.2 }}>
-            Simple comme <span style={{ color:'#1B4FD8' }}>4 étapes</span>
+          <h2 style={{ fontFamily: "'Inter',system-ui,sans-serif", fontSize: 'clamp(26px,6vw,36px)', fontWeight: 800, color: '#111827', letterSpacing: '-.03em', margin: 0, lineHeight: 1.2 }}>
+            Simple comme <span style={{ color: '#1B4FD8' }}>4 étapes</span>
           </h2>
-          <p style={{ fontSize:15, color:'#6B7280', marginTop:14, lineHeight:1.65, maxWidth:400, margin:'14px auto 0' }}>
+          <p style={{ fontSize: 15, color: '#6B7280', marginTop: 14, lineHeight: 1.65, maxWidth: 380, margin: '14px auto 0' }}>
             De Douala à Montréal — on s'occupe de tout, vous suivez en temps réel.
           </p>
         </div>
-        <div className="jsteps-grid">
-          {STEPS_DATA.map(step => (
-            <div key={step.num} className="jsteps-card">
-              <div className="jsteps-icon">{step.icon}</div>
-              <div style={{ flex:1 }}>
-                <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:8 }}>
-                  <span style={{ fontSize:11, fontWeight:800, color:'#9CA3AF', letterSpacing:'.05em' }}>{step.num}</span>
-                  <span style={{ background:'#111827', color:'white', fontSize:10, fontWeight:700, padding:'2px 8px', borderRadius:99 }}>{step.duration}</span>
+
+        {/* Steps */}
+        <div className="js2-wrap">
+          {STEPS_DATA.map((step, i) => (
+            <div key={step.num} className={`js2-row js2-row--${step.side}`}>
+
+              {/* Card */}
+              <div className="js2-card-wrap">
+                <div className="js2-badge-outer">
+                  <div className="js2-badge">{step.duration}</div>
                 </div>
-                <h3 style={{ fontSize:15, fontWeight:700, color:'#111827', margin:'0 0 7px', lineHeight:1.3 }}>{step.title}</h3>
-                <p style={{ fontSize:13, color:'#6B7280', margin:0, lineHeight:1.65 }}>{step.desc}</p>
+                <div className="js2-inner" style={{ background: step.bg }}>
+                  <div className="js2-head">
+                    <span className="js2-icon">{step.icon}</span>
+                    <h3 className="js2-title">{step.num} {step.title}</h3>
+                  </div>
+                  <p className="js2-desc">{step.desc}</p>
+                </div>
               </div>
+
+              {/* Dashed connecting arrow to next step */}
+              {i < STEPS_DATA.length - 1 && (
+                <div className="js2-arrow">
+                  {step.side === 'left' ? (
+                    /* left card → curves right-down toward right card */
+                    <svg width="88" height="58" viewBox="0 0 88 58" fill="none">
+                      <path d="M 6 6 C 30 6, 82 24, 82 52" stroke="#BDC9B1" strokeDasharray="5,4" strokeWidth="1.5" fill="none"/>
+                      <path d="M 75 45 L 82 52 L 86 44" stroke="#BDC9B1" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
+                    </svg>
+                  ) : (
+                    /* right card → curves left-down toward left card */
+                    <svg width="88" height="58" viewBox="0 0 88 58" fill="none">
+                      <path d="M 82 6 C 58 6, 6 24, 6 52" stroke="#BDC9B1" strokeDasharray="5,4" strokeWidth="1.5" fill="none"/>
+                      <path d="M 13 45 L 6 52 L 2 44" stroke="#BDC9B1" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
+                    </svg>
+                  )}
+                </div>
+              )}
             </div>
           ))}
         </div>
-        <div style={{ textAlign:'center', marginTop:48 }}>
-          <button onClick={onBook} style={{ background:'linear-gradient(135deg,#00B4D8,#1B4FD8)', color:'white', border:'none', borderRadius:10, padding:'14px 36px', fontSize:15, fontWeight:700, cursor:'pointer', fontFamily:'inherit', boxShadow:'0 4px 20px rgba(27,79,216,.25)' }}>
+
+        {/* CTA */}
+        <div style={{ textAlign: 'center', marginTop: 56 }}>
+          <button onClick={onBook} style={{ background: 'linear-gradient(135deg,#00B4D8,#1B4FD8)', color: 'white', border: 'none', borderRadius: 10, padding: '14px 36px', fontSize: 15, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', boxShadow: '0 4px 20px rgba(27,79,216,.25)' }}>
             Commencer maintenant →
           </button>
         </div>
