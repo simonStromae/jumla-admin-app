@@ -1,4 +1,5 @@
 'use client';
+import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import I from '../components/Icons.jsx';
 import { useCompanyAssets } from '../lib/useCompanyAssets.js';
@@ -34,40 +35,81 @@ export function TopBar() {
   );
 }
 
+const LANDING_LINKS = [
+  { label: 'Nos services', href: '#jstory' },
+  { label: 'Tarifs',       href: '#jest' },
+  { label: 'Suivi',        href: '/suivi' },
+];
+
 /* ─── Nav ─── */
 export function SiteNav({ onNav, onBook, mode = 'landing' }) {
   const { data: session, status } = useSession();
-  const { logoUrl, logoIconUrl, logoHeight } = useCompanyAssets();
+  const { logoUrl, logoHeight } = useCompanyAssets();
   const t = useT();
   const user = session?.user;
   const role = user?.role;
+  const [scrolled, setScrolled] = useState(false);
+
+  useEffect(() => {
+    if (mode !== 'landing') return;
+    const onScroll = () => setScrolled(window.scrollY > 60);
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, [mode]);
 
   const dashHref = role === 'admin' || role === 'agent' ? '/admin' : '/client/dashboard';
   const initials = user?.name
     ? user.name.split(' ').map(x => x[0]).join('').slice(0, 2).toUpperCase()
     : '?';
 
+  const isLanding = mode === 'landing';
+  const navClass = isLanding
+    ? `jnav jnav--landing${scrolled ? ' jnav--scrolled' : ''}`
+    : 'jnav';
+
+  const handleLandingLink = (e, href) => {
+    if (href.startsWith('#')) {
+      e.preventDefault();
+      document.querySelector(href)?.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
+
   return (
-    <div className="jnav">
+    <div className={navClass}>
       <div className="jc">
         <div className="jnav__inner">
-          <button className="jnav__logo" onClick={() => mode === 'landing' ? window.scrollTo({ top: 0, behavior: 'smooth' }) : onNav?.('/')}
+          {/* Logo */}
+          <button className="jnav__logo" onClick={() => isLanding ? window.scrollTo({ top: 0, behavior: 'smooth' }) : onNav?.('/')}
             style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 10, padding: 0 }}>
             {logoUrl ? (
-              <img src={logoUrl} alt="Logo" style={{ height: logoHeight, maxWidth: 200, objectFit: 'contain' }} />
+              <img src={logoUrl} alt="Logo" style={{ height: logoHeight, maxWidth: 200, objectFit: 'contain', ...(isLanding && !scrolled ? { filter: 'brightness(0) invert(1)' } : {}) }} />
             ) : (
               <>
-                <div className="jnav__logo-mark" style={{ background: 'none', fontSize: 0 }}>
-                  <svg width="36" height="36" viewBox="0 0 48 48" fill="none">
+                <div style={{ width: 34, height: 34, fontSize: 0 }}>
+                  <svg width="34" height="34" viewBox="0 0 48 48" fill="none">
                     <defs><linearGradient id="navlg" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stopColor="#00B4D8"/><stop offset="100%" stopColor="#1B4FD8"/></linearGradient></defs>
                     <path d="M8 8 C8 6 10 4 12 5 L38 20 C40 21 40 27 38 28 L12 43 C10 44 8 42 8 40 Z" fill="url(#navlg)"/>
                   </svg>
                 </div>
                 <span style={{ fontFamily: "'Inter', system-ui, sans-serif", fontWeight: 800, letterSpacing: '.03em', textTransform: 'uppercase', background: 'linear-gradient(90deg,#00B4D8,#1B4FD8)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>JUMLA</span>
-                <span style={{ fontSize: 13, fontWeight: 500, color: 'var(--ink-500)', letterSpacing: 0, textTransform: 'none' }}>Shipping</span>
+                <span style={{ fontSize: 13, fontWeight: 500, color: isLanding ? 'rgba(255,255,255,.55)' : 'var(--ink-500)', letterSpacing: 0, textTransform: 'none' }}>Shipping</span>
               </>
             )}
           </button>
+
+          {/* Center links — landing only */}
+          {isLanding && (
+            <nav className="jnav__links jnav__links--center">
+              {LANDING_LINKS.map(lk => (
+                <a key={lk.label} href={lk.href} className="jnav__link jnav__link--landing"
+                  onClick={(e) => handleLandingLink(e, lk.href)}>
+                  {lk.label}
+                </a>
+              ))}
+            </nav>
+          )}
+
+          {/* Right */}
           <div className="jnav__right" style={{ marginLeft: 'auto' }}>
             {status === 'loading' ? null : user ? (
               <>
@@ -82,7 +124,13 @@ export function SiteNav({ onNav, onBook, mode = 'landing' }) {
             ) : (
               <>
                 <LanguageSwitcher />
-                <button className="jbtn-nav" onClick={() => onNav?.('/login')}>{t('nav.signIn')} <I.ArrowRight style={{ width: 15, height: 15 }} /></button>
+                {isLanding ? (
+                  <button className="jbtn-nav jbtn-nav--pill" onClick={onBook}>Réserver</button>
+                ) : (
+                  <button className="jbtn-nav" onClick={() => onNav?.('/login')}>
+                    {t('nav.signIn')} <I.ArrowRight style={{ width: 15, height: 15 }} />
+                  </button>
+                )}
               </>
             )}
           </div>

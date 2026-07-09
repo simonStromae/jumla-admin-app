@@ -941,7 +941,6 @@ export default function LandingPage({ onNav }) {
 
   return (
     <div className="jpage">
-      <TopBar />
       <SiteNav onNav={onNav} onBook={onBook} mode="landing" />
       <JHero onBook={onBook} content={content} />
       <JStoryCard onBook={onBook} content={content} />

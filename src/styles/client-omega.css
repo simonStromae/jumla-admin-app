@@ -45,12 +45,25 @@
 /* ── Nav ── */
 .jnav {
   background: var(--white);
-  position: sticky; top: 0; z-index: 200;
+  position: sticky; top: 0; z-index: 300;
   box-shadow: 0 1px 0 var(--border);
   font-family: "Inter",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
 }
+/* Landing overlay nav */
+.jnav--landing {
+  position: fixed; top: 0; left: 0; right: 0;
+  background: transparent;
+  box-shadow: none;
+  transition: background .3s, backdrop-filter .3s, border-color .3s;
+}
+.jnav--landing.jnav--scrolled {
+  background: rgba(9, 15, 30, 0.86);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  box-shadow: 0 1px 0 rgba(255,255,255,.07);
+}
 .jnav__inner {
-  display: flex; align-items: center; height: 72px; gap: 36px;
+  display: flex; align-items: center; height: 76px; gap: 0;
 }
 .jnav__logo {
   display: flex; align-items: center; gap: 10px;
@@ -65,17 +78,29 @@
   font-size: 18px; font-weight: 800; color: white;
   border-radius: var(--radius);
 }
+/* Center nav links */
+.jnav__links--center {
+  display: flex; align-items: center; gap: 2px;
+  margin: 0 auto;
+}
 .jnav__links { display: flex; align-items: center; gap: 2px; flex: 1; }
 .jnav__link {
-  padding: 9px 15px; border: 0; background: none;
+  padding: 9px 16px; border: 0; background: none;
   border-radius: var(--radius-sm);
-  font-family: 'Inter', sans-serif;
-  font-size: 14px; font-weight: 600; color: var(--ink-800);
+  font-family: 'Inter', sans-serif; text-decoration: none;
+  font-size: 14.5px; font-weight: 500; color: var(--ink-800);
   cursor: pointer;
   transition: color .15s, background .15s;
+  display: inline-flex; align-items: center;
 }
 .jnav__link:hover { color: var(--brand-400); background: var(--brand-50); }
-.jnav__right { display: flex; align-items: center; gap: 10px; }
+/* Landing link variant — white text */
+.jnav__link--landing {
+  color: rgba(255, 255, 255, .82);
+  font-weight: 500;
+}
+.jnav__link--landing:hover { color: white; background: rgba(255,255,255,.1); }
+.jnav__right { display: flex; align-items: center; gap: 12px; }
 .jnav__signin {
   font-family: 'Inter', sans-serif;
   font-size: 14px; font-weight: 600; color: var(--ink-400);
@@ -93,6 +118,15 @@
   transition: background .15s, transform .15s;
 }
 .jbtn-nav:hover { background: linear-gradient(90deg, #0087A8, #0D2E6E); transform: translateY(-1px); }
+/* Pill CTA for landing nav */
+.jbtn-nav--pill {
+  background: white; color: #0B1220;
+  border-radius: 99px;
+  padding: 12px 28px;
+  font-size: 14px;
+  box-shadow: 0 2px 16px rgba(0,0,0,.22);
+}
+.jbtn-nav--pill:hover { background: rgba(255,255,255,.92); transform: translateY(-1px); box-shadow: 0 6px 24px rgba(0,0,0,.3); }
 
 /* ── Hero ── */
 .jhero {
@@ -929,7 +963,9 @@
   .jtop-bar { display: none; }
 
   /* Nav */
-  .jnav__inner { height: 58px; gap: 14px; }
+  .jnav__inner { height: 60px; gap: 12px; }
+  .jnav__links--center { display: none; }
+  .jbtn-nav--pill { padding: 10px 20px; font-size: 13px; }
 
   /* Hero2 */
   .jhero2 { padding: 40px 0 36px; overflow: hidden; }
