@@ -175,46 +175,64 @@ const IMGS = {
 
 const WA_SUPPORT = 'https://wa.me/15149980709?text=Bonjour%20Jumla%20Shipping%2C%20j%27ai%20une%20question.';
 
-/* ─── Photo strip + floating stat cards ─── */
-function JStatsPhoto({ content }) {
+/* ─── Dark story card with stats ─── */
+function JStoryCard({ onBook, content }) {
   const heroStats = content.hero?.stats ?? [];
-  const DEFAULTS = [
+  const STAT_DEFAULTS = [
     { value: '12 000+', label: 'Colis livrés' },
     { value: '14 jours', label: 'Transit moyen' },
     { value: '98%',      label: 'Taux de succès' },
-    { value: '2 500+',   label: 'Clients actifs' },
   ];
-  const stats = DEFAULTS.map((d, i) => heroStats[i] ?? d);
+  const stats = STAT_DEFAULTS.map((d, i) => heroStats[i] ?? d);
 
   return (
-    <section style={{ background: 'white' }}>
+    <section style={{ background: 'transparent', padding: '48px 0 0' }}>
       <style>{`
-        .jsp-imgs { display: flex; height: clamp(180px, 28vw, 320px); gap: 4px; overflow: hidden; }
-        .jsp-img  { flex: 1; position: relative; overflow: hidden; }
-        .jsp-img img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform .4s; }
-        .jsp-img:hover img { transform: scale(1.04); }
-        .jsp-img::after { content:''; position:absolute; inset:0; background:rgba(13,46,110,.28); }
-        .jsp-cards { display:grid; grid-template-columns:repeat(4,1fr); gap:14px; margin-top:-30px; position:relative; z-index:2; padding-bottom:72px; }
-        @media(max-width:600px){
-          .jsp-cards { grid-template-columns:repeat(2,1fr); margin-top:-20px; padding-bottom:52px; }
-          .jsp-imgs  { height:150px; }
+        .jsc-grid { display: grid; grid-template-columns: 1fr 210px; gap: 48px; padding: clamp(36px,5vw,60px); align-items: start; }
+        .jsc-stats { display: flex; flex-direction: column; gap: 14px; }
+        @media (max-width: 640px) {
+          .jsc-grid { grid-template-columns: 1fr; gap: 32px; padding: 32px 24px 0; }
+          .jsc-stats { flex-direction: row; flex-wrap: wrap; gap: 10px; }
+          .jsc-stat  { flex: 1; min-width: 120px; }
         }
       `}</style>
-      <div style={{ padding: '0 clamp(10px, 2vw, 24px)' }}>
-        <div className="jsp-imgs" style={{ borderRadius: 20 }}>
-          {[IMGS.hero, IMGS.airport, IMGS.cargo].map((src, i) => (
-            <div key={i} className="jsp-img"><img src={src} alt="" /></div>
-          ))}
-        </div>
-      </div>
       <div className="jc">
-        <div className="jsp-cards">
-          {stats.map(s => (
-            <div key={s.label} style={{ background:'white', borderRadius:16, padding:'22px 16px', textAlign:'center', boxShadow:'0 4px 24px rgba(0,0,0,.09)', border:'1px solid rgba(0,0,0,.04)' }}>
-              <div style={{ fontSize:'clamp(22px,4vw,28px)', fontWeight:800, color:'#1B4FD8', lineHeight:1 }}>{s.value}</div>
-              <div style={{ fontSize:12, color:'#6B7280', marginTop:6, fontWeight:500 }}>{s.label}</div>
+        <div style={{ background: '#0D2E6E', borderRadius: 24, overflow: 'hidden' }}>
+
+          {/* Top: text + stat cards */}
+          <div className="jsc-grid">
+            {/* Left — headline + CTA */}
+            <div>
+              <div style={{ display: 'inline-flex', alignItems: 'center', background: 'rgba(147,197,253,.15)', color: '#93C5FD', border: '1px solid rgba(147,197,253,.25)', padding: '4px 13px', borderRadius: 99, fontSize: 11, fontWeight: 700, letterSpacing: '.05em', textTransform: 'uppercase', marginBottom: 20 }}>
+                Notre histoire
+              </div>
+              <h2 style={{ fontFamily: "'Inter',system-ui,sans-serif", fontSize: 'clamp(28px,4vw,44px)', fontWeight: 800, color: 'white', letterSpacing: '-.03em', lineHeight: 1.1, marginBottom: 18 }}>
+                Le pont aérien<br />entre l'Afrique<br />et le Canada.
+              </h2>
+              <p style={{ fontSize: 14.5, color: 'rgba(255,255,255,.6)', lineHeight: 1.75, maxWidth: 420, marginBottom: 30 }}>
+                Depuis 2021, nous connectons des familles entre Douala et Montréal. Chaque colis photographié, suivi à chaque étape et livré en 14 jours chrono.
+              </p>
+              <button onClick={onBook} style={{ background: 'white', color: '#0D2E6E', border: 'none', borderRadius: 10, padding: '12px 26px', fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+                Créer un envoi →
+              </button>
             </div>
-          ))}
+
+            {/* Right — stat cards */}
+            <div className="jsc-stats">
+              {stats.map(s => (
+                <div key={s.label} className="jsc-stat" style={{ background: 'white', borderRadius: 14, padding: '20px 18px', textAlign: 'center', boxShadow: '0 4px 24px rgba(0,0,0,.2)' }}>
+                  <div style={{ fontSize: 'clamp(24px,3vw,30px)', fontWeight: 800, color: '#1B4FD8', lineHeight: 1 }}>{s.value}</div>
+                  <div style={{ fontSize: 12, color: '#6B7280', marginTop: 6, fontWeight: 500 }}>{s.label}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Bottom — full-width photo */}
+          <div style={{ height: 'clamp(200px,22vw,290px)', overflow: 'hidden', position: 'relative' }}>
+            <img src={IMGS.airport} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center 38%', display: 'block' }} />
+            <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, rgba(13,46,110,.55) 0%, transparent 55%)' }} />
+          </div>
         </div>
       </div>
     </section>
@@ -251,7 +269,7 @@ const STEPS_DATA = [
 
 function JSteps({ onBook }) {
   return (
-    <section id="jsteps" style={{ padding: '96px 0 100px', background: 'white' }}>
+    <section id="jsteps" style={{ padding: '96px 0 100px', background: 'transparent' }}>
       <style>{`
         .js2-wrap { position: relative; max-width: 780px; margin: 0 auto; }
         .js2-row  { display: flex; margin-bottom: 60px; position: relative; }
@@ -466,114 +484,60 @@ function JChatBot() {
   );
 }
 
-/* ─── Hero split layout ─── */
-function JHero({ onBook, onNav, content }) {
+/* ─── Hero — light centered + photo grid with border ─── */
+function JHero({ onBook, content }) {
   const t = useT();
-  const [code, setCode] = useState('');
   const h = content.hero;
-  const tc = content.trackingCard ?? {};
-
-  const handleTrack = (e) => {
-    e.preventDefault();
-    const c = code.trim().toUpperCase();
-    if (c) onNav?.('/suivi?code=' + encodeURIComponent(c));
-  };
 
   return (
-    <section className="jhero2">
+    <section style={{ background: 'transparent', padding: 'clamp(56px,8vw,96px) 0 0' }}>
+      <style>{`
+        .jh3-btns { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+        .jh3-btn-p { background: linear-gradient(90deg,#00B4D8,#1B4FD8); color: white; border: none; border-radius: 10px; padding: 15px 32px; font-size: 15px; font-weight: 700; cursor: pointer; font-family: inherit; display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 4px 20px rgba(27,79,216,.28); transition: transform .15s; }
+        .jh3-btn-p:hover { transform: translateY(-1px); }
+        .jh3-btn-g { background: white; color: #374151; border: 1.5px solid #D1D5DB; border-radius: 10px; padding: 15px 32px; font-size: 15px; font-weight: 600; cursor: pointer; font-family: inherit; display: inline-flex; align-items: center; gap: 8px; transition: border-color .15s; }
+        .jh3-btn-g:hover { border-color: #1B4FD8; color: #1B4FD8; }
+        .jh3-grid { display: flex; gap: 3px; height: clamp(200px,28vw,360px); border: 3px solid #1B4FD8; border-radius: 20px; overflow: hidden; margin-top: clamp(40px,5vw,64px); }
+        .jh3-img  { flex: 1; overflow: hidden; position: relative; }
+        .jh3-img img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform .5s; }
+        .jh3-img:hover img { transform: scale(1.05); }
+        .jh3-img::after { content:''; position:absolute; inset:0; background: rgba(13,46,110,.15); }
+        @media (max-width: 600px) {
+          .jh3-btns { flex-direction: column; align-items: stretch; }
+          .jh3-btn-p, .jh3-btn-g { justify-content: center; }
+          .jh3-grid { height: 180px; }
+        }
+      `}</style>
       <div className="jc">
-        <div className="jhero2__grid">
-
-          {/* Left — headline */}
-          <div className="jhero2__left">
-            <div className="jhero2__eyebrow">
-              <span className="jhero2__eyebrow-dot" />
-              {h.eyebrow}
-            </div>
-            <h1 className="jhero2__title">
-              {h.line1}<br />
-              {h.line2.includes('Douala')
-                ? <>{h.line2.split('Douala')[0]}<span className="cy">Douala</span>{h.line2.split('Douala')[1]}</>
-                : h.line2}<br />
-              {h.line3.includes('Montréal')
-                ? <>{h.line3.split('Montréal')[0]}<span className="cy">Montréal</span>{h.line3.split('Montréal')[1]}</>
-                : <span className="cy">{h.line3}</span>}
-            </h1>
-            <p className="jhero2__sub">{h.subtitle}</p>
-            <div className="jhero2__btns">
-              <button className="jhero2__btn-primary" onClick={onBook}>
-                {t('hero.button.book')}
-              </button>
-              <button className="jhero2__btn-ghost" onClick={() => document.getElementById('jest')?.scrollIntoView({ behavior: 'smooth' })}>
-                {t('hero.button.estimate')}
-              </button>
-            </div>
-            <div className="jhero2__stats">
-              {h.stats.map(({ value: n, label: l }, i) => (
-                <div key={l} className="jhero2__stat">
-                  {i > 0 && <div className="jhero2__stat-sep" />}
-                  <div className="jhero2__stat-n">{n}</div>
-                  <div className="jhero2__stat-l">{l}</div>
-                </div>
-              ))}
-            </div>
+        {/* Centered headline */}
+        <div style={{ textAlign: 'center', maxWidth: 680, margin: '0 auto' }}>
+          <div style={{ display: 'inline-flex', alignItems: 'center', gap: 7, background: '#EFF6FF', color: '#1B4FD8', padding: '5px 16px', borderRadius: 99, fontSize: 11.5, fontWeight: 700, letterSpacing: '.05em', textTransform: 'uppercase', marginBottom: 24 }}>
+            <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#1B4FD8', flexShrink: 0 }} />
+            {h.eyebrow}
           </div>
-
-          {/* Right — tracking card */}
-          <div className="jhero2__right">
-            <div className="jhero2__card">
-              <div className="jhero2__card-header">
-                <div className="jhero2__card-icon">
-                  <I.Search style={{ width: 16, height: 16 }} />
-                </div>
-                <span className="jhero2__card-title">{tc.title ?? t('hero.tracking.title')}</span>
-              </div>
-
-              <form onSubmit={handleTrack}>
-                <label className="jhero2__card-label">{tc.label ?? t('hero.tracking.label')}</label>
-                <input
-                  value={code}
-                  onChange={e => setCode(e.target.value.toUpperCase())}
-                  placeholder={tc.placeholder ?? t('hero.tracking.placeholder')}
-                  className="jhero2__card-input"
-                />
-                <button type="submit" className="jhero2__card-btn">
-                  {tc.button ?? t('hero.tracking.button')}
-                </button>
-              </form>
-
-              <div className="jhero2__card-divider" />
-
-              <div className="jhero2__card-route">
-                <div className="jhero2__card-city">
-                  <div className="jhero2__card-city-label">{tc.cityFromLabel ?? t('hero.route.departure')}</div>
-                  <div className="jhero2__card-city-name">{tc.cityFrom ?? 'DOUALA'}</div>
-                  <div className="jhero2__card-city-sub">{tc.cityFromSub ?? 'DLA · Cameroun'}</div>
-                </div>
-                <div className="jhero2__card-plane">
-                  <I.Plane style={{ width: 20, height: 20, color: '#00B4D8' }} />
-                </div>
-                <div className="jhero2__card-city" style={{ textAlign: 'right' }}>
-                  <div className="jhero2__card-city-label">{tc.cityToLabel ?? t('hero.route.arrival')}</div>
-                  <div className="jhero2__card-city-name">{tc.cityTo ?? 'MONTRÉAL'}</div>
-                  <div className="jhero2__card-city-sub">{tc.cityToSub ?? 'YUL · Canada'}</div>
-                </div>
-              </div>
-
-              <div className="jhero2__card-badge">
-                <span className="jhero2__card-badge-dot" />
-                {tc.badge ?? t('hero.route.badge')}
-              </div>
-            </div>
-
-            <div className="jhero2__card-book">
-              {tc.ctaText ?? t('hero.cta.newCustomer')}{' '}
-              <button onClick={onBook} className="jhero2__card-book-link">
-                {tc.ctaLink ?? t('hero.cta.bookNow')}
-              </button>
-            </div>
+          <h1 style={{ fontFamily: "'Inter',system-ui,sans-serif", fontSize: 'clamp(38px,6.5vw,72px)', fontWeight: 800, color: '#0B1220', letterSpacing: '-.04em', lineHeight: 1.05, marginBottom: 22 }}>
+            {h.line1}<br />
+            {h.line2.includes('Douala')
+              ? <>{h.line2.split('Douala')[0]}<span style={{ color: '#00B4D8' }}>Douala</span>{h.line2.split('Douala')[1]}</>
+              : h.line2}<br />
+            {h.line3.includes('Montréal')
+              ? <>{h.line3.split('Montréal')[0]}<span style={{ color: '#1B4FD8' }}>Montréal</span>{h.line3.split('Montréal')[1]}</>
+              : <span style={{ color: '#1B4FD8' }}>{h.line3}</span>}
+          </h1>
+          <p style={{ fontSize: 16, color: '#6B7280', lineHeight: 1.7, maxWidth: 500, margin: '0 auto 36px' }}>
+            {h.subtitle}
+          </p>
+          <div className="jh3-btns">
+            <button className="jh3-btn-p" onClick={onBook}>{t('hero.button.book')}</button>
+            <button className="jh3-btn-g" onClick={() => document.getElementById('jest')?.scrollIntoView({ behavior: 'smooth' })}>{t('hero.button.estimate')} →</button>
           </div>
+        </div>
 
+        {/* Photo grid with blue border */}
+        <div className="jh3-grid">
+          {[IMGS.hero, IMGS.airport, IMGS.cargo].map((src, i) => (
+            <div key={i} className="jh3-img"><img src={src} alt="" /></div>
+          ))}
         </div>
       </div>
     </section>
@@ -915,11 +879,10 @@ export default function LandingPage({ onNav }) {
     <div className="jpage">
       <TopBar />
       <SiteNav onNav={onNav} onBook={onBook} mode="landing" />
-      <JHero onBook={onBook} onNav={onNav} content={content} />
-      <JStatsPhoto content={content} />
+      <JHero onBook={onBook} content={content} />
+      <JStoryCard onBook={onBook} content={content} />
       <JSteps onBook={onBook} />
       <JEstimator onBook={onBook} content={content} />
-      <JCTA onBook={onBook} content={content} />
       <SiteFooter content={content} />
       <JChatBot />
     </div>
