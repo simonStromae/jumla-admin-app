@@ -97,15 +97,22 @@ export async function GET() {
     (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
   );
 
-  return NextResponse.json(
-    allRows.map(r => ({
-      ...r,
-      amount:         Number(r.amount),
-      totalAllocated: Number(r.totalAllocated),
-      credit:         Number(r.amount) - Number(r.totalAllocated),
-    })),
-    queryError ? { headers: { 'X-Query-Error': queryError } } : undefined
-  );
+  try {
+    // Prisma raw queries can return BigInt/Decimal for numeric fields — convert everything to Number
+    const safe = allRows.map(r => {
+      const amount         = Number(r.amount ?? 0);
+      const totalAllocated = Number(r.totalAllocated ?? 0);
+      return {
+        ...JSON.parse(JSON.stringify(r, (_, v) => typeof v === 'bigint' ? Number(v) : v)),
+        amount,
+        totalAllocated,
+        credit: amount - totalAllocated,
+      };
+    });
+    return NextResponse.json(safe, queryError ? { headers: { 'X-Query-Error': queryError } } : undefined);
+  } catch (serr: any) {
+    return NextResponse.json({ error: 'Erreur de sérialisation', detail: serr?.message }, { status: 500 });
+  }
 }
 
 export async function POST(req: NextRequest) {

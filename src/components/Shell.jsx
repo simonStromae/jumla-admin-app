@@ -292,6 +292,7 @@ function AdminMobileBlock() {
       <style>{`
         @media (max-width: 900px) { .admin-mobile-block { display: flex !important; } .app { display: none !important; } }
         @media (min-width: 901px) { .admin-mobile-block { display: none !important; } }
+        @media print { .admin-mobile-block { display: none !important; } .app { display: flex !important; } }
       `}</style>
       <div className="admin-mobile-block" style={{
         display: 'none', position: 'fixed', inset: 0, zIndex: 9999,
