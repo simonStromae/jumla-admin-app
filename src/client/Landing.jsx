@@ -235,7 +235,7 @@ function JStoryCard({ onBook, content }) {
               </div>
             ))}
           </div>
-          <button className="jbtn-nav jbtn-nav--pill jbtn-nav--lg" onClick={onBook}>
+          <button className="jbtn-nav jbtn-nav--secondary jbtn-nav--lg" onClick={onBook}>
             Créer un envoi →
           </button>
         </div>
@@ -493,9 +493,9 @@ function JHero({ onBook, content }) {
           {h.subtitle}
         </p>
 
-        <button className="jbtn-nav jbtn-nav--pill jbtn-nav--lg" onClick={onBook}>
+        <button className="jbtn-nav jbtn-nav--lg" onClick={onBook}>
           Réserver un envoi
-          <svg width="17" height="17" fill="none" stroke="#0B1220" strokeWidth="2.5" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+          <svg width="17" height="17" fill="none" stroke="white" strokeWidth="2.5" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
         </button>
       </div>
 
@@ -904,8 +904,6 @@ function JWidePhoto({ onBook }) {
         .jwp-title { font-family:'Inter',system-ui,sans-serif; font-size: clamp(36px,5vw,56px); font-weight: 800; color: white; letter-spacing: -.03em; line-height: 1.08; }
         .jwp-right { display: flex; flex-direction: column; align-items: flex-start; gap: 24px; }
         .jwp-desc { font-size: 17px; color: rgba(255,255,255,.7); line-height: 1.75; max-width: 420px; }
-        .jwp-btn { display: inline-flex; align-items: center; gap: 8px; background: white; color: #0B1220; border: none; border-radius: 99px; padding: 16px 36px; font-size: 16px; font-weight: 700; cursor: pointer; font-family: inherit; transition: transform .15s, box-shadow .15s; }
-        .jwp-btn:hover { transform: translateY(-2px); box-shadow: 0 12px 40px rgba(0,0,0,.35); }
         @media (max-width: 680px) {
           .jwp-inner { grid-template-columns: 1fr; }
           .jwp-right { display: none; }
@@ -921,7 +919,7 @@ function JWidePhoto({ onBook }) {
           <p className="jwp-desc">
             Rejoignez 2 500+ clients qui nous font confiance pour leurs envois entre l'Afrique et le Canada. Sécurité, transparence et notification WhatsApp à chaque étape.
           </p>
-          <button className="jbtn-nav jbtn-nav--pill jbtn-nav--lg" onClick={onBook}>
+          <button className="jbtn-nav jbtn-nav--secondary jbtn-nav--lg" onClick={onBook}>
             Réserver un envoi
             <svg width="16" height="16" fill="none" stroke="#0B1220" strokeWidth="2.5" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
           </button>

@@ -128,7 +128,7 @@ export function SiteNav({ onNav, onBook, mode = 'landing' }) {
                   {t('nav.signIn')}
                 </button>
                 {isLanding && (
-                  <button className="jbtn-nav jbtn-nav--pill" onClick={onBook}>Réserver</button>
+                  <button className="jbtn-nav jbtn-nav--secondary" onClick={onBook}>Réserver</button>
                 )}
               </>
             )}
