@@ -168,9 +168,12 @@ function useLandingContent() {
 }
 
 const IMGS = {
-  hero:    'https://images.pexels.com/photos/46148/aircraft-jet-landing-cloud-46148.jpeg?auto=compress&cs=tinysrgb&w=1600',
-  cargo:   'https://images.pexels.com/photos/2026324/pexels-photo-2026324.jpeg?auto=compress&cs=tinysrgb&w=1600',
-  airport: 'https://images.pexels.com/photos/358319/pexels-photo-358319.jpeg?auto=compress&cs=tinysrgb&w=1600',
+  // Hero background — palettes cargo tons chauds, format paysage
+  airport: 'https://images.pexels.com/photos/33824580/pexels-photo-33824580.jpeg?auto=compress&cs=tinysrgb&w=1920',
+  // JStoryCard split left — Air France cargo N&B, très cinématique
+  cargo:   'https://images.pexels.com/photos/32689680/pexels-photo-32689680.jpeg?auto=compress&cs=tinysrgb&w=1200',
+  // JWidePhoto full-bleed overlay — Lufthansa Jettainer containers
+  hero:    'https://images.pexels.com/photos/19854581/pexels-photo-19854581.jpeg?auto=compress&cs=tinysrgb&w=1920',
 };
 
 const WA_SUPPORT = 'https://wa.me/15149980709?text=Bonjour%20Jumla%20Shipping%2C%20j%27ai%20une%20question.';
