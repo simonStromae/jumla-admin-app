@@ -207,7 +207,6 @@ function JStatsPhoto({ content }) {
           ))}
         </div>
       </div>
-      </div>
       <div className="jc">
         <div className="jsp-cards">
           {stats.map(s => (
