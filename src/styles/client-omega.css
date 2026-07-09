@@ -6,13 +6,13 @@
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 :root {
-  --w: 1300px;
+  --w: 1100px;
 }
 
 .jpage {
   font-family: 'Inter', system-ui, sans-serif;
   color: var(--ink-800);
-  background: var(--white);
+  background: #F4F6F9;
   -webkit-font-smoothing: antialiased;
 }
 
@@ -25,7 +25,7 @@
   font-weight: 700; letter-spacing: -.02em; line-height: 1.2;
 }
 
-.jc { max-width: var(--w); margin: 0 auto; padding: 0 32px; width: 100%; }
+.jc { max-width: var(--w); margin: 0 auto; padding: 0 clamp(20px, 5vw, 72px); width: 100%; }
 
 /* ── Top info bar ── */
 .jtop-bar {
@@ -394,7 +394,8 @@
 /* ── Hero 2 — split layout ── */
 .jhero2 {
   background: #0B1220;
-  padding: 88px 0 80px;
+  padding: 96px 0 88px;
+  border-radius: 0 0 28px 28px;
 }
 .jhero2__grid {
   display: grid;
@@ -696,6 +697,8 @@
 .jcta3 {
   position: relative; overflow: hidden;
   min-height: 560px; display: flex; align-items: center;
+  border-radius: 24px 24px 0 0;
+  margin: 0 clamp(10px, 2vw, 24px);
 }
 .jcta3__bg {
   position: absolute; inset: 0;
@@ -842,7 +845,7 @@
 .jbtn-ghost:hover { border-color: var(--ink-300); }
 
 /* estimator (kept, used in hero-below) */
-.jest-wrap { background: var(--bg-soft); padding: 80px 0; }
+.jest-wrap { background: white; padding: 96px 0; }
 .jest {
   background: white; overflow: hidden;
   border-radius: var(--radius-xl);
@@ -922,7 +925,7 @@
 
 /* ── Mobile (≤ 768px) ── */
 @media (max-width: 768px) {
-  .jc { padding: 0 16px; }
+  .jc { padding: 0 20px; }
 
   /* Top bar: hide on mobile */
   .jtop-bar { display: none; }

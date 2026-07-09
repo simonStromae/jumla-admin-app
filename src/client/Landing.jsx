@@ -187,29 +187,33 @@ function JStatsPhoto({ content }) {
   const stats = DEFAULTS.map((d, i) => heroStats[i] ?? d);
 
   return (
-    <section style={{ background: '#F7F8FA' }}>
+    <section style={{ background: 'white' }}>
       <style>{`
-        .jsp-imgs { display: flex; height: clamp(160px, 28vw, 300px); gap: 3px; overflow: hidden; }
+        .jsp-imgs { display: flex; height: clamp(180px, 28vw, 320px); gap: 4px; overflow: hidden; }
         .jsp-img  { flex: 1; position: relative; overflow: hidden; }
-        .jsp-img img { width: 100%; height: 100%; object-fit: cover; display: block; }
-        .jsp-img::after { content:''; position:absolute; inset:0; background:rgba(13,46,110,.32); }
-        .jsp-cards { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-top:-26px; position:relative; z-index:2; padding-bottom:56px; }
+        .jsp-img img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform .4s; }
+        .jsp-img:hover img { transform: scale(1.04); }
+        .jsp-img::after { content:''; position:absolute; inset:0; background:rgba(13,46,110,.28); }
+        .jsp-cards { display:grid; grid-template-columns:repeat(4,1fr); gap:14px; margin-top:-30px; position:relative; z-index:2; padding-bottom:72px; }
         @media(max-width:600px){
-          .jsp-cards { grid-template-columns:repeat(2,1fr); margin-top:-18px; }
-          .jsp-imgs  { height:140px; }
+          .jsp-cards { grid-template-columns:repeat(2,1fr); margin-top:-20px; padding-bottom:52px; }
+          .jsp-imgs  { height:150px; }
         }
       `}</style>
-      <div className="jsp-imgs">
-        {[IMGS.hero, IMGS.airport, IMGS.cargo].map((src, i) => (
-          <div key={i} className="jsp-img"><img src={src} alt="" /></div>
-        ))}
+      <div style={{ padding: '0 clamp(10px, 2vw, 24px)' }}>
+        <div className="jsp-imgs" style={{ borderRadius: 20 }}>
+          {[IMGS.hero, IMGS.airport, IMGS.cargo].map((src, i) => (
+            <div key={i} className="jsp-img"><img src={src} alt="" /></div>
+          ))}
+        </div>
+      </div>
       </div>
       <div className="jc">
         <div className="jsp-cards">
           {stats.map(s => (
-            <div key={s.label} style={{ background:'white', borderRadius:14, padding:'18px 12px', textAlign:'center', boxShadow:'0 4px 20px rgba(0,0,0,.08)' }}>
-              <div style={{ fontSize:'clamp(20px,4vw,26px)', fontWeight:800, color:'#1B4FD8', lineHeight:1 }}>{s.value}</div>
-              <div style={{ fontSize:11.5, color:'#6B7280', marginTop:5, fontWeight:500 }}>{s.label}</div>
+            <div key={s.label} style={{ background:'white', borderRadius:16, padding:'22px 16px', textAlign:'center', boxShadow:'0 4px 24px rgba(0,0,0,.09)', border:'1px solid rgba(0,0,0,.04)' }}>
+              <div style={{ fontSize:'clamp(22px,4vw,28px)', fontWeight:800, color:'#1B4FD8', lineHeight:1 }}>{s.value}</div>
+              <div style={{ fontSize:12, color:'#6B7280', marginTop:6, fontWeight:500 }}>{s.label}</div>
             </div>
           ))}
         </div>
@@ -248,7 +252,7 @@ const STEPS_DATA = [
 
 function JSteps({ onBook }) {
   return (
-    <section id="jsteps" style={{ padding: '80px 0', background: '#F9FAF8' }}>
+    <section id="jsteps" style={{ padding: '96px 0 100px', background: 'white' }}>
       <style>{`
         .js2-wrap { position: relative; max-width: 780px; margin: 0 auto; }
         .js2-row  { display: flex; margin-bottom: 60px; position: relative; }
@@ -372,11 +376,14 @@ function JSteps({ onBook }) {
 
 /* ─── Floating chatbot ─── */
 const CHAT_QS = [
-  { emoji:'⏱️', label:'Délai de livraison ?',   answer:"Le transit moyen est de 14 jours porte à porte Douala → Montréal. Vous recevez une notification WhatsApp à chaque étape clé." },
-  { emoji:'📦', label:'Comment ça marche ?',     answer:"1. Réservez en ligne → 2. Déposez à Douala → 3. Transit ~14 jours → 4. Livraison à Montréal. Simple et transparent !" },
-  { emoji:'💰', label:'Tarifs & devis ?',        answer:"Les tarifs sont calculés au kilo. Notre simulateur sur cette page vous donne un devis instantané et gratuit.", scrollTo:'jest' },
-  { emoji:'🔍', label:'Suivre mon colis',        link:'/suivi' },
-  { emoji:'💬', label:'Autre question',          wa:true },
+  { emoji:'⏱️', label:'Délai de livraison ?',      answer:"Le transit moyen est de 14 jours porte à porte Douala → Montréal. Vous recevez une notification WhatsApp à chaque étape clé du voyage." },
+  { emoji:'📦', label:'Comment ça marche ?',        answer:"1. Réservez en ligne en 3 min → 2. Déposez à notre entrepôt de Douala → 3. Transit aérien ~14 jours → 4. Livraison ou retrait à Montréal. Simple et transparent !" },
+  { emoji:'💰', label:'Tarifs & devis ?',           answer:"Les tarifs sont calculés au kilo par tranche (0–5 kg, 5–10 kg, 10–25 kg…). Fragile +8%, électronique +5%, documents –10%. Utilisez le simulateur sur cette page pour un devis instantané.", scrollTo:'jest' },
+  { emoji:'💳', label:'Moyens de paiement ?',       answer:"Paiement à la livraison à Montréal : Interac, virement bancaire, Mobile Money (Orange Money, MTN) ou espèces. Aucun paiement requis à l'envoi depuis Douala. Zéro frais caché." },
+  { emoji:'🎁', label:'Que puis-je envoyer ?',      answer:"Vêtements, denrées sèches, électronique, cosmétiques, documents, mobilier léger. Sont exclus : produits dangereux, liquides, marchandises prohibées au transport aérien." },
+  { emoji:'🏠', label:'Livraison ou retrait ?',     answer:"Au choix : livraison à domicile partout au Québec (créneau sur RDV, signature requise) ou retrait à notre entrepôt de Montréal. Paiement à la remise." },
+  { emoji:'🔍', label:'Suivre mon colis',           link:'/suivi' },
+  { emoji:'💬', label:'Autre question',             wa:true },
 ];
 
 function JChatBot() {
@@ -913,7 +920,6 @@ export default function LandingPage({ onNav }) {
       <JStatsPhoto content={content} />
       <JSteps onBook={onBook} />
       <JEstimator onBook={onBook} content={content} />
-      <JFAQ content={content} />
       <JCTA onBook={onBook} content={content} />
       <SiteFooter content={content} />
       <JChatBot />
