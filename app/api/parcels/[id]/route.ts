@@ -153,3 +153,39 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
 
   return NextResponse.json({ ok: true, parcel });
 }
+
+export async function DELETE(_: NextRequest, { params }: { params: { id: string } }) {
+  const { error } = await requirePermission('parcels');
+  if (error) return error;
+
+  const parcel = await prisma.parcel.findUnique({
+    where: { id: params.id },
+    select: { id: true, status: true, trackingCode: true, payment: { select: { status: true } } },
+  });
+
+  if (!parcel || (parcel as any).deletedAt) {
+    return NextResponse.json({ error: 'Colis introuvable' }, { status: 404 });
+  }
+
+  const DELETABLE = ['enr', 'rec'];
+  if (!DELETABLE.includes(parcel.status)) {
+    return NextResponse.json(
+      { error: `Impossible de supprimer un colis au statut "${parcel.status}". Seuls les statuts Enregistré et Reçu sont supprimables.` },
+      { status: 403 },
+    );
+  }
+
+  if (parcel.payment?.status === 'completed') {
+    return NextResponse.json(
+      { error: 'Ce colis a un paiement complété. Remboursez le client avant de supprimer.' },
+      { status: 403 },
+    );
+  }
+
+  await prisma.$executeRawUnsafe(
+    `UPDATE parcels SET "deletedAt" = NOW() WHERE id = $1`,
+    params.id,
+  );
+
+  return NextResponse.json({ ok: true, trackingCode: parcel.trackingCode });
+}

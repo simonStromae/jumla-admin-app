@@ -15,7 +15,7 @@ export async function GET(req: NextRequest) {
   const campaignId = searchParams.get('campaign');
 
   const parcels = await prisma.parcel.findMany({
-    where: campaignId ? { campaignId } : undefined,
+    where: { ...(campaignId ? { campaignId } : {}), deletedAt: null },
     orderBy: { createdAt: 'desc' },
     include: {
       client:   { select: { id: true, name: true, email: true, phone: true, city: true } },

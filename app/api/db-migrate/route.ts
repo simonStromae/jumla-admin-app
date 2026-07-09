@@ -38,6 +38,7 @@ export async function GET() {
   await run('parcels.confirmedPriceXaf',  `ALTER TABLE parcels ADD COLUMN IF NOT EXISTS "confirmedPriceXaf" INTEGER`);
   await run('parcels.adjustmentStatus',   `ALTER TABLE parcels ADD COLUMN IF NOT EXISTS "adjustmentStatus" TEXT NOT NULL DEFAULT 'none'`);
   await run('parcels.delivery',           `ALTER TABLE parcels ADD COLUMN IF NOT EXISTS delivery TEXT NOT NULL DEFAULT 'pickup'`);
+  await run('parcels.deletedAt',          `ALTER TABLE parcels ADD COLUMN IF NOT EXISTS "deletedAt" TIMESTAMPTZ`);
 
   // ── Tracking events ────────────────────────────────────────────────────────
   await run('tracking_events.status_to_text', `ALTER TABLE tracking_events ALTER COLUMN status TYPE TEXT USING status::TEXT`);

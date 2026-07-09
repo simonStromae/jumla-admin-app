@@ -58,6 +58,10 @@ export default function CampaignDetailScreen({ id, onNav }) {
   const [showConfirmModal,   setShowConfirmModal]   = useState(null); // nextStep
   const [showDepartureModal, setShowDepartureModal] = useState(null); // targetStep
   const [statusNotes,        setStatusNotes]        = useState({});
+  const [showBroadcast,      setShowBroadcast]      = useState(false);
+  const [broadcastPreview,   setBroadcastPreview]   = useState(null); // { total, campaign }
+  const [broadcasting,       setBroadcasting]       = useState(false);
+  const [broadcastResult,    setBroadcastResult]    = useState(null); // { sent, failed, total }
 
   useEffect(() => {
     fetch('/api/campaigns/' + id)
@@ -181,11 +185,25 @@ export default function CampaignDetailScreen({ id, onNav }) {
           <button className="btn btn--ghost" onClick={() => onNav('/admin/campaigns/' + campaign.id + '/edit')}>
             <I.Edit />Modifier
           </button>
-          <button onClick={() => onNav('/messaging?campaignId=' + campaign.id)} style={{
+          <button onClick={() => {
+            setBroadcastResult(null);
+            fetch('/api/campaigns/' + campaign.id + '/broadcast')
+              .then(r => r.json()).then(d => setBroadcastPreview(d)).catch(() => {});
+            setShowBroadcast(true);
+          }} style={{
             display: 'flex', alignItems: 'center', gap: 8,
             padding: '8px 14px', borderRadius: 8,
             border: '1px solid #25D366', background: 'white',
             color: '#25D366', fontSize: 13, fontWeight: 700, cursor: 'pointer',
+          }}>
+            <svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16"><path d="M17.5 14.4c-.3-.1-1.7-.9-2-1s-.5-.1-.7.1c-.2.3-.7 1-.9 1.1-.2.2-.3.2-.6 0-.3-.1-1.2-.5-2.3-1.4-.8-.7-1.4-1.7-1.6-2-.2-.3 0-.5.1-.6l.5-.5c.1-.2.2-.3.3-.5 0-.2 0-.4-.1-.5 0-.1-.7-1.6-1-2.2-.2-.6-.5-.5-.7-.5h-.6c-.2 0-.5.1-.7.4-.3.3-1 1-1 2.4s1 2.8 1.2 3.1c.2.2 2 3 4.8 4.3.7.3 1.2.4 1.6.6.7.2 1.3.2 1.8.1.6-.1 1.7-.7 1.9-1.3.3-.7.3-1.2.2-1.3-.1-.2-.3-.3-.6-.4zM12 21a9 9 0 0 1-4.6-1.3L3 21l1.3-4.3A9 9 0 1 1 12 21z" /></svg>
+            Notifier les clients
+          </button>
+          <button onClick={() => onNav('/messaging?campaignId=' + campaign.id)} style={{
+            display: 'flex', alignItems: 'center', gap: 8,
+            padding: '8px 14px', borderRadius: 8,
+            border: '1px solid var(--border)', background: 'white',
+            color: 'var(--ink-600)', fontSize: 13, fontWeight: 600, cursor: 'pointer',
           }}>
             <svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16"><path d="M17.5 14.4c-.3-.1-1.7-.9-2-1s-.5-.1-.7.1c-.2.3-.7 1-.9 1.1-.2.2-.3.2-.6 0-.3-.1-1.2-.5-2.3-1.4-.8-.7-1.4-1.7-1.6-2-.2-.3 0-.5.1-.6l.5-.5c.1-.2.2-.3.3-.5 0-.2 0-.4-.1-.5 0-.1-.7-1.6-1-2.2-.2-.6-.5-.5-.7-.5h-.6c-.2 0-.5.1-.7.4-.3.3-1 1-1 2.4s1 2.8 1.2 3.1c.2.2 2 3 4.8 4.3.7.3 1.2.4 1.6.6.7.2 1.3.2 1.8.1.6-.1 1.7-.7 1.9-1.3.3-.7.3-1.2.2-1.3-.1-.2-.3-.3-.6-.4zM12 21a9 9 0 0 1-4.6-1.3L3 21l1.3-4.3A9 9 0 1 1 12 21z" /></svg>
             WhatsApp groupe
@@ -298,6 +316,61 @@ export default function CampaignDetailScreen({ id, onNav }) {
             doAdvance(showDepartureModal, note);
           }}
         />
+      )}
+
+      {/* ── Broadcast modal ── */}
+      {showBroadcast && (
+        <Modal title="Notifier tous les clients" onClose={() => { setShowBroadcast(false); setBroadcastResult(null); }}>
+          {broadcastResult ? (
+            <div style={{ textAlign: 'center', padding: '8px 0 16px' }}>
+              <div style={{ fontSize: 40, marginBottom: 12 }}>{broadcastResult.failed === 0 ? '✅' : '⚠️'}</div>
+              <div style={{ fontSize: 18, fontWeight: 700, marginBottom: 6 }}>
+                {broadcastResult.sent} message{broadcastResult.sent > 1 ? 's' : ''} envoyé{broadcastResult.sent > 1 ? 's' : ''}
+              </div>
+              {broadcastResult.failed > 0 && (
+                <div style={{ fontSize: 13, color: 'var(--bad-600)', marginBottom: 8 }}>
+                  {broadcastResult.failed} échec{broadcastResult.failed > 1 ? 's' : ''} — vérifiez les numéros manquants dans les fiches clients
+                </div>
+              )}
+              <div style={{ fontSize: 12, color: 'var(--ink-400)' }}>{broadcastResult.total} clients contactés</div>
+              <button className="btn btn--brand" style={{ marginTop: 20 }} onClick={() => { setShowBroadcast(false); setBroadcastResult(null); }}>
+                Fermer
+              </button>
+            </div>
+          ) : (
+            <div>
+              <div style={{ background: 'var(--bg-soft)', borderRadius: 10, padding: '14px 16px', marginBottom: 16, fontSize: 13, color: 'var(--ink-600)', lineHeight: 1.6 }}>
+                <strong>Message qui sera envoyé :</strong>
+                <pre style={{ marginTop: 8, fontFamily: 'inherit', whiteSpace: 'pre-wrap', color: 'var(--ink-700)' }}>{`Bonjour [Prénom] 👋\n\nNouvelle cargaison disponible — départ prévu le ${campaign.departureDate ? new Date(campaign.departureDate).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' }) : 'à définir'}.\n\nRéservez votre place dès maintenant.\n\nJumla Shipping`}</pre>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', background: 'var(--info-50)', border: '1px solid var(--info-100)', borderRadius: 8, marginBottom: 20, fontSize: 13 }}>
+                <span style={{ fontSize: 20 }}>👥</span>
+                <div>
+                  <strong style={{ color: 'var(--info-700)' }}>
+                    {broadcastPreview ? broadcastPreview.total : '…'} client{broadcastPreview?.total !== 1 ? 's' : ''} actif{broadcastPreview?.total !== 1 ? 's' : ''}
+                  </strong>
+                  <div style={{ color: 'var(--info-600)', fontSize: 12 }}>Tous les clients avec un numéro de téléphone</div>
+                </div>
+              </div>
+              <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+                <button className="btn btn--ghost" onClick={() => setShowBroadcast(false)}>Annuler</button>
+                <button
+                  className="btn btn--brand"
+                  disabled={broadcasting || !broadcastPreview}
+                  onClick={async () => {
+                    setBroadcasting(true);
+                    const res = await fetch('/api/campaigns/' + campaign.id + '/broadcast', { method: 'POST' });
+                    const json = await res.json();
+                    setBroadcasting(false);
+                    setBroadcastResult(json);
+                  }}
+                >
+                  {broadcasting ? 'Envoi en cours…' : `Envoyer à ${broadcastPreview?.total ?? '…'} clients`}
+                </button>
+              </div>
+            </div>
+          )}
+        </Modal>
       )}
 
       {/* ── Compagnies aériennes & AWB ── */}

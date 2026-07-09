@@ -102,6 +102,43 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
   });
 }
 
+export async function DELETE(req: NextRequest, { params }: { params: { id: string } }) {
+  const { error, session } = await requireAuth();
+  if (error) return error;
+
+  const userId = (session!.user as any).id;
+
+  const parcel = await prisma.parcel.findUnique({
+    where: { id: params.id },
+    select: { id: true, clientId: true, status: true, trackingCode: true, payment: { select: { status: true } } },
+  });
+
+  if (!parcel || parcel.clientId !== userId || (parcel as any).deletedAt) {
+    return NextResponse.json({ error: 'Colis introuvable' }, { status: 404 });
+  }
+
+  if (parcel.status !== 'enr') {
+    return NextResponse.json(
+      { error: 'Annulation impossible : votre colis a déjà été pris en charge. Contactez-nous pour toute demande.' },
+      { status: 403 },
+    );
+  }
+
+  if (parcel.payment?.status === 'completed' || parcel.payment?.status === 'partial') {
+    return NextResponse.json(
+      { error: 'Un paiement est associé à ce colis. Contactez notre équipe pour annuler.' },
+      { status: 403 },
+    );
+  }
+
+  await prisma.$executeRawUnsafe(
+    `UPDATE parcels SET "deletedAt" = NOW() WHERE id = $1`,
+    params.id,
+  );
+
+  return NextResponse.json({ ok: true, trackingCode: parcel.trackingCode });
+}
+
 const EDITABLE_STATUSES = ['enr', 'rec', 'pre'];
 
 export async function PUT(req: NextRequest, { params }: { params: { id: string } }) {

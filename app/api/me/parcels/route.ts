@@ -10,7 +10,7 @@ export async function GET() {
   const userId = (session!.user as any).id;
 
   const parcels = await prisma.parcel.findMany({
-    where:   { clientId: userId },
+    where:   { clientId: userId, deletedAt: null },
     orderBy: { createdAt: 'desc' },
     include: {
       campaign: { include: { route: true } },
