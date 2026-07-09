@@ -6,13 +6,13 @@
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 :root {
-  --w: 1100px;
+  --w: 1400px;
 }
 
 .jpage {
   font-family: 'Inter', system-ui, sans-serif;
   color: var(--ink-800);
-  background: #F4F6F9;
+  background: rgb(233, 239, 255);
   -webkit-font-smoothing: antialiased;
 }
 

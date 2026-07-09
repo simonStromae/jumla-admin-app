@@ -858,6 +858,125 @@ function JCTA({ onBook, content }) {
   );
 }
 
+/* ─── Split promo — photo left / dark text right ─── */
+function JSplitPromo({ onBook, onNav }) {
+  return (
+    <section style={{ padding: '48px 0', background: 'transparent' }}>
+      <style>{`
+        .jsp2 { display: grid; grid-template-columns: 1fr 1fr; border-radius: 24px; overflow: hidden; min-height: 440px; }
+        .jsp2-left { position: relative; overflow: hidden; min-height: 340px; }
+        .jsp2-left img { width: 100%; height: 100%; object-fit: cover; display: block; }
+        .jsp2-left::after { content:''; position:absolute; inset:0; background:linear-gradient(135deg,rgba(13,46,110,.55) 0%,rgba(13,46,110,.1) 60%); }
+        .jsp2-right { background: #0B1220; padding: clamp(36px,5vw,64px); display: flex; flex-direction: column; justify-content: center; gap: 0; }
+        @media (max-width: 700px) {
+          .jsp2 { grid-template-columns: 1fr; }
+          .jsp2-left { min-height: 240px; }
+        }
+      `}</style>
+      <div className="jc">
+        <div className="jsp2">
+
+          {/* Left — photo + floating cards */}
+          <div className="jsp2-left">
+            <img src={IMGS.cargo} alt="" />
+            {/* Tracking status card */}
+            <div style={{ position: 'absolute', bottom: 32, left: 28, zIndex: 2, background: 'rgba(255,255,255,.96)', borderRadius: 16, padding: '14px 18px', boxShadow: '0 8px 32px rgba(0,0,0,.22)', backdropFilter: 'blur(10px)', minWidth: 220 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 9 }}>
+                <span style={{ background: '#EFF6FF', color: '#1B4FD8', borderRadius: 6, padding: '2px 8px', fontSize: 10.5, fontWeight: 700 }}>EN TRANSIT ✈️</span>
+                <span style={{ fontSize: 10.5, color: '#9CA3AF', fontFamily: 'monospace' }}>JMS-2847</span>
+              </div>
+              <div style={{ fontWeight: 700, fontSize: 13.5, color: '#111827' }}>Douala → Montréal</div>
+              <div style={{ fontSize: 12, color: '#6B7280', marginTop: 2 }}>Arrivée estimée : 14 jan.</div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 10 }}>
+                <div style={{ height: 4, flex: 1, background: '#E5E7EB', borderRadius: 2 }}>
+                  <div style={{ width: '65%', height: '100%', background: 'linear-gradient(90deg,#00B4D8,#1B4FD8)', borderRadius: 2 }} />
+                </div>
+                <span style={{ fontSize: 10, color: '#1B4FD8', fontWeight: 700 }}>65%</span>
+              </div>
+            </div>
+            {/* Notification toast */}
+            <div style={{ position: 'absolute', top: 28, right: 28, zIndex: 2, background: 'rgba(255,255,255,.96)', borderRadius: 12, padding: '10px 14px', boxShadow: '0 4px 16px rgba(0,0,0,.18)', display: 'flex', alignItems: 'center', gap: 10, backdropFilter: 'blur(10px)' }}>
+              <span style={{ fontSize: 20 }}>📦</span>
+              <div>
+                <div style={{ fontSize: 11.5, fontWeight: 700, color: '#111827' }}>Colis reçu à Douala</div>
+                <div style={{ fontSize: 10.5, color: '#6B7280' }}>Vérification en cours…</div>
+              </div>
+            </div>
+          </div>
+
+          {/* Right — dark text */}
+          <div className="jsp2-right">
+            <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: 'rgba(255,255,255,.08)', border: '1px solid rgba(255,255,255,.12)', borderRadius: 99, padding: '5px 14px', fontSize: 12, fontWeight: 700, color: 'rgba(255,255,255,.7)', letterSpacing: '.04em', marginBottom: 28, alignSelf: 'flex-start' }}>
+              <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#00B4D8' }} />
+              2 500+ clients actifs
+            </div>
+            <h2 style={{ fontFamily: "'Inter',system-ui,sans-serif", fontSize: 'clamp(28px,3.5vw,46px)', fontWeight: 800, color: 'white', letterSpacing: '-.03em', lineHeight: 1.1, marginBottom: 18 }}>
+              Le service d'envoi<br />préféré de la<br /><span style={{ color: '#00B4D8' }}>diaspora africaine.</span>
+            </h2>
+            <p style={{ fontSize: 15, color: 'rgba(255,255,255,.55)', lineHeight: 1.75, maxWidth: 380, marginBottom: 36 }}>
+              Réservez en 3 minutes, déposez à Douala — votre famille reçoit à Montréal. Suivi WhatsApp inclus, paiement à la livraison.
+            </p>
+            <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+              <button onClick={onBook} style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: 'rgba(255,255,255,.1)', border: '1.5px solid rgba(255,255,255,.2)', borderRadius: 10, padding: '12px 22px', fontSize: 14, fontWeight: 600, color: 'white', cursor: 'pointer', fontFamily: 'inherit' }}>
+                <svg width="16" height="16" fill="white" viewBox="0 0 24 24"><path d="M20 4H4C2.9 4 2 4.9 2 6v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/></svg>
+                Réserver un envoi
+              </button>
+              <button onClick={() => onNav?.('/suivi')} style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: 'rgba(255,255,255,.1)', border: '1.5px solid rgba(255,255,255,.2)', borderRadius: 10, padding: '12px 22px', fontSize: 14, fontWeight: 600, color: 'white', cursor: 'pointer', fontFamily: 'inherit' }}>
+                <svg width="16" height="16" fill="none" stroke="white" strokeWidth="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+                Suivre mon colis
+              </button>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ─── Wide photo section — full-bleed card with text overlay ─── */
+function JWidePhoto({ onBook }) {
+  return (
+    <section style={{ padding: '48px 0', background: 'transparent' }}>
+      <style>{`
+        .jwp { position: relative; border-radius: 24px; overflow: hidden; min-height: clamp(320px,40vw,520px); }
+        .jwp img { width: 100%; height: 100%; object-fit: cover; object-position: center 35%; display: block; position: absolute; inset: 0; }
+        .jwp-overlay { position: absolute; inset: 0; background: linear-gradient(100deg, rgba(9,15,30,.75) 0%, rgba(9,15,30,.5) 50%, rgba(9,15,30,.35) 100%); }
+        .jwp-inner { position: absolute; inset: 0; display: grid; grid-template-columns: 1fr 1fr; align-items: center; padding: clamp(32px,5vw,72px); gap: 40px; }
+        .jwp-title { font-family:'Inter',system-ui,sans-serif; font-size: clamp(32px,4.5vw,60px); font-weight: 800; color: white; letter-spacing: -.03em; line-height: 1.08; }
+        .jwp-right { display: flex; flex-direction: column; align-items: flex-start; gap: 20px; }
+        .jwp-desc { font-size: clamp(13px,1.5vw,16px); color: rgba(255,255,255,.68); line-height: 1.75; max-width: 380px; }
+        .jwp-btn { display: inline-flex; align-items: center; gap: 8px; background: white; color: #0B1220; border: none; border-radius: 10px; padding: 13px 24px; font-size: 14px; font-weight: 700; cursor: pointer; font-family: inherit; transition: transform .15s; }
+        .jwp-btn:hover { transform: translateY(-1px); }
+        @media (max-width: 680px) {
+          .jwp-inner { grid-template-columns: 1fr; }
+          .jwp-right { display: none; }
+        }
+      `}</style>
+      <div className="jc">
+        <div className="jwp">
+          <img src={IMGS.hero} alt="" />
+          <div className="jwp-overlay" />
+          <div className="jwp-inner">
+            <h2 className="jwp-title">
+              De Douala<br />à Montréal,<br /><span style={{ color: '#00B4D8' }}>en 14 jours.</span>
+            </h2>
+            <div className="jwp-right">
+              <p className="jwp-desc">
+                Rejoignez 2 500+ clients qui nous font confiance pour leurs envois entre l'Afrique et le Canada. Sécurité, transparence et notification WhatsApp à chaque étape.
+              </p>
+              <button className="jwp-btn" onClick={onBook}>
+                Réserver un envoi
+                <svg width="16" height="16" fill="none" stroke="#0B1220" strokeWidth="2.5" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
 /* ─── Root ─── */
 export default function LandingPage({ onNav }) {
   const { data: session } = useSession();
@@ -881,7 +1000,9 @@ export default function LandingPage({ onNav }) {
       <SiteNav onNav={onNav} onBook={onBook} mode="landing" />
       <JHero onBook={onBook} content={content} />
       <JStoryCard onBook={onBook} content={content} />
+      <JSplitPromo onBook={onBook} onNav={onNav} />
       <JSteps onBook={onBook} />
+      <JWidePhoto onBook={onBook} />
       <JEstimator onBook={onBook} content={content} />
       <SiteFooter content={content} />
       <JChatBot />
