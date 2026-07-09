@@ -47,6 +47,28 @@ export const ROUTES = [
     },
   },
   {
+    id: 'r-mtl-dla', code: 'MTL → DLA',
+    fromCity: 'Montréal', fromCountry: 'Canada', fromIATA: 'MTL',
+    toCity: 'Douala', toCountry: 'Cameroun', toIATA: 'DLA',
+    transitDays: 14, currency: 'CAD', active: true,
+    cargosCount: 0, parcelsTotal: 0, revenueTotal: 0,
+    warehouseFrom: 'Lachine, Montréal', warehouseTo: 'Akwa, Douala',
+    agentFrom: 'Marc L.', agentTo: 'Aïcha M.',
+    pricing: [
+      { from: 0, to: 5,    rate: 18 },
+      { from: 5, to: 10,   rate: 16 },
+      { from: 10, to: 25,  rate: 14 },
+      { from: 25, to: 50,  rate: 12 },
+      { from: 50, to: 100, rate: 10 },
+    ],
+    fees: {
+      base: 50, customs: 5, carton: 1, formality: 4, service: 5,
+      flatUpTo3kg: 65, perHalfKgRate: 9,
+      addons: { smallBag: 3, mediumBag: 5, largeBag: 10 },
+      montrealDelivery: 0,
+    },
+  },
+  {
     id: 'r-dla-bru', code: 'DLA → BRU',
     fromCity: 'Douala', fromCountry: 'Cameroun', fromIATA: 'DLA',
     toCity: 'Bruxelles', toCountry: 'Belgique', toIATA: 'BRU',

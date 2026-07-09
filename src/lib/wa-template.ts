@@ -4,11 +4,11 @@ export const WA_DEFAULTS: Record<string, { label: string; body: string; vars: st
   // ── Manuel ──────────────────────────────────────────────────────────────
   arrival: {
     label: "Avis d'arrivée",
-    vars:  ['{first_name}', '{parcel_code}', '{weight}', '{amount}', '{warehouse_address}', '{agent_phone}'],
+    vars:  ['{first_name}', '{parcel_code}', '{weight}', '{amount}', '{destination_city}', '{warehouse_address}', '{agent_phone}'],
     body:
 `Bonjour {first_name} 👋
 
-Votre colis ({parcel_code}) est arrivé à Montréal.
+Votre colis ({parcel_code}) est arrivé à {destination_city}.
 
 📦 Poids : {weight} kg
 💰 Montant dû : {amount} CAD

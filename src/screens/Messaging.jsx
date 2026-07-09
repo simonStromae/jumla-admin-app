@@ -105,6 +105,7 @@ export default function MessagingScreen({ onNav, campaignId }) {
     .replace(/\{weight\}/g,            String(previewParcel?.weightKg ?? 0))
     .replace(/\{parcel_code\}/g,       previewParcel?.trackingCode ?? 'JMS-00000')
     .replace(/\{arrival_date\}/g,      'à définir')
+    .replace(/\{destination_city\}/g,  'Montréal')
     .replace(/\{warehouse_address\}/g, '5500 Pl. de la Savane, Lachine')
     .replace(/\{agent_phone\}/g,       '+1 514 000 0000');
 

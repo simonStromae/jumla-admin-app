@@ -5,6 +5,7 @@ import { requireAdmin, requirePermission } from '@/src/lib/api-auth';
 import { createNotification } from '@/src/lib/notifications';
 import { sendStatusEmail } from '@/src/lib/email';
 import { sendWhatsappNotification, PARCEL_STATUS_LABELS } from '@/src/lib/twilio';
+import { sendPushToUser } from '@/src/lib/push';
 import { renderWaTemplate } from '@/src/lib/wa-template';
 
 export async function GET(_: NextRequest, { params }: { params: { id: string } }) {
@@ -118,6 +119,17 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
         parcel_code:  existing.trackingCode,
         status_label: statusLabel,
       }).then(msg => sendWhatsappNotification(existing!.client!.phone!, msg, params.id)).catch(() => {});
+    }
+    // Push notification on status change
+    if (existing?.clientId) {
+      const statusLabel = PARCEL_STATUS_LABELS[status] ?? status;
+      const code = existing.trackingCode ?? params.id;
+      sendPushToUser(existing.clientId, {
+        title: `${statusLabel} — ${code}`,
+        body:  eventNote || `Le statut de votre colis ${code} a été mis à jour.`,
+        url:   `/client/colis/${params.id}`,
+        tag:   `parcel-status-${params.id}`,
+      }).catch(() => {});
     }
   }
 

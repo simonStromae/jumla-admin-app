@@ -10,6 +10,65 @@ import LanguageSwitcher from '@/src/components/LanguageSwitcher.jsx';
 import ClientOnboarding from '@/src/components/ClientOnboarding.jsx';
 import HelpCenter from '@/src/components/HelpCenter.jsx';
 
+function urlBase64ToUint8Array(b64) {
+  const padding = '='.repeat((4 - b64.length % 4) % 4);
+  const base64  = (b64 + padding).replace(/-/g, '+').replace(/_/g, '/');
+  const raw     = atob(base64);
+  return Uint8Array.from([...raw].map(c => c.charCodeAt(0)));
+}
+
+function usePush(active) {
+  const [state, setState] = useState('idle'); // idle | supported | subscribed | denied
+
+  async function doSubscribe(reg) {
+    try {
+      const res = await fetch('/api/push/vapid');
+      if (!res.ok) return;
+      const { publicKey } = await res.json();
+      if (!publicKey) return;
+      const sub = await reg.pushManager.subscribe({
+        userVisibleOnly:      true,
+        applicationServerKey: urlBase64ToUint8Array(publicKey),
+      });
+      await fetch('/api/push/subscribe', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify(sub.toJSON()),
+      });
+      setState('subscribed');
+    } catch { setState('idle'); }
+  }
+
+  useEffect(() => {
+    if (!active || !('serviceWorker' in navigator) || !('PushManager' in window)) return;
+    navigator.serviceWorker.register('/sw.js').then(async reg => {
+      const perm = Notification.permission;
+      if (perm === 'denied') { setState('denied'); return; }
+      const existing = await reg.pushManager.getSubscription();
+      if (existing) {
+        // Re-sync subscription with server (idempotent upsert)
+        fetch('/api/push/vapid').then(r => r.json()).then(({ publicKey }) => {
+          if (publicKey) fetch('/api/push/subscribe', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(existing.toJSON()) }).catch(() => {});
+        }).catch(() => {});
+        setState('subscribed');
+        return;
+      }
+      if (perm === 'granted') { doSubscribe(reg); }
+      else { setState('supported'); }
+    }).catch(() => {});
+  }, [active]);
+
+  const enable = async () => {
+    const reg  = await navigator.serviceWorker.ready;
+    const perm = await Notification.requestPermission();
+    if (perm !== 'granted') { setState('denied'); return; }
+    doSubscribe(reg);
+  };
+
+  const dismiss = () => setState('idle');
+  return { state, enable, dismiss };
+}
+
 const NAV_ALL = [
   { labelKey: 'client.nav.parcels',    icon: I.Box,        href: '/client/dashboard',    suspendedOk: true  },
   { labelKey: 'client.nav.book',       icon: I.Plus,       href: '/client/booking',      suspendedOk: false },
@@ -125,6 +184,8 @@ export default function ClientLayout({ children }) {
   const router   = useRouter();
   const pathname = usePathname();
   const [plusOpen, setPlusOpen] = useState(false);
+  const isLoggedIn = status === 'authenticated';
+  const { state: pushState, enable: enablePush, dismiss: dismissPush } = usePush(isLoggedIn);
 
   const openHelp = () => {
     window.dispatchEvent(new CustomEvent('jumla:open-help'));
@@ -296,6 +357,27 @@ export default function ClientLayout({ children }) {
               <span>⚠️</span>
               <span style={{ color: 'var(--info-700)', fontWeight: 600 }}>{t('client.suspended.title')}</span>
               <span style={{ color: 'var(--warn-600)' }}>— {t('client.suspended.message')}</span>
+            </div>
+          )}
+
+          {pushState === 'supported' && (
+            <div style={{
+              background: '#EFF6FF', borderBottom: '1px solid #BFDBFE',
+              padding: '9px 20px', fontSize: 12.5,
+              display: 'flex', alignItems: 'center', gap: 10,
+            }}>
+              <I.Bell style={{ width: 14, height: 14, color: 'var(--brand-500)', flexShrink: 0 }} />
+              <span style={{ flex: 1, color: '#1e40af' }}>
+                {t && t('push.banner') ? t('push.banner') : 'Activez les notifications pour recevoir vos alertes de suivi en temps réel.'}
+              </span>
+              <button onClick={enablePush} style={{
+                background: 'var(--brand-500)', color: 'white', border: 'none',
+                borderRadius: 6, padding: '4px 14px', fontSize: 12, fontWeight: 600, cursor: 'pointer',
+              }}>Activer</button>
+              <button onClick={dismissPush} style={{
+                background: 'none', border: 'none', cursor: 'pointer', padding: '2px 6px',
+                color: '#60a5fa', fontSize: 13, lineHeight: 1,
+              }}>✕</button>
             </div>
           )}
 

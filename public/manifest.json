@@ -1,0 +1,13 @@
+{
+  "name": "Jumla Shipping",
+  "short_name": "Jumla",
+  "description": "Fret international · Douala ↔ Montréal",
+  "start_url": "/client",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#1B4FD8",
+  "icons": [
+    { "src": "/jumla-icon.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/jumla-icon.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}

@@ -3,7 +3,8 @@ import Providers from './providers';
 
 export const metadata = {
   title: 'Jumla Shipping',
-  description: 'Plateforme de gestion de fret international',
+  description: 'Fret international · Douala ↔ Montréal',
+  manifest: '/manifest.json',
 };
 
 export default function RootLayout({ children }) {
@@ -16,6 +17,7 @@ export default function RootLayout({ children }) {
           href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap"
           rel="stylesheet"
         />
+        <meta name="theme-color" content="#1B4FD8" />
       </head>
       <body><Providers>{children}</Providers></body>
     </html>

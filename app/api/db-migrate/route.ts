@@ -22,6 +22,17 @@ export async function GET() {
   await run('routes.transitDays', `ALTER TABLE routes ADD COLUMN IF NOT EXISTS "transitDays" INTEGER NOT NULL DEFAULT 14`);
   await run('routes.currency',    `ALTER TABLE routes ADD COLUMN IF NOT EXISTS currency TEXT NOT NULL DEFAULT 'CAD'`);
   await run('routes.fees',        `ALTER TABLE routes ADD COLUMN IF NOT EXISTS fees JSONB`);
+  // Seed arrival info for existing DLA→MTL/YUL routes (idempotent — only sets if arrival is null)
+  await run('routes.seed_arrival_dla_mtl', `
+    UPDATE routes
+    SET fees = COALESCE(fees, '{}'::jsonb) || jsonb_build_object('arrival', jsonb_build_object(
+      'city',    'Montréal',
+      'address', '5500 Pl. de la Savane, Lachine',
+      'phone',   '+1 514 998 0709'
+    ))
+    WHERE destination IN ('MTL','YUL')
+      AND (fees IS NULL OR fees->'arrival' IS NULL)
+  `);
 
   // ── Campaigns ──────────────────────────────────────────────────────────────
   await run('campaigns.status_to_text', `ALTER TABLE campaigns ALTER COLUMN status TYPE TEXT USING status::TEXT`);
@@ -71,6 +82,18 @@ export async function GET() {
       "transactionId" TEXT NOT NULL REFERENCES transactions(id) ON DELETE CASCADE,
       "paymentId" TEXT NOT NULL REFERENCES payments(id),
       amount INTEGER NOT NULL
+    )
+  `);
+
+  // ── Push subscriptions ─────────────────────────────────────────────────────
+  await run('push_subscriptions', `
+    CREATE TABLE IF NOT EXISTS push_subscriptions (
+      id TEXT PRIMARY KEY,
+      "userId" TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      endpoint TEXT NOT NULL UNIQUE,
+      p256dh TEXT NOT NULL,
+      auth TEXT NOT NULL,
+      "createdAt" TIMESTAMPTZ NOT NULL DEFAULT NOW()
     )
   `);
 
