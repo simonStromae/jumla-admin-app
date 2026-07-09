@@ -484,61 +484,73 @@ function JChatBot() {
   );
 }
 
-/* ─── Hero — light centered + photo grid with border ─── */
+/* ─── Hero — Kata-inspired: bg image blend + booking card ─── */
+const HERO_CATS = [
+  { id: 'clothes', label: 'Vêtements',   emoji: '👕' },
+  { id: 'elec',    label: 'Électronique', emoji: '📱' },
+  { id: 'docs',    label: 'Documents',    emoji: '📄' },
+  { id: 'food',    label: 'Alimentaire',  emoji: '🍫' },
+];
+
 function JHero({ onBook, content }) {
-  const t = useT();
   const h = content.hero;
+  const [sel, setSel] = useState('clothes');
 
   return (
-    <section style={{ background: 'transparent', padding: 'clamp(56px,8vw,96px) 0 0' }}>
-      <style>{`
-        .jh3-btns { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
-        .jh3-btn-p { background: linear-gradient(90deg,#00B4D8,#1B4FD8); color: white; border: none; border-radius: 10px; padding: 15px 32px; font-size: 15px; font-weight: 700; cursor: pointer; font-family: inherit; display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 4px 20px rgba(27,79,216,.28); transition: transform .15s; }
-        .jh3-btn-p:hover { transform: translateY(-1px); }
-        .jh3-btn-g { background: white; color: #374151; border: 1.5px solid #D1D5DB; border-radius: 10px; padding: 15px 32px; font-size: 15px; font-weight: 600; cursor: pointer; font-family: inherit; display: inline-flex; align-items: center; gap: 8px; transition: border-color .15s; }
-        .jh3-btn-g:hover { border-color: #1B4FD8; color: #1B4FD8; }
-        .jh3-grid { display: flex; gap: 3px; height: clamp(200px,28vw,360px); border: 3px solid #1B4FD8; border-radius: 20px; overflow: hidden; margin-top: clamp(40px,5vw,64px); }
-        .jh3-img  { flex: 1; overflow: hidden; position: relative; }
-        .jh3-img img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform .5s; }
-        .jh3-img:hover img { transform: scale(1.05); }
-        .jh3-img::after { content:''; position:absolute; inset:0; background: rgba(13,46,110,.15); }
-        @media (max-width: 600px) {
-          .jh3-btns { flex-direction: column; align-items: stretch; }
-          .jh3-btn-p, .jh3-btn-g { justify-content: center; }
-          .jh3-grid { height: 180px; }
-        }
-      `}</style>
-      <div className="jc">
-        {/* Centered headline */}
-        <div style={{ textAlign: 'center', maxWidth: 680, margin: '0 auto' }}>
-          <div style={{ display: 'inline-flex', alignItems: 'center', gap: 7, background: '#EFF6FF', color: '#1B4FD8', padding: '5px 16px', borderRadius: 99, fontSize: 11.5, fontWeight: 700, letterSpacing: '.05em', textTransform: 'uppercase', marginBottom: 24 }}>
-            <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#1B4FD8', flexShrink: 0 }} />
-            {h.eyebrow}
+    <section style={{ position: 'relative', padding: 'clamp(72px,10vw,140px) 0 clamp(80px,10vw,130px)', overflow: 'hidden' }}>
+      {/* Background image — blended, low opacity */}
+      <img src={IMGS.airport} alt="" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center 40%', opacity: .18, filter: 'brightness(1.1) saturate(0.45)', zIndex: 0, pointerEvents: 'none' }} />
+
+      <div className="jc" style={{ position: 'relative', zIndex: 1, textAlign: 'center' }}>
+
+        {/* Announcement pill */}
+        <button onClick={onBook} style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: 'white', border: '1.5px solid #D1D5DB', borderRadius: 99, padding: '6px 16px', fontSize: 12.5, fontWeight: 600, color: '#374151', marginBottom: 28, cursor: 'pointer', fontFamily: 'inherit', boxShadow: '0 1px 6px rgba(0,0,0,.07)' }}>
+          🚀 Douala → Montréal en 14 jours
+          <svg width="13" height="13" fill="none" stroke="#6B7280" strokeWidth="2.2" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+        </button>
+
+        {/* Heading */}
+        <h1 style={{ fontFamily: "'Inter',system-ui,sans-serif", fontSize: 'clamp(42px,7vw,82px)', fontWeight: 800, color: '#0B1220', letterSpacing: '-.05em', lineHeight: 1.0, marginBottom: 20 }}>
+          {h.line1}{' '}
+          {h.line2.includes('Douala')
+            ? <>{h.line2.split('Douala')[0]}<span style={{ color: '#00B4D8' }}>Douala</span>{h.line2.split('Douala')[1]}</>
+            : h.line2}
+          <br />
+          {h.line3.includes('Montréal')
+            ? <><span style={{ color: '#1B4FD8' }}>Montréal.</span></>
+            : <span style={{ color: '#1B4FD8' }}>{h.line3}</span>}
+        </h1>
+
+        {/* Subtitle */}
+        <p style={{ fontSize: 16, color: '#6B7280', lineHeight: 1.7, maxWidth: 460, margin: '0 auto 38px' }}>
+          {h.subtitle}
+        </p>
+
+        {/* Booking action card */}
+        <div style={{ background: 'white', borderRadius: 20, padding: '18px 20px', maxWidth: 540, margin: '0 auto', boxShadow: '0 8px 48px rgba(13,46,110,.13)', border: '1px solid rgba(0,0,0,.05)' }}>
+          <div style={{ fontSize: 14, color: '#9CA3AF', textAlign: 'left', marginBottom: 14, fontWeight: 500 }}>
+            Démarrez votre envoi...
           </div>
-          <h1 style={{ fontFamily: "'Inter',system-ui,sans-serif", fontSize: 'clamp(38px,6.5vw,72px)', fontWeight: 800, color: '#0B1220', letterSpacing: '-.04em', lineHeight: 1.05, marginBottom: 22 }}>
-            {h.line1}<br />
-            {h.line2.includes('Douala')
-              ? <>{h.line2.split('Douala')[0]}<span style={{ color: '#00B4D8' }}>Douala</span>{h.line2.split('Douala')[1]}</>
-              : h.line2}<br />
-            {h.line3.includes('Montréal')
-              ? <>{h.line3.split('Montréal')[0]}<span style={{ color: '#1B4FD8' }}>Montréal</span>{h.line3.split('Montréal')[1]}</>
-              : <span style={{ color: '#1B4FD8' }}>{h.line3}</span>}
-          </h1>
-          <p style={{ fontSize: 16, color: '#6B7280', lineHeight: 1.7, maxWidth: 500, margin: '0 auto 36px' }}>
-            {h.subtitle}
-          </p>
-          <div className="jh3-btns">
-            <button className="jh3-btn-p" onClick={onBook}>{t('hero.button.book')}</button>
-            <button className="jh3-btn-g" onClick={() => document.getElementById('jest')?.scrollIntoView({ behavior: 'smooth' })}>{t('hero.button.estimate')} →</button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 7, borderTop: '1px solid #F3F4F6', paddingTop: 14, flexWrap: 'wrap' }}>
+            {HERO_CATS.map(c => (
+              <button key={c.id} onClick={() => setSel(c.id)} style={{ display: 'flex', alignItems: 'center', gap: 5, background: sel === c.id ? '#EFF6FF' : '#F9FAFB', border: `1.5px solid ${sel === c.id ? '#1B4FD8' : '#E5E7EB'}`, borderRadius: 8, padding: '7px 11px', fontSize: 12.5, fontWeight: 600, color: sel === c.id ? '#1B4FD8' : '#374151', cursor: 'pointer', fontFamily: 'inherit', transition: 'all .12s' }}>
+                <span>{c.emoji}</span> {c.label}
+              </button>
+            ))}
+            <button onClick={onBook} style={{ marginLeft: 'auto', width: 40, height: 40, background: 'linear-gradient(135deg,#00B4D8,#1B4FD8)', border: 'none', borderRadius: 10, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 14px rgba(27,79,216,.35)', flexShrink: 0 }}>
+              <svg width="17" height="17" fill="none" stroke="white" strokeWidth="2.5" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+            </button>
           </div>
         </div>
 
-        {/* Photo grid with blue border */}
-        <div className="jh3-grid">
-          {[IMGS.hero, IMGS.airport, IMGS.cargo].map((src, i) => (
-            <div key={i} className="jh3-img"><img src={src} alt="" /></div>
+        {/* Routes strip */}
+        <div style={{ marginTop: 26, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, flexWrap: 'wrap' }}>
+          <span style={{ fontSize: 12, color: '#6B7280', fontWeight: 500 }}>Routes disponibles :</span>
+          {['DLA → YUL', 'DLA → LOS', 'DLA → BRU'].map(r => (
+            <span key={r} style={{ background: 'white', borderRadius: 7, padding: '3px 10px', fontSize: 12, fontWeight: 700, color: '#374151', border: '1px solid #E5E7EB', boxShadow: '0 1px 3px rgba(0,0,0,.05)' }}>{r}</span>
           ))}
         </div>
+
       </div>
     </section>
   );
