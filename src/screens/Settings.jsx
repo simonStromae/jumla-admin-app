@@ -611,6 +611,59 @@ function SectionWhatsapp() {
   );
 }
 
+/* ── Push Notifications ───────────────────────────────────── */
+function SectionPushSetup() {
+  const [status,  setStatus]  = useState(null); // null | 'loading' | { configured, publicKey }
+  const [setting, setSetting] = useState(false);
+  const [result,  setResult]  = useState('');
+
+  useEffect(() => {
+    fetch('/api/push/vapid').then(r => r.json()).then(d => {
+      setStatus({ configured: !!d.publicKey, publicKey: d.publicKey });
+    }).catch(() => setStatus({ configured: false }));
+  }, []);
+
+  async function handleSetup() {
+    setSetting(true); setResult('');
+    const res = await fetch('/api/push/setup').catch(() => null);
+    if (!res?.ok) { setResult('Erreur lors de la configuration.'); setSetting(false); return; }
+    const d = await res.json();
+    setStatus({ configured: true, publicKey: d.publicKey });
+    setResult('Clés VAPID générées et enregistrées.');
+    setSetting(false);
+  }
+
+  const configured = status?.configured;
+  return (
+    <SettingsCard title="Push Notifications" sub="Notifications natives sur navigateur et appareils mobiles — canal complémentaire au WhatsApp.">
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '14px 16px', background: configured ? 'var(--ok-50)' : 'var(--bg-soft)', border: '1px solid ' + (configured ? 'var(--ok-100)' : 'var(--border)'), borderRadius: 8, marginBottom: 16 }}>
+        <span style={{ width: 10, height: 10, borderRadius: 999, background: configured ? 'var(--ok-500)' : 'var(--ink-300)', flexShrink: 0 }} />
+        <div style={{ flex: 1 }}>
+          <div style={{ fontSize: 13, fontWeight: 700, color: configured ? 'var(--ok-700)' : 'var(--ink-600)' }}>
+            {status === null ? 'Chargement…' : configured ? 'Push configuré · clés VAPID actives' : 'Non configuré — cliquez sur « Configurer » pour générer les clés'}
+          </div>
+          {configured && status?.publicKey && (
+            <div style={{ fontSize: 11, color: 'var(--ok-600)', marginTop: 2, fontFamily: 'monospace', wordBreak: 'break-all' }}>
+              {status.publicKey.slice(0, 40)}…
+            </div>
+          )}
+        </div>
+      </div>
+      <p style={{ fontSize: 12.5, color: 'var(--ink-500)', marginBottom: 14, lineHeight: 1.6 }}>
+        Les clés VAPID sont générées une seule fois et stockées de façon sécurisée.
+        Une fois configuré, les clients pourront activer les notifications push dans leur espace client —
+        ils recevront une alerte native à chaque changement de statut de colis.
+      </p>
+      {!configured && (
+        <button className="btn btn--brand btn--sm" onClick={handleSetup} disabled={setting || status === null}>
+          {setting ? 'Configuration…' : 'Configurer les push notifications'}
+        </button>
+      )}
+      {result && <div style={{ marginTop: 10, fontSize: 12.5, color: 'var(--ok-600)' }}>{result}</div>}
+    </SettingsCard>
+  );
+}
+
 /* ── Modèles WhatsApp ────────────────────────────────────── */
 const WA_TMPL_DEFS = {
   // Manuel
@@ -1417,7 +1470,7 @@ export default function SettingsScreen({ onNav }) {
               <SectionPricing routes={routes} onEdit={setEditRoute} />
             </>
           )}
-          {section === 'whatsapp'  && <><SectionWhatsapp /><SectionWaTemplates /></>}
+          {section === 'whatsapp'  && <><SectionWhatsapp /><SectionPushSetup /><SectionWaTemplates /></>}
           {section === 'auto'      && <SectionAutoNotif />}
           {section === 'campaigns' && <SectionCampaigns />}
           {section === 'codes'     && <SectionCodes />}
