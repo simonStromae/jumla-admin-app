@@ -246,6 +246,20 @@ Votre bordereau {{2}} (colis {{3}}) a été confirmé par Jumla Shipping.
 
 Merci de vous connecter à votre espace client pour vérifier et accepter le contenu déclaré avant l'expédition.`,
   },
+  broadcast: {
+    friendlyName: 'jumla_broadcast_fr',
+    settingKey:   'WA_TMPL_SID_broadcast',
+    varMap: { first_name: '1', arrival_date: '2' },
+    sampleVars: { '1': 'Client', '2': '15 août 2026' },
+    body:
+`Bonjour {{1}} 👋
+
+Nouvelle cargaison disponible — départ prévu le {{2}}.
+
+Réservez votre place dès maintenant.
+
+Jumla Shipping`,
+  },
   auto_campaign_status: {
     friendlyName: 'jumla_cargaison_fr',
     settingKey:   'WA_TMPL_SID_auto_campaign_status',

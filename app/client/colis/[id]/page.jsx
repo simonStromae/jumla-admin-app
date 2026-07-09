@@ -62,7 +62,10 @@ export default function ParcelDetailPage({ params }) {
   const [editForm,  setEditForm]  = useState({});
   const [saving,    setSaving]    = useState(false);
   const [saveErr,   setSaveErr]   = useState('');
-  const [blConfirm, setBlConfirm] = useState({});
+  const [blConfirm,    setBlConfirm]    = useState({});
+  const [showCancel,   setShowCancel]   = useState(false);
+  const [cancelling,   setCancelling]   = useState(false);
+  const [cancelError,  setCancelError]  = useState('');
 
   const fmt = (date, opts) => {
     if (!date) return '—';
@@ -252,6 +255,18 @@ export default function ParcelDetailPage({ params }) {
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
               {locale === 'fr' ? 'Étiquettes' : 'Labels'}
             </button>
+            {parcel.status === 'enr' && !parcel.payment && (
+              <button
+                onClick={() => { setCancelError(''); setShowCancel(true); }}
+                style={{
+                  marginTop: 8, display: 'inline-flex', alignItems: 'center', gap: 5,
+                  padding: '5px 10px', borderRadius: 7,
+                  border: '1px solid #fca5a5', background: '#fff1f2',
+                  fontSize: 11.5, fontWeight: 600, color: '#dc2626', cursor: 'pointer',
+                }}>
+                ✕ {locale === 'fr' ? 'Annuler réservation' : 'Cancel booking'}
+              </button>
+            )}
         </div>
       </div>
 
@@ -674,6 +689,52 @@ export default function ParcelDetailPage({ params }) {
           )}
         </Section>
       </div>
+
+      {/* Annulation modal */}
+      {showCancel && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 200, background: 'rgba(0,0,0,.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
+          <div style={{ background: 'white', borderRadius: 16, padding: 24, maxWidth: 420, width: '100%', boxShadow: '0 20px 60px rgba(0,0,0,.2)' }}>
+            <div style={{ fontSize: 16, fontWeight: 700, color: '#111827', marginBottom: 8 }}>
+              {locale === 'fr' ? 'Annuler ma réservation' : 'Cancel my booking'}
+            </div>
+            <div style={{ fontSize: 13, color: '#6b7280', lineHeight: 1.6, marginBottom: 16 }}>
+              {locale === 'fr'
+                ? `Vous êtes sur le point d'annuler le colis ${parcel.trackingCode}. Cette action est définitive.`
+                : `You are about to cancel parcel ${parcel.trackingCode}. This action is final.`}
+            </div>
+            {cancelError && (
+              <div style={{ padding: '8px 12px', background: '#fee2e2', borderRadius: 7, fontSize: 13, color: '#dc2626', marginBottom: 12 }}>
+                {cancelError}
+              </div>
+            )}
+            <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+              <button onClick={() => setShowCancel(false)} style={{ padding: '8px 16px', borderRadius: 8, border: '1px solid #d1d5db', background: 'white', fontSize: 13, fontWeight: 600, cursor: 'pointer', color: '#374151' }}>
+                {locale === 'fr' ? 'Retour' : 'Back'}
+              </button>
+              <button
+                disabled={cancelling}
+                onClick={async () => {
+                  setCancelling(true);
+                  setCancelError('');
+                  const res = await fetch('/api/me/parcels/' + parcel.id, { method: 'DELETE' });
+                  const json = await res.json();
+                  setCancelling(false);
+                  if (res.ok) {
+                    router.push('/client/dashboard');
+                  } else {
+                    setCancelError(json.error || (locale === 'fr' ? 'Erreur, veuillez réessayer.' : 'Error, please try again.'));
+                  }
+                }}
+                style={{ padding: '8px 16px', borderRadius: 8, border: 'none', background: cancelling ? '#9ca3af' : '#dc2626', color: 'white', fontSize: 13, fontWeight: 700, cursor: cancelling ? 'not-allowed' : 'pointer' }}
+              >
+                {cancelling
+                  ? (locale === 'fr' ? 'Annulation…' : 'Cancelling…')
+                  : (locale === 'fr' ? 'Confirmer l\'annulation' : 'Confirm cancellation')}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -44,6 +44,9 @@ export default function ParcelDetailScreen({ id, onNav }) {
   const [loading,       setLoading]       = useState(true);
   const [showPayModal,    setShowPayModal]    = useState(false);
   const [showWeightModal, setShowWeightModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleting,        setDeleting]        = useState(false);
+  const [deleteError,     setDeleteError]     = useState('');
   const [statusForm, setStatusForm] = useState({ status: '', note: '', location: '', saving: false });
   const [showAddBl,       setShowAddBl]       = useState(false);
   const [newBl,    setNewBl]    = useState({ description: '', weightKg: '', items: [] });
@@ -173,6 +176,15 @@ export default function ParcelDetailScreen({ id, onNav }) {
           <button className="btn btn--ghost" onClick={() => onNav('/admin/parcels/' + id + '/labels')}><I.Tag />Étiquettes</button>
           <button className="btn btn--ghost" onClick={() => setShowWeightModal(true)}><I.Edit />Poids / Prix</button>
           <button className="btn btn--ghost" onClick={() => setShowPayModal(true)}><I.Send />Lien Interac</button>
+          {['enr', 'rec'].includes(parcel.status) && (
+            <button
+              className="btn btn--ghost"
+              onClick={() => { setDeleteError(''); setShowDeleteModal(true); }}
+              style={{ color: 'var(--bad-600)', borderColor: 'var(--bad-200)' }}
+            >
+              <I.Trash />Supprimer
+            </button>
+          )}
         </div>
       </div>
 
@@ -702,6 +714,44 @@ export default function ParcelDetailScreen({ id, onNav }) {
       )}
       {showPayModal && parcel && (
         <InteracModal parcel={parcel} onClose={() => setShowPayModal(false)} />
+      )}
+
+      {showDeleteModal && (
+        <Modal title="Supprimer ce colis" onClose={() => setShowDeleteModal(false)}>
+          <div style={{ marginBottom: 16, fontSize: 14, color: 'var(--ink-700)', lineHeight: 1.6 }}>
+            Vous êtes sur le point de supprimer le colis <strong style={{ fontFamily: 'monospace' }}>{parcel.trackingCode}</strong> de <strong>{client.name}</strong>.
+          </div>
+          <div style={{ padding: '10px 14px', background: 'var(--bad-50)', border: '1px solid var(--bad-100)', borderRadius: 8, fontSize: 13, color: 'var(--bad-700)', marginBottom: 20 }}>
+            ⚠️ Cette action est irréversible. Le colis sera archivé et n'apparaîtra plus dans les listes.
+          </div>
+          {deleteError && (
+            <div style={{ padding: '8px 12px', background: '#fee2e2', borderRadius: 7, fontSize: 13, color: '#dc2626', marginBottom: 12 }}>
+              {deleteError}
+            </div>
+          )}
+          <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+            <button className="btn btn--ghost" onClick={() => setShowDeleteModal(false)}>Annuler</button>
+            <button
+              disabled={deleting}
+              onClick={async () => {
+                setDeleting(true);
+                setDeleteError('');
+                const res = await fetch('/api/parcels/' + id, { method: 'DELETE' });
+                const json = await res.json();
+                setDeleting(false);
+                if (res.ok) {
+                  setShowDeleteModal(false);
+                  onNav(campaign?.id ? '/campaign/' + campaign.id : '/parcels');
+                } else {
+                  setDeleteError(json.error || 'Erreur lors de la suppression');
+                }
+              }}
+              style={{ padding: '8px 16px', borderRadius: 8, border: 'none', background: 'var(--bad-500)', color: 'white', fontSize: 13, fontWeight: 700, cursor: deleting ? 'not-allowed' : 'pointer', opacity: deleting ? .6 : 1 }}
+            >
+              {deleting ? 'Suppression…' : 'Confirmer la suppression'}
+            </button>
+          </div>
+        </Modal>
       )}
     </div>
   );
