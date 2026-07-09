@@ -251,13 +251,13 @@ function JSteps({ onBook }) {
     <section id="jsteps" style={{ padding: '80px 0', background: '#F9FAF8' }}>
       <style>{`
         .js2-wrap { position: relative; max-width: 780px; margin: 0 auto; }
-        .js2-row  { display: flex; margin-bottom: 56px; position: relative; }
+        .js2-row  { display: flex; margin-bottom: 60px; position: relative; }
         .js2-row:last-child { margin-bottom: 0; }
-        .js2-row--l { justify-content: flex-start; }
-        .js2-row--r { justify-content: flex-end; }
+        .js2-row--left  { justify-content: flex-start; }
+        .js2-row--right { justify-content: flex-end; }
 
         /* Card + badge assembly */
-        .js2-card-wrap { width: 56%; position: relative; }
+        .js2-card-wrap { width: 58%; position: relative; }
         .js2-badge-outer {
           position: absolute;
           left: -17px; top: 50%;
@@ -285,20 +285,20 @@ function JSteps({ onBook }) {
           display: flex; align-items: center; gap: 9px;
           margin-bottom: 10px;
         }
-        .js2-icon { color: #1F3A2D; flex-shrink: 0; }
+        .js2-icon  { color: #1F3A2D; flex-shrink: 0; }
         .js2-title { font-size: 15px; font-weight: 700; color: #111827; margin: 0; line-height: 1.3; }
         .js2-desc  { font-size: 13px; color: #6B7280; line-height: 1.7; margin: 0; }
 
-        /* Connecting arrows */
-        .js2-arrow { position: absolute; bottom: -48px; pointer-events: none; z-index: 1; }
-        .js2-row--l .js2-arrow { left: 52%; }
-        .js2-row--r .js2-arrow { right: 52%; }
+        /* Connecting arrows — centred in the gap between left & right halves */
+        .js2-arrow { position: absolute; bottom: -52px; pointer-events: none; z-index: 1; }
+        .js2-row--left  .js2-arrow { left:  54%; }
+        .js2-row--right .js2-arrow { right: 54%; }
 
-        /* Mobile */
-        @media (max-width: 600px) {
+        /* Mobile: stack single column */
+        @media (max-width: 620px) {
           .js2-card-wrap { width: 100%; padding-left: 36px; }
           .js2-badge-outer { left: 2px; }
-          .js2-row--r { justify-content: flex-start; }
+          .js2-row--right { justify-content: flex-start; }
           .js2-arrow  { display: none; }
           .js2-row    { margin-bottom: 20px; }
         }
