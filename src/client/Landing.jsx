@@ -286,10 +286,10 @@ function JSteps({ onBook }) {
         .js2-row--right { justify-content: flex-end; }
         .js2-card-wrap { width: 58%; position: relative; }
         .js2-badge-outer { position: absolute; left: -17px; top: 50%; transform: translateY(-50%); z-index: 2; }
-        .js2-badge { writing-mode: vertical-rl; transform: rotate(180deg); background: #0D2E6E; color: white; padding: 10px 5px; border-radius: 99px; font-size: 9px; font-weight: 700; letter-spacing: .06em; white-space: nowrap; font-family: inherit; }
+        .js2-badge { writing-mode: vertical-rl; transform: rotate(180deg); background: #00B4D8; color: white; padding: 10px 5px; border-radius: 99px; font-size: 9px; font-weight: 700; letter-spacing: .06em; white-space: nowrap; font-family: inherit; }
         .js2-inner { border-radius: 16px; padding: 28px 24px 28px 32px; border: 1px solid rgba(0,0,0,.07); box-shadow: 0 2px 12px rgba(0,0,0,.05); }
         .js2-head { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
-        .js2-icon  { color: #1B4FD8; flex-shrink: 0; }
+        .js2-icon  { color: #00B4D8; flex-shrink: 0; }
         .js2-title { font-size: 19px; font-weight: 700; color: #111827; margin: 0; line-height: 1.3; }
         .js2-desc  { font-size: 15px; color: #6B7280; line-height: 1.75; margin: 0; }
         .js2-arrow { position: absolute; bottom: -52px; pointer-events: none; z-index: 1; }
@@ -307,11 +307,11 @@ function JSteps({ onBook }) {
       <div className="jc">
         {/* Header */}
         <div style={{ textAlign: 'center', marginBottom: 64 }}>
-          <div style={{ display: 'inline-flex', alignItems: 'center', background: '#EFF6FF', color: '#1B4FD8', padding: '5px 16px', borderRadius: 99, fontSize: 12, fontWeight: 700, letterSpacing: '.05em', textTransform: 'uppercase', marginBottom: 18 }}>
+          <div style={{ display: 'inline-flex', alignItems: 'center', background: 'rgba(0,180,216,.1)', color: '#00B4D8', border: '1px solid rgba(0,180,216,.25)', padding: '5px 16px', borderRadius: 99, fontSize: 12, fontWeight: 700, letterSpacing: '.05em', textTransform: 'uppercase', marginBottom: 18 }}>
             Comment ça marche
           </div>
           <h2 style={{ fontFamily: "'Inter',system-ui,sans-serif", fontSize: 'clamp(36px,5vw,56px)', fontWeight: 800, color: '#111827', letterSpacing: '-.04em', margin: 0, lineHeight: 1.1 }}>
-            Simple comme <span style={{ color: '#1B4FD8' }}>4 étapes</span>
+            Simple comme <span style={{ color: '#00B4D8' }}>4 étapes</span>
           </h2>
           <p style={{ fontSize: 18, color: '#6B7280', marginTop: 16, lineHeight: 1.65, maxWidth: 420, margin: '16px auto 0' }}>
             De Douala à Montréal — on s'occupe de tout, vous suivez en temps réel.
@@ -343,14 +343,14 @@ function JSteps({ onBook }) {
                   {step.side === 'left' ? (
                     /* left card → curves right-down toward right card */
                     <svg width="88" height="58" viewBox="0 0 88 58" fill="none">
-                      <path d="M 6 6 C 30 6, 82 24, 82 52" stroke="#93C5FD" strokeDasharray="5,4" strokeWidth="1.5" fill="none"/>
-                      <path d="M 75 45 L 82 52 L 86 44" stroke="#93C5FD" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
+                      <path d="M 6 6 C 30 6, 82 24, 82 52" stroke="#00B4D8" strokeDasharray="5,4" strokeWidth="1.5" fill="none"/>
+                      <path d="M 75 45 L 82 52 L 86 44" stroke="#00B4D8" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
                     </svg>
                   ) : (
                     /* right card → curves left-down toward left card */
                     <svg width="88" height="58" viewBox="0 0 88 58" fill="none">
-                      <path d="M 82 6 C 58 6, 6 24, 6 52" stroke="#93C5FD" strokeDasharray="5,4" strokeWidth="1.5" fill="none"/>
-                      <path d="M 13 45 L 6 52 L 2 44" stroke="#93C5FD" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
+                      <path d="M 82 6 C 58 6, 6 24, 6 52" stroke="#00B4D8" strokeDasharray="5,4" strokeWidth="1.5" fill="none"/>
+                      <path d="M 13 45 L 6 52 L 2 44" stroke="#00B4D8" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
                     </svg>
                   )}
                 </div>
