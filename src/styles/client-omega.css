@@ -12,7 +12,7 @@
 .jpage {
   font-family: 'Inter', system-ui, sans-serif;
   color: var(--ink-800);
-  background: rgb(233, 239, 255);
+  background: rgb(253, 253, 255);
   -webkit-font-smoothing: antialiased;
 }
 
@@ -843,7 +843,7 @@
 .jbtn-ghost:hover { border-color: var(--ink-300); }
 
 /* estimator (kept, used in hero-below) */
-.jest-wrap { background: transparent; padding: 96px 0; }
+.jest-wrap { background: rgb(253,253,255); min-height: 80vh; display: flex; flex-direction: column; justify-content: center; padding: 80px 0; }
 .jest {
   background: white; overflow: hidden;
   border-radius: var(--radius-xl);
