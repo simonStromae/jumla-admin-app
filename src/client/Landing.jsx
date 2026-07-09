@@ -221,7 +221,7 @@ function JStatsPhoto({ content }) {
 /* ─── 4-step zigzag "Comment ça marche" ─── */
 const STEPS_DATA = [
   {
-    num: '1', duration: '3 min', side: 'left', bg: '#F2FBF4',
+    num: '1', duration: '3 min', side: 'left', bg: '#EFF6FF',
     icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" width="19" height="19" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>,
     title: 'Réservez en ligne',
     desc: 'Créez votre envoi en 3 minutes. Renseignez les colis et obtenez votre code de suivi instantanément.',
@@ -239,7 +239,7 @@ const STEPS_DATA = [
     desc: 'Vos colis voyagent avec nos compagnies partenaires certifiées. Notifications WhatsApp à chaque étape.',
   },
   {
-    num: '4', duration: 'Sur RDV', side: 'right', bg: '#F2FBF4',
+    num: '4', duration: 'Sur RDV', side: 'right', bg: '#EFF6FF',
     icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" width="19" height="19" strokeLinecap="round" strokeLinejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>,
     title: 'Livraison à Montréal',
     desc: 'Retrait à notre entrepôt ou livraison à domicile partout au Québec. Paiement à la remise.',
@@ -267,7 +267,7 @@ function JSteps({ onBook }) {
         .js2-badge {
           writing-mode: vertical-rl;
           transform: rotate(180deg);
-          background: #1B3A2D;
+          background: #0D2E6E;
           color: white;
           padding: 10px 5px;
           border-radius: 99px;
@@ -285,7 +285,7 @@ function JSteps({ onBook }) {
           display: flex; align-items: center; gap: 9px;
           margin-bottom: 10px;
         }
-        .js2-icon  { color: #1F3A2D; flex-shrink: 0; }
+        .js2-icon  { color: #1B4FD8; flex-shrink: 0; }
         .js2-title { font-size: 15px; font-weight: 700; color: #111827; margin: 0; line-height: 1.3; }
         .js2-desc  { font-size: 13px; color: #6B7280; line-height: 1.7; margin: 0; }
 
@@ -307,7 +307,7 @@ function JSteps({ onBook }) {
       <div className="jc">
         {/* Header */}
         <div style={{ textAlign: 'center', marginBottom: 52 }}>
-          <div style={{ display: 'inline-flex', alignItems: 'center', background: '#DCFCE7', color: '#16A34A', padding: '4px 14px', borderRadius: 99, fontSize: 11.5, fontWeight: 700, letterSpacing: '.04em', textTransform: 'uppercase', marginBottom: 14 }}>
+          <div style={{ display: 'inline-flex', alignItems: 'center', background: '#EFF6FF', color: '#1B4FD8', padding: '4px 14px', borderRadius: 99, fontSize: 11.5, fontWeight: 700, letterSpacing: '.04em', textTransform: 'uppercase', marginBottom: 14 }}>
             Comment ça marche
           </div>
           <h2 style={{ fontFamily: "'Inter',system-ui,sans-serif", fontSize: 'clamp(26px,6vw,36px)', fontWeight: 800, color: '#111827', letterSpacing: '-.03em', margin: 0, lineHeight: 1.2 }}>
@@ -343,14 +343,14 @@ function JSteps({ onBook }) {
                   {step.side === 'left' ? (
                     /* left card → curves right-down toward right card */
                     <svg width="88" height="58" viewBox="0 0 88 58" fill="none">
-                      <path d="M 6 6 C 30 6, 82 24, 82 52" stroke="#BDC9B1" strokeDasharray="5,4" strokeWidth="1.5" fill="none"/>
-                      <path d="M 75 45 L 82 52 L 86 44" stroke="#BDC9B1" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
+                      <path d="M 6 6 C 30 6, 82 24, 82 52" stroke="#93C5FD" strokeDasharray="5,4" strokeWidth="1.5" fill="none"/>
+                      <path d="M 75 45 L 82 52 L 86 44" stroke="#93C5FD" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
                     </svg>
                   ) : (
                     /* right card → curves left-down toward left card */
                     <svg width="88" height="58" viewBox="0 0 88 58" fill="none">
-                      <path d="M 82 6 C 58 6, 6 24, 6 52" stroke="#BDC9B1" strokeDasharray="5,4" strokeWidth="1.5" fill="none"/>
-                      <path d="M 13 45 L 6 52 L 2 44" stroke="#BDC9B1" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
+                      <path d="M 82 6 C 58 6, 6 24, 6 52" stroke="#93C5FD" strokeDasharray="5,4" strokeWidth="1.5" fill="none"/>
+                      <path d="M 13 45 L 6 52 L 2 44" stroke="#93C5FD" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
                     </svg>
                   )}
                 </div>
