@@ -614,7 +614,7 @@ function SectionWhatsapp() {
 /* ── Modèles WhatsApp ────────────────────────────────────── */
 const WA_TMPL_DEFS = {
   // Manuel
-  arrival:  { label: "Avis d'arrivée",      group: 'manual', vars: ['{first_name}','{parcel_code}','{weight}','{amount}','{warehouse_address}','{agent_phone}'], body: `Bonjour {first_name} 👋\n\nVotre colis ({parcel_code}) est arrivé à Montréal.\n\n📦 Poids : {weight} kg\n💰 Montant dû : {amount} CAD\n\n📍 Retrait : {warehouse_address}\n📞 Contact : {agent_phone}\n\nMerci,\nJumla Shipping` },
+  arrival:  { label: "Avis d'arrivée",      group: 'manual', vars: ['{first_name}','{parcel_code}','{weight}','{amount}','{destination_city}','{warehouse_address}','{agent_phone}'], body: `Bonjour {first_name} 👋\n\nVotre colis ({parcel_code}) est arrivé à {destination_city}.\n\n📦 Poids : {weight} kg\n💰 Montant dû : {amount} CAD\n\n📍 Retrait : {warehouse_address}\n📞 Contact : {agent_phone}\n\nMerci,\nJumla Shipping` },
   reminder: { label: 'Relance paiement',     group: 'manual', vars: ['{first_name}','{parcel_code}','{amount}'], body: `Bonjour {first_name},\n\nNous n'avons pas encore reçu votre paiement pour le colis {parcel_code} — montant dû : {amount} CAD.\n\nMerci de régulariser votre situation au plus vite.\n\nJumla Shipping` },
   delivery: { label: 'Livraison confirmée',  group: 'manual', vars: ['{first_name}','{parcel_code}'], body: `Bonjour {first_name},\n\nVotre colis {parcel_code} a été livré. Merci de votre confiance !\n\nJumla Shipping` },
   invoice:  { label: 'Facture / Récap',      group: 'manual', vars: ['{first_name}','{parcel_code}','{weight}','{amount}'], body: `Bonjour {first_name},\n\nVoici le récapitulatif de votre colis {parcel_code} :\n• Poids : {weight} kg\n• Montant : {amount} CAD\n\nJumla Shipping` },
@@ -1018,12 +1018,17 @@ function RouteEditModal({ editRoute, onClose, onSaved }) {
   const [marginPct,      setMarginPct]      = useState(String(r?.fees?.marginPct  ?? 30));
   const [deliveryFeeIle, setDeliveryFeeIle] = useState(String(r?.fees?.deliveryFee ?? 25));
 
-  // Contact & dépôt
+  // Contact & dépôt (côté départ)
   const [dropoffAddress,      setDropoffAddress]      = useState(r?.fees?.dropoff?.address      || '');
   const [dropoffPhone,        setDropoffPhone]        = useState(r?.fees?.dropoff?.phone        || '');
   const [dropoffWhatsapp,     setDropoffWhatsapp]     = useState(r?.fees?.dropoff?.whatsapp     || '');
   const [dropoffHours,        setDropoffHours]        = useState(r?.fees?.dropoff?.hours        || '');
   const [dropoffInstructions, setDropoffInstructions] = useState(r?.fees?.dropoff?.instructions || '');
+
+  // Retrait / arrivée (côté destination) — utilisé dans les notifications WhatsApp
+  const [arrivalCity,    setArrivalCity]    = useState(r?.fees?.arrival?.city    || '');
+  const [arrivalAddress, setArrivalAddress] = useState(r?.fees?.arrival?.address || '');
+  const [arrivalPhone,   setArrivalPhone]   = useState(r?.fees?.arrival?.phone   || '');
 
   // Helpers paliers
   const updTier = (id, k, v) => setTiers(ts => ts.map(t => t.id === id ? { ...t, [k]: v } : t));
@@ -1055,6 +1060,11 @@ function RouteEditModal({ editRoute, onClose, onSaved }) {
           whatsapp:     dropoffWhatsapp.trim()     || null,
           hours:        dropoffHours.trim()        || null,
           instructions: dropoffInstructions.trim() || null,
+        },
+        arrival: {
+          city:    arrivalCity.trim()    || null,
+          address: arrivalAddress.trim() || null,
+          phone:   arrivalPhone.trim()   || null,
         },
       };
       const payload = {
@@ -1301,8 +1311,8 @@ function RouteEditModal({ editRoute, onClose, onSaved }) {
           </div>
         </div>
 
-        {/* Section 7 — Contact & dépôt */}
-        <SectionTitle>Contact & instructions de dépôt</SectionTitle>
+        {/* Section 7 — Contact & dépôt (côté départ) */}
+        <SectionTitle>Dépôt — côté départ</SectionTitle>
         <div className="card" style={{ padding: 20, marginBottom: 20 }}>
           <p style={{ fontSize: 12, color: 'var(--ink-400)', marginBottom: 14, lineHeight: 1.5 }}>
             Ces informations sont affichées au client dans sa confirmation de réservation pour qu'il sache où et comment déposer son colis.
@@ -1330,6 +1340,34 @@ function RouteEditModal({ editRoute, onClose, onSaved }) {
             <textarea className="input" rows={4} value={dropoffInstructions} onChange={e => setDropoffInstructions(e.target.value)}
               style={{ resize: 'vertical' }}
               placeholder="ex: Venez avec une pièce d'identité et votre numéro de suivi. Un reçu vous sera remis sur place. Prévenez-nous 24h avant votre venue par WhatsApp." />
+          </div>
+        </div>
+
+        {/* Section 8 — Retrait côté destination (pour notifications WhatsApp d'arrivée) */}
+        <SectionTitle>Retrait — côté destination</SectionTitle>
+        <div className="card" style={{ padding: 20, marginBottom: 20 }}>
+          <p style={{ fontSize: 12, color: 'var(--ink-400)', marginBottom: 14, lineHeight: 1.5 }}>
+            Ces informations sont insérées automatiquement dans les notifications WhatsApp d'arrivée envoyées aux clients
+            (variables <code style={{ fontSize: 11, background: 'var(--bg-soft)', padding: '1px 5px', borderRadius: 4 }}>{'{destination_city}'}</code>,{' '}
+            <code style={{ fontSize: 11, background: 'var(--bg-soft)', padding: '1px 5px', borderRadius: 4 }}>{'{warehouse_address}'}</code>,{' '}
+            <code style={{ fontSize: 11, background: 'var(--bg-soft)', padding: '1px 5px', borderRadius: 4 }}>{'{agent_phone}'}</code>).
+          </p>
+          <div className="field-row field-row--2">
+            <div className="field">
+              <label className="label">Ville de destination</label>
+              <input className="input" value={arrivalCity} onChange={e => setArrivalCity(e.target.value)}
+                placeholder="ex: Montréal · ex: Douala" />
+            </div>
+            <div className="field">
+              <label className="label">Téléphone contact retrait</label>
+              <input className="input" type="tel" value={arrivalPhone} onChange={e => setArrivalPhone(e.target.value)}
+                placeholder="ex: +1 514 998 0709" />
+            </div>
+          </div>
+          <div className="field" style={{ marginBottom: 0 }}>
+            <label className="label">Adresse de retrait / entrepôt</label>
+            <input className="input" value={arrivalAddress} onChange={e => setArrivalAddress(e.target.value)}
+              placeholder="ex: 5500 Pl. de la Savane, Lachine · ex: 45 Rue de la Réunification, Akwa, Douala" />
           </div>
         </div>
 

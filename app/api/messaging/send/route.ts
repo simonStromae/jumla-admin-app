@@ -36,7 +36,7 @@ export async function POST(req: NextRequest) {
     where:   { id: { in: parcelIds } },
     include: {
       client:   { select: { name: true, phone: true } },
-      campaign: { select: { code: true, arrivalDate: true } },
+      campaign: { select: { code: true, arrivalDate: true, route: { select: { destination: true, fees: true } } } },
       payment:  { select: { status: true, amount: true } },
     },
   });
@@ -57,14 +57,25 @@ export async function POST(req: NextRequest) {
       ? new Date(p.campaign.arrivalDate).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' })
       : 'à définir';
 
+    // Route-specific overrides from fees.arrival; fall back to hardcoded Montreal defaults
+    const routeFees = (p.campaign as any).route?.fees as any;
+    const warehouseAddress = routeFees?.arrival?.address ?? '5500 Pl. de la Savane, Lachine';
+    const agentPhone       = routeFees?.arrival?.phone   ?? '+1 514 998 0709';
+    const destCode         = (p.campaign as any).route?.destination ?? 'MTL';
+    const CITY_MAP: Record<string, string> = {
+      MTL: 'Montréal', YUL: 'Montréal', DLA: 'Douala', BRU: 'Bruxelles', LOS: 'Lagos',
+    };
+    const destinationCity  = routeFees?.arrival?.city ?? CITY_MAP[destCode] ?? destCode;
+
     const namedVars: Record<string, string> = {
       first_name:        firstName,
       parcel_code:       p.trackingCode,
       amount,
       weight,
       arrival_date:      arrDate,
-      warehouse_address: '5500 Pl. de la Savane, Lachine',
-      agent_phone:       '+1 514 998 0709',
+      destination_city:  destinationCity,
+      warehouse_address: warehouseAddress,
+      agent_phone:       agentPhone,
     };
 
     // Render free-form body (always computed, used as fallback or log)
@@ -74,8 +85,9 @@ export async function POST(req: NextRequest) {
       .replace(/\{weight\}/g,            weight)
       .replace(/\{parcel_code\}/g,       p.trackingCode)
       .replace(/\{arrival_date\}/g,      arrDate)
-      .replace(/\{warehouse_address\}/g, '5500 Pl. de la Savane, Lachine')
-      .replace(/\{agent_phone\}/g,       '+1 514 998 0709');
+      .replace(/\{destination_city\}/g,  destinationCity)
+      .replace(/\{warehouse_address\}/g, warehouseAddress)
+      .replace(/\{agent_phone\}/g,       agentPhone);
 
     const toPhone = formatWhatsappNumber(phone);
 

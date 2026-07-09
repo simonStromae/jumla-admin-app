@@ -3,7 +3,7 @@ import { Resend } from 'resend';
 const HEADER = `
   <div style="background:linear-gradient(135deg,#0D2E6E 0%,#1B4FD8 100%);padding:24px 32px;border-radius:12px 12px 0 0">
     <div style="color:#00B4D8;font-size:22px;font-weight:800;font-family:sans-serif">Jumla Shipping</div>
-    <div style="color:rgba(255,255,255,.5);font-size:12px;margin-top:2px;font-family:sans-serif">Fret international · Douala → Montréal</div>
+    <div style="color:rgba(255,255,255,.5);font-size:12px;margin-top:2px;font-family:sans-serif">Fret international · Douala ↔ Montréal</div>
   </div>
 `;
 
