@@ -131,9 +131,9 @@ export default function AgentDashboard() {
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             {pending.slice(0, 10).map(p => (
-              <div key={p.id} className="agent-card" style={{ padding: '13px 14px' }}
-                onClick={() => router.push(`/agent/parcels/${p.id}`)}
-                role="button" style={{ cursor: 'pointer', padding: '13px 14px', background: 'white', borderRadius: 12, boxShadow: '0 1px 3px rgba(0,0,0,.07)' }}>
+              <div key={p.id} onClick={() => router.push(`/agent/parcels/${p.id}`)}
+                role="button"
+                style={{ cursor: 'pointer', padding: '13px 14px', background: 'white', borderRadius: 12, boxShadow: '0 1px 3px rgba(0,0,0,.07)' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 6 }}>
                   <div>
                     <span style={{ fontFamily: 'monospace', fontSize: 13, fontWeight: 700, color: '#111827' }}>{p.trackingCode}</span>
