@@ -17,16 +17,16 @@ export function TopBar() {
               <I.Calendar style={{ width: 13, height: 13 }} />
               {t('topbar.hours')}
             </span>
-            <span className="jtop-bar__item">
+            <a href="mailto:contact@jumla.cargo" className="jtop-bar__item" style={{ textDecoration:'none', color:'inherit' }}>
               <I.Send style={{ width: 13, height: 13 }} />
-              info@jumlas.com
-            </span>
+              contact@jumla.cargo
+            </a>
           </div>
           <div className="jtop-bar__right">
-            <span className="jtop-bar__item">
+            <a href="https://wa.me/15149980709" target="_blank" rel="noreferrer" className="jtop-bar__item" style={{ textDecoration:'none', color:'inherit' }}>
               <I.Phone style={{ width: 13, height: 13 }} />
-              {t('topbar.availability')}
-            </span>
+              +1 514 998-0709 · WhatsApp
+            </a>
           </div>
         </div>
       </div>
@@ -172,6 +172,18 @@ export function SiteFooter({ content }) {
               </div>
             </a>
             <p className="jfoot__desc">{fc.description ?? t('footer.description')}</p>
+            <div style={{ display:'flex', flexDirection:'column', gap:8, marginTop:16 }}>
+              <a href={`mailto:${fc.email ?? 'contact@jumla.cargo'}`}
+                style={{ display:'inline-flex', alignItems:'center', gap:7, fontSize:12.5, color:'rgba(255,255,255,.6)', textDecoration:'none' }}>
+                <I.Send style={{ width:13, height:13 }} />
+                {fc.email ?? 'contact@jumla.cargo'}
+              </a>
+              <a href="https://wa.me/15149980709" target="_blank" rel="noreferrer"
+                style={{ display:'inline-flex', alignItems:'center', gap:7, fontSize:12.5, color:'#25D366', textDecoration:'none', fontWeight:600 }}>
+                <I.Whatsapp style={{ width:14, height:14 }} />
+                +1 514 998-0709 · WhatsApp
+              </a>
+            </div>
           </div>
           {cols.map(col => (
             <div key={col.title}>

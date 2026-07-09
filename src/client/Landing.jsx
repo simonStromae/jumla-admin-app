@@ -173,6 +173,239 @@ const IMGS = {
   airport: 'https://images.pexels.com/photos/358319/pexels-photo-358319.jpeg?auto=compress&cs=tinysrgb&w=1600',
 };
 
+const WA_SUPPORT = 'https://wa.me/15149980709?text=Bonjour%20Jumla%20Shipping%2C%20j%27ai%20une%20question.';
+
+/* ─── Photo strip + floating stat cards ─── */
+function JStatsPhoto({ content }) {
+  const heroStats = content.hero?.stats ?? [];
+  const DEFAULTS = [
+    { value: '12 000+', label: 'Colis livrés' },
+    { value: '14 jours', label: 'Transit moyen' },
+    { value: '98%',      label: 'Taux de succès' },
+    { value: '2 500+',   label: 'Clients actifs' },
+  ];
+  const stats = DEFAULTS.map((d, i) => heroStats[i] ?? d);
+
+  return (
+    <section style={{ background: '#F7F8FA' }}>
+      <style>{`
+        .jsp-imgs { display: flex; height: clamp(160px, 28vw, 300px); gap: 3px; overflow: hidden; }
+        .jsp-img  { flex: 1; position: relative; overflow: hidden; }
+        .jsp-img img { width: 100%; height: 100%; object-fit: cover; display: block; }
+        .jsp-img::after { content:''; position:absolute; inset:0; background:rgba(13,46,110,.32); }
+        .jsp-cards { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-top:-26px; position:relative; z-index:2; padding-bottom:56px; }
+        @media(max-width:600px){
+          .jsp-cards { grid-template-columns:repeat(2,1fr); margin-top:-18px; }
+          .jsp-imgs  { height:140px; }
+        }
+      `}</style>
+      <div className="jsp-imgs">
+        {[IMGS.hero, IMGS.airport, IMGS.cargo].map((src, i) => (
+          <div key={i} className="jsp-img"><img src={src} alt="" /></div>
+        ))}
+      </div>
+      <div className="jc">
+        <div className="jsp-cards">
+          {stats.map(s => (
+            <div key={s.label} style={{ background:'white', borderRadius:14, padding:'18px 12px', textAlign:'center', boxShadow:'0 4px 20px rgba(0,0,0,.08)' }}>
+              <div style={{ fontSize:'clamp(20px,4vw,26px)', fontWeight:800, color:'#1B4FD8', lineHeight:1 }}>{s.value}</div>
+              <div style={{ fontSize:11.5, color:'#6B7280', marginTop:5, fontWeight:500 }}>{s.label}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ─── 4-step zigzag "Comment ça marche" ─── */
+const STEPS_DATA = [
+  {
+    num:'01', duration:'3 min',
+    icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" width="22" height="22" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>,
+    title: 'Réservez en ligne',
+    desc:  'Créez votre envoi en 3 minutes. Renseignez les colis et obtenez votre code de suivi instantanément.',
+  },
+  {
+    num:'02', duration:'1 jour',
+    icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" width="22" height="22" strokeLinecap="round" strokeLinejoin="round"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>,
+    title: 'Déposez à Douala',
+    desc:  'Apportez vos colis à notre entrepôt. Vérification article par article, bordereau signé au départ.',
+  },
+  {
+    num:'03', duration:'~14 jours',
+    icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" width="22" height="22" strokeLinecap="round" strokeLinejoin="round"><path d="M22 2L11 13"/><path d="M22 2l-7 20-4-9-9-4 20-7z"/></svg>,
+    title: 'Transit aérien',
+    desc:  'Vos colis voyagent avec nos compagnies partenaires certifiées. Notifications WhatsApp à chaque étape.',
+  },
+  {
+    num:'04', duration:'Sur RDV',
+    icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" width="22" height="22" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>,
+    title: 'Livraison à Montréal',
+    desc:  'Retrait à notre entrepôt ou livraison à domicile partout au Québec. Paiement à la remise.',
+  },
+];
+
+function JSteps({ onBook }) {
+  return (
+    <section id="jsteps" style={{ padding:'72px 0', background:'white' }}>
+      <style>{`
+        .jsteps-grid {
+          display:grid; grid-template-columns:1fr 1fr;
+          gap:32px 56px; max-width:860px; margin:0 auto;
+          position:relative;
+        }
+        .jsteps-grid::before {
+          content:''; position:absolute;
+          left:50%; top:24px; bottom:24px; width:0;
+          border-left:2px dashed #E5E7EB;
+          transform:translateX(-50%);
+          pointer-events:none;
+        }
+        .jsteps-card {
+          background:#F9FAFB; border:1px solid #E5E7EB;
+          border-radius:16px; padding:22px 18px;
+          display:flex; gap:14px; align-items:flex-start;
+        }
+        .jsteps-card:nth-child(even) { margin-top:44px; }
+        .jsteps-icon {
+          width:44px; height:44px; border-radius:12px;
+          background:#EFF6FF; color:#1B4FD8;
+          display:grid; place-items:center; flex-shrink:0;
+        }
+        @media(max-width:680px){
+          .jsteps-grid { grid-template-columns:1fr; }
+          .jsteps-grid::before { display:none; }
+          .jsteps-card:nth-child(even) { margin-top:0; }
+        }
+      `}</style>
+      <div className="jc">
+        <div style={{ textAlign:'center', marginBottom:48 }}>
+          <div style={{ display:'inline-flex', alignItems:'center', background:'#ECFDF5', color:'#059669', padding:'4px 14px', borderRadius:99, fontSize:11.5, fontWeight:700, letterSpacing:'.04em', textTransform:'uppercase', marginBottom:14 }}>
+            Comment ça marche
+          </div>
+          <h2 style={{ fontFamily:"'Inter',system-ui,sans-serif", fontSize:'clamp(26px,6vw,38px)', fontWeight:800, color:'#111827', letterSpacing:'-.03em', margin:0, lineHeight:1.2 }}>
+            Simple comme <span style={{ color:'#1B4FD8' }}>4 étapes</span>
+          </h2>
+          <p style={{ fontSize:15, color:'#6B7280', marginTop:14, lineHeight:1.65, maxWidth:400, margin:'14px auto 0' }}>
+            De Douala à Montréal — on s'occupe de tout, vous suivez en temps réel.
+          </p>
+        </div>
+        <div className="jsteps-grid">
+          {STEPS_DATA.map(step => (
+            <div key={step.num} className="jsteps-card">
+              <div className="jsteps-icon">{step.icon}</div>
+              <div style={{ flex:1 }}>
+                <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:8 }}>
+                  <span style={{ fontSize:11, fontWeight:800, color:'#9CA3AF', letterSpacing:'.05em' }}>{step.num}</span>
+                  <span style={{ background:'#111827', color:'white', fontSize:10, fontWeight:700, padding:'2px 8px', borderRadius:99 }}>{step.duration}</span>
+                </div>
+                <h3 style={{ fontSize:15, fontWeight:700, color:'#111827', margin:'0 0 7px', lineHeight:1.3 }}>{step.title}</h3>
+                <p style={{ fontSize:13, color:'#6B7280', margin:0, lineHeight:1.65 }}>{step.desc}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+        <div style={{ textAlign:'center', marginTop:48 }}>
+          <button onClick={onBook} style={{ background:'linear-gradient(135deg,#00B4D8,#1B4FD8)', color:'white', border:'none', borderRadius:10, padding:'14px 36px', fontSize:15, fontWeight:700, cursor:'pointer', fontFamily:'inherit', boxShadow:'0 4px 20px rgba(27,79,216,.25)' }}>
+            Commencer maintenant →
+          </button>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ─── Floating chatbot ─── */
+const CHAT_QS = [
+  { emoji:'⏱️', label:'Délai de livraison ?',   answer:"Le transit moyen est de 14 jours porte à porte Douala → Montréal. Vous recevez une notification WhatsApp à chaque étape clé." },
+  { emoji:'📦', label:'Comment ça marche ?',     answer:"1. Réservez en ligne → 2. Déposez à Douala → 3. Transit ~14 jours → 4. Livraison à Montréal. Simple et transparent !" },
+  { emoji:'💰', label:'Tarifs & devis ?',        answer:"Les tarifs sont calculés au kilo. Notre simulateur sur cette page vous donne un devis instantané et gratuit.", scrollTo:'jest' },
+  { emoji:'🔍', label:'Suivre mon colis',        link:'/suivi' },
+  { emoji:'💬', label:'Autre question',          wa:true },
+];
+
+function JChatBot() {
+  const [open, setOpen]       = useState(false);
+  const [current, setCurrent] = useState(null);
+
+  const handleQ = (q) => {
+    if (q.link)    { window.location.href = q.link; return; }
+    if (q.wa)      { window.open(WA_SUPPORT, '_blank'); return; }
+    if (q.scrollTo){ document.getElementById(q.scrollTo)?.scrollIntoView({ behavior:'smooth' }); setOpen(false); return; }
+    setCurrent(q);
+  };
+
+  return (
+    <>
+      <button
+        onClick={() => { setOpen(v => !v); setCurrent(null); }}
+        aria-label="Chat"
+        style={{
+          position:'fixed', bottom:24, right:24, zIndex:1000,
+          width:56, height:56, borderRadius:'50%',
+          background:'linear-gradient(135deg,#00B4D8,#1B4FD8)',
+          border:'none', cursor:'pointer',
+          display:'flex', alignItems:'center', justifyContent:'center',
+          boxShadow:'0 4px 24px rgba(27,79,216,.4)',
+        }}>
+        {open
+          ? <span style={{ color:'white', fontSize:18 }}>✕</span>
+          : <svg width="22" height="22" viewBox="0 0 24 24" fill="white"><path d="M20 2H4C2.9 2 2 2.9 2 4v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/></svg>
+        }
+      </button>
+
+      {open && (
+        <div style={{ position:'fixed', bottom:90, right:24, zIndex:1000, width:'min(320px, calc(100vw - 48px))', background:'white', borderRadius:16, boxShadow:'0 8px 48px rgba(0,0,0,.15)', overflow:'hidden' }}>
+          <div style={{ background:'linear-gradient(135deg,#0D2E6E,#1B4FD8)', padding:'14px 18px' }}>
+            <div style={{ display:'flex', alignItems:'center', gap:10 }}>
+              <div style={{ width:36, height:36, borderRadius:'50%', background:'rgba(255,255,255,.15)', display:'grid', placeItems:'center', fontSize:18 }}>✈️</div>
+              <div>
+                <div style={{ color:'white', fontWeight:700, fontSize:13.5 }}>Jumla Shipping</div>
+                <div style={{ color:'rgba(255,255,255,.65)', fontSize:11 }}>Répond en moins d'une heure</div>
+              </div>
+            </div>
+          </div>
+          <div style={{ padding:'14px 14px 18px' }}>
+            {!current ? (
+              <>
+                <div style={{ background:'#F4F5F7', borderRadius:12, padding:'11px 14px', fontSize:13.5, color:'#374151', marginBottom:12, lineHeight:1.5 }}>
+                  👋 Bonjour ! Comment puis-je vous aider ?
+                </div>
+                <div style={{ display:'flex', flexDirection:'column', gap:7 }}>
+                  {CHAT_QS.map(q => (
+                    <button key={q.label} onClick={() => handleQ(q)}
+                      style={{ display:'flex', alignItems:'center', gap:9, background:'white', border:'1.5px solid #E5E7EB', borderRadius:10, padding:'9px 12px', fontSize:13, fontWeight:500, color:'#374151', cursor:'pointer', textAlign:'left', fontFamily:'inherit', width:'100%' }}>
+                      <span style={{ fontSize:15 }}>{q.emoji}</span>
+                      <span style={{ flex:1 }}>{q.label}</span>
+                      <span style={{ color:'#C4C9D4', fontSize:12 }}>→</span>
+                    </button>
+                  ))}
+                </div>
+              </>
+            ) : (
+              <>
+                <div style={{ background:'#F4F5F7', borderRadius:12, padding:'11px 14px', fontSize:13.5, color:'#374151', marginBottom:12, lineHeight:1.6 }}>
+                  {current.answer}
+                </div>
+                <div style={{ display:'flex', gap:8 }}>
+                  <button onClick={() => setCurrent(null)} style={{ flex:1, padding:'9px', border:'1.5px solid #E5E7EB', borderRadius:10, background:'white', fontSize:12.5, fontWeight:600, color:'#374151', cursor:'pointer', fontFamily:'inherit' }}>
+                    ← Retour
+                  </button>
+                  <a href={WA_SUPPORT} target="_blank" rel="noreferrer"
+                    style={{ flex:1, padding:'9px', borderRadius:10, background:'#25D366', color:'white', fontSize:12.5, fontWeight:700, textDecoration:'none', display:'flex', alignItems:'center', justifyContent:'center', gap:5 }}>
+                    💬 WhatsApp
+                  </a>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
+
 /* ─── Hero split layout ─── */
 function JHero({ onBook, onNav, content }) {
   const t = useT();
@@ -623,12 +856,13 @@ export default function LandingPage({ onNav }) {
       <TopBar />
       <SiteNav onNav={onNav} onBook={onBook} mode="landing" />
       <JHero onBook={onBook} onNav={onNav} content={content} />
+      <JStatsPhoto content={content} />
+      <JSteps onBook={onBook} />
       <JEstimator onBook={onBook} content={content} />
-      <JServices onBook={onBook} content={content} />
-      <JFeats onBook={onBook} content={content} />
       <JFAQ content={content} />
       <JCTA onBook={onBook} content={content} />
       <SiteFooter content={content} />
+      <JChatBot />
     </div>
   );
 }
