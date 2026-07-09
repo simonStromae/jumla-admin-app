@@ -380,7 +380,7 @@ function TransactionsTab({ onRecord }) {
     fetch('/api/transactions').then(r => r.json()).then(d => {
       setRows(Array.isArray(d) ? d : []);
       setLoading(false);
-    });
+    }).catch(() => setLoading(false));
   };
   useEffect(() => { load(); }, []);
 
