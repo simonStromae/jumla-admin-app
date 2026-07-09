@@ -170,6 +170,7 @@ export default function ParcelDetailScreen({ id, onNav }) {
           </div>
         </div>
         <div className="page__actions">
+          <button className="btn btn--ghost" onClick={() => onNav('/admin/parcels/' + id + '/labels')}><I.Tag />Étiquettes</button>
           <button className="btn btn--ghost" onClick={() => setShowWeightModal(true)}><I.Edit />Poids / Prix</button>
           <button className="btn btn--ghost" onClick={() => setShowPayModal(true)}><I.Send />Lien Interac</button>
         </div>
