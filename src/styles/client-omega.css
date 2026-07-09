@@ -118,7 +118,7 @@
   transition: background .15s, transform .15s;
 }
 .jbtn-nav:hover { background: linear-gradient(90deg, #0087A8, #0D2E6E); transform: translateY(-1px); }
-/* Pill CTA for landing nav */
+/* Pill — white bg for dark/photo contexts */
 .jbtn-nav--pill {
   background: white; color: #0B1220;
   border-radius: 99px;
@@ -126,7 +126,29 @@
   font-size: 14px;
   box-shadow: 0 2px 16px rgba(0,0,0,.22);
 }
-.jbtn-nav--pill:hover { background: rgba(255,255,255,.92); transform: translateY(-1px); box-shadow: 0 6px 24px rgba(0,0,0,.3); }
+.jbtn-nav--pill:hover { background: rgba(255,255,255,.92); transform: translateY(-1px); box-shadow: 0 8px 28px rgba(0,0,0,.32); }
+/* Large — for section-level CTAs */
+.jbtn-nav--lg {
+  padding: 17px 44px;
+  font-size: 16px;
+  border-radius: 12px;
+}
+.jbtn-nav--pill.jbtn-nav--lg { border-radius: 99px; }
+/* Ghost — secondary on dark backgrounds */
+.jbtn-nav--ghost {
+  background: transparent;
+  border: 1.5px solid rgba(255,255,255,.28);
+  color: white;
+  border-radius: 99px;
+}
+.jbtn-nav--ghost:hover { background: rgba(255,255,255,.08); transform: translateY(-1px); }
+/* Outline — secondary on light backgrounds */
+.jbtn-nav--outline {
+  background: transparent;
+  border: 1.5px solid #1B4FD8;
+  color: #1B4FD8;
+}
+.jbtn-nav--outline:hover { background: #EFF6FF; transform: translateY(-1px); }
 
 /* ── Hero ── */
 .jhero {

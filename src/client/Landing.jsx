@@ -235,9 +235,7 @@ function JStoryCard({ onBook, content }) {
               </div>
             ))}
           </div>
-          <button onClick={onBook} style={{ background: 'white', color: '#0B1220', border: 'none', borderRadius: 99, padding: '16px 38px', fontSize: 15, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center', gap: 8, transition: 'transform .15s, box-shadow .15s' }}
-            onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 8px 28px rgba(0,0,0,.35)'; }}
-            onMouseLeave={e => { e.currentTarget.style.transform = ''; e.currentTarget.style.boxShadow = ''; }}>
+          <button className="jbtn-nav jbtn-nav--pill jbtn-nav--lg" onClick={onBook}>
             Créer un envoi →
           </button>
         </div>
@@ -360,7 +358,7 @@ function JSteps({ onBook }) {
 
         {/* CTA */}
         <div style={{ textAlign: 'center', marginTop: 56 }}>
-          <button onClick={onBook} style={{ background: 'linear-gradient(135deg,#00B4D8,#1B4FD8)', color: 'white', border: 'none', borderRadius: 10, padding: '14px 36px', fontSize: 15, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', boxShadow: '0 4px 20px rgba(27,79,216,.25)' }}>
+          <button className="jbtn-nav jbtn-nav--lg" onClick={onBook}>
             Commencer maintenant →
           </button>
         </div>
@@ -495,10 +493,9 @@ function JHero({ onBook, content }) {
           {h.subtitle}
         </p>
 
-        {/* Single pill CTA */}
-        <button onClick={onBook} style={{ display: 'inline-flex', alignItems: 'center', gap: 10, background: 'white', color: '#0B1220', border: 'none', borderRadius: 99, padding: '18px 48px', fontSize: 17, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', boxShadow: '0 8px 40px rgba(0,0,0,.3)', transition: 'transform .15s' }}>
+        <button className="jbtn-nav jbtn-nav--pill jbtn-nav--lg" onClick={onBook}>
           Réserver un envoi
-          <svg width="18" height="18" fill="none" stroke="#0B1220" strokeWidth="2.5" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+          <svg width="17" height="17" fill="none" stroke="#0B1220" strokeWidth="2.5" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
         </button>
       </div>
 
@@ -735,7 +732,7 @@ function JEstimator({ onBook, content }) {
               <span className="jest__total-n">{grandTotal}</span>
               <span className="jest__total-cur">{r?.currency}</span>
             </div>
-            <button className="jbtn-nav" style={{ marginLeft: 'auto' }} onClick={onBook}>
+            <button className="jbtn-nav jbtn-nav--lg" style={{ marginLeft: 'auto' }} onClick={onBook}>
               {t('estimator.book')} <I.ArrowRight style={{ width: 15, height: 15 }} />
             </button>
           </div>
@@ -924,7 +921,7 @@ function JWidePhoto({ onBook }) {
           <p className="jwp-desc">
             Rejoignez 2 500+ clients qui nous font confiance pour leurs envois entre l'Afrique et le Canada. Sécurité, transparence et notification WhatsApp à chaque étape.
           </p>
-          <button className="jwp-btn" onClick={onBook}>
+          <button className="jbtn-nav jbtn-nav--pill jbtn-nav--lg" onClick={onBook}>
             Réserver un envoi
             <svg width="16" height="16" fill="none" stroke="#0B1220" strokeWidth="2.5" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
           </button>
@@ -955,11 +952,10 @@ export default function LandingPage({ onNav }) {
     <div className="jpage">
       <SiteNav onNav={onNav} onBook={onBook} mode="landing" />
       <JHero onBook={onBook} content={content} />
+      <JEstimator onBook={onBook} content={content} />
       <JStoryCard onBook={onBook} content={content} />
-      <JSplitPromo onBook={onBook} onNav={onNav} />
       <JSteps onBook={onBook} />
       <JWidePhoto onBook={onBook} />
-      <JEstimator onBook={onBook} content={content} />
       <SiteFooter content={content} />
       <JChatBot />
     </div>

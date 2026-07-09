@@ -124,12 +124,11 @@ export function SiteNav({ onNav, onBook, mode = 'landing' }) {
             ) : (
               <>
                 <LanguageSwitcher />
-                {isLanding ? (
+                <button className={isLanding ? 'jbtn-nav jbtn-nav--ghost' : 'jbtn-nav jbtn-nav--outline'} onClick={() => onNav?.('/login')}>
+                  {t('nav.signIn')}
+                </button>
+                {isLanding && (
                   <button className="jbtn-nav jbtn-nav--pill" onClick={onBook}>Réserver</button>
-                ) : (
-                  <button className="jbtn-nav" onClick={() => onNav?.('/login')}>
-                    {t('nav.signIn')} <I.ArrowRight style={{ width: 15, height: 15 }} />
-                  </button>
                 )}
               </>
             )}
