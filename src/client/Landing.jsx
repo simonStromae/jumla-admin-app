@@ -235,7 +235,7 @@ function JStoryCard({ onBook, content }) {
               </div>
             ))}
           </div>
-          <button className="jbtn-nav jbtn-nav--secondary jbtn-nav--lg" onClick={onBook}>
+          <button className="jbtn-nav jbtn-nav--lg" onClick={onBook}>
             Créer un envoi →
           </button>
         </div>
@@ -919,9 +919,9 @@ function JWidePhoto({ onBook }) {
           <p className="jwp-desc">
             Rejoignez 2 500+ clients qui nous font confiance pour leurs envois entre l'Afrique et le Canada. Sécurité, transparence et notification WhatsApp à chaque étape.
           </p>
-          <button className="jbtn-nav jbtn-nav--secondary jbtn-nav--lg" onClick={onBook}>
+          <button className="jbtn-nav jbtn-nav--lg" onClick={onBook}>
             Réserver un envoi
-            <svg width="16" height="16" fill="none" stroke="#0B1220" strokeWidth="2.5" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+            <svg width="16" height="16" fill="none" stroke="white" strokeWidth="2.5" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
           </button>
         </div>
       </div>
