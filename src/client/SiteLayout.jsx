@@ -119,11 +119,11 @@ export function SiteNav({ onNav, onBook, mode = 'landing' }) {
                   fontSize: 13, fontWeight: 700, border: 'none', cursor: 'pointer',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                 }}>{initials}</button>
-                <LanguageSwitcher />
+                <LanguageSwitcher dark={isLanding} />
               </>
             ) : (
               <>
-                <LanguageSwitcher />
+                <LanguageSwitcher dark={isLanding} />
                 <button className={isLanding ? 'jbtn-nav jbtn-nav--ghost' : 'jbtn-nav jbtn-nav--outline'} onClick={() => onNav?.('/login')}>
                   {t('nav.signIn')}
                 </button>
