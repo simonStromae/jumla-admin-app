@@ -1,12 +1,14 @@
+self.addEventListener('install', () => self.skipWaiting());
+self.addEventListener('activate', (event) => event.waitUntil(self.clients.claim()));
+
 self.addEventListener('push', function (event) {
   const data = event.data?.json() ?? {};
   const title = data.title ?? 'Jumla Shipping';
   const options = {
-    body:    data.body  ?? '',
-    icon:    '/jumla-icon.png',
-    badge:   '/jumla-badge.png',
-    tag:     data.tag   ?? 'jumla',
-    data:    { url: data.url ?? '/client' },
+    body: data.body ?? '',
+    icon: '/jumla-icon.png',
+    tag:  data.tag  ?? 'jumla',
+    data: { url: data.url ?? '/client' },
     requireInteraction: false,
   };
   event.waitUntil(self.registration.showNotification(title, options));
