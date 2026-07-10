@@ -715,7 +715,7 @@ function JEstimator({ onBook, content }) {
                 </select>
               ) : (
                 <span className="jest__route-pill">
-                  ✈️ {r?.fromCity} → {r?.toCity}
+                  {r?.fromCity} → {r?.toCity}
                 </span>
               )}
             </div>

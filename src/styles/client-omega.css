@@ -903,7 +903,7 @@
 }
 .jest__head {
   display: flex; align-items: center; gap: 10px;
-  padding: 16px 24px; border-bottom: 1px solid var(--border); background: var(--bg-soft);
+  padding: 16px 24px; border-bottom: 1px solid var(--border); background: #fff;
 }
 .jest__title {
   font-family: 'Inter', system-ui, sans-serif; font-size: 14px; font-weight: 800; color: var(--ink-900);
