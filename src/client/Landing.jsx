@@ -694,61 +694,67 @@ function JEstimator({ onBook, content }) {
             {st.subtitle ?? t('estimator.subtitle')}
           </p>
         </div>
+
         <div className="jest">
+          {/* ── Header: title + route selector ── */}
           <div className="jest__head">
             <I.Calculator style={{ width: 16, height: 16, color: 'var(--brand-400)' }} />
-            <span className="jest__title">{t('estimator.header')}</span>
-            <span style={{ marginLeft: 'auto', fontSize: 12, color: 'var(--ink-400)' }}>{t('estimator.hint')}</span>
+            <span className="jest__title">Simulateur de prix</span>
+            <div style={{ marginLeft: 'auto' }}>
+              {routes.length > 1 ? (
+                <select
+                  value={routeId}
+                  onChange={e => setRouteId(e.target.value)}
+                  className="jest__route-select"
+                >
+                  {routes.map(rr => (
+                    <option key={rr.id} value={rr.id}>
+                      {rr.fromCity} → {rr.toCity}
+                    </option>
+                  ))}
+                </select>
+              ) : (
+                <span className="jest__route-pill">
+                  ✈️ {r?.fromCity} → {r?.toCity}
+                </span>
+              )}
+            </div>
           </div>
-          <div className="jest__route">
-            <div className="jest__f">
-              <label>{t('estimator.field.origin')}</label>
-              <select value={routeId} onChange={e => setRouteId(e.target.value)}>
-                {routes.map(rr => <option key={rr.id} value={rr.id}>{rr.fromCity} ({rr.fromIATA})</option>)}
-              </select>
-            </div>
-            <I.ArrowRight style={{ width: 18, height: 18, color: 'var(--ink-300)', alignSelf: 'flex-end', marginBottom: 11 }} />
-            <div className="jest__f">
-              <label>{t('estimator.field.destination')}</label>
-              <select>{routes.map(rr => <option key={rr.id}>{rr.toCity} ({rr.toIATA})</option>)}</select>
-            </div>
-            <div style={{ flex: 1 }} />
-            <div style={{ alignSelf: 'flex-end', marginBottom: 11, fontSize: 13, color: 'var(--ink-400)' }}>
-              {t('estimator.field.transit')} <strong style={{ color: 'var(--ink-900)' }}>{r?.transitDays} {t('estimator.field.transitUnit')}</strong>
-              {' · '}{t('estimator.field.rate')} <strong style={{ color: 'var(--ink-900)' }}>{r?.currency}</strong>
-            </div>
-          </div>
+
+          {/* ── Lines ── */}
           <div className="jest__lines">
             <div className="jest__lhead">
-              <span>{t('estimator.table.category')}</span><span>{t('estimator.table.weight')}</span>
-              <span style={{ textAlign: 'right' }}>{t('estimator.table.base')}</span>
-              <span style={{ textAlign: 'right' }}>{t('estimator.table.surcharge')}</span>
-              <span style={{ textAlign: 'right' }}>{t('estimator.table.subtotal')}</span>
+              <span>Catégorie</span>
+              <span>Poids (kg)</span>
+              <span style={{ textAlign: 'right' }}>Base</span>
+              <span style={{ textAlign: 'right' }}>Autres frais</span>
               <span />
             </div>
             {lines.map((ln, i) => {
               const c = computed[i];
               return (
                 <div className="jest__line" key={ln.id}>
+                  {/* Category */}
                   <div className="jest__f">
                     <select value={ln.cat} onChange={e => updLine(ln.id, 'cat', e.target.value)}>
                       {cats.map(ct => <option key={ct.id} value={ct.id}>{ct.icon} {ct.label}</option>)}
                     </select>
                   </div>
+                  {/* Weight */}
                   <div className="jest__f">
                     <input type="number" min="0.5" step="0.5" value={ln.weight} onChange={e => updLine(ln.id, 'weight', e.target.value)} />
                   </div>
+                  {/* Base */}
                   <div className="jest__cell" style={{ textAlign: 'right' }}>
-                    {c.base} <span className="jest__cur">{r?.currency}</span>
-                    <div className="jest__tier">{c.tier.from}–{c.tier.to}kg · {c.tier.rate}/kg</div>
+                    <div>{c.base} <span className="jest__cur">CAD</span></div>
+                    <div className="jest__tier">{c.tier.rate} CAD/kg</div>
                   </div>
+                  {/* Autres frais */}
                   <div className="jest__cell" style={{ textAlign: 'right', color: c.surcharge > 0 ? 'var(--brand-600)' : c.surcharge < 0 ? '#059669' : 'var(--ink-300)' }}>
-                    {c.surcharge > 0 ? '+' : ''}{c.surcharge} <span className="jest__cur">{r?.currency}</span>
-                    <div className="jest__tier">{c.cat.label} {c.cat.pct > 0 ? '+' : ''}{c.cat.pct}%</div>
+                    <div>{c.surcharge !== 0 ? (c.surcharge > 0 ? '+' : '') + c.surcharge + ' ' : '—'}{c.surcharge !== 0 && <span className="jest__cur">CAD</span>}</div>
+                    <div className="jest__tier">{c.cat.pct > 0 ? '+' : ''}{c.cat.pct}%</div>
                   </div>
-                  <div className="jest__cell" style={{ fontWeight: 800, color: 'var(--ink-900)', textAlign: 'right' }}>
-                    {c.total} <span className="jest__cur">{r?.currency}</span>
-                  </div>
+                  {/* Delete */}
                   <button className="jest__del" onClick={() => removeLine(ln.id)} disabled={lines.length <= 1}>
                     <I.Trash style={{ width: 14, height: 14 }} />
                   </button>
@@ -756,19 +762,24 @@ function JEstimator({ onBook, content }) {
               );
             })}
             <button className="jest__add" onClick={addLine}>
-              <I.Plus style={{ width: 14, height: 14 }} /> {t('estimator.addItem')}
+              <I.Plus style={{ width: 14, height: 14 }} /> Ajouter un article
             </button>
           </div>
+
+          {/* ── Result ── */}
           <div className="jest__res">
             <div>
               <div className="jest__total-label">
-                {`${lines.length} ${lines.length > 1 ? t('estimator.items') : t('estimator.item')}`} · {totalWeight} kg · {r?.fromIATA} → {r?.toIATA}
+                {lines.length} article{lines.length > 1 ? 's' : ''} · {totalWeight} kg
               </div>
-              <span className="jest__total-n">{grandTotal}</span>
-              <span className="jest__total-cur">{r?.currency}</span>
+              <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, flexWrap: 'wrap' }}>
+                <span className="jest__total-n">{grandTotal}</span>
+                <span className="jest__total-cur">CAD</span>
+                <span className="jest__transit">· max 10 jrs</span>
+              </div>
             </div>
             <button className="jbtn-nav jbtn-nav--lg" style={{ marginLeft: 'auto' }} onClick={onBook}>
-              {t('estimator.book')} <I.ArrowRight style={{ width: 15, height: 15 }} />
+              Réserver <I.ArrowRight style={{ width: 15, height: 15 }} />
             </button>
           </div>
         </div>
