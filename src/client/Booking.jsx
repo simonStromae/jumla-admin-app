@@ -784,6 +784,18 @@ export default function BookingScreen({ onNav, embedded = false }) {
   const [savedRecipients, setSavedRecipients] = useState([]);
   const [saveAddr, setSaveAddr] = useState(false);
   const [saveRecip, setSaveRecip] = useState(false);
+  // Disclaimer modal
+  const [showDisclaimer, setShowDisclaimer] = useState(false);
+  const [hasValuable, setHasValuable]       = useState(null); // null | true | false
+  const [declaredValueCad, setDeclaredValueCad] = useState('');
+  const [waiverAccepted, setWaiverAccepted]     = useState(false);
+  const [forbiddenAcknowledged, setForbiddenAcknowledged] = useState(false);
+  const coverageFee = hasValuable && declaredValueCad ? Math.round(Number(declaredValueCad) * 0.20) : 0;
+  const disclaimerReady = forbiddenAcknowledged && (
+    hasValuable === false ? waiverAccepted :
+    hasValuable === true  ? (Number(declaredValueCad) > 0) : false
+  );
+
   // 'idle' | 'interac' | 'processing' | 'pending' | 'error'
   const [payStatus, setPayStatus]   = useState('idle');
   const [bookingRef, setBookingRef] = useState('');
@@ -887,7 +899,7 @@ export default function BookingScreen({ onNav, embedded = false }) {
   };
   const next = () => setStep(s => s + 1);
 
-  const handlePay = () => confirmInterac();
+  const handlePay = () => setShowDisclaimer(true);
 
   // Interac — save booking then mark as pending
   const confirmInterac = async () => {
@@ -944,8 +956,12 @@ export default function BookingScreen({ onNav, embedded = false }) {
           recipApt:        form.recipApt,
           recipProvince:   form.recipProvince,
           recipPostal:     form.recipPostal,
-          delivery:        form.delivery,
-          totalPrice:      price?.total ?? null,
+          delivery:              form.delivery,
+          totalPrice:            price?.total ?? null,
+          hasValuable:           !!hasValuable,
+          declaredValueCad:      hasValuable ? Number(declaredValueCad) : null,
+          waiverAccepted:        !hasValuable && waiverAccepted,
+          forbiddenAcknowledged: forbiddenAcknowledged,
         }),
       });
       const json = await res.json();
@@ -1765,6 +1781,98 @@ export default function BookingScreen({ onNav, embedded = false }) {
       </div>
 
       {!embedded && <SiteFooter />}
+
+      {/* ── Disclaimer modal ── */}
+      {showDisclaimer && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 1200, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px' }}>
+          <div style={{ position: 'absolute', inset: 0, background: 'rgba(9,15,30,.6)', backdropFilter: 'blur(4px)' }} onClick={() => setShowDisclaimer(false)} />
+          <div style={{ position: 'relative', background: 'white', borderRadius: 16, width: '100%', maxWidth: 560, maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 24px 64px rgba(0,0,0,.22)' }}>
+
+            {/* Header */}
+            <div style={{ padding: '24px 28px 20px', borderBottom: '1px solid var(--border)' }}>
+              <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '.08em', textTransform: 'uppercase', color: 'var(--brand-500)', marginBottom: 6 }}>Avant de confirmer</div>
+              <div style={{ fontSize: 18, fontWeight: 800, color: 'var(--ink-900)' }}>Déclaration obligatoire</div>
+            </div>
+
+            <div style={{ padding: '24px 28px', display: 'flex', flexDirection: 'column', gap: 24 }}>
+
+              {/* Section 1 — Objets de valeur */}
+              <div>
+                <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--ink-900)', marginBottom: 4 }}>💎 Avez-vous des objets de valeur dans votre envoi ?</div>
+                <div style={{ fontSize: 13, color: 'var(--ink-500)', marginBottom: 14, lineHeight: 1.6 }}>
+                  Tout article d'une valeur supérieure à <strong>100 $ CAD</strong> (bijoux, vêtements de marque, téléphones, ordinateurs, montres…) doit être déclaré.
+                </div>
+                <div style={{ display: 'flex', gap: 10, marginBottom: 14 }}>
+                  {[{ v: true, label: 'Oui, j\'ai des objets de valeur' }, { v: false, label: 'Non, aucun objet de valeur' }].map(opt => (
+                    <button key={String(opt.v)} onClick={() => { setHasValuable(opt.v); setWaiverAccepted(false); setDeclaredValueCad(''); }}
+                      style={{ flex: 1, padding: '10px 12px', borderRadius: 10, border: `2px solid ${hasValuable === opt.v ? 'var(--brand-500)' : 'var(--border)'}`, background: hasValuable === opt.v ? 'var(--brand-50)' : 'white', color: hasValuable === opt.v ? 'var(--brand-700)' : 'var(--ink-700)', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
+
+                {hasValuable === true && (
+                  <div style={{ background: 'var(--brand-50)', border: '1px solid var(--brand-100)', borderRadius: 10, padding: '14px 16px' }}>
+                    <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--ink-800)', marginBottom: 10 }}>Valeur déclarée (CAD)</div>
+                    <input type="number" min="100" step="1" value={declaredValueCad}
+                      onChange={e => setDeclaredValueCad(e.target.value)}
+                      placeholder="ex. 500"
+                      style={{ width: '100%', padding: '9px 12px', border: '1.5px solid var(--border)', borderRadius: 8, fontSize: 14, fontFamily: 'inherit', boxSizing: 'border-box' }} />
+                    {Number(declaredValueCad) > 0 && (
+                      <div style={{ marginTop: 10, fontSize: 13, color: 'var(--brand-700)', fontWeight: 600 }}>
+                        Frais de couverture (20 %) : <strong>{Math.round(Number(declaredValueCad) * 0.20)} $ CAD</strong>
+                        <div style={{ fontSize: 12, color: 'var(--ink-500)', fontWeight: 400, marginTop: 2 }}>Sera ajouté à votre total.</div>
+                      </div>
+                    )}
+                    <div style={{ fontSize: 12, color: 'var(--ink-500)', marginTop: 10, lineHeight: 1.6 }}>
+                      Le client doit déclarer la valeur réelle et fournir une facture ou preuve d'achat lors du dépôt.
+                    </div>
+                  </div>
+                )}
+
+                {hasValuable === false && (
+                  <label style={{ display: 'flex', alignItems: 'flex-start', gap: 10, cursor: 'pointer', background: '#FEF2F2', border: '1px solid #FECACA', borderRadius: 10, padding: '14px 16px' }}>
+                    <input type="checkbox" checked={waiverAccepted} onChange={e => setWaiverAccepted(e.target.checked)}
+                      style={{ marginTop: 2, flexShrink: 0, width: 16, height: 16, accentColor: 'var(--brand-500)' }} />
+                    <span style={{ fontSize: 13, color: '#991B1B', lineHeight: 1.6 }}>
+                      Je confirme qu'aucun article de mon envoi ne dépasse 100 $ CAD et je renonce expressément à toute réclamation contre Jumla en cas de perte, vol ou dommage sur ces articles.
+                    </span>
+                  </label>
+                )}
+              </div>
+
+              {/* Section 2 — Marchandises interdites */}
+              <div>
+                <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--ink-900)', marginBottom: 4 }}>🚫 Marchandises interdites</div>
+                <div style={{ fontSize: 13, color: 'var(--ink-500)', marginBottom: 10, lineHeight: 1.6 }}>
+                  Les marchandises suivantes sont strictement interdites : viande/volaille, produits laitiers, médicaments sur ordonnance, drogues, armes, explosifs, argent comptant, animaux vivants, produits contrefaits…
+                </div>
+                <label style={{ display: 'flex', alignItems: 'flex-start', gap: 10, cursor: 'pointer', background: 'var(--surface)', border: '1.5px solid var(--border)', borderRadius: 10, padding: '14px 16px' }}>
+                  <input type="checkbox" checked={forbiddenAcknowledged} onChange={e => setForbiddenAcknowledged(e.target.checked)}
+                    style={{ marginTop: 2, flexShrink: 0, width: 16, height: 16, accentColor: 'var(--brand-500)' }} />
+                  <span style={{ fontSize: 13, color: 'var(--ink-700)', lineHeight: 1.6 }}>
+                    Je certifie que mon envoi ne contient aucune marchandise interdite et j'accepte que tout colis non conforme puisse être saisi ou détruit sans remboursement.
+                  </span>
+                </label>
+              </div>
+
+            </div>
+
+            {/* Footer */}
+            <div style={{ padding: '16px 28px 24px', borderTop: '1px solid var(--border)', display: 'flex', gap: 12 }}>
+              <button onClick={() => setShowDisclaimer(false)}
+                style={{ flex: 1, padding: '11px', border: '1.5px solid var(--border)', borderRadius: 10, background: 'white', color: 'var(--ink-700)', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
+                Annuler
+              </button>
+              <button onClick={() => { setShowDisclaimer(false); confirmInterac(); }}
+                disabled={!disclaimerReady}
+                style={{ flex: 2, padding: '11px', borderRadius: 10, border: 'none', background: disclaimerReady ? 'var(--brand-500)' : 'var(--border)', color: disclaimerReady ? 'white' : 'var(--ink-400)', fontSize: 14, fontWeight: 700, cursor: disclaimerReady ? 'pointer' : 'default', fontFamily: 'inherit', transition: 'background .15s' }}>
+                Confirmer et réserver
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

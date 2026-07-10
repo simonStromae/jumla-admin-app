@@ -45,8 +45,12 @@ export async function POST(req: NextRequest) {
     recipProvince,
     recipPostal,
     delivery,
-    totalPrice,     // pre-calculated by client
+    totalPrice,     // pre-calculated by client (shipping only)
     notes,
+    hasValuable,
+    declaredValueCad,
+    waiverAccepted,
+    forbiddenAcknowledged,
   } = body;
 
   if (!campaignId) {
@@ -103,6 +107,12 @@ export async function POST(req: NextRequest) {
     }).catch(() => {});
   }
 
+  const coverageFee = hasValuable && declaredValueCad
+    ? Math.round(Number(declaredValueCad) * 0.20)
+    : 0;
+  const shippingPrice = totalPrice ? Math.round(Number(totalPrice)) : 0;
+  const finalPrice = shippingPrice + coverageFee;
+
   const parcel = await prisma.parcel.create({
     data: {
       clientId:     userId,
@@ -110,7 +120,8 @@ export async function POST(req: NextRequest) {
       trackingCode: genTrackingCode(),
       description,
       weightKg:     totalWeightKg || null,
-      priceXaf:     totalPrice ? Math.round(Number(totalPrice)) : null,
+      priceXaf:     finalPrice || null,
+      declaredValue: hasValuable && declaredValueCad ? Number(declaredValueCad) : null,
       productType:  dominantType,
       nbCartons:    addons?.cartons    || 0,
       nbPetitsSacs: addons?.smallBag   || 0,
@@ -122,6 +133,11 @@ export async function POST(req: NextRequest) {
       recipName:    recipName  || null,
       recipPhone:   recipPhone || null,
       recipCity:    finalCity  || null,
+      hasValuable:           !!hasValuable,
+      coverageFee:           coverageFee || null,
+      waiverAccepted:        !hasValuable && !!waiverAccepted,
+      forbiddenAcknowledged: !!forbiddenAcknowledged,
+      disclaimerAcceptedAt:  new Date(),
     },
     include: { campaign: { select: { code: true } } },
   });
@@ -137,12 +153,12 @@ export async function POST(req: NextRequest) {
   });
 
   // Create pending payment record
-  if (totalPrice && Number(totalPrice) > 0) {
+  if (finalPrice > 0) {
     await prisma.payment.create({
       data: {
         parcelId: parcel.id,
         clientId: userId,
-        amount:   Math.round(Number(totalPrice)),
+        amount:   finalPrice,
         status:   'pending',
       },
     }).catch(() => {});

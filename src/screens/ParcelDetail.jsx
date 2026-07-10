@@ -609,6 +609,51 @@ export default function ParcelDetailScreen({ id, onNav }) {
             </div>
           </div>
 
+          {/* Disclaimer légal */}
+          <div className="card" style={{ padding: 16 }}>
+            <div className="section-title" style={{ marginBottom: 12 }}>
+              <span style={{ fontSize: 14 }}>📋</span> Déclaration légale
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+              {/* Objets de valeur */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 13, padding: '6px 8px', background: 'var(--bg-soft)', borderRadius: 5 }}>
+                <span style={{ color: 'var(--ink-500)' }}>Objets de valeur</span>
+                {parcel.hasValuable
+                  ? <span className="badge badge--dot badge--warn">Déclaré</span>
+                  : parcel.waiverAccepted
+                    ? <span className="badge badge--dot badge--ok">Renonciation signée</span>
+                    : <span style={{ color: 'var(--ink-300)', fontSize: 12 }}>—</span>
+                }
+              </div>
+              {parcel.hasValuable && parcel.declaredValue && (
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, padding: '6px 8px', background: 'var(--brand-50)', borderRadius: 5 }}>
+                  <span style={{ color: 'var(--ink-600)' }}>Valeur déclarée</span>
+                  <span className="mono" style={{ fontWeight: 700, color: 'var(--ink-900)' }}>{parcel.declaredValue.toLocaleString('fr')} $ CAD</span>
+                </div>
+              )}
+              {parcel.coverageFee > 0 && (
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, padding: '6px 8px', background: 'var(--brand-50)', borderRadius: 5 }}>
+                  <span style={{ color: 'var(--ink-600)' }}>Couverture (20 %)</span>
+                  <span className="mono" style={{ fontWeight: 700, color: 'var(--brand-700)' }}>+{parcel.coverageFee.toLocaleString('fr')} CAD</span>
+                </div>
+              )}
+              {/* Marchandises interdites */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 13, padding: '6px 8px', background: 'var(--bg-soft)', borderRadius: 5 }}>
+                <span style={{ color: 'var(--ink-500)' }}>Marchandises interdites</span>
+                {parcel.forbiddenAcknowledged
+                  ? <span className="badge badge--dot badge--ok">Confirmé</span>
+                  : <span style={{ color: 'var(--err-500)', fontSize: 12, fontWeight: 600 }}>Non confirmé</span>
+                }
+              </div>
+              {/* Timestamp */}
+              {parcel.disclaimerAcceptedAt && (
+                <div style={{ fontSize: 11, color: 'var(--ink-300)', padding: '2px 8px' }}>
+                  Accepté le {new Date(parcel.disclaimerAcceptedAt).toLocaleDateString('fr-CA', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                </div>
+              )}
+            </div>
+          </div>
+
           {/* Campaign info */}
           <div className="card" style={{ padding: 16 }}>
             <div className="section-title" style={{ marginBottom: 12 }}>

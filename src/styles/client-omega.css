@@ -14,6 +14,7 @@
   color: var(--ink-800);
   background: rgb(253, 253, 255);
   -webkit-font-smoothing: antialiased;
+  line-height: 1.2;
 }
 
 .jpage h1, .jpage h2 {
@@ -1018,7 +1019,9 @@
   /* Services */
   .jsvc3 { padding: 48px 0; }
   .jsvc3__head { margin-bottom: 28px; }
-  .jsvc3__title { font-size: 32px; }
+  .jsvc3__title { font-size: 35px; }
+  .jsvc3__subtitle { font-size: 14px; }
+  .jsvc3__item-desc { font-size: 12px; }
   .jsvc3__grid { grid-template-columns: 1fr; gap: 0; }
   .jsvc3__item { padding: 28px 24px; }
 
@@ -1026,7 +1029,10 @@
   .jfeats3 { padding: 48px 0; }
   .jfeats3__grid { grid-template-columns: 1fr; gap: 40px; }
   .jfeats3__right { position: static; }
-  .jfeats3__title { font-size: 30px; }
+  .jfeats3__title { font-size: 35px; }
+  .jfeats3__body { font-size: 14px; }
+  .jfeats3__item-title { font-size: 14px; }
+  .jfeats3__item-body { font-size: 12px; }
   .jfeats3__stats { gap: 20px; flex-wrap: wrap; }
   .jfeats3__btn { width: 100%; justify-content: center; }
 
@@ -1067,10 +1073,29 @@
   /* CTA */
   .jcta3 { min-height: auto; }
   .jcta3__grid { grid-template-columns: 1fr; gap: 28px; padding: 48px 0; }
-  .jcta3__title { font-size: 26px; }
-  .jcta3__sub { font-size: 13.5px; }
+  .jcta3__title { font-size: 35px; }
+  .jcta3__sub { font-size: 14px; }
+  .jcta3__item { font-size: 12px; }
   .jcta3__btn { width: 100%; justify-content: center; }
   .jcta3__card { padding: 20px; }
+
+  /* Hero2 subtitle */
+  .jhero2__title { font-size: 35px; }
+  .jhero2__sub { font-size: 14px; }
+
+  /* Inline-style h2 elements (need !important to beat inline styles) */
+  .jsp2-right h2 { font-size: 35px !important; }
+  .jest-wrap h2 { font-size: 35px !important; }
+  .jfaq-section h2 { font-size: 35px !important; }
+
+  /* Inline-style subtitle paragraphs */
+  .jsp2-right p { font-size: 14px !important; }
+  .jest-wrap > .jc > div > p { font-size: 14px !important; }
+  .jfaq-grid > div > p { font-size: 14px !important; }
+
+  /* FAQ */
+  .jfaq__q { font-size: 14px; }
+  .jfaq__a { font-size: 12px; }
 
   /* Footer */
   .jfoot { padding: 40px 0 24px; }
@@ -1083,18 +1108,18 @@
   .jc { padding: 0 14px; }
 
   .jhero2 { padding: 32px 0 28px; }
-  .jhero2__title { font-size: 28px; }
-  .jhero2__sub { font-size: 13px; }
+  .jhero2__title { font-size: 35px; }
+  .jhero2__sub { font-size: 14px; }
   .jhero2__stat-n { font-size: 20px; }
   .jhero2__stat-l { font-size: 10.5px; }
 
-  .jsvc3__title { font-size: 26px; }
+  .jsvc3__title { font-size: 35px; }
   .jsvc3__item { padding: 22px 18px; }
   .jsvc3__item-top { margin-bottom: 16px; }
 
-  .jfeats3__title { font-size: 24px; }
+  .jfeats3__title { font-size: 35px; }
 
-  .jcta3__title { font-size: 26px; }
+  .jcta3__title { font-size: 35px; }
 
   .jfaq__q { font-size: 14px; padding: 16px 0; }
   .jfaq-grid .jsvc-sec__tag { font-size: 11px; }
