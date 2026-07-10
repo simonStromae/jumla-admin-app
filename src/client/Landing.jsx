@@ -197,7 +197,8 @@ function JStoryCard({ onBook, onNav, content }) {
           .jsc-photo { min-height: 260px; }
           .jsc-wa-card { display: none; }
           .jsc-content { padding: 40px 20px !important; }
-          .jsc-h2 { font-size: 28px !important; }
+          .jsc-h2 { font-size: 35px !important; }
+          .jsc-content p { font-size: 14px !important; }
           .jsc-stats-row { margin-bottom: 24px !important; gap: 16px !important; }
         }
         .jsc-stats-row { display: flex; gap: clamp(20px,3vw,40px); flex-wrap: wrap; margin-bottom: 40px; }
@@ -303,8 +304,8 @@ function JSteps({ onBook }) {
         @media (max-width: 768px) {
           #jsteps { padding: 48px 0 64px !important; min-height: auto !important; }
           .js2-steps-hd { margin-bottom: 36px !important; }
-          .js2-steps-hd h2 { font-size: 26px !important; }
-          .js2-steps-hd p { font-size: 15px !important; }
+          .js2-steps-hd h2 { font-size: 35px !important; }
+          .js2-steps-hd p { font-size: 14px !important; }
           .js2-steps-cta { margin-top: 32px !important; }
         }
         @media (max-width: 620px) {
@@ -313,8 +314,8 @@ function JSteps({ onBook }) {
           .js2-row--right { justify-content: flex-start; }
           .js2-arrow  { display: none; }
           .js2-row    { margin-bottom: 24px; }
-          .js2-title  { font-size: 16px; }
-          .js2-desc   { font-size: 14px; }
+          .js2-title  { font-size: 14px; }
+          .js2-desc   { font-size: 12px; }
           .js2-inner  { padding: 20px 16px 20px 24px; }
         }
       `}</style>
@@ -500,7 +501,8 @@ function JHero({ onBook, onNav, content }) {
         .jhero-tile-label { font-size: 13px; font-weight: 600; line-height: 1.4; color: #111827; }
         @media (max-width: 820px) {
           .jhero-wrap { grid-template-columns: 1fr; padding: 100px 0 56px; gap: 36px; }
-          .jhero-sub { max-width: 100%; }
+          .jhero-h1 { font-size: 35px !important; }
+          .jhero-sub { max-width: 100%; font-size: 14px; }
           .jhero-tiles { flex-direction: column; border-radius: 10px; }
           .jhero-tile { justify-content: flex-start; text-align: left; padding: 16px 20px; }
           .jhero-tile + .jhero-tile::before { top: 0; left: 16px; width: calc(100% - 32px); height: 1px; }
@@ -939,9 +941,9 @@ function JWidePhoto({ onBook }) {
         .jwp-desc { font-size: 17px; color: rgba(255,255,255,.7); line-height: 1.75; max-width: 420px; }
         @media (max-width: 768px) {
           .jwp-inner { grid-template-columns: 1fr; gap: 28px; padding: 56px 20px; }
-          .jwp-title { font-size: 28px; }
+          .jwp-title { font-size: 35px; }
           .jwp-right { display: flex; }
-          .jwp-desc { font-size: 15px; }
+          .jwp-desc { font-size: 14px; }
         }
       `}</style>
       <img className="jwp-img" src={IMGS.hero} alt="" />
