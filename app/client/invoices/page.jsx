@@ -89,7 +89,7 @@ export default function ClientInvoices() {
   const t = useT();
   const [parcels, setParcels] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [paymentEmail, setPaymentEmail] = useState('paiement@jumla.cargo');
+  const [paymentEmail, setPaymentEmail] = useState('incjumla@gmail.com');
 
   useEffect(() => {
     fetch('/api/public/config').then(r => r.json()).then(d => {

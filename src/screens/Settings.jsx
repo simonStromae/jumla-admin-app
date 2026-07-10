@@ -166,7 +166,7 @@ function SectionCompany() {
     phone_montreal:    '',
     contact_whatsapp:  '',
     warehouse_addr:    '5500 Place de la Savane, Lachine, QC H4S 1V8, Canada',
-    payment_email:     'paiement@jumla.cargo',
+    payment_email:     'incjumla@gmail.com',
   });
   const [saving, setSaving]       = useState(false);
   const [saved,  setSaved]        = useState(false);
@@ -253,7 +253,7 @@ function SectionCompany() {
         </div>
         <div className="field">
           <label className="label">Courriel de paiement Interac <span className="opt">/ affiché sur toutes les factures et instructions de paiement</span></label>
-          <input className="input mono" value={fields.payment_email} onChange={set('payment_email')} placeholder="paiement@jumla.cargo" />
+          <input className="input mono" value={fields.payment_email} onChange={set('payment_email')} placeholder="incjumla@gmail.com" />
         </div>
         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, alignItems: 'center', marginTop: 4 }}>
           {saved && <span style={{ fontSize: 12, color: 'var(--ok-700)', fontWeight: 600 }}>✓ Sauvegardé</span>}

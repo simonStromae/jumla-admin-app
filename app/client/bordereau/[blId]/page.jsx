@@ -43,7 +43,7 @@ export default function BordereauPage({ params }) {
   const [checked,    setChecked]    = useState(false);
   const [confirming, setConfirming] = useState(false);
   const [confirmed,  setConfirmed]  = useState(false);
-  const [paymentEmail, setPaymentEmail] = useState('paiement@jumla.cargo');
+  const [paymentEmail, setPaymentEmail] = useState('incjumla@gmail.com');
 
   useEffect(() => {
     fetch('/api/public/config').then(r => r.json()).then(d => {

@@ -511,7 +511,7 @@ function InvoicePreviewModal({ parcelId, onClose }) {
   const [data, setData]       = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError]     = useState('');
-  const [paymentEmail, setPaymentEmail] = useState('paiement@jumla.cargo');
+  const [paymentEmail, setPaymentEmail] = useState('incjumla@gmail.com');
   const [adjMode, setAdjMode] = useState(false);
 
   useEffect(() => {

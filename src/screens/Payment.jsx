@@ -71,7 +71,7 @@ export default function PaymentScreen({ token }) {
 
 function PaymentView({ data, onConfirm }) {
   const [acknowledged, setAcknowledged] = useState(false);
-  const [paymentEmail, setPaymentEmail] = useState('paiement@jumla.cargo');
+  const [paymentEmail, setPaymentEmail] = useState('incjumla@gmail.com');
   useEffect(() => {
     fetch('/api/public/config').then(r => r.json()).then(d => {
       if (d.paymentEmail) setPaymentEmail(d.paymentEmail);

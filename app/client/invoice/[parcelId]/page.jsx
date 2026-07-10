@@ -14,7 +14,7 @@ function InvoiceContent({ params }) {
   const [data, setData]       = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError]     = useState('');
-  const [paymentEmail, setPaymentEmail] = useState('paiement@jumla.cargo');
+  const [paymentEmail, setPaymentEmail] = useState('incjumla@gmail.com');
 
   useEffect(() => {
     fetch('/api/public/config').then(r => r.json()).then(d => {

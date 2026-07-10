@@ -381,10 +381,10 @@ export function SiteFooter({ content }) {
             </a>
             <p className="jfoot__desc">{fc.description ?? t('footer.description')}</p>
             <div style={{ display:'flex', flexDirection:'column', gap:8, marginTop:16 }}>
-              <a href={`mailto:${fc.email ?? 'info@jumlas.com'}`}
+              <a href="mailto:info@jumlas.com"
                 style={{ display:'inline-flex', alignItems:'center', gap:7, fontSize:12.5, color:'rgba(255,255,255,.6)', textDecoration:'none' }}>
                 <I.Send style={{ width:13, height:13 }} />
-                {fc.email ?? 'info@jumlas.com'}
+                info@jumlas.com
               </a>
               <a href="https://wa.me/15149980709" target="_blank" rel="noreferrer"
                 style={{ display:'inline-flex', alignItems:'center', gap:7, fontSize:12.5, color:'#25D366', textDecoration:'none', fontWeight:600 }}>
