@@ -50,7 +50,7 @@ const NAV_LINKS = [
   { label: 'Nos politiques',   href: null, dropdown: POLICY_LINKS },
 ];
 
-/* ─── Policies dropdown ─── */
+/* ─── Desktop policies dropdown ─── */
 function PoliciesDropdown({ isLanding, onNav }) {
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
@@ -61,19 +61,12 @@ function PoliciesDropdown({ isLanding, onNav }) {
     return () => document.removeEventListener('mousedown', handler);
   }, []);
 
-  const linkColor = isLanding ? 'rgba(255,255,255,.82)' : 'var(--ink-600)';
-  const linkHoverBg = isLanding ? 'rgba(255,255,255,.1)' : 'var(--surface)';
-
   return (
     <div ref={ref} style={{ position: 'relative' }}>
       <button
         onClick={() => setOpen(o => !o)}
         className={`jnav__link${isLanding ? ' jnav__link--landing' : ''}`}
-        style={{
-          background: 'none', border: 'none', cursor: 'pointer',
-          display: 'inline-flex', alignItems: 'center', gap: 5,
-          fontFamily: 'inherit',
-        }}
+        style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 5, fontFamily: 'inherit' }}
       >
         Nos politiques
         <svg width="11" height="11" viewBox="0 0 12 12" fill="none"
@@ -92,12 +85,7 @@ function PoliciesDropdown({ isLanding, onNav }) {
           {POLICY_LINKS.map(lk => (
             <a key={lk.href} href={lk.href}
               onClick={(e) => { e.preventDefault(); setOpen(false); onNav?.(lk.href); }}
-              style={{
-                display: 'block', padding: '9px 16px',
-                fontSize: 13.5, color: 'var(--ink-700)', textDecoration: 'none',
-                fontWeight: 500,
-                transition: 'background .12s',
-              }}
+              style={{ display: 'block', padding: '9px 16px', fontSize: 13.5, color: 'var(--ink-700)', textDecoration: 'none', fontWeight: 500 }}
               onMouseOver={e => { e.currentTarget.style.background = 'var(--brand-50)'; e.currentTarget.style.color = 'var(--brand-700)'; }}
               onMouseOut={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--ink-700)'; }}
             >
@@ -110,6 +98,83 @@ function PoliciesDropdown({ isLanding, onNav }) {
   );
 }
 
+/* ─── Mobile menu drawer ─── */
+function MobileMenu({ open, onClose, onNav, onBook, isPublic, user, dashHref, t }) {
+  const [policiesOpen, setPoliciesOpen] = useState(false);
+
+  useEffect(() => {
+    if (open) document.body.style.overflow = 'hidden';
+    else document.body.style.overflow = '';
+    return () => { document.body.style.overflow = ''; };
+  }, [open]);
+
+  const go = (href) => { onClose(); onNav?.(href); };
+
+  return (
+    <div className={`jnav-mobile${open ? ' is-open' : ''}`}>
+      <div className="jnav-mobile__backdrop" onClick={onClose} />
+      <div className="jnav-mobile__panel">
+        <button className="jnav-mobile__close" onClick={onClose}>✕</button>
+
+        {/* Logo */}
+        <div className="jnav-mobile__logo" style={{ marginBottom: 28 }}>
+          <svg width="28" height="28" viewBox="0 0 48 48" fill="none">
+            <defs><linearGradient id="mmlg" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stopColor="#00B4D8"/><stop offset="100%" stopColor="#1B4FD8"/></linearGradient></defs>
+            <path d="M8 8 C8 6 10 4 12 5 L38 20 C40 21 40 27 38 28 L12 43 C10 44 8 42 8 40 Z" fill="url(#mmlg)"/>
+          </svg>
+          <span style={{ fontWeight: 800, letterSpacing: '.03em', textTransform: 'uppercase', background: 'linear-gradient(90deg,#00B4D8,#1B4FD8)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>JUMLA</span>
+        </div>
+
+        {/* Nav links */}
+        <a className="jnav-mobile__link" href="/faq" onClick={(e) => { e.preventDefault(); go('/faq'); }}>
+          Besoin d'aide ?
+        </a>
+        <a className="jnav-mobile__link" href="/suivi" onClick={(e) => { e.preventDefault(); go('/suivi'); }}>
+          Suivre mon colis
+        </a>
+
+        {/* Policies accordion */}
+        <button className="jnav-mobile__link" onClick={() => setPoliciesOpen(o => !o)}>
+          Nos politiques
+          <svg width="13" height="13" viewBox="0 0 12 12" fill="none"
+            style={{ transition: 'transform .2s', transform: policiesOpen ? 'rotate(180deg)' : 'rotate(0deg)', flexShrink: 0 }}>
+            <path d="M2 4l4 4 4-4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
+        </button>
+        {policiesOpen && (
+          <div className="jnav-mobile__sub">
+            {POLICY_LINKS.map(lk => (
+              <a key={lk.href} href={lk.href} onClick={(e) => { e.preventDefault(); go(lk.href); }}>
+                {lk.label}
+              </a>
+            ))}
+          </div>
+        )}
+
+        {/* CTA buttons */}
+        <div className="jnav-mobile__btns">
+          {user ? (
+            <button className="jbtn-nav" onClick={() => go(dashHref)}>
+              Mon espace
+            </button>
+          ) : (
+            <>
+              <button className="jbtn-nav jbtn-nav--secondary" onClick={() => go('/login')}>
+                {t('nav.signIn')}
+              </button>
+              {isPublic && (
+                <button className="jbtn-nav" onClick={() => { onClose(); onBook?.(); }}>
+                  Réserver
+                </button>
+              )}
+            </>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 /* ─── Nav ─── */
 export function SiteNav({ onNav, onBook, mode = 'landing' }) {
   const { data: session, status } = useSession();
@@ -118,6 +183,7 @@ export function SiteNav({ onNav, onBook, mode = 'landing' }) {
   const user = session?.user;
   const role = user?.role;
   const [scrolled, setScrolled] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
 
   useEffect(() => {
     if (mode !== 'landing') return;
@@ -137,6 +203,8 @@ export function SiteNav({ onNav, onBook, mode = 'landing' }) {
     ? `jnav jnav--landing${scrolled ? ' jnav--scrolled' : ''}`
     : 'jnav';
 
+  const burgerColor = isLanding && !scrolled ? 'white' : 'var(--ink-800)';
+
   const handleNav = (e, href) => {
     if (!href) return;
     if (href.startsWith('#')) {
@@ -149,70 +217,92 @@ export function SiteNav({ onNav, onBook, mode = 'landing' }) {
   };
 
   return (
-    <div className={navClass}>
-      <div className="jc">
-        <div className="jnav__inner">
-          {/* Logo */}
-          <button className="jnav__logo" onClick={() => isLanding ? window.scrollTo({ top: 0, behavior: 'smooth' }) : onNav?.('/')}
-            style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 10, padding: 0 }}>
-            {logoUrl ? (
-              <img src={logoUrl} alt="Logo" style={{ height: logoHeight, maxWidth: 200, objectFit: 'contain', ...(isLanding && !scrolled ? { filter: 'brightness(0) invert(1)' } : {}) }} />
-            ) : (
-              <>
-                <div style={{ width: 34, height: 34, fontSize: 0 }}>
-                  <svg width="34" height="34" viewBox="0 0 48 48" fill="none">
-                    <defs><linearGradient id="navlg" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stopColor="#00B4D8"/><stop offset="100%" stopColor="#1B4FD8"/></linearGradient></defs>
-                    <path d="M8 8 C8 6 10 4 12 5 L38 20 C40 21 40 27 38 28 L12 43 C10 44 8 42 8 40 Z" fill="url(#navlg)"/>
-                  </svg>
-                </div>
-                <span style={{ fontFamily: "'Inter', system-ui, sans-serif", fontWeight: 800, letterSpacing: '.03em', textTransform: 'uppercase', background: 'linear-gradient(90deg,#00B4D8,#1B4FD8)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>JUMLA</span>
-                <span style={{ fontSize: 13, fontWeight: 500, color: isLanding ? 'rgba(255,255,255,.55)' : 'var(--ink-500)', letterSpacing: 0, textTransform: 'none' }}>Shipping</span>
-              </>
-            )}
-          </button>
-
-          {/* Center nav — all pages (public + authenticated) */}
-          <nav className="jnav__links jnav__links--center">
-            {NAV_LINKS.map(lk =>
-              lk.dropdown ? (
-                <PoliciesDropdown key={lk.label} isLanding={isLanding} onNav={onNav} />
+    <>
+      <div className={navClass}>
+        <div className="jc">
+          <div className="jnav__inner">
+            {/* Logo */}
+            <button className="jnav__logo" onClick={() => isLanding ? window.scrollTo({ top: 0, behavior: 'smooth' }) : onNav?.('/')}
+              style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 10, padding: 0 }}>
+              {logoUrl ? (
+                <img src={logoUrl} alt="Logo" style={{ height: logoHeight, maxWidth: 200, objectFit: 'contain', ...(isLanding && !scrolled ? { filter: 'brightness(0) invert(1)' } : {}) }} />
               ) : (
-                <a key={lk.label} href={lk.href}
-                  className={`jnav__link${isLanding ? ' jnav__link--landing' : ''}`}
-                  onClick={(e) => handleNav(e, lk.href)}>
-                  {lk.label}
-                </a>
-              )
-            )}
-          </nav>
+                <>
+                  <div style={{ width: 34, height: 34, fontSize: 0 }}>
+                    <svg width="34" height="34" viewBox="0 0 48 48" fill="none">
+                      <defs><linearGradient id="navlg" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stopColor="#00B4D8"/><stop offset="100%" stopColor="#1B4FD8"/></linearGradient></defs>
+                      <path d="M8 8 C8 6 10 4 12 5 L38 20 C40 21 40 27 38 28 L12 43 C10 44 8 42 8 40 Z" fill="url(#navlg)"/>
+                    </svg>
+                  </div>
+                  <span style={{ fontFamily: "'Inter', system-ui, sans-serif", fontWeight: 800, letterSpacing: '.03em', textTransform: 'uppercase', background: 'linear-gradient(90deg,#00B4D8,#1B4FD8)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>JUMLA</span>
+                  <span style={{ fontSize: 13, fontWeight: 500, color: isLanding ? 'rgba(255,255,255,.55)' : 'var(--ink-500)', letterSpacing: 0, textTransform: 'none' }}>Shipping</span>
+                </>
+              )}
+            </button>
 
-          {/* Right */}
-          <div className="jnav__right" style={{ marginLeft: 'auto' }}>
-            {status === 'loading' ? null : user ? (
-              <>
-                <button onClick={() => onNav?.(dashHref)} style={{
-                  width: 36, height: 36, borderRadius: '50%',
-                  background: 'var(--brand-500)', color: '#fff',
-                  fontSize: 13, fontWeight: 700, border: 'none', cursor: 'pointer',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                }}>{initials}</button>
-                <LanguageSwitcher dark={isLanding} />
-              </>
-            ) : (
-              <>
-                <LanguageSwitcher dark={isLanding} />
-                <button className="jbtn-nav jbtn-nav--secondary" onClick={() => onNav?.('/login')}>
-                  {t('nav.signIn')}
-                </button>
-                {isPublic && (
-                  <button className="jbtn-nav" onClick={onBook}>Réserver</button>
-                )}
-              </>
-            )}
+            {/* Center nav — desktop */}
+            <nav className="jnav__links jnav__links--center">
+              {NAV_LINKS.map(lk =>
+                lk.dropdown ? (
+                  <PoliciesDropdown key={lk.label} isLanding={isLanding} onNav={onNav} />
+                ) : (
+                  <a key={lk.label} href={lk.href}
+                    className={`jnav__link${isLanding ? ' jnav__link--landing' : ''}`}
+                    onClick={(e) => handleNav(e, lk.href)}>
+                    {lk.label}
+                  </a>
+                )
+              )}
+            </nav>
+
+            {/* Right */}
+            <div className="jnav__right" style={{ marginLeft: 'auto' }}>
+              <LanguageSwitcher dark={isLanding && !scrolled} />
+
+              {status !== 'loading' && (
+                <>
+                  {user ? (
+                    <button onClick={() => onNav?.(dashHref)} style={{
+                      width: 36, height: 36, borderRadius: '50%',
+                      background: 'var(--brand-500)', color: '#fff',
+                      fontSize: 13, fontWeight: 700, border: 'none', cursor: 'pointer',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    }}>{initials}</button>
+                  ) : (
+                    <>
+                      <button className="jbtn-nav jbtn-nav--secondary" onClick={() => onNav?.('/login')}>
+                        {t('nav.signIn')}
+                      </button>
+                      {isPublic && (
+                        <button className="jbtn-nav" onClick={onBook}>Réserver</button>
+                      )}
+                    </>
+                  )}
+                </>
+              )}
+
+              {/* Hamburger — mobile only */}
+              <button className="jnav__burger" onClick={() => setMenuOpen(true)}
+                style={{ color: burgerColor }} aria-label="Menu">
+                <span /><span /><span />
+              </button>
+            </div>
           </div>
         </div>
       </div>
-    </div>
+
+      {/* Mobile drawer */}
+      <MobileMenu
+        open={menuOpen}
+        onClose={() => setMenuOpen(false)}
+        onNav={onNav}
+        onBook={onBook}
+        isPublic={isPublic}
+        user={user}
+        dashHref={dashHref}
+        t={t}
+      />
+    </>
   );
 }
 
@@ -270,7 +360,7 @@ export function SiteFooter({ content }) {
   return (
     <footer className="jfoot" id="jfoot">
       <div className="jc">
-        <div className="jfoot__grid" style={{ gridTemplateColumns: '2fr 1fr 1fr' }}>
+        <div className="jfoot__grid">
           <div>
             <a href="/" style={{ textDecoration: 'none' }}>
               <div className="jfoot__brand">

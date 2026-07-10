@@ -238,7 +238,7 @@ function Article({ article }) {
           {article.title}
         </h2>
       </div>
-      <div style={{ paddingLeft: 44 }}>
+      <div className="jlegal-art-body">
         {article.body && <Paragraphs text={article.body} />}
         {article.bullets && <BulletList items={article.bullets} />}
         {article.after && <Paragraphs text={article.after} />}
@@ -266,7 +266,7 @@ export default function PolitiqueReclamationPage() {
           </div>
 
           {/* Délais clés */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 32 }}>
+          <div className="jlegal-delay-grid">
             {DELAYS.map(d => (
               <div key={d.label} style={{ background: d.bg, border: `1.5px solid ${d.border}`, borderRadius: 12, padding: '16px 20px' }}>
                 <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '.08em', textTransform: 'uppercase', color: d.color, marginBottom: 6 }}>{d.label}</div>
@@ -279,7 +279,7 @@ export default function PolitiqueReclamationPage() {
           {/* Table des matières */}
           <div style={{ background: 'var(--surface)', border: '1.5px solid var(--border)', borderRadius: 12, padding: '20px 24px', marginBottom: 36 }}>
             <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '.08em', textTransform: 'uppercase', color: 'var(--ink-400)', marginBottom: 12 }}>Table des matières</div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '4px 24px' }}>
+            <div className="jlegal-toc-grid">
               {ARTICLES.map(a => (
                 <a key={a.n} href={`#art-${a.n}`}
                   style={{ fontSize: 13, color: 'var(--ink-600)', textDecoration: 'none', padding: '3px 0', display: 'flex', gap: 8, alignItems: 'baseline' }}
@@ -294,7 +294,7 @@ export default function PolitiqueReclamationPage() {
           </div>
 
           {/* Articles */}
-          <div style={{ background: 'white', border: '1.5px solid var(--border)', borderRadius: 16, padding: '36px 36px 12px', boxShadow: '0 2px 16px rgba(0,0,0,.04)' }}>
+          <div className="jlegal-card">
             {ARTICLES.map(a => (
               <div key={a.n} id={`art-${a.n}`}>
                 <Article article={a} />

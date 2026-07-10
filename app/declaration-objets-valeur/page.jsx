@@ -54,7 +54,7 @@ export default function DeclarationObjetsValeurPage() {
           </div>
 
           {/* Section 1 — Objets de valeur */}
-          <div style={{ background: 'white', border: '1.5px solid var(--border)', borderRadius: 16, padding: '32px 36px', boxShadow: '0 2px 16px rgba(0,0,0,.04)', marginBottom: 24 }}>
+          <div className="jlegal-doc-card" style={{ marginBottom: 24 }}>
             <div style={{ display: 'flex', gap: 14, alignItems: 'flex-start', marginBottom: 18 }}>
               <div style={{ flexShrink: 0, width: 40, height: 40, borderRadius: 10, background: 'var(--brand-50)', border: '1.5px solid var(--brand-100)', display: 'grid', placeItems: 'center', fontSize: 20 }}>
                 💎
@@ -86,7 +86,7 @@ export default function DeclarationObjetsValeurPage() {
           </div>
 
           {/* Section 2 — Marchandises interdites */}
-          <div style={{ background: 'white', border: '1.5px solid var(--border)', borderRadius: 16, padding: '32px 36px', boxShadow: '0 2px 16px rgba(0,0,0,.04)' }}>
+          <div className="jlegal-doc-card">
             <div style={{ display: 'flex', gap: 14, alignItems: 'flex-start', marginBottom: 18 }}>
               <div style={{ flexShrink: 0, width: 40, height: 40, borderRadius: 10, background: '#FEF2F2', border: '1.5px solid #FECACA', display: 'grid', placeItems: 'center', fontSize: 20 }}>
                 🚫
