@@ -63,6 +63,9 @@ export async function GET(_: NextRequest, { params }: { params: { parcelId: stri
     confirmedPriceXaf,
     adjustmentStatus,
     amount:            parcel.payment?.amount ?? priceXaf ?? 0,
+    hasValuable:       (parcel as any).hasValuable ?? false,
+    coverageFee:       (parcel as any).coverageFee ?? null,
+    declaredValue:     parcel.declaredValue ?? null,
     pricingDetails:    parcel.pricingDetails,
     client: {
       name:  parcel.client.name,

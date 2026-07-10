@@ -172,6 +172,12 @@ model Parcel {
   confirmedPriceXaf Int?
   adjustmentStatus  String?  @default("none")
   delivery          String?  @default("pickup")
+  // Disclaimer légal avant réservation
+  hasValuable           Boolean   @default(false)
+  coverageFee           Int?
+  waiverAccepted        Boolean   @default(false)
+  forbiddenAcknowledged Boolean   @default(false)
+  disclaimerAcceptedAt  DateTime?
   bordereaux        Bordereau[]
   status        String       @default("enr")
   confirmed     Boolean      @default(false)

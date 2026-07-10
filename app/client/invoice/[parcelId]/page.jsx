@@ -45,11 +45,13 @@ function InvoiceContent({ params }) {
     </div>
   );
 
-  const paid       = data.payment?.status === 'completed';
-  const hasAdj     = data.confirmedPriceXaf != null && data.adjustmentStatus !== 'none';
-  const supplement = hasAdj ? (data.confirmedPriceXaf - (data.priceXaf ?? 0)) : 0;
-  const totalAmt   = hasAdj ? data.confirmedPriceXaf : data.amount;
-  const hasRecip   = data.recipient?.name || data.recipient?.phone || data.recipient?.city;
+  const paid        = data.payment?.status === 'completed';
+  const hasAdj      = data.confirmedPriceXaf != null && data.adjustmentStatus !== 'none';
+  const supplement  = hasAdj ? (data.confirmedPriceXaf - (data.priceXaf ?? 0)) : 0;
+  const totalAmt    = hasAdj ? data.confirmedPriceXaf : data.amount;
+  const hasRecip    = data.recipient?.name || data.recipient?.phone || data.recipient?.city;
+  const coverageFee = data.coverageFee > 0 ? data.coverageFee : 0;
+  const shippingAmt = coverageFee > 0 ? (data.priceXaf ?? data.amount) - coverageFee : null;
 
   // Supplement mode — only valid when adjustment exists and supplement > 0
   if (adjMode) {
@@ -298,9 +300,23 @@ function InvoiceContent({ params }) {
                   {data.weightKg ? data.weightKg + ' kg' : '—'}
                 </td>
                 <td style={{ padding: '14px', borderBottom: '1px solid #f3f4f6', textAlign: 'right', fontFamily: 'monospace', fontSize: 14, fontWeight: 700, color: hasAdj ? '#9ca3af' : '#111827', textDecoration: hasAdj ? 'line-through' : 'none' }}>
-                  {(data.priceXaf ?? data.amount).toLocaleString('fr')} CAD
+                  {(shippingAmt ?? data.priceXaf ?? data.amount).toLocaleString('fr')} CAD
                 </td>
               </tr>
+              {coverageFee > 0 && (
+                <tr style={{ background: '#eff6ff' }}>
+                  <td style={{ padding: '14px', borderBottom: '1px solid #f3f4f6', color: '#1e40af', fontSize: 14 }}>
+                    <div style={{ fontWeight: 600 }}>Couverture objets de valeur</div>
+                    <div style={{ fontSize: 12, color: '#3b82f6', marginTop: 2 }}>
+                      20 % × {data.declaredValue?.toLocaleString('fr')} $ CAD déclarés
+                    </div>
+                  </td>
+                  <td style={{ padding: '14px', borderBottom: '1px solid #f3f4f6', color: '#3b82f6', fontFamily: 'monospace', fontSize: 14 }}>—</td>
+                  <td style={{ padding: '14px', borderBottom: '1px solid #f3f4f6', textAlign: 'right', fontFamily: 'monospace', fontSize: 14, fontWeight: 700, color: '#1e40af' }}>
+                    +{coverageFee.toLocaleString('fr')} CAD
+                  </td>
+                </tr>
+              )}
               {hasAdj && supplement > 0 && (
                 <tr style={{ background: '#fffbeb' }}>
                   <td style={{ padding: '14px', borderBottom: '1px solid #f3f4f6', color: '#92400e', fontSize: 14 }}>
