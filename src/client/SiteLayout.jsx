@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useSession } from 'next-auth/react';
 import I from '../components/Icons.jsx';
 import { useCompanyAssets } from '../lib/useCompanyAssets.js';
@@ -35,11 +35,80 @@ export function TopBar() {
   );
 }
 
-const LANDING_LINKS = [
-  { label: 'Nos services', href: '#jstory' },
-  { label: 'Tarifs',       href: '#jest' },
-  { label: 'Suivi',        href: '/suivi' },
+const POLICY_LINKS = [
+  { label: 'CGU',                          href: '/cgu' },
+  { label: 'CGV',                          href: '/cgv' },
+  { label: 'Politique de réclamation',     href: '/politique-de-reclamation' },
+  { label: 'Déclaration objets de valeur', href: '/declaration-objets-valeur' },
+  { label: 'Politique de confidentialité', href: '/politique-de-confidentialite' },
+  { label: 'Cookies',                      href: '/cookies' },
 ];
+
+const NAV_LINKS = [
+  { label: 'Besoin d\'aide ?',  href: '/faq' },
+  { label: 'Suivre mon colis', href: '/suivi' },
+  { label: 'Nos politiques',   href: null, dropdown: POLICY_LINKS },
+];
+
+/* ─── Policies dropdown ─── */
+function PoliciesDropdown({ isLanding, onNav }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef(null);
+
+  useEffect(() => {
+    const handler = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
+
+  const linkColor = isLanding ? 'rgba(255,255,255,.82)' : 'var(--ink-600)';
+  const linkHoverBg = isLanding ? 'rgba(255,255,255,.1)' : 'var(--surface)';
+
+  return (
+    <div ref={ref} style={{ position: 'relative' }}>
+      <button
+        onClick={() => setOpen(o => !o)}
+        className={`jnav__link${isLanding ? ' jnav__link--landing' : ''}`}
+        style={{
+          background: 'none', border: 'none', cursor: 'pointer',
+          display: 'inline-flex', alignItems: 'center', gap: 5,
+          fontFamily: 'inherit',
+        }}
+      >
+        Nos politiques
+        <svg width="11" height="11" viewBox="0 0 12 12" fill="none"
+          style={{ transition: 'transform .2s', transform: open ? 'rotate(180deg)' : 'rotate(0deg)' }}>
+          <path d="M2 4l4 4 4-4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
+        </svg>
+      </button>
+
+      {open && (
+        <div style={{
+          position: 'absolute', top: 'calc(100% + 8px)', left: '50%', transform: 'translateX(-50%)',
+          background: 'white', border: '1.5px solid var(--border)',
+          borderRadius: 10, boxShadow: '0 8px 32px rgba(0,0,0,.13)',
+          padding: '6px 0', minWidth: 230, zIndex: 200,
+        }}>
+          {POLICY_LINKS.map(lk => (
+            <a key={lk.href} href={lk.href}
+              onClick={(e) => { e.preventDefault(); setOpen(false); onNav?.(lk.href); }}
+              style={{
+                display: 'block', padding: '9px 16px',
+                fontSize: 13.5, color: 'var(--ink-700)', textDecoration: 'none',
+                fontWeight: 500,
+                transition: 'background .12s',
+              }}
+              onMouseOver={e => { e.currentTarget.style.background = 'var(--brand-50)'; e.currentTarget.style.color = 'var(--brand-700)'; }}
+              onMouseOut={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--ink-700)'; }}
+            >
+              {lk.label}
+            </a>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
 
 /* ─── Nav ─── */
 export function SiteNav({ onNav, onBook, mode = 'landing' }) {
@@ -63,15 +132,19 @@ export function SiteNav({ onNav, onBook, mode = 'landing' }) {
     : '?';
 
   const isLanding = mode === 'landing';
-  const isPublic  = mode === 'landing' || mode === 'public'; // show nav links + Réserver
+  const isPublic  = mode === 'landing' || mode === 'public';
   const navClass  = isLanding
     ? `jnav jnav--landing${scrolled ? ' jnav--scrolled' : ''}`
     : 'jnav';
 
-  const handleLandingLink = (e, href) => {
+  const handleNav = (e, href) => {
+    if (!href) return;
     if (href.startsWith('#')) {
       e.preventDefault();
       document.querySelector(href)?.scrollIntoView({ behavior: 'smooth' });
+    } else {
+      e.preventDefault();
+      onNav?.(href);
     }
   };
 
@@ -98,18 +171,20 @@ export function SiteNav({ onNav, onBook, mode = 'landing' }) {
             )}
           </button>
 
-          {/* Center links — public pages */}
-          {isPublic && (
-            <nav className="jnav__links jnav__links--center">
-              {LANDING_LINKS.map(lk => (
+          {/* Center nav — all pages (public + authenticated) */}
+          <nav className="jnav__links jnav__links--center">
+            {NAV_LINKS.map(lk =>
+              lk.dropdown ? (
+                <PoliciesDropdown key={lk.label} isLanding={isLanding} onNav={onNav} />
+              ) : (
                 <a key={lk.label} href={lk.href}
                   className={`jnav__link${isLanding ? ' jnav__link--landing' : ''}`}
-                  onClick={(e) => handleLandingLink(e, lk.href)}>
+                  onClick={(e) => handleNav(e, lk.href)}>
                   {lk.label}
                 </a>
-              ))}
-            </nav>
-          )}
+              )
+            )}
+          </nav>
 
           {/* Right */}
           <div className="jnav__right" style={{ marginLeft: 'auto' }}>
@@ -165,24 +240,18 @@ function normalizeLinks(links) {
 
 const DEFAULT_COL_LINKS = {
   col1: [
-    { label: 'Fret aérien', href: '#services' },
-    { label: 'Livraison à domicile', href: '#services' },
-    { label: 'Suivi de colis', href: '/suivi' },
-    { label: 'Tarifs', href: '#estimator' },
+    { label: 'Besoin d\'aide ?',   href: '/faq' },
+    { label: 'Suivre mon colis',   href: '/suivi' },
+    { label: 'Contact',            href: '/contact' },
+    { label: 'Réserver',           href: '/login' },
   ],
   col2: [
-    { label: 'À propos', href: '#features' },
-    { label: 'FAQ', href: '/faq' },
-    { label: 'Contact', href: '/contact' },
-    { label: 'Réserver', href: '/login' },
-  ],
-  col3: [
-    { label: 'CGU', href: '/cgu' },
-    { label: 'CGV', href: '/cgv' },
-    { label: 'Politique de réclamation', href: '/politique-de-reclamation' },
+    { label: 'CGU',                          href: '/cgu' },
+    { label: 'CGV',                          href: '/cgv' },
+    { label: 'Politique de réclamation',     href: '/politique-de-reclamation' },
     { label: 'Déclaration objets de valeur', href: '/declaration-objets-valeur' },
     { label: 'Politique de confidentialité', href: '/politique-de-confidentialite' },
-    { label: 'Cookies', href: '/cookies' },
+    { label: 'Cookies',                      href: '/cookies' },
   ],
 };
 
@@ -193,17 +262,15 @@ export function SiteFooter({ content }) {
 
   const col1Links = normalizeLinks(fc.col1Links) ?? DEFAULT_COL_LINKS.col1;
   const col2Links = normalizeLinks(fc.col2Links) ?? DEFAULT_COL_LINKS.col2;
-  const col3Links = normalizeLinks(fc.col3Links) ?? DEFAULT_COL_LINKS.col3;
   const cols = [
-    { title: fc.col1Title ?? t('footer.cols.services'), links: col1Links },
-    { title: fc.col2Title ?? t('footer.cols.company'),  links: col2Links },
-    { title: fc.col3Title ?? t('footer.cols.legal'),    links: col3Links },
+    { title: fc.col1Title ?? 'Navigation',  links: col1Links },
+    { title: fc.col2Title ?? 'Politiques',  links: col2Links },
   ];
 
   return (
     <footer className="jfoot" id="jfoot">
       <div className="jc">
-        <div className="jfoot__grid">
+        <div className="jfoot__grid" style={{ gridTemplateColumns: '2fr 1fr 1fr' }}>
           <div>
             <a href="/" style={{ textDecoration: 'none' }}>
               <div className="jfoot__brand">
