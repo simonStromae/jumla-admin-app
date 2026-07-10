@@ -377,7 +377,7 @@ function JSteps({ onBook }) {
         {/* CTA */}
         <div className="js2-steps-cta" style={{ textAlign: 'center', marginTop: 56 }}>
           <button className="jbtn-nav jbtn-nav--lg" onClick={onBook}>
-            Commencer maintenant →
+            Créer une nouvelle expédition →
           </button>
         </div>
       </div>
@@ -948,7 +948,7 @@ function JWidePhoto({ onBook }) {
       <div className="jwp-overlay" />
       <div className="jwp-inner">
         <h2 className="jwp-title">
-          De Douala à Montréal, <span style={{ color: '#00B4D8' }}>en 14 jours.</span>
+          De Douala à Montréal, <span style={{ color: '#00B4D8' }}>en 10 jours max.</span>
         </h2>
         <div className="jwp-right">
           <p className="jwp-desc">
