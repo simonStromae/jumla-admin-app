@@ -353,8 +353,8 @@ export function SiteFooter({ content }) {
   const col1Links = normalizeLinks(fc.col1Links) ?? DEFAULT_COL_LINKS.col1;
   const col2Links = normalizeLinks(fc.col2Links) ?? DEFAULT_COL_LINKS.col2;
   const cols = [
-    { title: fc.col1Title ?? 'Navigation',  links: col1Links },
-    { title: fc.col2Title ?? 'Politiques',  links: col2Links },
+    { title: 'Navigation',  links: col1Links },
+    { title: 'Politiques', links: col2Links },
   ];
 
   return (
