@@ -493,17 +493,16 @@ function JHero({ onBook, onNav, content }) {
         .jhero-sub { font-size: 16px; color: rgba(255,255,255,.62); line-height: 1.7; margin: 0; max-width: 400px; }
         .jhero-panel { background: rgba(11,18,32,.82); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,.1); border-radius: 16px; padding: 28px 28px 24px; }
         .jhero-panel-hd { font-size: 11px; font-weight: 700; color: rgba(255,255,255,.45); text-transform: uppercase; letter-spacing: .1em; margin-bottom: 16px; }
-        .jhero-tiles { display: flex; background: rgba(255,255,255,.08); border-radius: 10px; overflow: hidden; border: 1px solid rgba(255,255,255,.1); }
-        .jhero-tile { flex: 1; background: transparent; padding: 22px 12px; display: flex; flex-direction: column; align-items: center; text-align: center; gap: 10px; cursor: pointer; border: none; color: white; font-family: inherit; transition: background .15s; position: relative; }
-        .jhero-tile + .jhero-tile::before { content: ''; position: absolute; left: 0; top: 16%; height: 68%; width: 1px; background: rgba(255,255,255,.12); }
-        .jhero-tile:hover { background: rgba(255,255,255,.1); }
-        .jhero-tile-icon { font-size: 24px; line-height: 1; }
-        .jhero-tile-label { font-size: 13px; font-weight: 600; line-height: 1.35; }
+        .jhero-tiles { display: flex; background: white; border-radius: 10px; overflow: hidden; }
+        .jhero-tile { flex: 1; background: white; padding: 22px 14px; display: flex; align-items: center; justify-content: center; text-align: center; cursor: pointer; border: none; color: #111827; font-family: inherit; transition: background .15s; position: relative; }
+        .jhero-tile + .jhero-tile::before { content: ''; position: absolute; left: 0; top: 12%; height: 76%; width: 1px; background: #E5E7EB; }
+        .jhero-tile:hover { background: #F3F4F6; }
+        .jhero-tile-label { font-size: 13px; font-weight: 600; line-height: 1.4; color: #111827; }
         @media (max-width: 820px) {
           .jhero-wrap { grid-template-columns: 1fr; padding: 100px 0 56px; gap: 36px; }
           .jhero-sub { max-width: 100%; }
           .jhero-tiles { flex-direction: column; border-radius: 10px; }
-          .jhero-tile { flex-direction: row; text-align: left; justify-content: flex-start; gap: 16px; padding: 16px 20px; }
+          .jhero-tile { justify-content: flex-start; text-align: left; padding: 16px 20px; }
           .jhero-tile + .jhero-tile::before { top: 0; left: 16px; width: calc(100% - 32px); height: 1px; }
         }
       `}</style>
@@ -534,15 +533,12 @@ function JHero({ onBook, onNav, content }) {
             <div className="jhero-panel-hd">Pour expédier</div>
             <div className="jhero-tiles">
               <button className="jhero-tile" onClick={onBook}>
-                <span className="jhero-tile-icon">📦</span>
-                <span className="jhero-tile-label">Créer un envoi</span>
+                <span className="jhero-tile-label">Créer une nouvelle expédition</span>
               </button>
               <button className="jhero-tile" onClick={() => document.getElementById('jest')?.scrollIntoView({ behavior: 'smooth' })}>
-                <span className="jhero-tile-icon">🧮</span>
-                <span className="jhero-tile-label">Simuler mon tarif</span>
+                <span className="jhero-tile-label">Obtenir un tarif et une estimation de délai</span>
               </button>
               <button className="jhero-tile" onClick={() => onNav?.('/suivi')}>
-                <span className="jhero-tile-icon">🔍</span>
                 <span className="jhero-tile-label">Suivre mon colis</span>
               </button>
             </div>
