@@ -2,8 +2,10 @@
 import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import '@/src/styles/tokens.css';
+import '@/src/styles/client-omega.css';
 import { useCompanyAssets } from '@/src/lib/useCompanyAssets.js';
 import { useT, useLocale } from '@/src/lib/i18n';
+import { SiteNav, SiteFooter } from '@/src/client/SiteLayout.jsx';
 
 /* ── Jumla brand tokens ──────────────────────────────── */
 const J = {
@@ -95,31 +97,11 @@ function TrackContent() {
   const s = result ? (STATUS[result.status] ?? { color: J.gray400, bg: 'rgba(148,163,184,.1)', icon: '📦' }) : null;
 
   return (
-    <div style={{ fontFamily: FONT_BODY, minHeight: '100vh', background: J.gray100, WebkitFontSmoothing: 'antialiased', color: J.gray700 }}>
+    <div className="jpage" style={{ fontFamily: FONT_BODY, WebkitFontSmoothing: 'antialiased', color: J.gray700 }}>
 
-      {/* Header */}
-      <header style={{ background: J.black, padding: '0 24px', height: 64, display: 'flex', alignItems: 'center', justifyContent: 'space-between', boxShadow: '0 8px 32px rgba(27,79,216,.18)' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 14, cursor: 'pointer' }} onClick={() => router.push('/')}>
-          {logoUrl ? (
-            <img src={logoUrl} alt="Logo" style={{ height: 38, maxWidth: 160, objectFit: 'contain' }} />
-          ) : (
-            <>
-              <svg width="36" height="36" viewBox="0 0 48 48" fill="none">
-                <defs><linearGradient id="lg" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stopColor="#00B4D8"/><stop offset="100%" stopColor="#1B4FD8"/></linearGradient></defs>
-                <path d="M8 8 C8 6 10 4 12 5 L38 20 C40 21 40 27 38 28 L12 43 C10 44 8 42 8 40 Z" fill="url(#lg)"/>
-              </svg>
-              <div>
-                <div style={{ fontFamily: FONT_DISPLAY, fontSize: 22, fontWeight: 800, letterSpacing: '.05em', textTransform: 'uppercase', background: J.gradient, WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text', lineHeight: 1 }}>JUMLA</div>
-                <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: '.15em', color: 'rgba(255,255,255,.3)', textTransform: 'uppercase', marginTop: 2 }}>Import · Export · Livraison</div>
-              </div>
-            </>
-          )}
-        </div>
-        <a href="/login" style={{ fontFamily: FONT_DISPLAY, fontSize: 14, fontWeight: 700, letterSpacing: '.08em', textTransform: 'uppercase', color: 'white', textDecoration: 'none', padding: '8px 18px', border: '2px solid rgba(255,255,255,.25)', borderRadius: 8, transition: 'all .2s' }}>
-          {t('button.signIn')}
-        </a>
-      </header>
+      <SiteNav onNav={(href) => router.push(href)} onBook={() => router.push('/login')} mode="public" />
 
+      <div style={{ background: J.gray100, minHeight: 'calc(100vh - 76px)' }}>
       <div style={{ maxWidth: 660, margin: '0 auto', padding: '44px 20px 80px' }}>
 
         {/* Title */}
@@ -296,6 +278,9 @@ function TrackContent() {
           </div>
         )}
       </div>
+      </div>
+
+      <SiteFooter />
     </div>
   );
 }
