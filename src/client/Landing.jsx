@@ -933,8 +933,8 @@ function JWidePhoto({ onBook }) {
       <style>{`
         .jwp-img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: center 35%; }
         .jwp-overlay { position: absolute; inset: 0; background: linear-gradient(100deg, rgba(9,15,30,.82) 0%, rgba(9,15,30,.58) 55%, rgba(9,15,30,.38) 100%); }
-        .jwp-inner { position: relative; z-index: 2; display: grid; grid-template-columns: 1fr 1fr; align-items: center; gap: 64px; width: 100%; max-width: var(--w); margin: 0 auto; padding: clamp(64px,8vh,120px) clamp(20px,5vw,72px); }
-        .jwp-title { font-family:'Inter',system-ui,sans-serif; font-size: clamp(38px,5.5vw,50px); font-weight: 800; color: white; letter-spacing: -.03em; line-height: 1.1; }
+        .jwp-inner { position: relative; z-index: 2; display: grid; grid-template-columns: 1fr 1fr; align-items: start; gap: 64px; width: 100%; max-width: var(--w); margin: 0 auto; padding: clamp(64px,8vh,120px) clamp(20px,5vw,72px); }
+        .jwp-title { font-family:'Inter',system-ui,sans-serif; font-size: clamp(38px,5.5vw,50px); font-weight: 800; color: white; letter-spacing: -.03em; line-height: 1.1; width: 85%; }
         .jwp-right { display: flex; flex-direction: column; align-items: flex-start; gap: 24px; }
         .jwp-desc { font-size: 17px; color: rgba(255,255,255,.7); line-height: 1.75; max-width: 420px; }
         @media (max-width: 768px) {
