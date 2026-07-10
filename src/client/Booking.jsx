@@ -1800,7 +1800,10 @@ export default function BookingScreen({ onNav, embedded = false }) {
               <div>
                 <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--ink-900)', marginBottom: 4 }}>💎 Avez-vous des objets de valeur dans votre envoi ?</div>
                 <div style={{ fontSize: 13, color: 'var(--ink-500)', marginBottom: 14, lineHeight: 1.6 }}>
-                  Tout article d'une valeur supérieure à <strong>100 $ CAD</strong> (bijoux, vêtements de marque, téléphones, ordinateurs, montres…) doit être déclaré.
+                  Tout article d'une valeur supérieure à <strong>100 $ CAD</strong> (bijoux, vêtements de marque, téléphones, ordinateurs, montres…) doit être déclaré.{' '}
+                  <a href="/declaration-objets-valeur" target="_blank" rel="noreferrer" style={{ color: 'var(--brand-600)', fontWeight: 600, textDecoration: 'underline' }}>
+                    Voir notre politique de déclaration ↗
+                  </a>
                 </div>
                 <div style={{ display: 'flex', gap: 10, marginBottom: 14 }}>
                   {[{ v: true, label: 'Oui, j\'ai des objets de valeur' }, { v: false, label: 'Non, aucun objet de valeur' }].map(opt => (
@@ -1835,7 +1838,10 @@ export default function BookingScreen({ onNav, embedded = false }) {
                     <input type="checkbox" checked={waiverAccepted} onChange={e => setWaiverAccepted(e.target.checked)}
                       style={{ marginTop: 2, flexShrink: 0, width: 16, height: 16, accentColor: 'var(--brand-500)' }} />
                     <span style={{ fontSize: 13, color: '#991B1B', lineHeight: 1.6 }}>
-                      Je confirme qu'aucun article de mon envoi ne dépasse 100 $ CAD et je renonce expressément à toute réclamation contre Jumla en cas de perte, vol ou dommage sur ces articles.
+                      Je confirme qu'aucun article de mon envoi ne dépasse 100 $ CAD et je renonce expressément à toute réclamation contre Jumla en cas de perte, vol ou dommage sur ces articles.{' '}
+                      <a href="/politique-de-reclamation" target="_blank" rel="noreferrer" style={{ color: '#991B1B', fontWeight: 700, textDecoration: 'underline' }}>
+                        Lire la politique de réclamation ↗
+                      </a>
                     </span>
                   </label>
                 )}
@@ -1845,7 +1851,10 @@ export default function BookingScreen({ onNav, embedded = false }) {
               <div>
                 <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--ink-900)', marginBottom: 4 }}>🚫 Marchandises interdites</div>
                 <div style={{ fontSize: 13, color: 'var(--ink-500)', marginBottom: 10, lineHeight: 1.6 }}>
-                  Les marchandises suivantes sont strictement interdites : viande/volaille, produits laitiers, médicaments sur ordonnance, drogues, armes, explosifs, argent comptant, animaux vivants, produits contrefaits…
+                  Les marchandises suivantes sont strictement interdites : viande/volaille, produits laitiers, médicaments sur ordonnance, drogues, armes, explosifs, argent comptant, animaux vivants, produits contrefaits…{' '}
+                  <a href="/cgv" target="_blank" rel="noreferrer" style={{ color: 'var(--brand-600)', fontWeight: 600, textDecoration: 'underline' }}>
+                    Voir la liste complète dans nos CGV ↗
+                  </a>
                 </div>
                 <label style={{ display: 'flex', alignItems: 'flex-start', gap: 10, cursor: 'pointer', background: 'var(--surface)', border: '1.5px solid var(--border)', borderRadius: 10, padding: '14px 16px' }}>
                   <input type="checkbox" checked={forbiddenAcknowledged} onChange={e => setForbiddenAcknowledged(e.target.checked)}
@@ -1854,6 +1863,23 @@ export default function BookingScreen({ onNav, embedded = false }) {
                     Je certifie que mon envoi ne contient aucune marchandise interdite et j'accepte que tout colis non conforme puisse être saisi ou détruit sans remboursement.
                   </span>
                 </label>
+              </div>
+
+              {/* Liens politiques */}
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px 16px', padding: '12px 16px', background: 'var(--bg-soft)', borderRadius: 10 }}>
+                <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--ink-400)', textTransform: 'uppercase', letterSpacing: '.06em', width: '100%', marginBottom: 4 }}>Documents applicables</span>
+                {[
+                  { label: 'CGU',                          href: '/cgu' },
+                  { label: 'CGV',                          href: '/cgv' },
+                  { label: 'Politique de réclamation',     href: '/politique-de-reclamation' },
+                  { label: 'Déclaration objets de valeur', href: '/declaration-objets-valeur' },
+                  { label: 'Politique de confidentialité', href: '/politique-de-confidentialite' },
+                ].map(({ label, href }) => (
+                  <a key={href} href={href} target="_blank" rel="noreferrer"
+                    style={{ fontSize: 12, color: 'var(--brand-600)', textDecoration: 'none', fontWeight: 500, display: 'flex', alignItems: 'center', gap: 3 }}>
+                    {label} <span style={{ fontSize: 10 }}>↗</span>
+                  </a>
+                ))}
               </div>
 
             </div>
