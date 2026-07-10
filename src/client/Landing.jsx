@@ -192,8 +192,12 @@ function JStoryCard({ onBook, onNav, content }) {
     <section id="jstory" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', minHeight: '80vh' }}>
       <style>{`
         @media (max-width: 768px) {
-          #jstory { grid-template-columns: 1fr; }
+          #jstory { grid-template-columns: 1fr; min-height: auto; }
           .jsc-photo { min-height: 260px; }
+          .jsc-wa-card { display: none; }
+          .jsc-content { padding: 40px 20px !important; }
+          .jsc-h2 { font-size: 28px !important; }
+          .jsc-stats-row { margin-bottom: 24px !important; gap: 16px !important; }
         }
         .jsc-stats-row { display: flex; gap: clamp(20px,3vw,40px); flex-wrap: wrap; margin-bottom: 40px; }
         .jsc-stat-item { display: flex; flex-direction: column; gap: 5px; }
@@ -206,7 +210,7 @@ function JStoryCard({ onBook, onNav, content }) {
         <img src={IMGS.cargo} alt="" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center 40%' }} />
         <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(135deg, rgba(9,15,30,.18) 0%, rgba(9,15,30,.05) 100%)' }} />
         {/* Floating WhatsApp notification card */}
-        <div style={{ position: 'absolute', bottom: 40, left: '50%', transform: 'translateX(-50%)', background: 'rgba(255,255,255,.96)', backdropFilter: 'blur(12px)', borderRadius: 14, padding: '14px 18px', display: 'flex', alignItems: 'center', gap: 12, boxShadow: '0 8px 32px rgba(0,0,0,.18)', minWidth: 240, whiteSpace: 'nowrap' }}>
+        <div className="jsc-wa-card" style={{ position: 'absolute', bottom: 40, left: '50%', transform: 'translateX(-50%)', background: 'rgba(255,255,255,.96)', backdropFilter: 'blur(12px)', borderRadius: 14, padding: '14px 18px', display: 'flex', alignItems: 'center', gap: 12, boxShadow: '0 8px 32px rgba(0,0,0,.18)', minWidth: 240, whiteSpace: 'nowrap' }}>
           <div style={{ width: 36, height: 36, borderRadius: '50%', background: '#25D366', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="white"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
           </div>
@@ -218,12 +222,12 @@ function JStoryCard({ onBook, onNav, content }) {
       </div>
 
       {/* Right — dark content */}
-      <div style={{ background: '#0B1220', display: 'flex', alignItems: 'center', padding: 'clamp(56px,7vw,96px) clamp(32px,5vw,72px)' }}>
+      <div className="jsc-content" style={{ background: '#0B1220', display: 'flex', alignItems: 'center', padding: 'clamp(56px,7vw,96px) clamp(32px,5vw,72px)' }}>
         <div style={{ maxWidth: 480 }}>
           <div style={{ display: 'inline-flex', alignItems: 'center', background: 'rgba(147,197,253,.1)', color: '#93C5FD', border: '1px solid rgba(147,197,253,.18)', padding: '5px 14px', borderRadius: 99, fontSize: 11, fontWeight: 700, letterSpacing: '.06em', textTransform: 'uppercase', marginBottom: 28 }}>
             Notre histoire
           </div>
-          <h2 style={{ fontFamily: "'Inter',system-ui,sans-serif", fontSize: 'clamp(38px,5.5vw,50px)', fontWeight: 800, color: 'white', letterSpacing: '-.04em', lineHeight: 1.1, marginBottom: 20 }}>
+          <h2 className="jsc-h2" style={{ fontFamily: "'Inter',system-ui,sans-serif", fontSize: 'clamp(38px,5.5vw,50px)', fontWeight: 800, color: 'white', letterSpacing: '-.04em', lineHeight: 1.1, marginBottom: 20 }}>
             Le pont aérien entre l'Afrique et le Canada.
           </h2>
           <p style={{ fontSize: 17, color: 'rgba(255,255,255,.55)', lineHeight: 1.8, marginBottom: 40 }}>
@@ -295,18 +299,28 @@ function JSteps({ onBook }) {
         .js2-arrow { position: absolute; bottom: -52px; pointer-events: none; z-index: 1; }
         .js2-row--left  .js2-arrow { left: 54%; }
         .js2-row--right .js2-arrow { right: 54%; }
+        @media (max-width: 768px) {
+          #jsteps { padding: 48px 0 64px !important; min-height: auto !important; }
+          .js2-steps-hd { margin-bottom: 36px !important; }
+          .js2-steps-hd h2 { font-size: 26px !important; }
+          .js2-steps-hd p { font-size: 15px !important; }
+          .js2-steps-cta { margin-top: 32px !important; }
+        }
         @media (max-width: 620px) {
           .js2-card-wrap { width: 100%; padding-left: 36px; }
           .js2-badge-outer { left: 2px; }
           .js2-row--right { justify-content: flex-start; }
           .js2-arrow  { display: none; }
           .js2-row    { margin-bottom: 24px; }
+          .js2-title  { font-size: 16px; }
+          .js2-desc   { font-size: 14px; }
+          .js2-inner  { padding: 20px 16px 20px 24px; }
         }
       `}</style>
 
       <div className="jc">
         {/* Header */}
-        <div style={{ textAlign: 'center', marginBottom: 64 }}>
+        <div className="js2-steps-hd" style={{ textAlign: 'center', marginBottom: 64 }}>
           <div style={{ display: 'inline-flex', alignItems: 'center', background: 'rgba(0,180,216,.1)', color: '#00B4D8', border: '1px solid rgba(0,180,216,.25)', padding: '5px 16px', borderRadius: 99, fontSize: 12, fontWeight: 700, letterSpacing: '.05em', textTransform: 'uppercase', marginBottom: 18 }}>
             Comment ça marche
           </div>
@@ -360,7 +374,7 @@ function JSteps({ onBook }) {
         </div>
 
         {/* CTA */}
-        <div style={{ textAlign: 'center', marginTop: 56 }}>
+        <div className="js2-steps-cta" style={{ textAlign: 'center', marginTop: 56 }}>
           <button className="jbtn-nav jbtn-nav--lg" onClick={onBook}>
             Commencer maintenant →
           </button>
@@ -472,9 +486,22 @@ function JHero({ onBook, content }) {
       <img src={IMGS.airport} alt="" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center 42%', zIndex: 0 }} />
       <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(rgba(9,15,30,.62) 0%, rgb(3 24 74 / 72%) 60%, rgb(3 20 65 / 85%) 100%)', zIndex: 1 }} />
 
+      <style>{`
+        .jhero-outer { position:relative; z-index:2; flex:1; display:flex; flex-direction:column; justify-content:center; align-items:flex-start; padding: 120px clamp(20px,5vw,72px) 80px; }
+        .jhero-inner { max-width: 50%; }
+        .jhero-trust { position:relative; z-index:2; border-top:1px solid rgba(255,255,255,.1); padding:20px clamp(20px,5vw,72px); display:flex; align-items:center; justify-content:center; gap:clamp(16px,4vw,48px); flex-wrap:wrap; }
+        .jhero-trust-stat { text-align:center; }
+        @media (max-width: 768px) {
+          .jhero-outer { padding: 96px 20px 60px; }
+          .jhero-inner { max-width: 100%; }
+          .jhero-trust { gap: 20px; }
+          .jhero-trust-stat { min-width: 80px; }
+        }
+      `}</style>
+
       {/* Content — left-aligned, 50% width */}
-      <div className="jc" style={{ position: 'relative', zIndex: 2, flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'flex-start', padding: '120px clamp(20px,5vw,72px) 80px' }}>
-        <div style={{ maxWidth: '50%' }}>
+      <div className="jc jhero-outer">
+        <div className="jhero-inner">
           {/* Pill badge */}
           <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: 'rgba(255,255,255,.12)', border: '1px solid rgba(255,255,255,.22)', borderRadius: 99, padding: '7px 18px', fontSize: 13, fontWeight: 600, color: 'rgba(255,255,255,.85)', marginBottom: 32, backdropFilter: 'blur(8px)' }}>
             <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#00B4D8', flexShrink: 0 }} />
@@ -505,14 +532,14 @@ function JHero({ onBook, content }) {
       </div>
 
       {/* Trust strip — bottom of hero */}
-      <div style={{ position: 'relative', zIndex: 2, borderTop: '1px solid rgba(255,255,255,.1)', padding: '20px clamp(20px,5vw,72px)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 'clamp(16px,4vw,48px)', flexWrap: 'wrap' }}>
+      <div className="jhero-trust">
         {[
           { v: '12 000+', l: 'Colis livrés' },
           { v: '14 jours', l: 'Transit moyen' },
           { v: '98%', l: 'Taux de succès' },
           { v: '2 500+', l: 'Clients actifs' },
         ].map(s => (
-          <div key={s.l} style={{ textAlign: 'center' }}>
+          <div key={s.l} className="jhero-trust-stat">
             <div style={{ fontSize: 'clamp(18px,2.5vw,24px)', fontWeight: 800, color: 'white', lineHeight: 1 }}>{s.v}</div>
             <div style={{ fontSize: 12, color: 'rgba(255,255,255,.5)', marginTop: 4, fontWeight: 500 }}>{s.l}</div>
           </div>
@@ -657,7 +684,7 @@ function JEstimator({ onBook, content }) {
       <div className="jc">
         <div style={{ textAlign: 'center', marginBottom: 40 }}>
           <div className="jsvc3__eyebrow" style={{ display: 'block', marginBottom: 10 }}>{st.eyebrow ?? t('estimator.eyebrow')}</div>
-          <h2 style={{ fontFamily: "'Inter', system-ui, sans-serif", fontSize: 'clamp(26px, 7.5vw, 36px)', color: 'var(--ink-900)', fontWeight: 800, letterSpacing: '-.03em' }}>
+          <h2 style={{ fontFamily: "'Inter', system-ui, sans-serif", fontSize: 'clamp(22px, 5vw, 36px)', color: 'var(--ink-900)', fontWeight: 800, letterSpacing: '-.03em' }}>
             {st.title ?? t('estimator.title')}
           </h2>
           <p style={{ fontSize: 15, color: 'var(--ink-400)', marginTop: 12, lineHeight: 1.65, maxWidth: 440, margin: '12px auto 0' }}>
@@ -759,7 +786,7 @@ function JFAQ({ content }) {
         <div className="jfaq-grid">
           <div>
             <div className="jsvc3__eyebrow" style={{ display: 'block', marginBottom: 12 }}>{st.eyebrow ?? t('faq.eyebrow')}</div>
-            <h2 style={{ fontFamily: "'Inter', system-ui, sans-serif", fontSize: 'clamp(26px, 7.5vw, 36px)', fontWeight: 800, letterSpacing: '-.03em', color: 'var(--ink-900)', marginBottom: 16 }}>
+            <h2 style={{ fontFamily: "'Inter', system-ui, sans-serif", fontSize: 'clamp(22px, 5vw, 36px)', fontWeight: 800, letterSpacing: '-.03em', color: 'var(--ink-900)', marginBottom: 16 }}>
               {st.title ?? t('faq.title')}
             </h2>
             <p style={{ fontSize: 15, lineHeight: 1.75, color: 'var(--ink-400)' }}>
@@ -908,9 +935,11 @@ function JWidePhoto({ onBook }) {
         .jwp-title { font-family:'Inter',system-ui,sans-serif; font-size: clamp(38px,5.5vw,50px); font-weight: 800; color: white; letter-spacing: -.03em; line-height: 1.1; }
         .jwp-right { display: flex; flex-direction: column; align-items: flex-start; gap: 24px; }
         .jwp-desc { font-size: 17px; color: rgba(255,255,255,.7); line-height: 1.75; max-width: 420px; }
-        @media (max-width: 680px) {
-          .jwp-inner { grid-template-columns: 1fr; }
-          .jwp-right { display: none; }
+        @media (max-width: 768px) {
+          .jwp-inner { grid-template-columns: 1fr; gap: 28px; padding: 56px 20px; }
+          .jwp-title { font-size: 28px; }
+          .jwp-right { display: flex; }
+          .jwp-desc { font-size: 15px; }
         }
       `}</style>
       <img className="jwp-img" src={IMGS.hero} alt="" />

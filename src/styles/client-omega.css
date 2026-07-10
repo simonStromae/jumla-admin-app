@@ -1049,14 +1049,25 @@
   .jest__res { padding: 16px 14px; flex-direction: column; align-items: flex-start; gap: 12px; }
   .jest__res .jbtn-nav { width: 100%; justify-content: center; }
 
+  /* Services */
+  .jsvc3 { padding: 48px 0; }
+  .jsvc3__head { margin-bottom: 32px; }
+
+  /* Features */
+  .jfeats3 { padding: 48px 0; }
+  .jfeats3__stats { flex-wrap: wrap; gap: 20px; }
+
+  /* Estimator */
+  .jest-wrap { min-height: auto; }
+
   /* FAQ */
-  .jfaq-section { padding: 56px 0; }
-  .jfaq-grid { grid-template-columns: 1fr; gap: 32px; }
+  .jfaq-section { padding: 48px 0; }
+  .jfaq-grid { grid-template-columns: 1fr; gap: 24px; }
 
   /* CTA */
   .jcta3 { min-height: auto; }
   .jcta3__grid { grid-template-columns: 1fr; gap: 28px; padding: 48px 0; }
-  .jcta3__title { font-size: 34px; }
+  .jcta3__title { font-size: 26px; }
   .jcta3__sub { font-size: 13.5px; }
   .jcta3__btn { width: 100%; justify-content: center; }
   .jcta3__card { padding: 20px; }
