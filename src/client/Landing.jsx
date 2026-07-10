@@ -478,73 +478,77 @@ function JChatBot() {
   );
 }
 
-/* ─── Hero — full-page background, centered, single CTA ─── */
-function JHero({ onBook, content }) {
+/* ─── Hero — DHL-style: background image + left text + right action panel ─── */
+function JHero({ onBook, onNav, content }) {
   const h = content.hero;
   return (
-    <section style={{ position: 'relative', minHeight: '100vh', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-      {/* Full-page background */}
+    <section style={{ position: 'relative', overflow: 'hidden' }}>
       <img src={IMGS.airport} alt="" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center 42%', zIndex: 0 }} />
-      <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(rgba(9,15,30,.62) 0%, rgb(3 24 74 / 72%) 60%, rgb(3 20 65 / 85%) 100%)', zIndex: 1 }} />
+      <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(rgba(9,15,30,.58) 0%, rgba(3,24,74,.68) 100%)', zIndex: 1 }} />
 
       <style>{`
-        .jhero-outer { position:relative; z-index:2; flex:1; display:flex; flex-direction:column; justify-content:center; align-items:flex-start; padding: 120px clamp(20px,5vw,72px) 80px; }
-        .jhero-inner { max-width: 50%; }
-        .jhero-trust { position:relative; z-index:2; border-top:1px solid rgba(255,255,255,.1); padding:20px clamp(20px,5vw,72px); display:flex; align-items:center; justify-content:center; gap:clamp(16px,4vw,48px); flex-wrap:wrap; }
-        .jhero-trust-stat { text-align:center; }
-        @media (max-width: 768px) {
-          .jhero-outer { padding: 96px 20px 60px; }
-          .jhero-inner { max-width: 100%; }
-          .jhero-trust { gap: 20px; }
-          .jhero-trust-stat { min-width: 80px; }
+        .jhero-wrap { display: grid; grid-template-columns: 1fr 1fr; align-items: center; gap: 48px; position: relative; z-index: 2; padding: 130px 0 90px; }
+        .jhero-badge { display: inline-flex; align-items: center; gap: 8px; background: rgba(255,255,255,.12); border: 1px solid rgba(255,255,255,.22); border-radius: 99px; padding: 7px 18px; font-size: 13px; font-weight: 600; color: rgba(255,255,255,.85); margin-bottom: 24px; backdrop-filter: blur(8px); }
+        .jhero-h1 { font-family:'Inter',system-ui,sans-serif; font-size: clamp(32px,4.5vw,48px); font-weight: 800; color: white; letter-spacing: -.04em; line-height: 1.1; margin: 0 0 18px; }
+        .jhero-sub { font-size: 16px; color: rgba(255,255,255,.62); line-height: 1.7; margin: 0; max-width: 400px; }
+        .jhero-panel { background: rgba(11,18,32,.82); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,.1); border-radius: 16px; padding: 28px 28px 24px; }
+        .jhero-panel-hd { font-size: 11px; font-weight: 700; color: rgba(255,255,255,.45); text-transform: uppercase; letter-spacing: .1em; margin-bottom: 16px; }
+        .jhero-tiles { display: flex; background: rgba(255,255,255,.08); border-radius: 10px; overflow: hidden; border: 1px solid rgba(255,255,255,.1); }
+        .jhero-tile { flex: 1; background: transparent; padding: 22px 12px; display: flex; flex-direction: column; align-items: center; text-align: center; gap: 10px; cursor: pointer; border: none; color: white; font-family: inherit; transition: background .15s; position: relative; }
+        .jhero-tile + .jhero-tile::before { content: ''; position: absolute; left: 0; top: 16%; height: 68%; width: 1px; background: rgba(255,255,255,.12); }
+        .jhero-tile:hover { background: rgba(255,255,255,.1); }
+        .jhero-tile-icon { font-size: 24px; line-height: 1; }
+        .jhero-tile-label { font-size: 13px; font-weight: 600; line-height: 1.35; }
+        @media (max-width: 820px) {
+          .jhero-wrap { grid-template-columns: 1fr; padding: 100px 0 56px; gap: 36px; }
+          .jhero-sub { max-width: 100%; }
+          .jhero-tiles { flex-direction: column; border-radius: 10px; }
+          .jhero-tile { flex-direction: row; text-align: left; justify-content: flex-start; gap: 16px; padding: 16px 20px; }
+          .jhero-tile + .jhero-tile::before { top: 0; left: 16px; width: calc(100% - 32px); height: 1px; }
         }
       `}</style>
 
-      {/* Content — left-aligned, 50% width */}
-      <div className="jc jhero-outer">
-        <div className="jhero-inner">
-          {/* Pill badge */}
-          <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: 'rgba(255,255,255,.12)', border: '1px solid rgba(255,255,255,.22)', borderRadius: 99, padding: '7px 18px', fontSize: 13, fontWeight: 600, color: 'rgba(255,255,255,.85)', marginBottom: 32, backdropFilter: 'blur(8px)' }}>
-            <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#00B4D8', flexShrink: 0 }} />
-            Spécialiste fret aérien · Douala → Montréal
+      <div className="jc">
+        <div className="jhero-wrap">
+
+          {/* Left — branding */}
+          <div>
+            <div className="jhero-badge">
+              <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#00B4D8', flexShrink: 0 }} />
+              Spécialiste fret aérien · Douala → Montréal
+            </div>
+            <h1 className="jhero-h1">
+              {h.line1}{' '}
+              {h.line2.includes('Douala')
+                ? <>{h.line2.split('Douala')[0]}<span style={{ color: '#00B4D8' }}>Douala</span>{h.line2.split('Douala')[1]}</>
+                : h.line2}{' '}
+              <span style={{ color: '#00B4D8' }}>
+                {h.line3.includes('Montréal') ? 'Montréal.' : h.line3}
+              </span>
+            </h1>
+            <p className="jhero-sub">{h.subtitle}</p>
           </div>
 
-          {/* Heading */}
-          <h1 style={{ fontFamily: "'Inter',system-ui,sans-serif", fontSize: 'clamp(38px,5.5vw,50px)', fontWeight: 800, color: 'white', letterSpacing: '-.04em', lineHeight: 1.1, marginBottom: 24 }}>
-            {h.line1}{' '}
-            {h.line2.includes('Douala')
-              ? <>{h.line2.split('Douala')[0]}<span style={{ color: '#00B4D8' }}>Douala</span>{h.line2.split('Douala')[1]}</>
-              : h.line2}{' '}
-            <span style={{ color: '#00B4D8' }}>
-              {h.line3.includes('Montréal') ? 'Montréal.' : h.line3}
-            </span>
-          </h1>
+          {/* Right — action panel */}
+          <div className="jhero-panel">
+            <div className="jhero-panel-hd">Pour expédier</div>
+            <div className="jhero-tiles">
+              <button className="jhero-tile" onClick={onBook}>
+                <span className="jhero-tile-icon">📦</span>
+                <span className="jhero-tile-label">Créer un envoi</span>
+              </button>
+              <button className="jhero-tile" onClick={() => document.getElementById('jest')?.scrollIntoView({ behavior: 'smooth' })}>
+                <span className="jhero-tile-icon">🧮</span>
+                <span className="jhero-tile-label">Simuler mon tarif</span>
+              </button>
+              <button className="jhero-tile" onClick={() => onNav?.('/suivi')}>
+                <span className="jhero-tile-icon">🔍</span>
+                <span className="jhero-tile-label">Suivre mon colis</span>
+              </button>
+            </div>
+          </div>
 
-          {/* Subtitle */}
-          <p style={{ fontSize: 18, color: 'rgba(255,255,255,.68)', lineHeight: 1.7, marginBottom: 44 }}>
-            {h.subtitle}
-          </p>
-
-          <button className="jbtn-nav jbtn-nav--lg" onClick={onBook}>
-            Réserver un envoi
-            <svg width="17" height="17" fill="none" stroke="white" strokeWidth="2.5" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-          </button>
         </div>
-      </div>
-
-      {/* Trust strip — bottom of hero */}
-      <div className="jhero-trust">
-        {[
-          { v: '12 000+', l: 'Colis livrés' },
-          { v: '14 jours', l: 'Transit moyen' },
-          { v: '98%', l: 'Taux de succès' },
-          { v: '2 500+', l: 'Clients actifs' },
-        ].map(s => (
-          <div key={s.l} className="jhero-trust-stat">
-            <div style={{ fontSize: 'clamp(18px,2.5vw,24px)', fontWeight: 800, color: 'white', lineHeight: 1 }}>{s.v}</div>
-            <div style={{ fontSize: 12, color: 'rgba(255,255,255,.5)', marginTop: 4, fontWeight: 500 }}>{s.l}</div>
-          </div>
-        ))}
       </div>
     </section>
   );
@@ -984,7 +988,7 @@ export default function LandingPage({ onNav }) {
   return (
     <div className="jpage">
       <SiteNav onNav={onNav} onBook={onBook} mode="landing" />
-      <JHero onBook={onBook} content={content} />
+      <JHero onBook={onBook} onNav={onNav} content={content} />
       <JEstimator onBook={onBook} content={content} />
       <JStoryCard onBook={onBook} onNav={onNav} content={content} />
       <JSteps onBook={onBook} />
