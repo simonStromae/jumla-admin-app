@@ -63,7 +63,8 @@ export function SiteNav({ onNav, onBook, mode = 'landing' }) {
     : '?';
 
   const isLanding = mode === 'landing';
-  const navClass = isLanding
+  const isPublic  = mode === 'landing' || mode === 'public'; // show nav links + Réserver
+  const navClass  = isLanding
     ? `jnav jnav--landing${scrolled ? ' jnav--scrolled' : ''}`
     : 'jnav';
 
@@ -97,11 +98,12 @@ export function SiteNav({ onNav, onBook, mode = 'landing' }) {
             )}
           </button>
 
-          {/* Center links — landing only */}
-          {isLanding && (
+          {/* Center links — public pages */}
+          {isPublic && (
             <nav className="jnav__links jnav__links--center">
               {LANDING_LINKS.map(lk => (
-                <a key={lk.label} href={lk.href} className="jnav__link jnav__link--landing"
+                <a key={lk.label} href={lk.href}
+                  className={`jnav__link${isLanding ? ' jnav__link--landing' : ''}`}
                   onClick={(e) => handleLandingLink(e, lk.href)}>
                   {lk.label}
                 </a>
@@ -127,7 +129,7 @@ export function SiteNav({ onNav, onBook, mode = 'landing' }) {
                 <button className="jbtn-nav jbtn-nav--secondary" onClick={() => onNav?.('/login')}>
                   {t('nav.signIn')}
                 </button>
-                {isLanding && (
+                {isPublic && (
                   <button className="jbtn-nav" onClick={onBook}>Réserver</button>
                 )}
               </>
