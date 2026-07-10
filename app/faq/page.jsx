@@ -79,7 +79,7 @@ export default function FaqPage() {
   return (
     <>
       <TopBar />
-      <SiteNav onNav={p => router.push(p)} mode="page" />
+      <SiteNav onNav={p => router.push(p)} onBook={() => router.push('/login')} mode="public" />
 
       <main style={{ minHeight: '60vh', padding: '64px 0' }}>
         <div className="jc">

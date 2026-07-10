@@ -62,7 +62,7 @@ const DEFAULT_CONTENT_FR = {
     description: "Spécialiste du fret aérien international entre l'Afrique et le Canada depuis 2021. Suivi, sécurité et transparence à chaque étape.",
     copyright: '© 2026 Jumla Shipping SARL — Tous droits réservés',
     offices: 'Douala · Montréal · Lagos · Bruxelles',
-    col1Title: 'Services', col2Title: 'Entreprise', col3Title: 'Légal',
+    col1Title: 'Navigation', col2Title: 'Politiques',
     email: 'contact@jumla.cargo',
   },
 };
@@ -122,7 +122,7 @@ const DEFAULT_CONTENT_EN = {
     description: 'International air freight specialist between Africa and Canada since 2021. Tracking, security and transparency at every step.',
     copyright: '© 2026 Jumla Shipping SARL — All rights reserved',
     offices: 'Douala · Montréal · Lagos · Brussels',
-    col1Title: 'Services', col2Title: 'Company', col3Title: 'Legal',
+    col1Title: 'Navigation', col2Title: 'Policies',
     email: 'contact@jumla.cargo',
   },
 };
