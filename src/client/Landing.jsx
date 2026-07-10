@@ -179,7 +179,7 @@ const IMGS = {
 const WA_SUPPORT = 'https://wa.me/15149980709?text=Bonjour%20Jumla%20Shipping%2C%20j%27ai%20une%20question.';
 
 /* ─── Dark story section — split grid photo left / content right ─── */
-function JStoryCard({ onBook, content }) {
+function JStoryCard({ onBook, onNav, content }) {
   const heroStats = content.hero?.stats ?? [];
   const STAT_DEFAULTS = [
     { value: '12 000+', label: 'Colis livrés' },
@@ -238,8 +238,8 @@ function JStoryCard({ onBook, content }) {
               </div>
             ))}
           </div>
-          <button className="jbtn-nav jbtn-nav--lg" onClick={onBook}>
-            Créer un envoi →
+          <button className="jbtn-nav jbtn-nav--lg" onClick={() => onNav?.('/suivi')}>
+            Suivre mon colis →
           </button>
         </div>
       </div>
@@ -955,7 +955,7 @@ export default function LandingPage({ onNav }) {
       <SiteNav onNav={onNav} onBook={onBook} mode="landing" />
       <JHero onBook={onBook} content={content} />
       <JEstimator onBook={onBook} content={content} />
-      <JStoryCard onBook={onBook} content={content} />
+      <JStoryCard onBook={onBook} onNav={onNav} content={content} />
       <JSteps onBook={onBook} />
       <JWidePhoto onBook={onBook} />
       <SiteFooter content={content} />
