@@ -487,7 +487,7 @@ function JHero({ onBook, onNav, content }) {
       <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(rgba(9,15,30,.58) 0%, rgba(3,24,74,.68) 100%)', zIndex: 1 }} />
 
       <style>{`
-        .jhero-wrap { display: grid; grid-template-columns: 1fr 1fr; align-items: center; gap: 48px; position: relative; z-index: 2; padding: 130px 0 90px; }
+        .jhero-wrap { display: grid; grid-template-columns: 1fr 1.25fr; align-items: center; gap: 48px; position: relative; z-index: 2; padding: 130px 0 90px; min-height: 80vh; }
         .jhero-badge { display: inline-flex; align-items: center; gap: 8px; background: rgba(255,255,255,.12); border: 1px solid rgba(255,255,255,.22); border-radius: 99px; padding: 7px 18px; font-size: 13px; font-weight: 600; color: rgba(255,255,255,.85); margin-bottom: 24px; backdrop-filter: blur(8px); }
         .jhero-h1 { font-family:'Inter',system-ui,sans-serif; font-size: clamp(32px,4.5vw,48px); font-weight: 800; color: white; letter-spacing: -.04em; line-height: 1.1; margin: 0 0 18px; }
         .jhero-sub { font-size: 16px; color: rgba(255,255,255,.62); line-height: 1.7; margin: 0; max-width: 400px; }
