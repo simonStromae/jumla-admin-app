@@ -789,7 +789,7 @@ export default function BookingScreen({ onNav, embedded = false }) {
   const [bookingRef, setBookingRef] = useState('');
   const [bookingErr, setBookingErr] = useState('');
   const [dropoffInfo, setDropoffInfo] = useState(null);
-  const [paymentEmail, setPaymentEmail] = useState('paiement@jumla.cargo');
+  const [paymentEmail, setPaymentEmail] = useState('incjumla@gmail.com');
   const [user, setUser] = useState(() => {
     try { return JSON.parse(localStorage.getItem('jumla_user')); } catch { return null; }
   });

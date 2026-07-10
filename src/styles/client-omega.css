@@ -6,13 +6,13 @@
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 :root {
-  --w: 1300px;
+  --w: 1400px;
 }
 
 .jpage {
   font-family: 'Inter', system-ui, sans-serif;
   color: var(--ink-800);
-  background: var(--white);
+  background: rgb(253, 253, 255);
   -webkit-font-smoothing: antialiased;
 }
 
@@ -25,7 +25,7 @@
   font-weight: 700; letter-spacing: -.02em; line-height: 1.2;
 }
 
-.jc { max-width: var(--w); margin: 0 auto; padding: 0 32px; width: 100%; }
+.jc { max-width: var(--w); margin: 0 auto; padding: 0 clamp(20px, 5vw, 72px); width: 100%; }
 
 /* ── Top info bar ── */
 .jtop-bar {
@@ -45,12 +45,25 @@
 /* ── Nav ── */
 .jnav {
   background: var(--white);
-  position: sticky; top: 0; z-index: 200;
+  position: sticky; top: 0; z-index: 300;
   box-shadow: 0 1px 0 var(--border);
   font-family: "Inter",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
 }
+/* Landing overlay nav */
+.jnav--landing {
+  position: fixed; top: 0; left: 0; right: 0;
+  background: transparent;
+  box-shadow: none;
+  transition: background .3s, backdrop-filter .3s, border-color .3s;
+}
+.jnav--landing.jnav--scrolled {
+  background: rgba(9, 15, 30, 0.86);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  box-shadow: 0 1px 0 rgba(255,255,255,.07);
+}
 .jnav__inner {
-  display: flex; align-items: center; height: 72px; gap: 36px;
+  display: flex; align-items: center; height: 76px; gap: 0;
 }
 .jnav__logo {
   display: flex; align-items: center; gap: 10px;
@@ -65,17 +78,29 @@
   font-size: 18px; font-weight: 800; color: white;
   border-radius: var(--radius);
 }
+/* Center nav links */
+.jnav__links--center {
+  display: flex; align-items: center; gap: 2px;
+  margin: 0 auto;
+}
 .jnav__links { display: flex; align-items: center; gap: 2px; flex: 1; }
 .jnav__link {
-  padding: 9px 15px; border: 0; background: none;
+  padding: 9px 16px; border: 0; background: none;
   border-radius: var(--radius-sm);
-  font-family: 'Inter', sans-serif;
-  font-size: 14px; font-weight: 600; color: var(--ink-800);
+  font-family: 'Inter', sans-serif; text-decoration: none;
+  font-size: 14.5px; font-weight: 500; color: var(--ink-800);
   cursor: pointer;
   transition: color .15s, background .15s;
+  display: inline-flex; align-items: center;
 }
 .jnav__link:hover { color: var(--brand-400); background: var(--brand-50); }
-.jnav__right { display: flex; align-items: center; gap: 10px; }
+/* Landing link variant — white text */
+.jnav__link--landing {
+  color: rgba(255, 255, 255, .82);
+  font-weight: 500;
+}
+.jnav__link--landing:hover { color: white; background: rgba(255,255,255,.1); }
+.jnav__right { display: flex; align-items: center; gap: 12px; }
 .jnav__signin {
   font-family: 'Inter', sans-serif;
   font-size: 14px; font-weight: 600; color: var(--ink-400);
@@ -93,6 +118,32 @@
   transition: background .15s, transform .15s;
 }
 .jbtn-nav:hover { background: linear-gradient(90deg, #0087A8, #0D2E6E); transform: translateY(-1px); }
+/* Secondary — white bg, dark text */
+.jbtn-nav--secondary {
+  background: white; color: #0B1220;
+  box-shadow: 0 1px 4px rgba(0,0,0,.1);
+}
+.jbtn-nav--secondary:hover { background: #F1F5F9; transform: translateY(-1px); box-shadow: 0 4px 16px rgba(0,0,0,.14); }
+/* Large — section-level CTAs (bigger padding, slightly more radius) */
+.jbtn-nav--lg {
+  padding: 17px 44px;
+  font-size: 16px;
+  border-radius: 12px;
+}
+/* Ghost — secondary on dark nav backgrounds */
+.jbtn-nav--ghost {
+  background: transparent;
+  border: 1.5px solid rgba(255,255,255,.28);
+  color: rgba(255,255,255,.85);
+}
+.jbtn-nav--ghost:hover { background: rgba(255,255,255,.08); color: white; transform: translateY(-1px); }
+/* Outline — secondary on light backgrounds */
+.jbtn-nav--outline {
+  background: transparent;
+  border: 1.5px solid #1B4FD8;
+  color: #1B4FD8;
+}
+.jbtn-nav--outline:hover { background: #EFF6FF; transform: translateY(-1px); }
 
 /* ── Hero ── */
 .jhero {
@@ -378,7 +429,7 @@
 
 /* ── Footer ── */
 .jfoot { background: var(--ink-900); border-top: 1px solid rgba(255,255,255,.07); padding: 64px 0 32px; font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; }
-.jfoot__grid { display: grid; grid-template-columns: 1.5fr 1fr 1fr 1fr; gap: 48px; margin-bottom: 48px; }
+.jfoot__grid { display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 48px; margin-bottom: 48px; }
 .jfoot__brand { font-family: 'Inter', system-ui, sans-serif; font-size: 20px; font-weight: 800; color: white; display: flex; align-items: center; gap: 10px; margin-bottom: 16px; }
 .jfoot__brand-mark { width: 36px; height: 36px; background: linear-gradient(135deg, #00B4D8, #1B4FD8); display: grid; place-items: center; font-size: 17px; font-weight: 800; color: white; border-radius: var(--radius); }
 .jfoot__desc { font-size: 14px; line-height: 1.75; color: rgba(255,255,255,.5); margin-bottom: 20px; }
@@ -391,10 +442,11 @@
 /* ── Cyan highlight ── */
 .cy { color: #00B4D8; }
 
-/* ── Hero 2 — split layout ── */
+/* ── Hero 2 — split layout (legacy, replaced) ── */
 .jhero2 {
   background: #0B1220;
-  padding: 88px 0 80px;
+  padding: 96px 0 88px;
+  border-radius: 0 0 28px 28px;
 }
 .jhero2__grid {
   display: grid;
@@ -692,7 +744,7 @@
   font-size: 14px; line-height: 1.75; color: var(--ink-400); max-width: 560px;
 }
 
-/* ── CTA 3 — photo + card ── */
+/* ── CTA 3 — photo + card (legacy, removed from landing) ── */
 .jcta3 {
   position: relative; overflow: hidden;
   min-height: 560px; display: flex; align-items: center;
@@ -842,7 +894,7 @@
 .jbtn-ghost:hover { border-color: var(--ink-300); }
 
 /* estimator (kept, used in hero-below) */
-.jest-wrap { background: var(--bg-soft); padding: 80px 0; }
+.jest-wrap { background: rgb(253,253,255); min-height: 80vh; display: flex; flex-direction: column; justify-content: center; padding: 80px 0; }
 .jest {
   background: white; overflow: hidden;
   border-radius: var(--radius-xl);
@@ -922,13 +974,15 @@
 
 /* ── Mobile (≤ 768px) ── */
 @media (max-width: 768px) {
-  .jc { padding: 0 16px; }
+  .jc { padding: 0 20px; }
 
   /* Top bar: hide on mobile */
   .jtop-bar { display: none; }
 
   /* Nav */
-  .jnav__inner { height: 58px; gap: 14px; }
+  .jnav__inner { height: 60px; gap: 12px; }
+  .jnav__links--center { display: none; }
+  .jbtn-nav--pill { padding: 10px 20px; font-size: 13px; }
 
   /* Hero2 */
   .jhero2 { padding: 40px 0 36px; overflow: hidden; }
@@ -995,14 +1049,25 @@
   .jest__res { padding: 16px 14px; flex-direction: column; align-items: flex-start; gap: 12px; }
   .jest__res .jbtn-nav { width: 100%; justify-content: center; }
 
+  /* Services */
+  .jsvc3 { padding: 48px 0; }
+  .jsvc3__head { margin-bottom: 32px; }
+
+  /* Features */
+  .jfeats3 { padding: 48px 0; }
+  .jfeats3__stats { flex-wrap: wrap; gap: 20px; }
+
+  /* Estimator */
+  .jest-wrap { min-height: auto; }
+
   /* FAQ */
-  .jfaq-section { padding: 56px 0; }
-  .jfaq-grid { grid-template-columns: 1fr; gap: 32px; }
+  .jfaq-section { padding: 48px 0; }
+  .jfaq-grid { grid-template-columns: 1fr; gap: 24px; }
 
   /* CTA */
   .jcta3 { min-height: auto; }
   .jcta3__grid { grid-template-columns: 1fr; gap: 28px; padding: 48px 0; }
-  .jcta3__title { font-size: 34px; }
+  .jcta3__title { font-size: 26px; }
   .jcta3__sub { font-size: 13.5px; }
   .jcta3__btn { width: 100%; justify-content: center; }
   .jcta3__card { padding: 20px; }
@@ -1035,4 +1100,118 @@
   .jfaq-grid .jsvc-sec__tag { font-size: 11px; }
 
   .jfoot__grid { grid-template-columns: 1fr; gap: 20px; }
+}
+
+/* ==============================================
+   HAMBURGER & MOBILE NAV DRAWER
+   ============================================== */
+.jnav__burger {
+  display: none;
+  flex-direction: column; justify-content: center; gap: 5px;
+  padding: 6px; background: none; border: none; cursor: pointer;
+  color: inherit;
+}
+.jnav__burger span {
+  display: block; width: 22px; height: 2px;
+  background: currentColor; border-radius: 2px;
+  transition: transform .2s, opacity .2s;
+}
+
+.jnav-mobile {
+  display: none; position: fixed; inset: 0; z-index: 999;
+}
+.jnav-mobile.is-open { display: flex; }
+.jnav-mobile__backdrop {
+  position: absolute; inset: 0;
+  background: rgba(9,15,30,.55); backdrop-filter: blur(4px);
+  animation: jfadein .18s ease;
+}
+@keyframes jfadein { from { opacity: 0; } to { opacity: 1; } }
+
+.jnav-mobile__panel {
+  position: relative; width: min(320px, 88vw);
+  background: white; height: 100%; margin-left: auto;
+  display: flex; flex-direction: column;
+  padding: 24px 20px 32px; overflow-y: auto;
+  box-shadow: -4px 0 32px rgba(0,0,0,.15);
+  animation: jslide .22s ease;
+}
+@keyframes jslide { from { transform: translateX(100%); } to { transform: translateX(0); } }
+
+.jnav-mobile__close {
+  position: absolute; top: 14px; right: 16px;
+  background: none; border: none; cursor: pointer;
+  font-size: 20px; color: var(--ink-400); line-height: 1;
+  padding: 4px;
+}
+.jnav-mobile__logo { display: flex; align-items: center; gap: 8px; margin-bottom: 28px; text-decoration: none; }
+
+.jnav-mobile__link {
+  display: flex; align-items: center; justify-content: space-between;
+  width: 100%; padding: 14px 0;
+  font-size: 15.5px; font-weight: 600; color: var(--ink-800);
+  text-decoration: none; background: none; border: none; cursor: pointer;
+  border-bottom: 1px solid var(--border-soft); text-align: left;
+  font-family: inherit;
+}
+.jnav-mobile__link:hover { color: var(--brand-600); }
+
+.jnav-mobile__sub {
+  display: flex; flex-direction: column; gap: 0;
+  padding-left: 14px; margin-bottom: 4px;
+  border-left: 2px solid var(--brand-100);
+}
+.jnav-mobile__sub a {
+  display: block; padding: 10px 0;
+  font-size: 14px; color: var(--ink-600);
+  text-decoration: none;
+  border-bottom: 1px solid var(--border-soft);
+}
+.jnav-mobile__sub a:last-child { border-bottom: none; }
+.jnav-mobile__sub a:hover { color: var(--brand-600); }
+
+.jnav-mobile__btns {
+  display: flex; flex-direction: column; gap: 10px; margin-top: auto; padding-top: 28px;
+}
+.jnav-mobile__btns .jbtn-nav { justify-content: center; width: 100%; }
+
+/* ==============================================
+   LEGAL PAGES — reusable layout classes
+   ============================================== */
+.jlegal-toc-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4px 24px; }
+.jlegal-delay-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 32px; }
+.jlegal-card { background: white; border: 1.5px solid var(--border); border-radius: 16px; padding: 36px 36px 12px; box-shadow: 0 2px 16px rgba(0,0,0,.04); }
+.jlegal-art-body { padding-left: 44px; }
+.jlegal-doc-card { background: white; border: 1.5px solid var(--border); border-radius: 16px; padding: 32px 36px; box-shadow: 0 2px 16px rgba(0,0,0,.04); }
+
+.jlegal-art-num {
+  flex-shrink: 0; width: 30px; height: 30px; border-radius: 8px;
+  background: var(--brand-50); border: 1.5px solid var(--brand-100);
+  display: grid; place-items: center;
+  font-size: 12px; font-weight: 800; color: var(--brand-600);
+}
+
+/* ==============================================
+   RESPONSIVE — mobile overrides
+   ============================================== */
+@media (max-width: 768px) {
+  /* Show hamburger, hide desktop buttons */
+  .jnav__burger { display: flex; }
+  .jnav__right .jbtn-nav { display: none; }
+  .jnav__right .jlang-trigger { display: flex; } /* keep language switcher */
+
+  /* Legal pages */
+  .jlegal-toc-grid { grid-template-columns: 1fr; }
+  .jlegal-delay-grid { grid-template-columns: 1fr; }
+  .jlegal-card { padding: 20px 18px 8px; }
+  .jlegal-art-body { padding-left: 0; }
+  .jlegal-doc-card { padding: 20px 18px; }
+
+  /* Legal page header */
+  .jlegal-h1 { font-size: 24px !important; }
+  .jlegal-doc-card { padding: 24px 18px !important; }
+}
+
+@media (max-width: 480px) {
+  .jlegal-card { padding: 16px 14px 8px; }
 }

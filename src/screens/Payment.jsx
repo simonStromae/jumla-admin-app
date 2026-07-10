@@ -71,7 +71,7 @@ export default function PaymentScreen({ token }) {
 
 function PaymentView({ data, onConfirm }) {
   const [acknowledged, setAcknowledged] = useState(false);
-  const [paymentEmail, setPaymentEmail] = useState('paiement@jumla.cargo');
+  const [paymentEmail, setPaymentEmail] = useState('incjumla@gmail.com');
   useEffect(() => {
     fetch('/api/public/config').then(r => r.json()).then(d => {
       if (d.paymentEmail) setPaymentEmail(d.paymentEmail);
@@ -206,7 +206,7 @@ function ConfirmationView({ data }) {
         Notre équipe vérifiera la réception du paiement et mettra à jour votre dossier sous <strong>24h ouvrées</strong>.
       </div>
       <div className="pay-confirm__sub" style={{ marginTop: 8 }}>
-        En cas de question : <strong>contact@jumla.cargo</strong> ou WhatsApp <strong>+1 514 000 0000</strong>
+        En cas de question : <strong>info@jumlas.com</strong> ou WhatsApp <strong>+1 514 000 0000</strong>
       </div>
     </div>
   );

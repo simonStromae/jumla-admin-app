@@ -511,7 +511,7 @@ function InvoicePreviewModal({ parcelId, onClose }) {
   const [data, setData]       = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError]     = useState('');
-  const [paymentEmail, setPaymentEmail] = useState('paiement@jumla.cargo');
+  const [paymentEmail, setPaymentEmail] = useState('incjumla@gmail.com');
   const [adjMode, setAdjMode] = useState(false);
 
   useEffect(() => {
@@ -708,7 +708,7 @@ function InvoicePreviewModal({ parcelId, onClose }) {
 
               {/* Footer */}
               <div style={{ borderTop: '1px solid #e5e7eb', paddingTop: 16, display: 'flex', justifyContent: 'space-between', fontSize: 11, color: '#9ca3af' }}>
-                <span>Jumla Shipping SARL · contact@jumla.cargo</span>
+                <span>Jumla Shipping SARL · info@jumlas.com</span>
                 <span>Douala · Montréal · Lagos · Bruxelles</span>
               </div>
             </div>

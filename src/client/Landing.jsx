@@ -62,8 +62,8 @@ const DEFAULT_CONTENT_FR = {
     description: "Spécialiste du fret aérien international entre l'Afrique et le Canada depuis 2021. Suivi, sécurité et transparence à chaque étape.",
     copyright: '© 2026 Jumla Shipping SARL — Tous droits réservés',
     offices: 'Douala · Montréal · Lagos · Bruxelles',
-    col1Title: 'Services', col2Title: 'Entreprise', col3Title: 'Légal',
-    email: 'contact@jumla.cargo',
+    col1Title: 'Navigation', col2Title: 'Politiques',
+    email: 'info@jumlas.com',
   },
 };
 
@@ -122,8 +122,8 @@ const DEFAULT_CONTENT_EN = {
     description: 'International air freight specialist between Africa and Canada since 2021. Tracking, security and transparency at every step.',
     copyright: '© 2026 Jumla Shipping SARL — All rights reserved',
     offices: 'Douala · Montréal · Lagos · Brussels',
-    col1Title: 'Services', col2Title: 'Company', col3Title: 'Legal',
-    email: 'contact@jumla.cargo',
+    col1Title: 'Navigation', col2Title: 'Policies',
+    email: 'info@jumlas.com',
   },
 };
 
@@ -168,115 +168,378 @@ function useLandingContent() {
 }
 
 const IMGS = {
-  hero:    'https://images.pexels.com/photos/46148/aircraft-jet-landing-cloud-46148.jpeg?auto=compress&cs=tinysrgb&w=1600',
-  cargo:   'https://images.pexels.com/photos/2026324/pexels-photo-2026324.jpeg?auto=compress&cs=tinysrgb&w=1600',
-  airport: 'https://images.pexels.com/photos/358319/pexels-photo-358319.jpeg?auto=compress&cs=tinysrgb&w=1600',
+  // Hero background — palettes cargo tons chauds, format paysage
+  airport: 'https://images.pexels.com/photos/33824580/pexels-photo-33824580.jpeg?auto=compress&cs=tinysrgb&w=1920',
+  // JStoryCard split left — Air France cargo N&B, très cinématique
+  cargo:   'https://images.pexels.com/photos/32689680/pexels-photo-32689680.jpeg?auto=compress&cs=tinysrgb&w=1200',
+  // JWidePhoto full-bleed overlay — Lufthansa Jettainer containers
+  hero:    'https://images.pexels.com/photos/19854581/pexels-photo-19854581.jpeg?auto=compress&cs=tinysrgb&w=1920',
 };
 
-/* ─── Hero split layout ─── */
-function JHero({ onBook, onNav, content }) {
-  const t = useT();
-  const [code, setCode] = useState('');
-  const h = content.hero;
-  const tc = content.trackingCard ?? {};
+const WA_SUPPORT = 'https://wa.me/15149980709?text=Bonjour%20Jumla%20Shipping%2C%20j%27ai%20une%20question.';
 
-  const handleTrack = (e) => {
-    e.preventDefault();
-    const c = code.trim().toUpperCase();
-    if (c) onNav?.('/suivi?code=' + encodeURIComponent(c));
+/* ─── Dark story section — split grid photo left / content right ─── */
+function JStoryCard({ onBook, onNav, content }) {
+  const heroStats = content.hero?.stats ?? [];
+  const STAT_DEFAULTS = [
+    { value: '12 000+', label: 'Colis livrés' },
+    { value: '14 jours', label: 'Transit moyen' },
+    { value: '98%',      label: 'Taux de succès' },
+  ];
+  const stats = STAT_DEFAULTS.map((d, i) => heroStats[i] ?? d);
+
+  return (
+    <section id="jstory" style={{ display: 'grid' }}>
+      <style>{`
+        #jstory { grid-template-columns: 1fr 1fr; min-height: 80vh; }
+        @media (max-width: 768px) {
+          #jstory { grid-template-columns: 1fr; min-height: auto; }
+          .jsc-photo { min-height: 260px; }
+          .jsc-wa-card { display: none; }
+          .jsc-content { padding: 40px 20px !important; }
+          .jsc-h2 { font-size: 28px !important; }
+          .jsc-stats-row { margin-bottom: 24px !important; gap: 16px !important; }
+        }
+        .jsc-stats-row { display: flex; gap: clamp(20px,3vw,40px); flex-wrap: wrap; margin-bottom: 40px; }
+        .jsc-stat-item { display: flex; flex-direction: column; gap: 5px; }
+        .jsc-stat-val  { font-family:'Inter',system-ui,sans-serif; font-size: clamp(26px,3vw,36px); font-weight: 800; color: white; line-height: 1; }
+        .jsc-stat-lbl  { font-size: 13px; color: rgba(255,255,255,.45); font-weight: 500; }
+      `}</style>
+
+      {/* Left — photo */}
+      <div className="jsc-photo" style={{ position: 'relative', overflow: 'hidden' }}>
+        <img src={IMGS.cargo} alt="" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center 40%' }} />
+        <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(135deg, rgba(9,15,30,.18) 0%, rgba(9,15,30,.05) 100%)' }} />
+        {/* Floating WhatsApp notification card */}
+        <div className="jsc-wa-card" style={{ position: 'absolute', bottom: 40, left: '50%', transform: 'translateX(-50%)', background: 'rgba(255,255,255,.96)', backdropFilter: 'blur(12px)', borderRadius: 14, padding: '14px 18px', display: 'flex', alignItems: 'center', gap: 12, boxShadow: '0 8px 32px rgba(0,0,0,.18)', minWidth: 240, whiteSpace: 'nowrap' }}>
+          <div style={{ width: 36, height: 36, borderRadius: '50%', background: '#25D366', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="white"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+          </div>
+          <div>
+            <div style={{ fontSize: 11, fontWeight: 700, color: '#25D366', textTransform: 'uppercase', letterSpacing: '.04em', marginBottom: 2 }}>Jumla Shipping</div>
+            <div style={{ fontSize: 13, color: '#111827', fontWeight: 500 }}>📦 Colis JMS-4829 arrivé à Montréal</div>
+          </div>
+        </div>
+      </div>
+
+      {/* Right — dark content */}
+      <div className="jsc-content" style={{ background: '#0B1220', display: 'flex', alignItems: 'center', padding: 'clamp(56px,7vw,96px) clamp(32px,5vw,72px)' }}>
+        <div style={{ maxWidth: 480 }}>
+          <div style={{ display: 'inline-flex', alignItems: 'center', background: 'rgba(147,197,253,.1)', color: '#93C5FD', border: '1px solid rgba(147,197,253,.18)', padding: '5px 14px', borderRadius: 99, fontSize: 11, fontWeight: 700, letterSpacing: '.06em', textTransform: 'uppercase', marginBottom: 28 }}>
+            Notre histoire
+          </div>
+          <h2 className="jsc-h2" style={{ fontFamily: "'Inter',system-ui,sans-serif", fontSize: 'clamp(38px,5.5vw,50px)', fontWeight: 800, color: 'white', letterSpacing: '-.04em', lineHeight: 1.1, marginBottom: 20 }}>
+            Le pont aérien entre l'Afrique et le Canada.
+          </h2>
+          <p style={{ fontSize: 17, color: 'rgba(255,255,255,.55)', lineHeight: 1.8, marginBottom: 40 }}>
+            Depuis 2021, nous connectons des familles entre Douala et Montréal. Chaque colis photographié, suivi à chaque étape et livré en 14 jours chrono.
+          </p>
+          {/* Stats row */}
+          <div className="jsc-stats-row">
+            {stats.map(s => (
+              <div key={s.label} className="jsc-stat-item">
+                <span className="jsc-stat-val">{s.value}</span>
+                <span className="jsc-stat-lbl">{s.label}</span>
+              </div>
+            ))}
+          </div>
+          <button className="jbtn-nav jbtn-nav--lg" onClick={() => onNav?.('/suivi')}>
+            Suivre mon colis →
+          </button>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ─── 4-step zigzag "Comment ça marche" ─── */
+const STEPS_DATA = [
+  {
+    num: '1', duration: '3 min', side: 'left', bg: '#EFF6FF',
+    icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" width="19" height="19" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>,
+    title: 'Réservez en ligne',
+    desc: 'Créez votre envoi en 3 minutes. Renseignez les colis et obtenez votre code de suivi instantanément.',
+  },
+  {
+    num: '2', duration: '1 jour', side: 'right', bg: 'white',
+    icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" width="19" height="19" strokeLinecap="round" strokeLinejoin="round"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>,
+    title: 'Déposez à Douala',
+    desc: 'Apportez vos colis à notre entrepôt. Vérification article par article, bordereau signé au départ.',
+  },
+  {
+    num: '3', duration: '~14 jours', side: 'left', bg: 'white',
+    icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" width="19" height="19" strokeLinecap="round" strokeLinejoin="round"><path d="M22 2L11 13"/><path d="M22 2l-7 20-4-9-9-4 20-7z"/></svg>,
+    title: 'Transit aérien',
+    desc: 'Vos colis voyagent avec nos compagnies partenaires certifiées. Notifications WhatsApp à chaque étape.',
+  },
+  {
+    num: '4', duration: 'Sur RDV', side: 'right', bg: '#EFF6FF',
+    icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" width="19" height="19" strokeLinecap="round" strokeLinejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>,
+    title: 'Livraison à Montréal',
+    desc: 'Retrait à notre entrepôt ou livraison à domicile partout au Québec. Paiement à la remise.',
+  },
+];
+
+function JSteps({ onBook }) {
+  return (
+    <section id="jsteps" style={{ minHeight: '80vh', display: 'flex', flexDirection: 'column', justifyContent: 'center', background: 'rgb(253,253,255)', padding: '80px 0 100px' }}>
+      <style>{`
+        .js2-wrap { position: relative; max-width: 820px; margin: 0 auto; }
+        .js2-row  { display: flex; margin-bottom: 64px; position: relative; }
+        .js2-row:last-child { margin-bottom: 0; }
+        .js2-row--left  { justify-content: flex-start; }
+        .js2-row--right { justify-content: flex-end; }
+        .js2-card-wrap { width: 58%; position: relative; }
+        .js2-badge-outer { position: absolute; left: -17px; top: 50%; transform: translateY(-50%); z-index: 2; }
+        .js2-badge { writing-mode: vertical-rl; transform: rotate(180deg); background: #00B4D8; color: white; padding: 10px 5px; border-radius: 99px; font-size: 9px; font-weight: 700; letter-spacing: .06em; white-space: nowrap; font-family: inherit; }
+        .js2-inner { border-radius: 16px; padding: 28px 24px 28px 32px; border: 1px solid rgba(0,0,0,.07); box-shadow: 0 2px 12px rgba(0,0,0,.05); }
+        .js2-head { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+        .js2-icon  { color: #00B4D8; flex-shrink: 0; }
+        .js2-title { font-size: 19px; font-weight: 700; color: #111827; margin: 0; line-height: 1.3; }
+        .js2-desc  { font-size: 15px; color: #6B7280; line-height: 1.75; margin: 0; }
+        .js2-arrow { position: absolute; bottom: -52px; pointer-events: none; z-index: 1; }
+        .js2-row--left  .js2-arrow { left: 54%; }
+        .js2-row--right .js2-arrow { right: 54%; }
+        @media (max-width: 768px) {
+          #jsteps { padding: 48px 0 64px !important; min-height: auto !important; }
+          .js2-steps-hd { margin-bottom: 36px !important; }
+          .js2-steps-hd h2 { font-size: 26px !important; }
+          .js2-steps-hd p { font-size: 15px !important; }
+          .js2-steps-cta { margin-top: 32px !important; }
+        }
+        @media (max-width: 620px) {
+          .js2-card-wrap { width: 100%; padding-left: 36px; }
+          .js2-badge-outer { left: 2px; }
+          .js2-row--right { justify-content: flex-start; }
+          .js2-arrow  { display: none; }
+          .js2-row    { margin-bottom: 24px; }
+          .js2-title  { font-size: 16px; }
+          .js2-desc   { font-size: 14px; }
+          .js2-inner  { padding: 20px 16px 20px 24px; }
+        }
+      `}</style>
+
+      <div className="jc">
+        {/* Header */}
+        <div className="js2-steps-hd" style={{ textAlign: 'center', marginBottom: 64 }}>
+          <div style={{ display: 'inline-flex', alignItems: 'center', background: 'rgba(0,180,216,.1)', color: '#00B4D8', border: '1px solid rgba(0,180,216,.25)', padding: '5px 16px', borderRadius: 99, fontSize: 12, fontWeight: 700, letterSpacing: '.05em', textTransform: 'uppercase', marginBottom: 18 }}>
+            Comment ça marche
+          </div>
+          <h2 style={{ fontFamily: "'Inter',system-ui,sans-serif", fontSize: 'clamp(38px,5.5vw,50px)', fontWeight: 800, color: '#111827', letterSpacing: '-.04em', margin: 0, lineHeight: 1.1 }}>
+            Simple comme <span style={{ color: '#00B4D8' }}>4 étapes</span>
+          </h2>
+          <p style={{ fontSize: 18, color: '#6B7280', marginTop: 16, lineHeight: 1.65, maxWidth: 420, margin: '16px auto 0' }}>
+            De Douala à Montréal — on s'occupe de tout, vous suivez en temps réel.
+          </p>
+        </div>
+
+        {/* Steps */}
+        <div className="js2-wrap">
+          {STEPS_DATA.map((step, i) => (
+            <div key={step.num} className={`js2-row js2-row--${step.side}`}>
+
+              {/* Card */}
+              <div className="js2-card-wrap">
+                <div className="js2-badge-outer">
+                  <div className="js2-badge">{step.duration}</div>
+                </div>
+                <div className="js2-inner" style={{ background: step.bg }}>
+                  <div className="js2-head">
+                    <span className="js2-icon">{step.icon}</span>
+                    <h3 className="js2-title">{step.num} {step.title}</h3>
+                  </div>
+                  <p className="js2-desc">{step.desc}</p>
+                </div>
+              </div>
+
+              {/* Dashed connecting arrow to next step */}
+              {i < STEPS_DATA.length - 1 && (
+                <div className="js2-arrow">
+                  {step.side === 'left' ? (
+                    /* left card → curves right-down toward right card */
+                    <svg width="88" height="58" viewBox="0 0 88 58" fill="none">
+                      <path d="M 6 6 C 30 6, 82 24, 82 52" stroke="#00B4D8" strokeDasharray="5,4" strokeWidth="1.5" fill="none"/>
+                      <path d="M 75 45 L 82 52 L 86 44" stroke="#00B4D8" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
+                    </svg>
+                  ) : (
+                    /* right card → curves left-down toward left card */
+                    <svg width="88" height="58" viewBox="0 0 88 58" fill="none">
+                      <path d="M 82 6 C 58 6, 6 24, 6 52" stroke="#00B4D8" strokeDasharray="5,4" strokeWidth="1.5" fill="none"/>
+                      <path d="M 13 45 L 6 52 L 2 44" stroke="#00B4D8" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
+                    </svg>
+                  )}
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+
+        {/* CTA */}
+        <div className="js2-steps-cta" style={{ textAlign: 'center', marginTop: 56 }}>
+          <button className="jbtn-nav jbtn-nav--lg" onClick={onBook}>
+            Créer une nouvelle expédition →
+          </button>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ─── Floating chatbot ─── */
+const CHAT_QS = [
+  { emoji:'⏱️', label:'Délai de livraison ?',      answer:"Le transit moyen est de 14 jours porte à porte Douala → Montréal. Vous recevez une notification WhatsApp à chaque étape clé du voyage." },
+  { emoji:'📦', label:'Comment ça marche ?',        answer:"1. Réservez en ligne en 3 min → 2. Déposez à notre entrepôt de Douala → 3. Transit aérien ~14 jours → 4. Livraison ou retrait à Montréal. Simple et transparent !" },
+  { emoji:'💰', label:'Tarifs & devis ?',           answer:"Les tarifs sont calculés au kilo par tranche (0–5 kg, 5–10 kg, 10–25 kg…). Fragile +8%, électronique +5%, documents –10%. Utilisez le simulateur sur cette page pour un devis instantané.", scrollTo:'jest' },
+  { emoji:'💳', label:'Moyens de paiement ?',       answer:"Paiement à la livraison à Montréal : Interac, virement bancaire, Mobile Money (Orange Money, MTN) ou espèces. Aucun paiement requis à l'envoi depuis Douala. Zéro frais caché." },
+  { emoji:'🎁', label:'Que puis-je envoyer ?',      answer:"Vêtements, denrées sèches, électronique, cosmétiques, documents, mobilier léger. Sont exclus : produits dangereux, liquides, marchandises prohibées au transport aérien." },
+  { emoji:'🏠', label:'Livraison ou retrait ?',     answer:"Au choix : livraison à domicile partout au Québec (créneau sur RDV, signature requise) ou retrait à notre entrepôt de Montréal. Paiement à la remise." },
+  { emoji:'🔍', label:'Suivre mon colis',           link:'/suivi' },
+  { emoji:'💬', label:'Autre question',             wa:true },
+];
+
+function JChatBot() {
+  const [open, setOpen]       = useState(false);
+  const [current, setCurrent] = useState(null);
+
+  const handleQ = (q) => {
+    if (q.link)    { window.location.href = q.link; return; }
+    if (q.wa)      { window.open(WA_SUPPORT, '_blank'); return; }
+    if (q.scrollTo){ document.getElementById(q.scrollTo)?.scrollIntoView({ behavior:'smooth' }); setOpen(false); return; }
+    setCurrent(q);
   };
 
   return (
-    <section className="jhero2">
-      <div className="jc">
-        <div className="jhero2__grid">
+    <>
+      <button
+        onClick={() => { setOpen(v => !v); setCurrent(null); }}
+        aria-label="Chat"
+        style={{
+          position:'fixed', bottom:24, right:24, zIndex:1000,
+          width:56, height:56, borderRadius:'50%',
+          background:'linear-gradient(135deg,#00B4D8,#1B4FD8)',
+          border:'none', cursor:'pointer',
+          display:'flex', alignItems:'center', justifyContent:'center',
+          boxShadow:'0 4px 24px rgba(27,79,216,.4)',
+        }}>
+        {open
+          ? <span style={{ color:'white', fontSize:18 }}>✕</span>
+          : <svg width="22" height="22" viewBox="0 0 24 24" fill="white"><path d="M20 2H4C2.9 2 2 2.9 2 4v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/></svg>
+        }
+      </button>
 
-          {/* Left — headline */}
-          <div className="jhero2__left">
-            <div className="jhero2__eyebrow">
-              <span className="jhero2__eyebrow-dot" />
-              {h.eyebrow}
-            </div>
-            <h1 className="jhero2__title">
-              {h.line1}<br />
-              {h.line2.includes('Douala')
-                ? <>{h.line2.split('Douala')[0]}<span className="cy">Douala</span>{h.line2.split('Douala')[1]}</>
-                : h.line2}<br />
-              {h.line3.includes('Montréal')
-                ? <>{h.line3.split('Montréal')[0]}<span className="cy">Montréal</span>{h.line3.split('Montréal')[1]}</>
-                : <span className="cy">{h.line3}</span>}
-            </h1>
-            <p className="jhero2__sub">{h.subtitle}</p>
-            <div className="jhero2__btns">
-              <button className="jhero2__btn-primary" onClick={onBook}>
-                {t('hero.button.book')}
-              </button>
-              <button className="jhero2__btn-ghost" onClick={() => document.getElementById('jest')?.scrollIntoView({ behavior: 'smooth' })}>
-                {t('hero.button.estimate')}
-              </button>
-            </div>
-            <div className="jhero2__stats">
-              {h.stats.map(({ value: n, label: l }, i) => (
-                <div key={l} className="jhero2__stat">
-                  {i > 0 && <div className="jhero2__stat-sep" />}
-                  <div className="jhero2__stat-n">{n}</div>
-                  <div className="jhero2__stat-l">{l}</div>
-                </div>
-              ))}
+      {open && (
+        <div style={{ position:'fixed', bottom:90, right:24, zIndex:1000, width:'min(320px, calc(100vw - 48px))', background:'white', borderRadius:16, boxShadow:'0 8px 48px rgba(0,0,0,.15)', overflow:'hidden' }}>
+          <div style={{ background:'linear-gradient(135deg,#0D2E6E,#1B4FD8)', padding:'14px 18px' }}>
+            <div style={{ display:'flex', alignItems:'center', gap:10 }}>
+              <div style={{ width:36, height:36, borderRadius:'50%', background:'rgba(255,255,255,.15)', display:'grid', placeItems:'center', fontSize:18 }}>✈️</div>
+              <div>
+                <div style={{ color:'white', fontWeight:700, fontSize:13.5 }}>Jumla Shipping</div>
+                <div style={{ color:'rgba(255,255,255,.65)', fontSize:11 }}>Répond en moins d'une heure</div>
+              </div>
             </div>
           </div>
-
-          {/* Right — tracking card */}
-          <div className="jhero2__right">
-            <div className="jhero2__card">
-              <div className="jhero2__card-header">
-                <div className="jhero2__card-icon">
-                  <I.Search style={{ width: 16, height: 16 }} />
+          <div style={{ padding:'14px 14px 18px' }}>
+            {!current ? (
+              <>
+                <div style={{ background:'#F4F5F7', borderRadius:12, padding:'11px 14px', fontSize:13.5, color:'#374151', marginBottom:12, lineHeight:1.5 }}>
+                  👋 Bonjour ! Comment puis-je vous aider ?
                 </div>
-                <span className="jhero2__card-title">{tc.title ?? t('hero.tracking.title')}</span>
-              </div>
-
-              <form onSubmit={handleTrack}>
-                <label className="jhero2__card-label">{tc.label ?? t('hero.tracking.label')}</label>
-                <input
-                  value={code}
-                  onChange={e => setCode(e.target.value.toUpperCase())}
-                  placeholder={tc.placeholder ?? t('hero.tracking.placeholder')}
-                  className="jhero2__card-input"
-                />
-                <button type="submit" className="jhero2__card-btn">
-                  {tc.button ?? t('hero.tracking.button')}
-                </button>
-              </form>
-
-              <div className="jhero2__card-divider" />
-
-              <div className="jhero2__card-route">
-                <div className="jhero2__card-city">
-                  <div className="jhero2__card-city-label">{tc.cityFromLabel ?? t('hero.route.departure')}</div>
-                  <div className="jhero2__card-city-name">{tc.cityFrom ?? 'DOUALA'}</div>
-                  <div className="jhero2__card-city-sub">{tc.cityFromSub ?? 'DLA · Cameroun'}</div>
+                <div style={{ display:'flex', flexDirection:'column', gap:7 }}>
+                  {CHAT_QS.map(q => (
+                    <button key={q.label} onClick={() => handleQ(q)}
+                      style={{ display:'flex', alignItems:'center', gap:9, background:'white', border:'1.5px solid #E5E7EB', borderRadius:10, padding:'9px 12px', fontSize:13, fontWeight:500, color:'#374151', cursor:'pointer', textAlign:'left', fontFamily:'inherit', width:'100%' }}>
+                      <span style={{ fontSize:15 }}>{q.emoji}</span>
+                      <span style={{ flex:1 }}>{q.label}</span>
+                      <span style={{ color:'#C4C9D4', fontSize:12 }}>→</span>
+                    </button>
+                  ))}
                 </div>
-                <div className="jhero2__card-plane">
-                  <I.Plane style={{ width: 20, height: 20, color: '#00B4D8' }} />
+              </>
+            ) : (
+              <>
+                <div style={{ background:'#F4F5F7', borderRadius:12, padding:'11px 14px', fontSize:13.5, color:'#374151', marginBottom:12, lineHeight:1.6 }}>
+                  {current.answer}
                 </div>
-                <div className="jhero2__card-city" style={{ textAlign: 'right' }}>
-                  <div className="jhero2__card-city-label">{tc.cityToLabel ?? t('hero.route.arrival')}</div>
-                  <div className="jhero2__card-city-name">{tc.cityTo ?? 'MONTRÉAL'}</div>
-                  <div className="jhero2__card-city-sub">{tc.cityToSub ?? 'YUL · Canada'}</div>
+                <div style={{ display:'flex', gap:8 }}>
+                  <button onClick={() => setCurrent(null)} style={{ flex:1, padding:'9px', border:'1.5px solid #E5E7EB', borderRadius:10, background:'white', fontSize:12.5, fontWeight:600, color:'#374151', cursor:'pointer', fontFamily:'inherit' }}>
+                    ← Retour
+                  </button>
+                  <a href={WA_SUPPORT} target="_blank" rel="noreferrer"
+                    style={{ flex:1, padding:'9px', borderRadius:10, background:'#25D366', color:'white', fontSize:12.5, fontWeight:700, textDecoration:'none', display:'flex', alignItems:'center', justifyContent:'center', gap:5 }}>
+                    💬 WhatsApp
+                  </a>
                 </div>
-              </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
 
-              <div className="jhero2__card-badge">
-                <span className="jhero2__card-badge-dot" />
-                {tc.badge ?? t('hero.route.badge')}
-              </div>
+/* ─── Hero — DHL-style: background image + left text + right action panel ─── */
+function JHero({ onBook, onNav, content }) {
+  const h = content.hero;
+  return (
+    <section style={{ position: 'relative', overflow: 'hidden' }}>
+      <img src={IMGS.airport} alt="" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center 42%', zIndex: 0 }} />
+      <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(rgba(9,15,30,.58) 0%, rgba(3,24,74,.68) 100%)', zIndex: 1 }} />
+
+      <style>{`
+        .jhero-wrap { display: grid; grid-template-columns: 1fr 1.25fr; align-items: center; gap: 48px; position: relative; z-index: 2; padding: 130px 0 90px; min-height: 80vh; }
+        .jhero-badge { display: inline-flex; align-items: center; gap: 8px; background: rgba(255,255,255,.12); border: 1px solid rgba(255,255,255,.22); border-radius: 99px; padding: 7px 18px; font-size: 13px; font-weight: 600; color: rgba(255,255,255,.85); margin-bottom: 24px; backdrop-filter: blur(8px); }
+        .jhero-h1 { font-family:'Inter',system-ui,sans-serif; font-size: clamp(32px,4.5vw,48px); font-weight: 800; color: white; letter-spacing: -.04em; line-height: 1.1; margin: 0 0 18px; width: 70%; }
+        .jhero-sub { font-size: 16px; color: rgba(255,255,255,.62); line-height: 1.7; margin: 0; max-width: 400px; }
+        .jhero-panel { background: rgba(11,18,32,.82); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,.1); border-radius: 16px; padding: 28px 28px 24px; }
+        .jhero-panel-hd { font-size: 11px; font-weight: 700; color: rgba(255,255,255,.45); text-transform: uppercase; letter-spacing: .1em; margin-bottom: 16px; }
+        .jhero-tiles { display: flex; background: white; border-radius: 10px; overflow: hidden; }
+        .jhero-tile { flex: 1; background: white; padding: 22px 14px; display: flex; align-items: center; justify-content: center; text-align: center; cursor: pointer; border: none; color: #111827; font-family: inherit; transition: background .15s; position: relative; }
+        .jhero-tile + .jhero-tile::before { content: ''; position: absolute; left: 0; top: 12%; height: 76%; width: 1px; background: #E5E7EB; }
+        .jhero-tile:hover { background: #F3F4F6; }
+        .jhero-tile-label { font-size: 13px; font-weight: 600; line-height: 1.4; color: #111827; }
+        @media (max-width: 820px) {
+          .jhero-wrap { grid-template-columns: 1fr; padding: 100px 0 56px; gap: 36px; }
+          .jhero-sub { max-width: 100%; }
+          .jhero-tiles { flex-direction: column; border-radius: 10px; }
+          .jhero-tile { justify-content: flex-start; text-align: left; padding: 16px 20px; }
+          .jhero-tile + .jhero-tile::before { top: 0; left: 16px; width: calc(100% - 32px); height: 1px; }
+        }
+      `}</style>
+
+      <div className="jc">
+        <div className="jhero-wrap">
+
+          {/* Left — branding */}
+          <div>
+            <div className="jhero-badge">
+              <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#00B4D8', flexShrink: 0 }} />
+              Spécialiste fret aérien · Douala → Montréal
             </div>
+            <h1 className="jhero-h1">
+              {h.line1}{' '}
+              {h.line2.includes('Douala')
+                ? <>{h.line2.split('Douala')[0]}<span style={{ color: '#00B4D8' }}>Douala</span>{h.line2.split('Douala')[1]}</>
+                : h.line2}{' '}
+              <span style={{ color: '#00B4D8' }}>
+                {h.line3.includes('Montréal') ? 'Montréal.' : h.line3}
+              </span>
+            </h1>
+            <p className="jhero-sub">{h.subtitle}</p>
+          </div>
 
-            <div className="jhero2__card-book">
-              {tc.ctaText ?? t('hero.cta.newCustomer')}{' '}
-              <button onClick={onBook} className="jhero2__card-book-link">
-                {tc.ctaLink ?? t('hero.cta.bookNow')}
+          {/* Right — action panel */}
+          <div className="jhero-panel">
+            <div className="jhero-panel-hd">Pour expédier</div>
+            <div className="jhero-tiles">
+              <button className="jhero-tile" onClick={onBook}>
+                <span className="jhero-tile-label">Créer une nouvelle expédition</span>
+              </button>
+              <button className="jhero-tile" onClick={() => document.getElementById('jest')?.scrollIntoView({ behavior: 'smooth' })}>
+                <span className="jhero-tile-label">Obtenir un tarif et une estimation de délai</span>
+              </button>
+              <button className="jhero-tile" onClick={() => onNav?.('/suivi')}>
+                <span className="jhero-tile-label">Suivre mon colis</span>
               </button>
             </div>
           </div>
@@ -347,7 +610,7 @@ function JFeats({ onBook, content }) {
           <div className="jfeats3__left">
             <div className="jfeats3__eyebrow">{st.eyebrow ?? t('features.eyebrow')}</div>
             <h2 className="jfeats3__title">
-              {st.title1 ?? t('features.title1')}<br />
+              {st.title1 ?? t('features.title1')}{' '}
               <span className="cy">{st.title2 ?? t('features.title2')}</span>
             </h2>
             <p className="jfeats3__body">
@@ -422,7 +685,7 @@ function JEstimator({ onBook, content }) {
       <div className="jc">
         <div style={{ textAlign: 'center', marginBottom: 40 }}>
           <div className="jsvc3__eyebrow" style={{ display: 'block', marginBottom: 10 }}>{st.eyebrow ?? t('estimator.eyebrow')}</div>
-          <h2 style={{ fontFamily: "'Inter', system-ui, sans-serif", fontSize: 'clamp(26px, 7.5vw, 36px)', color: 'var(--ink-900)', fontWeight: 800, letterSpacing: '-.03em' }}>
+          <h2 style={{ fontFamily: "'Inter', system-ui, sans-serif", fontSize: 'clamp(22px, 5vw, 36px)', color: 'var(--ink-900)', fontWeight: 800, letterSpacing: '-.03em' }}>
             {st.title ?? t('estimator.title')}
           </h2>
           <p style={{ fontSize: 15, color: 'var(--ink-400)', marginTop: 12, lineHeight: 1.65, maxWidth: 440, margin: '12px auto 0' }}>
@@ -502,7 +765,7 @@ function JEstimator({ onBook, content }) {
               <span className="jest__total-n">{grandTotal}</span>
               <span className="jest__total-cur">{r?.currency}</span>
             </div>
-            <button className="jbtn-nav" style={{ marginLeft: 'auto' }} onClick={onBook}>
+            <button className="jbtn-nav jbtn-nav--lg" style={{ marginLeft: 'auto' }} onClick={onBook}>
               {t('estimator.book')} <I.ArrowRight style={{ width: 15, height: 15 }} />
             </button>
           </div>
@@ -524,7 +787,7 @@ function JFAQ({ content }) {
         <div className="jfaq-grid">
           <div>
             <div className="jsvc3__eyebrow" style={{ display: 'block', marginBottom: 12 }}>{st.eyebrow ?? t('faq.eyebrow')}</div>
-            <h2 style={{ fontFamily: "'Inter', system-ui, sans-serif", fontSize: 'clamp(26px, 7.5vw, 36px)', fontWeight: 800, letterSpacing: '-.03em', color: 'var(--ink-900)', marginBottom: 16 }}>
+            <h2 style={{ fontFamily: "'Inter', system-ui, sans-serif", fontSize: 'clamp(22px, 5vw, 36px)', fontWeight: 800, letterSpacing: '-.03em', color: 'var(--ink-900)', marginBottom: 16 }}>
               {st.title ?? t('faq.title')}
             </h2>
             <p style={{ fontSize: 15, lineHeight: 1.75, color: 'var(--ink-400)' }}>
@@ -565,8 +828,7 @@ function JCTA({ onBook, content }) {
           <div className="jcta3__left">
             <div className="jcta3__eyebrow">{t('cta.eyebrow')}</div>
             <h2 className="jcta3__title">
-              {c.line1}<br />
-              {c.line2}<br />
+              {c.line1}{' '}{c.line2}{' '}
               <span style={{ color: '#00B4D8' }}>{c.line3}</span>
             </h2>
             <p className="jcta3__sub">{c.subtitle}</p>
@@ -601,6 +863,107 @@ function JCTA({ onBook, content }) {
   );
 }
 
+/* ─── Split promo — photo left / dark text right — full-bleed 80vh ─── */
+function JSplitPromo({ onBook }) {
+  return (
+    <section className="jsp2-section" style={{ display: 'grid' }}>
+      <style>{`
+        .jsp2-section { grid-template-columns: 1fr 1fr; min-height: 80vh; }
+        .jsp2-left { position: relative; overflow: hidden; min-height: 480px; }
+        .jsp2-left img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; }
+        .jsp2-left::after { content:''; position:absolute; inset:0; background:linear-gradient(135deg,rgba(13,46,110,.5) 0%,rgba(13,46,110,.08) 65%); }
+        .jsp2-right { background: #0B1220; padding: clamp(48px,7vw,96px); display: flex; flex-direction: column; justify-content: center; }
+        @media (max-width: 768px) {
+          .jsp2-section { grid-template-columns: 1fr; min-height: auto; }
+          .jsp2-left { min-height: 300px; }
+        }
+      `}</style>
+
+      {/* Left — photo + floating cards */}
+      <div className="jsp2-left">
+        <img src={IMGS.cargo} alt="" />
+        <div style={{ position: 'absolute', bottom: 36, left: 32, zIndex: 2, background: 'rgba(255,255,255,.96)', borderRadius: 16, padding: '16px 20px', boxShadow: '0 8px 32px rgba(0,0,0,.25)', backdropFilter: 'blur(10px)', minWidth: 230 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+            <span style={{ background: '#EFF6FF', color: '#1B4FD8', borderRadius: 6, padding: '2px 9px', fontSize: 11, fontWeight: 700 }}>EN TRANSIT ✈️</span>
+            <span style={{ fontSize: 11, color: '#9CA3AF', fontFamily: 'monospace' }}>JMS-2847</span>
+          </div>
+          <div style={{ fontWeight: 700, fontSize: 14, color: '#111827' }}>Douala → Montréal</div>
+          <div style={{ fontSize: 12.5, color: '#6B7280', marginTop: 3 }}>Arrivée estimée : 14 jan.</div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginTop: 12 }}>
+            <div style={{ height: 4, flex: 1, background: '#E5E7EB', borderRadius: 2 }}>
+              <div style={{ width: '65%', height: '100%', background: 'linear-gradient(90deg,#00B4D8,#1B4FD8)', borderRadius: 2 }} />
+            </div>
+            <span style={{ fontSize: 11, color: '#1B4FD8', fontWeight: 700 }}>65%</span>
+          </div>
+        </div>
+        <div style={{ position: 'absolute', top: 32, right: 32, zIndex: 2, background: 'rgba(255,255,255,.96)', borderRadius: 14, padding: '12px 16px', boxShadow: '0 4px 16px rgba(0,0,0,.2)', display: 'flex', alignItems: 'center', gap: 10, backdropFilter: 'blur(10px)' }}>
+          <span style={{ fontSize: 22 }}>📦</span>
+          <div>
+            <div style={{ fontSize: 12.5, fontWeight: 700, color: '#111827' }}>Colis reçu à Douala</div>
+            <div style={{ fontSize: 11.5, color: '#6B7280' }}>Vérification en cours…</div>
+          </div>
+        </div>
+      </div>
+
+      {/* Right — dark text + simulator CTA */}
+      <div className="jsp2-right">
+        <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: 'rgba(255,255,255,.07)', border: '1px solid rgba(255,255,255,.12)', borderRadius: 99, padding: '6px 16px', fontSize: 12.5, fontWeight: 700, color: 'rgba(255,255,255,.65)', marginBottom: 32, alignSelf: 'flex-start' }}>
+          <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#00B4D8' }} />
+          2 500+ clients actifs
+        </div>
+        <h2 style={{ fontFamily: "'Inter',system-ui,sans-serif", fontSize: 'clamp(36px,4vw,58px)', fontWeight: 800, color: 'white', letterSpacing: '-.04em', lineHeight: 1.05, marginBottom: 20 }}>
+          Le service d'envoi préféré de la <span style={{ color: '#00B4D8' }}>diaspora africaine.</span>
+        </h2>
+        <p style={{ fontSize: 17, color: 'rgba(255,255,255,.52)', lineHeight: 1.75, maxWidth: 400, marginBottom: 40 }}>
+          Réservez en 3 minutes, déposez à Douala — votre famille reçoit à Montréal. Suivi WhatsApp inclus, paiement à la livraison.
+        </p>
+        <button onClick={() => document.getElementById('jest')?.scrollIntoView({ behavior: 'smooth' })} style={{ display: 'inline-flex', alignItems: 'center', gap: 10, background: 'rgba(255,255,255,.1)', border: '1.5px solid rgba(255,255,255,.2)', borderRadius: 10, padding: '14px 26px', fontSize: 15, fontWeight: 600, color: 'white', cursor: 'pointer', fontFamily: 'inherit', alignSelf: 'flex-start' }}>
+          <svg width="17" height="17" fill="none" stroke="white" strokeWidth="2" viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
+          Simuler mon tarif
+        </button>
+      </div>
+    </section>
+  );
+}
+
+/* ─── Wide photo section — full-bleed with text overlay ─── */
+function JWidePhoto({ onBook }) {
+  return (
+    <section style={{ position: 'relative', minHeight: '80vh', display: 'flex', alignItems: 'center', overflow: 'hidden' }}>
+      <style>{`
+        .jwp-img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: center 35%; }
+        .jwp-overlay { position: absolute; inset: 0; background: linear-gradient(100deg, rgba(9,15,30,.82) 0%, rgba(9,15,30,.58) 55%, rgba(9,15,30,.38) 100%); }
+        .jwp-inner { position: relative; z-index: 2; display: grid; grid-template-columns: 1fr 1fr; align-items: start; gap: 64px; width: 100%; max-width: var(--w); margin: 0 auto; padding: clamp(64px,8vh,120px) clamp(20px,5vw,72px); }
+        .jwp-title { font-family:'Inter',system-ui,sans-serif; font-size: clamp(38px,5.5vw,50px); font-weight: 800; color: white; letter-spacing: -.03em; line-height: 1.1; width: 85%; }
+        .jwp-right { display: flex; flex-direction: column; align-items: flex-start; gap: 24px; }
+        .jwp-desc { font-size: 17px; color: rgba(255,255,255,.7); line-height: 1.75; max-width: 420px; }
+        @media (max-width: 768px) {
+          .jwp-inner { grid-template-columns: 1fr; gap: 28px; padding: 56px 20px; }
+          .jwp-title { font-size: 28px; }
+          .jwp-right { display: flex; }
+          .jwp-desc { font-size: 15px; }
+        }
+      `}</style>
+      <img className="jwp-img" src={IMGS.hero} alt="" />
+      <div className="jwp-overlay" />
+      <div className="jwp-inner">
+        <h2 className="jwp-title">
+          De Douala à Montréal, <span style={{ color: '#00B4D8' }}>en 10 jours max.</span>
+        </h2>
+        <div className="jwp-right">
+          <p className="jwp-desc">
+            Rejoignez 2 500+ clients qui nous font confiance pour leurs envois entre l'Afrique et le Canada. Sécurité, transparence et notification WhatsApp à chaque étape.
+          </p>
+          <button className="jbtn-nav jbtn-nav--lg" onClick={onBook}>
+            Réserver un envoi
+            <svg width="16" height="16" fill="none" stroke="white" strokeWidth="2.5" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+          </button>
+        </div>
+      </div>
+    </section>
+  );
+}
+
 /* ─── Root ─── */
 export default function LandingPage({ onNav }) {
   const { data: session } = useSession();
@@ -620,15 +983,14 @@ export default function LandingPage({ onNav }) {
 
   return (
     <div className="jpage">
-      <TopBar />
       <SiteNav onNav={onNav} onBook={onBook} mode="landing" />
       <JHero onBook={onBook} onNav={onNav} content={content} />
       <JEstimator onBook={onBook} content={content} />
-      <JServices onBook={onBook} content={content} />
-      <JFeats onBook={onBook} content={content} />
-      <JFAQ content={content} />
-      <JCTA onBook={onBook} content={content} />
+      <JStoryCard onBook={onBook} onNav={onNav} content={content} />
+      <JSteps onBook={onBook} />
+      <JWidePhoto onBook={onBook} />
       <SiteFooter content={content} />
+      <JChatBot />
     </div>
   );
 }

@@ -15,7 +15,7 @@ export default function SlipPrintScreen({ code, onNav }) {
   const [data,    setData]    = useState(null);
   const [loading, setLoading] = useState(true);
   const [error,   setError]   = useState('');
-  const [paymentEmail, setPaymentEmail] = useState('paiement@jumla.cargo');
+  const [paymentEmail, setPaymentEmail] = useState('incjumla@gmail.com');
 
   useEffect(() => {
     fetch('/api/public/config').then(r => r.json()).then(d => {
@@ -295,7 +295,7 @@ export default function SlipPrintScreen({ code, onNav }) {
           <div style={{ marginTop: 32, paddingTop: 14, borderTop: '1px solid #D1D5DB', display: 'flex', justifyContent: 'space-between', fontSize: 10, color: '#6B7280' }}>
             <span>Jumla Shipping · Douala · Cameroun</span>
             <span>{data.campaign.to}, Canada</span>
-            <span>contact@jumla.cargo</span>
+            <span>info@jumlas.com</span>
           </div>
         </div>
       )}

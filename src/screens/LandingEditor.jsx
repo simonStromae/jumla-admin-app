@@ -58,7 +58,7 @@ const DEFAULTS = {
       copyright: '© 2026 Jumla Shipping SARL — Tous droits réservés',
       offices: 'Douala · Montréal · Lagos · Bruxelles',
       col1Title: 'Services', col2Title: 'Entreprise', col3Title: 'Légal',
-      email: 'contact@jumla.cargo',
+      email: 'info@jumlas.com',
       col1Links: [
         { label: 'Fret aérien', href: '#services' },
         { label: 'Livraison à domicile', href: '#services' },
@@ -153,7 +153,7 @@ const DEFAULTS = {
       copyright: '© 2026 Jumla Shipping SARL — All rights reserved',
       offices: 'Douala · Montréal · Lagos · Brussels',
       col1Title: 'Services', col2Title: 'Company', col3Title: 'Legal',
-      email: 'contact@jumla.cargo',
+      email: 'info@jumlas.com',
       col1Links: [
         { label: 'Air freight', href: '#services' },
         { label: 'Home delivery', href: '#services' },

@@ -81,8 +81,7 @@ export default function TrackingScreen({ onNav, initialCode }) {
 
   return (
     <div className="jpage">
-      <TopBar />
-      <SiteNav onNav={onNav} onBook={onBook} mode="tracking" />
+      <SiteNav onNav={onNav} onBook={onBook} mode="public" />
 
       {/* ── Hero band ── */}
       <div style={{

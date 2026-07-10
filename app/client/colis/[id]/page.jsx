@@ -57,7 +57,7 @@ export default function ParcelDetailPage({ params }) {
   const [parcel,    setParcel]    = useState(null);
   const [loading,   setLoading]   = useState(true);
   const [error,     setError]     = useState('');
-  const [paymentEmail, setPaymentEmail] = useState('paiement@jumla.cargo');
+  const [paymentEmail, setPaymentEmail] = useState('incjumla@gmail.com');
   const [editing,   setEditing]   = useState(false);
   const [editForm,  setEditForm]  = useState({});
   const [saving,    setSaving]    = useState(false);
