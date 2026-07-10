@@ -44,7 +44,7 @@ export default function DeclarationObjetsValeurPage() {
       <TopBar />
       <SiteNav onNav={p => router.push(p)} mode="page" />
       <main style={{ minHeight: '60vh', padding: '64px 0 80px' }}>
-        <div className="jc" style={{ maxWidth: 760 }}>
+        <div className="jc">
 
           {/* Header */}
           <div style={{ marginBottom: 40 }}>

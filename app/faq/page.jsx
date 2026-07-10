@@ -82,7 +82,7 @@ export default function FaqPage() {
       <SiteNav onNav={p => router.push(p)} mode="page" />
 
       <main style={{ minHeight: '60vh', padding: '64px 0' }}>
-        <div className="jc" style={{ maxWidth: 760 }}>
+        <div className="jc">
           <div style={{ marginBottom: 48, textAlign: 'center' }}>
             <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: '.1em', textTransform: 'uppercase', color: 'var(--brand-500)', marginBottom: 10 }}>
               FAQ
