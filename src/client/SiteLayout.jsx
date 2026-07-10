@@ -179,6 +179,8 @@ const DEFAULT_COL_LINKS = {
   col3: [
     { label: 'CGU', href: '/cgu' },
     { label: 'CGV', href: '/cgv' },
+    { label: 'Politique de réclamation', href: '/politique-de-reclamation' },
+    { label: 'Déclaration objets de valeur', href: '/declaration-objets-valeur' },
     { label: 'Politique de confidentialité', href: '/politique-de-confidentialite' },
     { label: 'Cookies', href: '/cookies' },
   ],
