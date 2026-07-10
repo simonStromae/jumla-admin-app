@@ -295,7 +295,7 @@ export default function SlipPrintScreen({ code, onNav }) {
           <div style={{ marginTop: 32, paddingTop: 14, borderTop: '1px solid #D1D5DB', display: 'flex', justifyContent: 'space-between', fontSize: 10, color: '#6B7280' }}>
             <span>Jumla Shipping · Douala · Cameroun</span>
             <span>{data.campaign.to}, Canada</span>
-            <span>contact@jumla.cargo</span>
+            <span>info@jumlas.com</span>
           </div>
         </div>
       )}

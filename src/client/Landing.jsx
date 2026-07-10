@@ -63,7 +63,7 @@ const DEFAULT_CONTENT_FR = {
     copyright: '© 2026 Jumla Shipping SARL — Tous droits réservés',
     offices: 'Douala · Montréal · Lagos · Bruxelles',
     col1Title: 'Navigation', col2Title: 'Politiques',
-    email: 'contact@jumla.cargo',
+    email: 'info@jumlas.com',
   },
 };
 
@@ -123,7 +123,7 @@ const DEFAULT_CONTENT_EN = {
     copyright: '© 2026 Jumla Shipping SARL — All rights reserved',
     offices: 'Douala · Montréal · Lagos · Brussels',
     col1Title: 'Navigation', col2Title: 'Policies',
-    email: 'contact@jumla.cargo',
+    email: 'info@jumlas.com',
   },
 };
 

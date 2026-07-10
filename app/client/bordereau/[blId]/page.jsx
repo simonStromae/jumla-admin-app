@@ -370,7 +370,7 @@ export default function BordereauPage({ params }) {
           <div style={{ borderTop: '1px solid #e5e7eb', paddingTop: 14, marginTop: 28, display: 'flex', justifyContent: 'space-between', fontSize: 10.5, color: '#9ca3af' }}>
             <span>Jumla Shipping · Douala · Cameroun</span>
             <span>{data.campaign.to}, Canada</span>
-            <span>contact@jumla.cargo</span>
+            <span>info@jumlas.com</span>
           </div>
         </div>
       </div>

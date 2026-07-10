@@ -183,7 +183,7 @@ function InvoiceContent({ params }) {
 
             {/* Footer */}
             <div style={{ borderTop: '1px solid #e5e7eb', paddingTop: 20, display: 'flex', justifyContent: 'space-between', fontSize: 11, color: '#9ca3af' }}>
-              <span>Jumla Shipping SARL · contact@jumla.cargo</span>
+              <span>Jumla Shipping SARL · info@jumlas.com</span>
               <span>Douala · Montréal · Lagos · Bruxelles</span>
             </div>
           </div>
@@ -370,7 +370,7 @@ function InvoiceContent({ params }) {
 
           {/* Footer */}
           <div style={{ borderTop: '1px solid #e5e7eb', paddingTop: 20, display: 'flex', justifyContent: 'space-between', fontSize: 11, color: '#9ca3af' }}>
-            <span>Jumla Shipping SARL · contact@jumla.cargo</span>
+            <span>Jumla Shipping SARL · info@jumlas.com</span>
             <span>Douala · Montréal · Lagos · Bruxelles</span>
           </div>
         </div>

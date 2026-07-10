@@ -206,7 +206,7 @@ function ConfirmationView({ data }) {
         Notre équipe vérifiera la réception du paiement et mettra à jour votre dossier sous <strong>24h ouvrées</strong>.
       </div>
       <div className="pay-confirm__sub" style={{ marginTop: 8 }}>
-        En cas de question : <strong>contact@jumla.cargo</strong> ou WhatsApp <strong>+1 514 000 0000</strong>
+        En cas de question : <strong>info@jumlas.com</strong> ou WhatsApp <strong>+1 514 000 0000</strong>
       </div>
     </div>
   );

@@ -306,9 +306,9 @@ export default function PolitiqueReclamationPage() {
           <div style={{ marginTop: 32, padding: '20px 24px', background: 'var(--brand-50)', border: '1px solid var(--brand-100)', borderRadius: 12, display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
             <div style={{ flex: 1 }}>
               <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--brand-800)', marginBottom: 3 }}>Soumettre une réclamation</div>
-              <div style={{ fontSize: 13, color: 'var(--brand-700)' }}>Utilisez notre formulaire en ligne ou contactez-nous par email à <a href="mailto:contact@jumla.cargo" style={{ color: 'var(--brand-600)', fontWeight: 600 }}>contact@jumla.cargo</a>.</div>
+              <div style={{ fontSize: 13, color: 'var(--brand-700)' }}>Utilisez notre formulaire en ligne ou contactez-nous par email à <a href="mailto:info@jumlas.com" style={{ color: 'var(--brand-600)', fontWeight: 600 }}>info@jumlas.com</a>.</div>
             </div>
-            <a href="mailto:contact@jumla.cargo"
+            <a href="mailto:info@jumlas.com"
               style={{ display: 'inline-flex', alignItems: 'center', gap: 7, padding: '9px 18px', background: 'var(--brand-500)', borderRadius: 8, color: 'white', fontSize: 13, fontWeight: 700, textDecoration: 'none', flexShrink: 0 }}>
               Déposer une réclamation
             </a>

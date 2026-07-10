@@ -122,7 +122,7 @@ export default function DeclarationObjetsValeurPage() {
               style={{ display: 'inline-flex', alignItems: 'center', gap: 7, padding: '9px 18px', background: 'white', border: '1.5px solid var(--border)', borderRadius: 8, color: 'var(--ink-700)', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
               ← Retour aux CGV
             </button>
-            <a href="mailto:contact@jumla.cargo"
+            <a href="mailto:info@jumlas.com"
               style={{ display: 'inline-flex', alignItems: 'center', gap: 7, padding: '9px 18px', background: 'var(--brand-500)', borderRadius: 8, color: 'white', fontSize: 13, fontWeight: 700, textDecoration: 'none' }}>
               Une question ? Contactez-nous
             </a>
