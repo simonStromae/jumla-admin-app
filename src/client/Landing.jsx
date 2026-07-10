@@ -223,8 +223,8 @@ function JStoryCard({ onBook, content }) {
           <div style={{ display: 'inline-flex', alignItems: 'center', background: 'rgba(147,197,253,.1)', color: '#93C5FD', border: '1px solid rgba(147,197,253,.18)', padding: '5px 14px', borderRadius: 99, fontSize: 11, fontWeight: 700, letterSpacing: '.06em', textTransform: 'uppercase', marginBottom: 28 }}>
             Notre histoire
           </div>
-          <h2 style={{ fontFamily: "'Inter',system-ui,sans-serif", fontSize: 'clamp(36px,4.5vw,58px)', fontWeight: 800, color: 'white', letterSpacing: '-.04em', lineHeight: 1.05, marginBottom: 20 }}>
-            Le pont aérien<br />entre l'Afrique<br />et le Canada.
+          <h2 style={{ fontFamily: "'Inter',system-ui,sans-serif", fontSize: 'clamp(38px,5.5vw,50px)', fontWeight: 800, color: 'white', letterSpacing: '-.04em', lineHeight: 1.1, marginBottom: 20 }}>
+            Le pont aérien entre l'Afrique et le Canada.
           </h2>
           <p style={{ fontSize: 17, color: 'rgba(255,255,255,.55)', lineHeight: 1.8, marginBottom: 40 }}>
             Depuis 2021, nous connectons des familles entre Douala et Montréal. Chaque colis photographié, suivi à chaque étape et livré en 14 jours chrono.
@@ -310,7 +310,7 @@ function JSteps({ onBook }) {
           <div style={{ display: 'inline-flex', alignItems: 'center', background: 'rgba(0,180,216,.1)', color: '#00B4D8', border: '1px solid rgba(0,180,216,.25)', padding: '5px 16px', borderRadius: 99, fontSize: 12, fontWeight: 700, letterSpacing: '.05em', textTransform: 'uppercase', marginBottom: 18 }}>
             Comment ça marche
           </div>
-          <h2 style={{ fontFamily: "'Inter',system-ui,sans-serif", fontSize: 'clamp(36px,5vw,56px)', fontWeight: 800, color: '#111827', letterSpacing: '-.04em', margin: 0, lineHeight: 1.1 }}>
+          <h2 style={{ fontFamily: "'Inter',system-ui,sans-serif", fontSize: 'clamp(38px,5.5vw,50px)', fontWeight: 800, color: '#111827', letterSpacing: '-.04em', margin: 0, lineHeight: 1.1 }}>
             Simple comme <span style={{ color: '#00B4D8' }}>4 étapes</span>
           </h2>
           <p style={{ fontSize: 18, color: '#6B7280', marginTop: 16, lineHeight: 1.65, maxWidth: 420, margin: '16px auto 0' }}>
@@ -470,36 +470,38 @@ function JHero({ onBook, content }) {
     <section style={{ position: 'relative', minHeight: '100vh', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
       {/* Full-page background */}
       <img src={IMGS.airport} alt="" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center 42%', zIndex: 0 }} />
-      <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg, rgba(9,15,30,.62) 0%, rgba(9,15,30,.72) 60%, rgba(9,15,30,.85) 100%)', zIndex: 1 }} />
+      <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(rgba(9,15,30,.62) 0%, rgb(3 24 74 / 72%) 60%, rgb(3 20 65 / 85%) 100%)', zIndex: 1 }} />
 
-      {/* Content — centered vertically */}
-      <div className="jc" style={{ position: 'relative', zIndex: 2, flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', textAlign: 'center', padding: '120px clamp(20px,5vw,72px) 80px' }}>
-        {/* Pill badge */}
-        <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: 'rgba(255,255,255,.12)', border: '1px solid rgba(255,255,255,.22)', borderRadius: 99, padding: '7px 18px', fontSize: 13, fontWeight: 600, color: 'rgba(255,255,255,.85)', marginBottom: 32, backdropFilter: 'blur(8px)' }}>
-          <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#00B4D8', flexShrink: 0 }} />
-          Spécialiste fret aérien · Douala → Montréal
+      {/* Content — left-aligned, 50% width */}
+      <div className="jc" style={{ position: 'relative', zIndex: 2, flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'flex-start', padding: '120px clamp(20px,5vw,72px) 80px' }}>
+        <div style={{ maxWidth: '50%' }}>
+          {/* Pill badge */}
+          <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: 'rgba(255,255,255,.12)', border: '1px solid rgba(255,255,255,.22)', borderRadius: 99, padding: '7px 18px', fontSize: 13, fontWeight: 600, color: 'rgba(255,255,255,.85)', marginBottom: 32, backdropFilter: 'blur(8px)' }}>
+            <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#00B4D8', flexShrink: 0 }} />
+            Spécialiste fret aérien · Douala → Montréal
+          </div>
+
+          {/* Heading */}
+          <h1 style={{ fontFamily: "'Inter',system-ui,sans-serif", fontSize: 'clamp(38px,5.5vw,50px)', fontWeight: 800, color: 'white', letterSpacing: '-.04em', lineHeight: 1.1, marginBottom: 24 }}>
+            {h.line1}{' '}
+            {h.line2.includes('Douala')
+              ? <>{h.line2.split('Douala')[0]}<span style={{ color: '#00B4D8' }}>Douala</span>{h.line2.split('Douala')[1]}</>
+              : h.line2}{' '}
+            <span style={{ color: '#00B4D8' }}>
+              {h.line3.includes('Montréal') ? 'Montréal.' : h.line3}
+            </span>
+          </h1>
+
+          {/* Subtitle */}
+          <p style={{ fontSize: 18, color: 'rgba(255,255,255,.68)', lineHeight: 1.7, marginBottom: 44 }}>
+            {h.subtitle}
+          </p>
+
+          <button className="jbtn-nav jbtn-nav--lg" onClick={onBook}>
+            Réserver un envoi
+            <svg width="17" height="17" fill="none" stroke="white" strokeWidth="2.5" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+          </button>
         </div>
-
-        {/* Heading */}
-        <h1 style={{ fontFamily: "'Inter',system-ui,sans-serif", fontSize: 'clamp(48px,7.5vw,96px)', fontWeight: 800, color: 'white', letterSpacing: '-.05em', lineHeight: 1.0, marginBottom: 24, maxWidth: 900 }}>
-          {h.line1}{' '}
-          {h.line2.includes('Douala')
-            ? <>{h.line2.split('Douala')[0]}<span style={{ color: '#00B4D8' }}>Douala</span>{h.line2.split('Douala')[1]}</>
-            : h.line2}
-          <br /><span style={{ color: '#00B4D8' }}>
-            {h.line3.includes('Montréal') ? 'Montréal.' : h.line3}
-          </span>
-        </h1>
-
-        {/* Subtitle */}
-        <p style={{ fontSize: 19, color: 'rgba(255,255,255,.68)', lineHeight: 1.7, maxWidth: 520, margin: '0 auto 44px' }}>
-          {h.subtitle}
-        </p>
-
-        <button className="jbtn-nav jbtn-nav--lg" onClick={onBook}>
-          Réserver un envoi
-          <svg width="17" height="17" fill="none" stroke="white" strokeWidth="2.5" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-        </button>
       </div>
 
       {/* Trust strip — bottom of hero */}
@@ -580,7 +582,7 @@ function JFeats({ onBook, content }) {
           <div className="jfeats3__left">
             <div className="jfeats3__eyebrow">{st.eyebrow ?? t('features.eyebrow')}</div>
             <h2 className="jfeats3__title">
-              {st.title1 ?? t('features.title1')}<br />
+              {st.title1 ?? t('features.title1')}{' '}
               <span className="cy">{st.title2 ?? t('features.title2')}</span>
             </h2>
             <p className="jfeats3__body">
@@ -798,8 +800,7 @@ function JCTA({ onBook, content }) {
           <div className="jcta3__left">
             <div className="jcta3__eyebrow">{t('cta.eyebrow')}</div>
             <h2 className="jcta3__title">
-              {c.line1}<br />
-              {c.line2}<br />
+              {c.line1}{' '}{c.line2}{' '}
               <span style={{ color: '#00B4D8' }}>{c.line3}</span>
             </h2>
             <p className="jcta3__sub">{c.subtitle}</p>
@@ -882,7 +883,7 @@ function JSplitPromo({ onBook }) {
           2 500+ clients actifs
         </div>
         <h2 style={{ fontFamily: "'Inter',system-ui,sans-serif", fontSize: 'clamp(36px,4vw,58px)', fontWeight: 800, color: 'white', letterSpacing: '-.04em', lineHeight: 1.05, marginBottom: 20 }}>
-          Le service d'envoi<br />préféré de la<br /><span style={{ color: '#00B4D8' }}>diaspora africaine.</span>
+          Le service d'envoi préféré de la <span style={{ color: '#00B4D8' }}>diaspora africaine.</span>
         </h2>
         <p style={{ fontSize: 17, color: 'rgba(255,255,255,.52)', lineHeight: 1.75, maxWidth: 400, marginBottom: 40 }}>
           Réservez en 3 minutes, déposez à Douala — votre famille reçoit à Montréal. Suivi WhatsApp inclus, paiement à la livraison.
@@ -904,7 +905,7 @@ function JWidePhoto({ onBook }) {
         .jwp-img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: center 35%; }
         .jwp-overlay { position: absolute; inset: 0; background: linear-gradient(100deg, rgba(9,15,30,.82) 0%, rgba(9,15,30,.58) 55%, rgba(9,15,30,.38) 100%); }
         .jwp-inner { position: relative; z-index: 2; display: grid; grid-template-columns: 1fr 1fr; align-items: center; gap: 64px; width: 100%; max-width: var(--w); margin: 0 auto; padding: clamp(64px,8vh,120px) clamp(20px,5vw,72px); }
-        .jwp-title { font-family:'Inter',system-ui,sans-serif; font-size: clamp(36px,5vw,56px); font-weight: 800; color: white; letter-spacing: -.03em; line-height: 1.08; }
+        .jwp-title { font-family:'Inter',system-ui,sans-serif; font-size: clamp(38px,5.5vw,50px); font-weight: 800; color: white; letter-spacing: -.03em; line-height: 1.1; }
         .jwp-right { display: flex; flex-direction: column; align-items: flex-start; gap: 24px; }
         .jwp-desc { font-size: 17px; color: rgba(255,255,255,.7); line-height: 1.75; max-width: 420px; }
         @media (max-width: 680px) {
@@ -916,7 +917,7 @@ function JWidePhoto({ onBook }) {
       <div className="jwp-overlay" />
       <div className="jwp-inner">
         <h2 className="jwp-title">
-          De Douala<br />à Montréal,<br /><span style={{ color: '#00B4D8' }}>en 14 jours.</span>
+          De Douala à Montréal, <span style={{ color: '#00B4D8' }}>en 14 jours.</span>
         </h2>
         <div className="jwp-right">
           <p className="jwp-desc">
