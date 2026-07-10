@@ -489,7 +489,7 @@ function JHero({ onBook, onNav, content }) {
       <style>{`
         .jhero-wrap { display: grid; grid-template-columns: 1fr 1.25fr; align-items: center; gap: 48px; position: relative; z-index: 2; padding: 130px 0 90px; min-height: 80vh; }
         .jhero-badge { display: inline-flex; align-items: center; gap: 8px; background: rgba(255,255,255,.12); border: 1px solid rgba(255,255,255,.22); border-radius: 99px; padding: 7px 18px; font-size: 13px; font-weight: 600; color: rgba(255,255,255,.85); margin-bottom: 24px; backdrop-filter: blur(8px); }
-        .jhero-h1 { font-family:'Inter',system-ui,sans-serif; font-size: clamp(32px,4.5vw,48px); font-weight: 800; color: white; letter-spacing: -.04em; line-height: 1.1; margin: 0 0 18px; }
+        .jhero-h1 { font-family:'Inter',system-ui,sans-serif; font-size: clamp(32px,4.5vw,48px); font-weight: 800; color: white; letter-spacing: -.04em; line-height: 1.1; margin: 0 0 18px; width: 70%; }
         .jhero-sub { font-size: 16px; color: rgba(255,255,255,.62); line-height: 1.7; margin: 0; max-width: 400px; }
         .jhero-panel { background: rgba(11,18,32,.82); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,.1); border-radius: 16px; padding: 28px 28px 24px; }
         .jhero-panel-hd { font-size: 11px; font-weight: 700; color: rgba(255,255,255,.45); text-transform: uppercase; letter-spacing: .1em; margin-bottom: 16px; }
