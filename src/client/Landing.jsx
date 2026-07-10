@@ -500,7 +500,7 @@ function JHero({ onBook, onNav, content }) {
         .jhero-tile:hover { background: #F3F4F6; }
         .jhero-tile-label { font-size: 13px; font-weight: 600; line-height: 1.4; color: #111827; }
         @media (max-width: 820px) {
-          .jhero-wrap { grid-template-columns: 1fr; padding: 100px 0 56px; gap: 36px; }
+          .jhero-wrap { grid-template-columns: 1fr; padding: 56px 0 48px; gap: 32px; min-height: 80vh; align-content: end; }
           .jhero-h1 { font-size: 35px !important; }
           .jhero-sub { max-width: 100%; font-size: 14px; }
           .jhero-tiles { flex-direction: column; border-radius: 10px; }
