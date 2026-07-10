@@ -189,8 +189,9 @@ function JStoryCard({ onBook, onNav, content }) {
   const stats = STAT_DEFAULTS.map((d, i) => heroStats[i] ?? d);
 
   return (
-    <section id="jstory" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', minHeight: '80vh' }}>
+    <section id="jstory" style={{ display: 'grid' }}>
       <style>{`
+        #jstory { grid-template-columns: 1fr 1fr; min-height: 80vh; }
         @media (max-width: 768px) {
           #jstory { grid-template-columns: 1fr; min-height: auto; }
           .jsc-photo { min-height: 260px; }
@@ -865,14 +866,15 @@ function JCTA({ onBook, content }) {
 /* ─── Split promo — photo left / dark text right — full-bleed 80vh ─── */
 function JSplitPromo({ onBook }) {
   return (
-    <section style={{ minHeight: '80vh', display: 'grid', gridTemplateColumns: '1fr 1fr' }}>
+    <section className="jsp2-section" style={{ display: 'grid' }}>
       <style>{`
+        .jsp2-section { grid-template-columns: 1fr 1fr; min-height: 80vh; }
         .jsp2-left { position: relative; overflow: hidden; min-height: 480px; }
         .jsp2-left img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; }
         .jsp2-left::after { content:''; position:absolute; inset:0; background:linear-gradient(135deg,rgba(13,46,110,.5) 0%,rgba(13,46,110,.08) 65%); }
         .jsp2-right { background: #0B1220; padding: clamp(48px,7vw,96px); display: flex; flex-direction: column; justify-content: center; }
         @media (max-width: 768px) {
-          section:has(.jsp2-left) { grid-template-columns: 1fr; }
+          .jsp2-section { grid-template-columns: 1fr; min-height: auto; }
           .jsp2-left { min-height: 300px; }
         }
       `}</style>
