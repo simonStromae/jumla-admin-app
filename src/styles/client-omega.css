@@ -986,7 +986,7 @@
   .jbtn-nav--pill { padding: 10px 20px; font-size: 13px; }
 
   /* Hero2 */
-  .jhero2 { padding: 40px 0 36px; overflow: hidden; }
+  .jhero2 { padding: 40px 0 36px; overflow: hidden; min-height: 90vh; display: flex; flex-direction: column; justify-content: flex-end; }
   .jhero2__grid {
     grid-template-columns: 1fr;
     gap: 28px;
