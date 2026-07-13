@@ -5,13 +5,22 @@ import { Pagination, ViewToggle } from '../components/Pagination.jsx';
 import AgentFormModal from './AgentForm.jsx';
 
 const permLabels = {
-  campaigns: 'Créer cargaisons',
-  parcels:   'Modifier colis',
-  payments:  'Valider paiements',
-  agents:    'Gérer agents',
-  whatsapp:  'Envoyer WhatsApp',
-  analytics: 'Voir analyses',
+  campaigns:  'Créer cargaisons',
+  parcels:    'Modifier colis',
+  payments:   'Valider paiements',
+  agents:     'Gérer agents',
+  whatsapp:   'Envoyer WhatsApp',
+  analytics:  'Voir analyses',
 };
+
+// Total individual permission actions across all modules (mirrors AgentForm PERMISSION_MODULES)
+const PERM_MAX = { cargaisons: 5, parcels: 4, payments: 3, slips: 3, clients: 3, costs: 2, whatsapp: 2, admin: 4 };
+const TOTAL_ACTIONS = Object.values(PERM_MAX).reduce((a, b) => a + b, 0); // 26
+
+function countGranted(perms) {
+  return Object.values(perms).reduce((sum, v) =>
+    sum + (Array.isArray(v) ? v.length : (v === true ? 1 : 0)), 0);
+}
 
 function StatusBadge({ status }) {
   if (status === 'suspended') {
@@ -75,17 +84,20 @@ function AgentsGridView({ agents, setEditing, onToggleStatus, onDelete }) {
             <div style={{ padding: 14 }}>
               <div style={{ fontSize: 10.5, fontWeight: 700, letterSpacing: '.04em', color: 'var(--ink-400)', textTransform: 'uppercase', marginBottom: 8 }}>Permissions</div>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5 }}>
-                {Object.entries(perms).map(([k, v]) => (
-                  <span key={k} style={{
-                    padding: '3px 8px', fontSize: 10.5, fontWeight: 600, borderRadius: 4,
-                    background: v ? 'var(--ok-50)' : 'var(--bg-soft)',
-                    color: v ? 'var(--ok-700)' : 'var(--ink-300)',
-                    border: '1px solid ' + (v ? 'var(--ok-100)' : 'var(--border-soft)'),
-                    textDecoration: v ? 'none' : 'line-through',
-                  }}>
-                    {v ? '✓ ' : '✗ '}{permLabels[k]}
-                  </span>
-                ))}
+                {Object.entries(perms).map(([k, v]) => {
+                  const active = Array.isArray(v) ? v.length > 0 : Boolean(v);
+                  return (
+                    <span key={k} style={{
+                      padding: '3px 8px', fontSize: 10.5, fontWeight: 600, borderRadius: 4,
+                      background: active ? 'var(--ok-50)' : 'var(--bg-soft)',
+                      color: active ? 'var(--ok-700)' : 'var(--ink-300)',
+                      border: '1px solid ' + (active ? 'var(--ok-100)' : 'var(--border-soft)'),
+                      textDecoration: active ? 'none' : 'line-through',
+                    }}>
+                      {active ? '✓ ' : '✗ '}{permLabels[k]}
+                    </span>
+                  );
+                })}
               </div>
               <div style={{ marginTop: 10, display: 'flex', justifyContent: 'flex-end', gap: 6 }}>
                 <button
@@ -142,8 +154,8 @@ function AgentsListView({ agents, setEditing, onToggleStatus, onDelete, page, pa
       <tbody>
         {paged.map(a => {
           const perms = a.permissions || a.perms || {};
-          const enabledPerms = Object.values(perms).filter(Boolean).length;
-          const totalPerms = Object.keys(perms).length;
+          const enabledPerms = countGranted(perms);
+          const totalPerms = TOTAL_ACTIONS;
           const suspended = a.status === 'suspended';
           return (
             <tr key={a.id} style={{ opacity: suspended ? .7 : 1 }}>
