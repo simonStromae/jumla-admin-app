@@ -36,11 +36,18 @@ export default function ParcelLabelsScreen({ id, onNav }) {
       .catch(() => { setError('Erreur réseau'); setLoading(false); });
   }, [id]);
 
-  const items       = Array.isArray(parcel?.items) ? parcel.items : [];
+  // Prefer bordereau items (physically verified) over reservation items
+  const bordereaux   = Array.isArray(parcel?.bordereaux) ? parcel.bordereaux : [];
+  const bl           = bordereaux.find(b => b.status === 'valide') ?? bordereaux[0] ?? null;
+  const blItems      = Array.isArray(bl?.items) ? bl.items : [];
+  const parcelItems  = Array.isArray(parcel?.items) ? parcel.items : [];
+  const items        = blItems.length > 0 ? blItems : parcelItems;
+  const fromBordereau = blItems.length > 0;
+
   const campaignCode = parcel?.campaign?.code ?? '—';
 
   return (
-    <div style={{ minHeight: '100vh', background: '#f4f5f7' }}>
+    <div className="labels-page">
       <div className="labels-toolbar">
         <button className="btn btn--ghost btn--sm" onClick={() => onNav('/admin/parcels/' + id)}>
           <I.ArrowLeft />Retour
@@ -50,9 +57,16 @@ export default function ParcelLabelsScreen({ id, onNav }) {
             {loading ? '…' : 'Colis ' + (parcel?.trackingCode ?? '—') + ' — Étiquettes articles'}
           </div>
           <div style={{ fontSize: 12, color: 'var(--ink-400)' }}>
-            {loading ? '…' : items.length + ' étiquette' + (items.length > 1 ? 's' : '') + (parcel?.client?.name ? ' · ' + parcel.client.name : '')}
+            {loading ? '…' : items.length + ' étiquette' + (items.length > 1 ? 's' : '')
+              + (parcel?.client?.name ? ' · ' + parcel.client.name : '')
+              + (fromBordereau ? ' · données bordereau' : ' · données réservation')}
           </div>
         </div>
+        {!loading && !fromBordereau && parcelItems.length > 0 && (
+          <div style={{ fontSize: 11, color: '#B45309', background: '#FEF3C7', border: '1px solid #FDE68A', borderRadius: 6, padding: '4px 10px' }}>
+            Aucun bordereau — affichage déclaration initiale
+          </div>
+        )}
         <button className="btn btn--ghost btn--sm" onClick={() => window.print()}>
           <I.Print />Imprimer
         </button>
@@ -73,7 +87,7 @@ export default function ParcelLabelsScreen({ id, onNav }) {
           <I.Box style={{ width: 40, height: 40, margin: '0 auto 12px', display: 'block' }} />
           <div style={{ fontSize: 14, fontWeight: 600 }}>Aucun article dans ce colis</div>
           <div style={{ fontSize: 12, marginTop: 4 }}>
-            Renseignez les articles lors de la réservation pour générer les étiquettes.
+            Renseignez les articles dans le bordereau pour générer les étiquettes.
           </div>
         </div>
       )}
@@ -118,6 +132,10 @@ export default function ParcelLabelsScreen({ id, onNav }) {
       )}
 
       <style>{`
+        .labels-page {
+          min-height: 100vh;
+          background: #f4f5f7;
+        }
         .labels-toolbar {
           display: flex; align-items: center; gap: 14px;
           padding: 14px 24px; background: white;
@@ -131,7 +149,8 @@ export default function ParcelLabelsScreen({ id, onNav }) {
         .item-label-card {
           background: white; border: 1.5px solid #E5E7EB; border-radius: 8px;
           overflow: hidden; font-family: 'Inter', system-ui, sans-serif;
-          page-break-inside: avoid; display: flex; flex-direction: column;
+          page-break-inside: avoid; break-inside: avoid;
+          display: flex; flex-direction: column;
         }
         .item-label-head {
           display: flex; justify-content: space-between; align-items: center;
@@ -164,14 +183,37 @@ export default function ParcelLabelsScreen({ id, onNav }) {
           font-size: 11px; color: #9CA3AF; font-family: monospace;
         }
         .item-label-idx { color: #D1D5DB; }
+
         @media print {
-          body { margin: 0; background: white; }
+          /* Hide all shell chrome — sidebar, topbar, mobile overlay */
+          .sidebar,
+          .topbar,
+          .admin-mobile-block,
           .labels-toolbar { display: none !important; }
+
+          /* Let the main content fill the full A4 width */
+          body, html { margin: 0; padding: 0; background: white; }
+          .app { display: block !important; }
+          .labels-page { min-height: unset; background: white; }
+
           .item-labels-grid {
+            display: grid;
             grid-template-columns: repeat(4, 1fr);
-            padding: 6mm; gap: 5mm; max-width: none;
+            padding: 8mm;
+            gap: 5mm;
+            max-width: none;
+            margin: 0;
+            width: 100%;
+            box-sizing: border-box;
           }
-          .item-label-card { border: 1px solid #ccc; }
+          .item-label-card {
+            border: 1px solid #ccc;
+            border-radius: 4px;
+          }
+          .item-label-code { font-size: 20px; padding: 8px 6px 2px; }
+          .item-label-desc { font-size: 11px; padding: 4px 8px 6px; }
+          .item-label-cat  { padding: 5px 8px; }
+          .item-label-foot { padding: 4px 8px; }
         }
       `}</style>
     </div>
