@@ -385,7 +385,7 @@ function JSteps({ onBook, content }) {
               </div>
 
               {/* Dashed connecting arrow to next step */}
-              {i < STEPS_DATA.length - 1 && (
+              {i < stepsData.length - 1 && (
                 <div className="js2-arrow">
                   {step.side === 'left' ? (
                     /* left card → curves right-down toward right card */
