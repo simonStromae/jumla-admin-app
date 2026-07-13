@@ -101,7 +101,7 @@ export default function ParcelLabelsScreen({ id, onNav }) {
             return (
               <div key={idx} className="item-label-card">
                 <div className="item-label-head">
-                  <span className="item-label-brand">JUMLA CARGO</span>
+                  <span className="item-label-brand">JUMLA MARKET</span>
                   <span className="item-label-campaign">{campaignCode}</span>
                 </div>
 
@@ -198,7 +198,7 @@ export default function ParcelLabelsScreen({ id, onNav }) {
 
           .item-labels-grid {
             display: grid;
-            grid-template-columns: repeat(4, 1fr);
+            grid-template-columns: repeat(3, 1fr);
             padding: 8mm;
             gap: 5mm;
             max-width: none;
