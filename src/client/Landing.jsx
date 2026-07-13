@@ -51,6 +51,25 @@ const DEFAULT_CONTENT_FR = {
     features:  { eyebrow: 'Pourquoi Jumla', title1: 'Un service conçu pour', title2: 'la diaspora africaine', description: 'Depuis 2021, nous connectons les familles entre l\'Afrique et le Canada grâce à un service de fret aérien simple, transparent et fiable.' },
     estimator: { eyebrow: 'Simulateur de prix', title: 'Combien coûte mon envoi ?', subtitle: 'Calculez en quelques secondes. Sans inscription, sans engagement.' },
     faq:       { eyebrow: 'FAQ', title: 'Questions fréquentes', subtitle: 'Une autre question ? WhatsApp nous répond en moins d\'une heure.' },
+    steps:     { eyebrow: 'Comment ça marche', title: 'Simple comme ', titleHighlight: '4 étapes', subtitle: "De Douala à Montréal — on s'occupe de tout, vous suivez en temps réel.", button: 'Créer une nouvelle expédition →' },
+  },
+  storyCard: {
+    badge:       'Notre histoire',
+    title:       "Le pont aérien entre l'Afrique et le Canada.",
+    description: "Depuis 2021, nous connectons des familles entre Douala et Montréal. Chaque colis photographié, suivi à chaque étape et livré en 14 jours chrono.",
+    button:      'Suivre mon colis →',
+  },
+  steps: [
+    { duration: '3 min',   title: 'Réservez en ligne',    description: 'Créez votre envoi en 3 minutes. Renseignez les colis et obtenez votre code de suivi instantanément.' },
+    { duration: '1 jour',  title: 'Déposez à Douala',     description: "Apportez vos colis à notre entrepôt. Vérification article par article, bordereau signé au départ." },
+    { duration: '~14 jrs', title: 'Transit aérien',       description: 'Vos colis voyagent avec nos compagnies partenaires certifiées. Notifications WhatsApp à chaque étape.' },
+    { duration: 'Sur RDV', title: 'Livraison à Montréal', description: 'Retrait à notre entrepôt ou livraison à domicile partout au Québec. Paiement à la remise.' },
+  ],
+  widePhoto: {
+    title:          'De Douala à Montréal,',
+    titleHighlight: 'en 14 jours max.',
+    description:    "Rejoignez 2 500+ clients qui nous font confiance pour leurs envois entre l'Afrique et le Canada. Sécurité, transparence et notification WhatsApp à chaque étape.",
+    button:         'Réserver un envoi',
   },
   trackingCard: {
     title: 'Suivre mon colis', label: 'Numéro de suivi', placeholder: 'JMS-12345', button: 'Suivre mon colis →',
@@ -111,6 +130,25 @@ const DEFAULT_CONTENT_EN = {
     features:  { eyebrow: 'Why Jumla', title1: 'A service built for', title2: 'the African diaspora', description: 'Since 2021, we connect families between Africa and Canada through a simple, transparent and reliable air freight service.' },
     estimator: { eyebrow: 'Price simulator', title: 'How much does my shipment cost?', subtitle: 'Calculate in seconds. No registration, no commitment.' },
     faq:       { eyebrow: 'FAQ', title: 'Frequently asked questions', subtitle: 'Another question? WhatsApp us — we reply in under an hour.' },
+    steps:     { eyebrow: 'How it works', title: 'Simple in ', titleHighlight: '4 steps', subtitle: 'From Douala to Montréal — we handle everything, you track in real time.', button: 'Create a new shipment →' },
+  },
+  storyCard: {
+    badge:       'Our story',
+    title:       'The air bridge between Africa and Canada.',
+    description: 'Since 2021, we connect families between Douala and Montréal. Every parcel photographed, tracked at every step and delivered in 14 days.',
+    button:      'Track my parcel →',
+  },
+  steps: [
+    { duration: '3 min',    title: 'Book online',          description: 'Create your shipment in 3 minutes. Enter the parcels and get your tracking code instantly.' },
+    { duration: '1 day',    title: 'Drop off in Douala',   description: 'Bring your parcels to our warehouse. Item-by-item verification, signed manifest at departure.' },
+    { duration: '~14 days', title: 'Air transit',          description: 'Your parcels travel with our certified partner airlines. WhatsApp notifications at every step.' },
+    { duration: 'By appt',  title: 'Delivery in Montréal', description: 'Pickup at our warehouse or home delivery anywhere in Quebec. Payment on handover.' },
+  ],
+  widePhoto: {
+    title:          'From Douala to Montréal,',
+    titleHighlight: 'in 14 days max.',
+    description:    'Join 2,500+ customers who trust Jumla Shipping for their shipments between Africa and Canada. Security, transparency and WhatsApp notifications at every step.',
+    button:         'Book a shipment',
   },
   trackingCard: {
     title: 'Track my parcel', label: 'Tracking number', placeholder: 'JMS-12345', button: 'Track my parcel →',
@@ -138,11 +176,15 @@ function merge(base, override) {
     features:      override.features ?? base.features,
     faq:           override.faq      ?? base.faq,
     cta:           mergeObj(base.cta, override.cta),
+    storyCard:     mergeObj(base.storyCard, override.storyCard),
+    steps:         override.steps    ?? base.steps,
+    widePhoto:     mergeObj(base.widePhoto, override.widePhoto),
     sectionTitles: override.sectionTitles ? {
       services:  mergeObj(base.sectionTitles.services,  override.sectionTitles.services),
       features:  mergeObj(base.sectionTitles.features,  override.sectionTitles.features),
       estimator: mergeObj(base.sectionTitles.estimator, override.sectionTitles.estimator),
       faq:       mergeObj(base.sectionTitles.faq,       override.sectionTitles.faq),
+      steps:     mergeObj(base.sectionTitles.steps,     override.sectionTitles.steps),
     } : base.sectionTitles,
     trackingCard:  mergeObj(base.trackingCard, override.trackingCard),
     footer:        mergeObj(base.footer, override.footer),
@@ -181,6 +223,7 @@ const WA_SUPPORT = 'https://wa.me/15149980709?text=Bonjour%20Jumla%20Shipping%2C
 /* ─── Dark story section — split grid photo left / content right ─── */
 function JStoryCard({ onBook, onNav, content }) {
   const heroStats = content.hero?.stats ?? [];
+  const sc = content.storyCard ?? {};
   const STAT_DEFAULTS = [
     { value: '12 000+', label: 'Colis livrés' },
     { value: '14 jours', label: 'Transit moyen' },
@@ -227,13 +270,13 @@ function JStoryCard({ onBook, onNav, content }) {
       <div className="jsc-content" style={{ background: '#0B1220', display: 'flex', alignItems: 'center', padding: 'clamp(56px,7vw,96px) clamp(32px,5vw,72px)' }}>
         <div style={{ maxWidth: 480 }}>
           <div style={{ display: 'inline-flex', alignItems: 'center', background: 'rgba(147,197,253,.1)', color: '#93C5FD', border: '1px solid rgba(147,197,253,.18)', padding: '5px 14px', borderRadius: 99, fontSize: 11, fontWeight: 700, letterSpacing: '.06em', textTransform: 'uppercase', marginBottom: 28 }}>
-            Notre histoire
+            {sc.badge ?? 'Notre histoire'}
           </div>
           <h2 className="jsc-h2" style={{ fontFamily: "'Inter',system-ui,sans-serif", fontSize: 'clamp(38px,5.5vw,50px)', fontWeight: 800, color: 'white', letterSpacing: '-.04em', lineHeight: 1.1, marginBottom: 20 }}>
-            Le pont aérien entre l'Afrique et le Canada.
+            {sc.title ?? "Le pont aérien entre l'Afrique et le Canada."}
           </h2>
           <p style={{ fontSize: 17, color: 'rgba(255,255,255,.55)', lineHeight: 1.8, marginBottom: 40 }}>
-            Depuis 2021, nous connectons des familles entre Douala et Montréal. Chaque colis photographié, suivi à chaque étape et livré en 14 jours chrono.
+            {sc.description ?? "Depuis 2021, nous connectons des familles entre Douala et Montréal. Chaque colis photographié, suivi à chaque étape et livré en 14 jours chrono."}
           </p>
           {/* Stats row */}
           <div className="jsc-stats-row">
@@ -245,7 +288,7 @@ function JStoryCard({ onBook, onNav, content }) {
             ))}
           </div>
           <button className="jbtn-nav jbtn-nav--lg" onClick={() => onNav?.('/suivi')}>
-            Suivre mon colis →
+            {sc.button ?? 'Suivre mon colis →'}
           </button>
         </div>
       </div>
@@ -254,34 +297,22 @@ function JStoryCard({ onBook, onNav, content }) {
 }
 
 /* ─── 4-step zigzag "Comment ça marche" ─── */
-const STEPS_DATA = [
-  {
-    num: '1', duration: '3 min', side: 'left', bg: '#EFF6FF',
-    icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" width="19" height="19" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>,
-    title: 'Réservez en ligne',
-    desc: 'Créez votre envoi en 3 minutes. Renseignez les colis et obtenez votre code de suivi instantanément.',
-  },
-  {
-    num: '2', duration: '1 jour', side: 'right', bg: 'white',
-    icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" width="19" height="19" strokeLinecap="round" strokeLinejoin="round"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>,
-    title: 'Déposez à Douala',
-    desc: 'Apportez vos colis à notre entrepôt. Vérification article par article, bordereau signé au départ.',
-  },
-  {
-    num: '3', duration: '~14 jours', side: 'left', bg: 'white',
-    icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" width="19" height="19" strokeLinecap="round" strokeLinejoin="round"><path d="M22 2L11 13"/><path d="M22 2l-7 20-4-9-9-4 20-7z"/></svg>,
-    title: 'Transit aérien',
-    desc: 'Vos colis voyagent avec nos compagnies partenaires certifiées. Notifications WhatsApp à chaque étape.',
-  },
-  {
-    num: '4', duration: 'Sur RDV', side: 'right', bg: '#EFF6FF',
-    icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" width="19" height="19" strokeLinecap="round" strokeLinejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>,
-    title: 'Livraison à Montréal',
-    desc: 'Retrait à notre entrepôt ou livraison à domicile partout au Québec. Paiement à la remise.',
-  },
+const STEP_ICONS = [
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" width="19" height="19" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>,
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" width="19" height="19" strokeLinecap="round" strokeLinejoin="round"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>,
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" width="19" height="19" strokeLinecap="round" strokeLinejoin="round"><path d="M22 2L11 13"/><path d="M22 2l-7 20-4-9-9-4 20-7z"/></svg>,
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" width="19" height="19" strokeLinecap="round" strokeLinejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>,
 ];
+const STEP_SIDE = ['left', 'right', 'left', 'right'];
+const STEP_BG   = ['#EFF6FF', 'white', 'white', '#EFF6FF'];
 
-function JSteps({ onBook }) {
+function JSteps({ onBook, content }) {
+  const st = content?.sectionTitles?.steps ?? {};
+  const stepsData = (content?.steps ?? []).map((s, i) => ({
+    num: String(i + 1), duration: s.duration,
+    side: STEP_SIDE[i] ?? 'left', bg: STEP_BG[i] ?? 'white',
+    icon: STEP_ICONS[i], title: s.title, desc: s.description,
+  }));
   return (
     <section id="jsteps" style={{ minHeight: '80vh', display: 'flex', flexDirection: 'column', justifyContent: 'center', background: 'rgb(253,253,255)', padding: '80px 0 100px' }}>
       <style>{`
@@ -324,19 +355,19 @@ function JSteps({ onBook }) {
         {/* Header */}
         <div className="js2-steps-hd" style={{ textAlign: 'center', marginBottom: 64 }}>
           <div style={{ display: 'inline-flex', alignItems: 'center', background: 'rgba(0,180,216,.1)', color: '#00B4D8', border: '1px solid rgba(0,180,216,.25)', padding: '5px 16px', borderRadius: 99, fontSize: 12, fontWeight: 700, letterSpacing: '.05em', textTransform: 'uppercase', marginBottom: 18 }}>
-            Comment ça marche
+            {st.eyebrow ?? 'Comment ça marche'}
           </div>
           <h2 style={{ fontFamily: "'Inter',system-ui,sans-serif", fontSize: 'clamp(38px,5.5vw,50px)', fontWeight: 800, color: '#111827', letterSpacing: '-.04em', margin: 0, lineHeight: 1.1 }}>
-            Simple comme <span style={{ color: '#00B4D8' }}>4 étapes</span>
+            {st.title ?? 'Simple comme '}<span style={{ color: '#00B4D8' }}>{st.titleHighlight ?? '4 étapes'}</span>
           </h2>
           <p style={{ fontSize: 18, color: '#6B7280', marginTop: 16, lineHeight: 1.65, maxWidth: 420, margin: '16px auto 0' }}>
-            De Douala à Montréal — on s'occupe de tout, vous suivez en temps réel.
+            {st.subtitle ?? "De Douala à Montréal — on s'occupe de tout, vous suivez en temps réel."}
           </p>
         </div>
 
         {/* Steps */}
         <div className="js2-wrap">
-          {STEPS_DATA.map((step, i) => (
+          {stepsData.map((step, i) => (
             <div key={step.num} className={`js2-row js2-row--${step.side}`}>
 
               {/* Card */}
@@ -378,7 +409,7 @@ function JSteps({ onBook }) {
         {/* CTA */}
         <div className="js2-steps-cta" style={{ textAlign: 'center', marginTop: 56 }}>
           <button className="jbtn-nav jbtn-nav--lg" onClick={onBook}>
-            Créer une nouvelle expédition →
+            {st.button ?? 'Créer une nouvelle expédition →'}
           </button>
         </div>
       </div>
@@ -940,7 +971,8 @@ function JSplitPromo({ onBook }) {
 }
 
 /* ─── Wide photo section — full-bleed with text overlay ─── */
-function JWidePhoto({ onBook }) {
+function JWidePhoto({ onBook, content }) {
+  const wp = content?.widePhoto ?? {};
   return (
     <section style={{ position: 'relative', minHeight: '80vh', display: 'flex', alignItems: 'center', overflow: 'hidden' }}>
       <style>{`
@@ -961,14 +993,14 @@ function JWidePhoto({ onBook }) {
       <div className="jwp-overlay" />
       <div className="jwp-inner">
         <h2 className="jwp-title">
-          De Douala à Montréal, <span style={{ color: '#00B4D8' }}>en 10 jours max.</span>
+          {wp.title ?? 'De Douala à Montréal,'} <span style={{ color: '#00B4D8' }}>{wp.titleHighlight ?? 'en 14 jours max.'}</span>
         </h2>
         <div className="jwp-right">
           <p className="jwp-desc">
-            Rejoignez 2 500+ clients qui nous font confiance pour leurs envois entre l'Afrique et le Canada. Sécurité, transparence et notification WhatsApp à chaque étape.
+            {wp.description ?? "Rejoignez 2 500+ clients qui nous font confiance pour leurs envois entre l'Afrique et le Canada. Sécurité, transparence et notification WhatsApp à chaque étape."}
           </p>
           <button className="jbtn-nav jbtn-nav--lg" onClick={onBook}>
-            Réserver un envoi
+            {wp.button ?? 'Réserver un envoi'}
             <svg width="16" height="16" fill="none" stroke="white" strokeWidth="2.5" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
           </button>
         </div>
@@ -1000,8 +1032,8 @@ export default function LandingPage({ onNav }) {
       <JHero onBook={onBook} onNav={onNav} content={content} />
       <JEstimator onBook={onBook} content={content} />
       <JStoryCard onBook={onBook} onNav={onNav} content={content} />
-      <JSteps onBook={onBook} />
-      <JWidePhoto onBook={onBook} />
+      <JSteps onBook={onBook} content={content} />
+      <JWidePhoto onBook={onBook} content={content} />
       <SiteFooter content={content} />
       <JChatBot />
     </div>
