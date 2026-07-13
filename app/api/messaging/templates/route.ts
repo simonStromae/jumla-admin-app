@@ -1,7 +1,7 @@
 export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/src/lib/prisma';
-import { requireAdmin } from '@/src/lib/api-auth';
+import { requirePermission } from '@/src/lib/api-auth';
 import { getTwilioSettings } from '@/src/lib/twilio';
 import { TWILIO_TEMPLATES } from '@/src/lib/wa-template';
 
@@ -11,7 +11,7 @@ function contentAuth(accountSid: string, authToken: string) {
 
 // GET — list all templates with their SID and approval status
 export async function GET() {
-  const { error } = await requireAdmin();
+  const { error } = await requirePermission('whatsapp');
   if (error) return error;
 
   const { accountSid, authToken } = await getTwilioSettings();
@@ -62,7 +62,7 @@ export async function GET() {
 
 // POST — create missing templates in Twilio Content API + submit for approval
 export async function POST(req: NextRequest) {
-  const { error } = await requireAdmin();
+  const { error } = await requirePermission('whatsapp');
   if (error) return error;
 
   const { accountSid, authToken } = await getTwilioSettings();

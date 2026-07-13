@@ -5,5 +5,5 @@ import { PermGuard } from '@/src/components/Shell';
 
 export default function LogsPage() {
   const onNav = useNav();
-  return <PermGuard adminOnly><LogsScreen onNav={onNav} /></PermGuard>;
+  return <PermGuard perm="analytics"><LogsScreen onNav={onNav} /></PermGuard>;
 }

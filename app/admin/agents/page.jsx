@@ -5,5 +5,5 @@ import { PermGuard } from '@/src/components/Shell';
 
 export default function AgentsPage() {
   const onNav = useNav();
-  return <PermGuard adminOnly><AgentsScreen onNav={onNav} /></PermGuard>;
+  return <PermGuard perm="agents"><AgentsScreen onNav={onNav} /></PermGuard>;
 }

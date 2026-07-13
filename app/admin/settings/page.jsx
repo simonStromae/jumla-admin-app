@@ -5,5 +5,5 @@ import { PermGuard } from '@/src/components/Shell';
 
 export default function SettingsPage() {
   const onNav = useNav();
-  return <PermGuard adminOnly><SettingsScreen onNav={onNav} /></PermGuard>;
+  return <PermGuard perm="settings"><SettingsScreen onNav={onNav} /></PermGuard>;
 }

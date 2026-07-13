@@ -1,12 +1,12 @@
 export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/src/lib/prisma';
-import { requireAdmin } from '@/src/lib/api-auth';
+import { requirePermission } from '@/src/lib/api-auth';
 import { getTwilioSettings, twilioSendWhatsapp, twilioSendWhatsappTemplate, formatWhatsappNumber } from '@/src/lib/twilio';
 import { TWILIO_TEMPLATES, buildContentVariables } from '@/src/lib/wa-template';
 
 export async function POST(req: NextRequest) {
-  const { error } = await requireAdmin();
+  const { error } = await requirePermission('whatsapp');
   if (error) return error;
 
   const { parcelIds, body, templateId } = await req.json() as {

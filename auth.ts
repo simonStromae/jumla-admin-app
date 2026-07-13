@@ -98,6 +98,22 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         }
       }
 
+      // Subsequent calls (no fresh user object) — always re-fetch from DB so that
+      // permission/role/status changes made by an admin take effect immediately,
+      // without requiring the target user to log out and back in.
+      if (!user && token.id) {
+        const fresh = await prisma.user.findUnique({
+          where:  { id: token.id as string },
+          select: { role: true, permissions: true, status: true, mustChangePassword: true },
+        });
+        if (fresh) {
+          token.role               = fresh.role;
+          token.permissions        = fresh.permissions;
+          token.status             = (fresh as any).status ?? 'active';
+          token.mustChangePassword = (fresh as any).mustChangePassword ?? false;
+        }
+      }
+
       if (trigger === 'update' && session) {
         if (session.mustChangePassword !== undefined) token.mustChangePassword = session.mustChangePassword;
         if (session.status             !== undefined) token.status             = session.status;

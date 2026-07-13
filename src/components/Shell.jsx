@@ -18,9 +18,13 @@ export function useCan() {
     if (perms[key] === true) return true;
     const nk = PERM_ALIAS[key] || key;
     const arr = perms[nk];
-    if (!Array.isArray(arr) || arr.length === 0) return false;
-    if (!action) return true;
-    return arr.includes(action);
+    if (Array.isArray(arr) && arr.length > 0) {
+      if (!action) return true;
+      return arr.includes(action);
+    }
+    // Fall back to admin sub-permissions (e.g. analytics/agents/settings stored in perms.admin[])
+    if (Array.isArray(perms.admin) && perms.admin.includes(key)) return true;
+    return false;
   };
 }
 
@@ -105,10 +109,13 @@ export function Sidebar({ route, onNav }) {
   const items = allItems.filter(it => it.perm === null || can(it.perm));
 
   const admin = [
-    { id: 'agents',   label: 'Agents',      icon: I.Users,    route: '/admin/agents' },
-    { id: 'logs',     label: 'Journal',     icon: I.Activity, route: '/admin/logs' },
-    { id: 'settings', label: 'Paramètres',  icon: I.Settings, route: '/admin/settings' },
+    { id: 'agents',   label: 'Agents',      icon: I.Users,    route: '/admin/agents',   perm: 'agents' },
+    { id: 'logs',     label: 'Journal',     icon: I.Activity, route: '/admin/logs',     perm: 'analytics' },
+    { id: 'settings', label: 'Paramètres',  icon: I.Settings, route: '/admin/settings', perm: 'settings' },
   ];
+  // An agent with any admin sub-permission should see the Administration section
+  const hasAdminSubPerm = !isAdmin && Array.isArray(perms.admin) && perms.admin.length > 0;
+  const visibleAdmin = isAdmin ? admin : admin.filter(it => (perms.admin || []).includes(it.perm));
 
   const isActive = (r) => route === r || route.startsWith(r + '/');
   const onSettings = isActive('/admin/settings');
@@ -166,9 +173,9 @@ export function Sidebar({ route, onNav }) {
             </a>
           );
         })}
-        {isAdmin && <>
+        {(isAdmin || hasAdminSubPerm) && <>
           <div className="sidebar__section">Administration</div>
-          {admin.map(it => {
+          {visibleAdmin.map(it => {
             const Ic = it.icon;
             if (it.id === 'settings') {
               return (

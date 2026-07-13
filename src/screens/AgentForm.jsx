@@ -161,7 +161,8 @@ export default function AgentFormModal({ mode = 'create', agent, onClose, onSave
           email:       data.email.trim(),
           phone:       data.phone?.trim() || null,
           city:        data.city  || null,
-          role:        data.role,
+          // 'readonly' is a UI-only preset; store as 'agent' with restricted permissions
+          role:        data.role === 'readonly' ? 'agent' : data.role,
           permissions: data.perms,
           status:      data.status,
           sendInvite:  data.sendInvite,

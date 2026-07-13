@@ -2,7 +2,7 @@ export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
 import { prisma } from '@/src/lib/prisma';
-import { requireAdmin } from '@/src/lib/api-auth';
+import { requireAdmin, requirePermission } from '@/src/lib/api-auth';
 
 export async function GET(req: NextRequest) {
   const { error } = await requireAdmin();
@@ -81,7 +81,7 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  const { error } = await requireAdmin();
+  const { error } = await requirePermission('clients');
   if (error) return error;
 
   const { name, email, phone, city, notes } = await req.json();

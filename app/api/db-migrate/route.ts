@@ -1,10 +1,13 @@
 export const dynamic = 'force-dynamic';
 import { NextResponse } from 'next/server';
 import { prisma } from '@/src/lib/prisma';
+import { requireAdmin } from '@/src/lib/api-auth';
 
 // Safe incremental migration — adds missing columns/tables only.
 // Never truncates or deletes data.
 export async function GET() {
+  const { error } = await requireAdmin();
+  if (error) return error;
   const results: Record<string, string> = {};
 
   const run = async (name: string, sql: string) => {
