@@ -7,13 +7,17 @@ export default function AnalyticsScreen({ onNav }) {
   const [routeFilter, setRouteFilter] = useState('all');
   const [period, setPeriod] = useState('ytd');
   const [kpi, setKpi] = useState(null);
-  const [monthData, setMonthData] = useState({ labels: [], revenue: [], costs: [] });
+  const [opKpi, setOpKpi] = useState(null);
+  const [monthData, setMonthData] = useState({ labels: [], revenue: [], costs: [], invoiced: [] });
   const [routes, setRoutes] = useState([]);
-  const [topClients, setTopClients]         = useState([]);
-  const [topDestinations, setTopDestinations] = useState([]);
-  const [topAgents, setTopAgents]           = useState([]);
-  const [airlineStats, setAirlineStats]     = useState([]);
-  const [unpaid, setUnpaid]                 = useState([]);
+  const [routeStats, setRouteStats]             = useState([]);
+  const [topClients, setTopClients]             = useState([]);
+  const [topDestinations, setTopDestinations]   = useState([]);
+  const [topAgents, setTopAgents]               = useState([]);
+  const [airlineStats, setAirlineStats]         = useState([]);
+  const [unpaid, setUnpaid]                     = useState([]);
+  const [paymentMethods, setPaymentMethods]     = useState([]);
+  const [recentActivity, setRecentActivity]     = useState([]);
 
   useEffect(() => {
     const params = new URLSearchParams({ year: String(year) });
@@ -23,20 +27,25 @@ export default function AnalyticsScreen({ onNav }) {
     Promise.all([
       fetch('/api/analytics?' + params).then(r => r.json()),
       fetch('/api/routes').then(r => r.json()),
-    ]).then(([analyticsData, routesData]) => {
-      if (analyticsData.kpi) setKpi(analyticsData.kpi);
-      if (analyticsData.months) {
+    ]).then(([d, routesData]) => {
+      if (d.kpi) setKpi(d.kpi);
+      if (d.opKpi) setOpKpi(d.opKpi);
+      if (d.months) {
         setMonthData({
-          labels:  analyticsData.months.labels  || [],
-          revenue: analyticsData.months.revenue || [],
-          costs:   analyticsData.months.costs   || [],
+          labels:   d.months.labels   || [],
+          revenue:  d.months.revenue  || [],
+          costs:    d.months.costs    || [],
+          invoiced: d.months.invoiced || [],
         });
       }
-      setTopClients(analyticsData.topClients           || []);
-      setTopDestinations(analyticsData.topDestinations || []);
-      setTopAgents(analyticsData.topAgents             || []);
-      setAirlineStats(analyticsData.airlineStats        || []);
-      setUnpaid(analyticsData.unpaid                   || []);
+      setRouteStats(d.routeStats             || []);
+      setTopClients(d.topClients             || []);
+      setTopDestinations(d.topDestinations   || []);
+      setTopAgents(d.topAgents               || []);
+      setAirlineStats(d.airlineStats         || []);
+      setUnpaid(d.unpaid                     || []);
+      setPaymentMethods(d.paymentMethods     || []);
+      setRecentActivity(d.recentActivity     || []);
       setRoutes(Array.isArray(routesData) ? routesData : []);
     }).catch(() => {});
   }, [year, routeFilter]);
@@ -95,6 +104,11 @@ export default function AnalyticsScreen({ onNav }) {
     avgCostPerKg, marginPerParcel, unpaidTotal, unpaidCount,
   } = kpi;
 
+  const PAYMENT_COLORS = ['var(--brand-500)', 'var(--ok-500)', 'var(--info-500)', 'var(--warn-500)', 'var(--bad-500)'];
+  const donutData = paymentMethods.map((m, i) => ({
+    v: m.amount, l: m.label, color: PAYMENT_COLORS[i % PAYMENT_COLORS.length],
+  }));
+
   return (
     <div className="page">
       <div className="page__head">
@@ -125,14 +139,22 @@ export default function AnalyticsScreen({ onNav }) {
         </div>
       </div>
 
+      {/* ── KPIs principaux ── */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 12, marginBottom: 18 }}>
         <KpiCard label="CA encaissé" en="Revenue" value={(totalCollected/1000).toFixed(1)+'k'} unit="CAD" color="var(--ok-500)" big />
         <KpiCard label="Taux recouvrement" en="Recovery" value={recoveryRate} unit="%" progress={recoveryRate} color="var(--brand-500)" />
         <KpiCard label="Colis livrés" en="Parcels" value={totalParcels.toLocaleString('fr')} unit="" color="var(--info-500)" />
         <KpiCard label="Poids transporté" en="Weight" value={(totalWeight/1000).toFixed(1)} unit="t" color="var(--brand-500)" />
-        <KpiCard label="Impayés" en="Outstanding" value="—" unit="CAD" color="var(--bad-500)" sub="Données non disponibles" />
+        <KpiCard
+          label="Impayés" en="Outstanding"
+          value={unpaidTotal > 0 ? (unpaidTotal/1000).toFixed(1)+'k' : '0'}
+          unit="CAD"
+          color="var(--bad-500)"
+          sub={unpaidCount > 0 ? unpaidCount + ' paiement' + (unpaidCount > 1 ? 's' : '') + ' en attente' : 'Tout à jour'}
+        />
       </div>
 
+      {/* ── KPIs financiers ── */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 18 }}>
         <KpiCard label="Coûts opérationnels" en="Op. Costs" value={(totalCosts/1000).toFixed(1)+'k'} unit="CAD" color="var(--bad-500)" />
         <KpiCard label="Coût moyen / kg" en="Cost / kg" value={avgCostPerKg.toFixed(2)} unit="CAD/kg" color="var(--brand-500)" sub="par kilogramme expédié" />
@@ -140,23 +162,32 @@ export default function AnalyticsScreen({ onNav }) {
         <KpiCard label="Marge / colis" en="Per Parcel" value={marginPerParcel} unit="CAD" color="var(--ok-500)" sub={`Taux ${grossMarginPct}%`} />
       </div>
 
+      {/* ── Revenus vs temps + Performance opérationnelle ── */}
       <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 14, marginBottom: 14 }}>
         <ChartCard title="Évolution du chiffre d'affaires" sub="CA facturé vs encaissé · par mois">
-          <RevenueChart months={monthData.labels} revenue={monthData.revenue} collected={monthData.revenue} />
+          <RevenueChart months={monthData.labels} revenue={monthData.invoiced} collected={monthData.revenue} />
           <div style={{ display: 'flex', alignItems: 'center', gap: 18, marginTop: 14, padding: '10px 0 0', borderTop: '1px solid var(--border-soft)' }}>
-            <LegendItem color="var(--brand-500)" label="Facturé" v={(totalInvoiced/1000).toFixed(1)+'k CAD'} />
-            <LegendItem color="var(--ok-500)" label="Encaissé" v={(totalCollected/1000).toFixed(1)+'k CAD'} />
+            <LegendItem color="var(--brand-100)" label="Facturé" v={(totalInvoiced/1000).toFixed(1)+'k CAD'} />
+            <LegendItem color="var(--brand-500)" label="Encaissé" v={(totalCollected/1000).toFixed(1)+'k CAD'} />
             <div style={{ flex: 1 }} />
           </div>
         </ChartCard>
 
-        <ChartCard title="Performance opérationnelle" sub="Indicateur clé">
+        <ChartCard title="Performance opérationnelle" sub="Indicateurs clés">
           <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
             <GaugeRow label="Taux recouvrement" v={recoveryRate} target={95} unit="%" />
+            {opKpi && <>
+              <GaugeRow label="Délai moyen paiement" v={opKpi.avgPaymentDays} target={7} unit=" j" inverse />
+              <GaugeRow label="Délai moyen transit" v={opKpi.avgDeliveryDays} target={14} unit=" j" inverse />
+              {opKpi.borderTotal > 0 && (
+                <GaugeRow label="Validation bordereaux" v={opKpi.borderValRate} target={100} unit="%" />
+              )}
+            </>}
           </div>
         </ChartCard>
       </div>
 
+      {/* ── Revenus vs Coûts ── */}
       <div style={{ marginBottom: 14 }}>
         <ChartCard title="Revenus vs Coûts" sub="CA encaissé · coûts opérationnels · marge brute — par mois">
           <RevsVsCostsChart months={monthData.labels} revenue={monthData.revenue} costs={monthData.costs} />
@@ -172,10 +203,12 @@ export default function AnalyticsScreen({ onNav }) {
         </ChartCard>
       </div>
 
+      {/* ── Routes + Impayés + Méthodes de paiement ── */}
       <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr 1fr', gap: 14, marginBottom: 14 }}>
-        <ChartCard title="Performance par route" sub="Volume et chiffre d'affaires">
-          <RoutesBar routes={routes} />
+        <ChartCard title="Performance par route" sub="Volume et chiffre d'affaires encaissé">
+          <RoutesBar routeStats={routeStats} />
         </ChartCard>
+
         <ChartCard title="Impayés" sub={`${unpaidCount} paiement${unpaidCount !== 1 ? 's' : ''} en attente`}>
           <div style={{ textAlign: 'center', padding: '12px 0 8px' }}>
             <div style={{ fontSize: 28, fontWeight: 800, color: unpaidTotal > 0 ? 'var(--bad-600)' : 'var(--ok-600)', fontFamily: 'var(--ff-mono)' }}>
@@ -194,23 +227,22 @@ export default function AnalyticsScreen({ onNav }) {
           ))}
           {unpaid.length === 0 && <div style={{ textAlign: 'center', color: 'var(--ok-600)', fontSize: 13, fontWeight: 600, paddingTop: 8 }}>✓ Tout est à jour</div>}
         </ChartCard>
-        <ChartCard title="Méthodes de paiement" sub="Volume reçu par canal">
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 10, paddingTop: 8 }}>
-            {[{ label: 'Virement Interac', pct: 100, color: 'var(--brand-500)' }].map(m => (
-              <div key={m.label}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, marginBottom: 5 }}>
-                  <span style={{ color: 'var(--ink-700)', fontWeight: 600 }}>{m.label}</span>
-                  <span style={{ fontWeight: 700, color: m.color, fontFamily: 'var(--ff-mono)' }}>{m.pct}%</span>
-                </div>
-                <div style={{ height: 7, background: 'var(--ink-100)', borderRadius: 999, overflow: 'hidden' }}>
-                  <div style={{ height: '100%', width: m.pct + '%', background: m.color, borderRadius: 999 }} />
-                </div>
-              </div>
-            ))}
-          </div>
+
+        <ChartCard title="Méthodes de paiement" sub="Volume encaissé par canal">
+          {donutData.length === 0 ? (
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '32px 0', color: 'var(--ink-300)', fontSize: 13 }}>
+              Aucune transaction enregistrée
+            </div>
+          ) : (
+            <Donut
+              data={donutData}
+              center={{ value: (totalCollected / 1000).toFixed(1) + 'k', label: 'CAD' }}
+            />
+          )}
         </ChartCard>
       </div>
 
+      {/* ── Top classements ── */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 14, marginBottom: 14 }}>
         <RankingCard title="Top clients" sub="Par chiffre d'affaires" icon={<I.Star style={{ color: 'var(--brand-500)' }} />} items={topClients} />
         <RankingCard title="Top destinations" sub="Par volume expédié" icon={<I.Pin style={{ color: 'var(--info-500)' }} />} items={topDestinations} />
@@ -219,64 +251,65 @@ export default function AnalyticsScreen({ onNav }) {
 
       {/* ── Compagnies aériennes ── */}
       <div style={{ marginBottom: 14 }}>
-      <ChartCard title="Compagnies aériennes" sub="Volume, coûts et tarif au kg par transporteur">
-        {airlineStats.length === 0 ? (
-          <div style={{ padding: '28px 0', textAlign: 'center', color: 'var(--ink-400)', fontSize: 13 }}>
-            Aucune compagnie assignée aux cargaisons de cette période
-          </div>
-        ) : (
-          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-            <thead>
-              <tr style={{ borderBottom: '1px solid var(--border-soft)' }}>
-                {['Compagnie', 'Cargaisons', 'Volume (kg)', '% du volume', 'Frêt estimé', 'Frêt / kg'].map(h => (
-                  <th key={h} style={{ textAlign: 'left', fontSize: 10.5, fontWeight: 700, color: 'var(--ink-400)', textTransform: 'uppercase', letterSpacing: '.04em', padding: '0 0 8px', paddingRight: 16 }}>{h}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {airlineStats.map((a, i) => (
-                <tr key={i} style={{ borderBottom: '1px solid var(--border-soft)' }}>
-                  <td style={{ padding: '10px 16px 10px 0' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                      <div style={{ width: 28, height: 28, borderRadius: 6, background: 'var(--brand-50)', display: 'grid', placeItems: 'center', flexShrink: 0 }}>
-                        <I.Plane style={{ width: 13, height: 13, color: 'var(--brand-500)' }} />
-                      </div>
-                      <div>
-                        <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--ink-900)' }}>{a.name}</div>
-                        {a.iata && <div className="mono" style={{ fontSize: 10.5, color: 'var(--ink-400)' }}>{a.iata}</div>}
-                      </div>
-                    </div>
-                  </td>
-                  <td style={{ padding: '10px 16px 10px 0', fontSize: 13, fontWeight: 600, fontFamily: 'var(--ff-mono)' }}>{a.campaigns}</td>
-                  <td style={{ padding: '10px 16px 10px 0', fontSize: 13, fontFamily: 'var(--ff-mono)', fontWeight: 600 }}>
-                    {a.weightKg.toLocaleString('fr')}
-                  </td>
-                  <td style={{ padding: '10px 16px 10px 0', minWidth: 100 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                      <div style={{ flex: 1, height: 6, background: 'var(--ink-100)', borderRadius: 999, overflow: 'hidden' }}>
-                        <div style={{ height: '100%', width: a.weightPct + '%', background: 'var(--brand-500)', borderRadius: 999 }} />
-                      </div>
-                      <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--ink-600)', minWidth: 32, textAlign: 'right' }}>{a.weightPct}%</span>
-                    </div>
-                  </td>
-                  <td style={{ padding: '10px 16px 10px 0', fontSize: 13, fontFamily: 'var(--ff-mono)', fontWeight: 600, color: a.fretXaf > 0 ? 'var(--ink-900)' : 'var(--ink-300)' }}>
-                    {a.fretXaf > 0 ? a.fretXaf.toLocaleString('fr') + ' CAD' : '—'}
-                  </td>
-                  <td style={{ padding: '10px 0' }}>
-                    {a.fretPerKg > 0 ? (
-                      <span className="badge" style={{ background: 'var(--ok-50)', color: 'var(--ok-700)', border: '1px solid var(--ok-100)', fontFamily: 'var(--ff-mono)', fontSize: 12 }}>
-                        {a.fretPerKg} CAD/kg
-                      </span>
-                    ) : <span style={{ fontSize: 12, color: 'var(--ink-300)' }}>—</span>}
-                  </td>
+        <ChartCard title="Compagnies aériennes" sub="Volume, coûts et tarif au kg par transporteur">
+          {airlineStats.length === 0 ? (
+            <div style={{ padding: '28px 0', textAlign: 'center', color: 'var(--ink-400)', fontSize: 13 }}>
+              Aucune compagnie assignée aux cargaisons de cette période
+            </div>
+          ) : (
+            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <thead>
+                <tr style={{ borderBottom: '1px solid var(--border-soft)' }}>
+                  {['Compagnie', 'Cargaisons', 'Volume (kg)', '% du volume', 'Frêt estimé', 'Frêt / kg'].map(h => (
+                    <th key={h} style={{ textAlign: 'left', fontSize: 10.5, fontWeight: 700, color: 'var(--ink-400)', textTransform: 'uppercase', letterSpacing: '.04em', padding: '0 0 8px', paddingRight: 16 }}>{h}</th>
+                  ))}
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
-      </ChartCard>
+              </thead>
+              <tbody>
+                {airlineStats.map((a, i) => (
+                  <tr key={i} style={{ borderBottom: '1px solid var(--border-soft)' }}>
+                    <td style={{ padding: '10px 16px 10px 0' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <div style={{ width: 28, height: 28, borderRadius: 6, background: 'var(--brand-50)', display: 'grid', placeItems: 'center', flexShrink: 0 }}>
+                          <I.Plane style={{ width: 13, height: 13, color: 'var(--brand-500)' }} />
+                        </div>
+                        <div>
+                          <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--ink-900)' }}>{a.name}</div>
+                          {a.iata && <div className="mono" style={{ fontSize: 10.5, color: 'var(--ink-400)' }}>{a.iata}</div>}
+                        </div>
+                      </div>
+                    </td>
+                    <td style={{ padding: '10px 16px 10px 0', fontSize: 13, fontWeight: 600, fontFamily: 'var(--ff-mono)' }}>{a.campaigns}</td>
+                    <td style={{ padding: '10px 16px 10px 0', fontSize: 13, fontFamily: 'var(--ff-mono)', fontWeight: 600 }}>
+                      {a.weightKg.toLocaleString('fr')}
+                    </td>
+                    <td style={{ padding: '10px 16px 10px 0', minWidth: 100 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <div style={{ flex: 1, height: 6, background: 'var(--ink-100)', borderRadius: 999, overflow: 'hidden' }}>
+                          <div style={{ height: '100%', width: a.weightPct + '%', background: 'var(--brand-500)', borderRadius: 999 }} />
+                        </div>
+                        <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--ink-600)', minWidth: 32, textAlign: 'right' }}>{a.weightPct}%</span>
+                      </div>
+                    </td>
+                    <td style={{ padding: '10px 16px 10px 0', fontSize: 13, fontFamily: 'var(--ff-mono)', fontWeight: 600, color: a.fretXaf > 0 ? 'var(--ink-900)' : 'var(--ink-300)' }}>
+                      {a.fretXaf > 0 ? a.fretXaf.toLocaleString('fr') + ' CAD' : '—'}
+                    </td>
+                    <td style={{ padding: '10px 0' }}>
+                      {a.fretPerKg > 0 ? (
+                        <span className="badge" style={{ background: 'var(--ok-50)', color: 'var(--ok-700)', border: '1px solid var(--ok-100)', fontFamily: 'var(--ff-mono)', fontSize: 12 }}>
+                          {a.fretPerKg} CAD/kg
+                        </span>
+                      ) : <span style={{ fontSize: 12, color: 'var(--ink-300)' }}>—</span>}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </ChartCard>
       </div>
 
+      {/* ── Impayés à relancer + Activité récente ── */}
       <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr', gap: 14 }}>
         <ChartCard title="Impayés à relancer" sub={unpaidCount + ' paiement' + (unpaidCount !== 1 ? 's' : '') + ' en attente'} actions={
           <a style={{ fontSize: 12, color: 'var(--brand-700)', fontWeight: 600, cursor: 'pointer' }} onClick={() => onNav('/payments')}>Voir tout →</a>
@@ -315,10 +348,35 @@ export default function AnalyticsScreen({ onNav }) {
           )}
         </ChartCard>
 
-        <ChartCard title="Activité récente" sub="Prochainement disponible">
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '32px 0', color: 'var(--ink-300)', fontSize: 13 }}>
-            Journaux d'activité à venir
-          </div>
+        <ChartCard title="Activité récente" sub="Derniers événements de suivi et paiements">
+          {recentActivity.length === 0 ? (
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '32px 0', color: 'var(--ink-300)', fontSize: 13 }}>
+              Aucune activité récente
+            </div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column' }}>
+              {recentActivity.map((ev, i) => (
+                <div key={i} style={{ display: 'flex', gap: 10, padding: '8px 0', borderBottom: i < recentActivity.length - 1 ? '1px solid var(--border-soft)' : 'none' }}>
+                  <div style={{
+                    width: 28, height: 28, borderRadius: 999, flexShrink: 0,
+                    background: ev.type === 'payment' ? 'var(--ok-50)' : 'var(--brand-50)',
+                    display: 'grid', placeItems: 'center',
+                  }}>
+                    {ev.type === 'payment'
+                      ? <I.Check style={{ width: 13, height: 13, color: 'var(--ok-600)' }} />
+                      : <I.Box style={{ width: 13, height: 13, color: 'var(--brand-600)' }} />
+                    }
+                  </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 12.5, fontWeight: 600, color: 'var(--ink-800)', lineHeight: 1.3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{ev.label}</div>
+                    <div style={{ fontSize: 11, color: 'var(--ink-400)', marginTop: 2 }}>
+                      {ev.sub} · {new Date(ev.date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </ChartCard>
       </div>
     </div>
@@ -385,7 +443,7 @@ function ChartCard({ title, sub, actions, children }) {
 
 function RevenueChart({ months, revenue, collected }) {
   if (!months || months.length === 0) return <div style={{ height: 200, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--ink-300)', fontSize: 13 }}>Aucune donnée</div>;
-  const max = Math.max(...revenue, 1);
+  const max = Math.max(...revenue, ...collected, 1);
   const w = 100, h = 180;
   const barW = w / months.length * 0.6;
   return (
@@ -396,12 +454,12 @@ function RevenueChart({ months, revenue, collected }) {
         ))}
         {months.map((m, i) => {
           const x = (i + 0.5) * (w / months.length) - barW / 2;
-          const hRev = (revenue[i] / max) * h;
+          const hRev  = ((revenue[i]   || 0) / max) * h;
           const hColl = ((collected[i] || 0) / max) * h;
           return (
             <g key={i}>
-              <rect x={x} y={h - hRev} width={barW} height={hRev || 0.1} fill="var(--brand-100)" rx={1.4} vectorEffect="non-scaling-stroke" />
-              <rect x={x} y={h - hColl} width={barW} height={hColl || 0} fill="var(--brand-500)" rx={1.4} vectorEffect="non-scaling-stroke" />
+              <rect x={x} y={h - hRev}  width={barW} height={hRev  || 0.1} fill="var(--brand-100)" rx={1.4} vectorEffect="non-scaling-stroke" />
+              <rect x={x} y={h - hColl} width={barW} height={hColl || 0}   fill="var(--brand-500)" rx={1.4} vectorEffect="non-scaling-stroke" />
             </g>
           );
         })}
@@ -416,9 +474,12 @@ function RevenueChart({ months, revenue, collected }) {
 }
 
 function GaugeRow({ label, v, target, unit, inverse }) {
-  const pct = Math.min(100, Math.round((v / target) * 100));
+  const fillPct = inverse
+    ? Math.min(100, Math.round(target / Math.max(v, 0.1) * 100))
+    : Math.min(100, Math.round(v / Math.max(target, 0.1) * 100));
   const ok = inverse ? v <= target : v >= target * 0.95;
-  const color = ok ? 'var(--ok-500)' : v >= target * 0.7 ? 'var(--warn-500)' : 'var(--bad-500)';
+  const warn = inverse ? v <= target * 2 : v >= target * 0.7;
+  const color = ok ? 'var(--ok-500)' : warn ? 'var(--warn-500)' : 'var(--bad-500)';
   return (
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 6 }}>
@@ -429,7 +490,7 @@ function GaugeRow({ label, v, target, unit, inverse }) {
         </span>
       </div>
       <div style={{ height: 6, background: 'var(--ink-100)', borderRadius: 999, position: 'relative', overflow: 'hidden' }}>
-        <div style={{ position: 'absolute', left: 0, top: 0, height: '100%', width: pct + '%', background: color, borderRadius: 999 }} />
+        <div style={{ position: 'absolute', left: 0, top: 0, height: '100%', width: fillPct + '%', background: color, borderRadius: 999 }} />
       </div>
     </div>
   );
@@ -470,27 +531,31 @@ function Donut({ data, center }) {
   );
 }
 
-function RoutesBar({ routes }) {
-  const activeRoutes = routes.filter(r => r.active);
-  if (activeRoutes.length === 0) {
+function RoutesBar({ routeStats }) {
+  if (!routeStats || routeStats.length === 0) {
     return (
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px 0', color: 'var(--ink-300)', fontSize: 13 }}>
-        Aucune route active
+        Aucune donnée par route pour cette période
       </div>
     );
   }
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-      {activeRoutes.map((r, idx) => (
-        <div key={r.id}>
+      {routeStats.map((r, idx) => (
+        <div key={idx}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6 }}>
             <RoutePill from={r.fromIATA} to={r.toIATA} />
-            <span style={{ fontSize: 12.5, fontWeight: 600 }}>{r.label || r.code}</span>
-            <div style={{ flex: 1 }} />
-            <span className="mono" style={{ fontSize: 13.5, fontWeight: 700, color: 'var(--ink-900)' }}>—</span>
+            <span style={{ fontSize: 12.5, fontWeight: 600, flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.label}</span>
+            <span className="mono" style={{ fontSize: 13, fontWeight: 700, color: 'var(--ink-900)', flexShrink: 0 }}>
+              {r.collected > 0 ? (r.collected / 1000).toFixed(1) + 'k' : '—'}
+            </span>
           </div>
           <div style={{ height: 8, background: 'var(--ink-100)', borderRadius: 999, overflow: 'hidden' }}>
-            <div style={{ height: '100%', width: (100 / activeRoutes.length * (activeRoutes.length - idx)) + '%', background: 'linear-gradient(90deg, var(--brand-300), var(--brand-500))', borderRadius: 999 }} />
+            <div style={{ height: '100%', width: (r.meter || 0) + '%', background: 'linear-gradient(90deg, var(--brand-300), var(--brand-500))', borderRadius: 999 }} />
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 3, fontSize: 10.5, color: 'var(--ink-400)' }}>
+            <span>{r.parcels} colis · {r.weightKg.toLocaleString('fr')} kg</span>
+            <span>Facturé {r.invoiced > 0 ? (r.invoiced / 1000).toFixed(1) + 'k CAD' : '—'}</span>
           </div>
         </div>
       ))}
