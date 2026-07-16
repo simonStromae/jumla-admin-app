@@ -341,7 +341,6 @@ export default function ParcelDetailScreen({ id, onNav }) {
                         <tr key={idx}>
                           <td style={{ padding: '4px 4px' }}>
                             <input className="input input--sm" value={it.designation}
-                              {/* TODO: i18n — placeholder 'Ex: Vêtements adulte' has no direct key */}
                               onChange={e => updBlItem(idx, 'designation', e.target.value)} placeholder="Ex: Vêtements adulte" />
                           </td>
                           <td style={{ padding: '4px 4px', width: 140 }}>

@@ -1,8 +1,9 @@
 'use client';
-import { useSession } from 'next-auth/react';
+import { useSession, signOut } from 'next-auth/react';
 import { useRouter, usePathname } from 'next/navigation';
 import { useEffect } from 'react';
 import '@/src/styles/tokens.css';
+import { useCompanyAssets } from '@/src/lib/useCompanyAssets';
 
 const NAV = [
   { label: 'Tableau', icon: HomeIcon,   href: '/agent/dashboard' },
@@ -48,6 +49,10 @@ export default function AgentLayout({ children }) {
   const { data: session, status } = useSession();
   const router   = useRouter();
   const pathname = usePathname();
+  const { logoUrl, logoIconUrl, logoHeight, logoIconSize } = useCompanyAssets();
+
+  const userName = session?.user?.name ?? session?.user?.email ?? 'Agent';
+  const initials = userName.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
 
   useEffect(() => {
     if (status === 'unauthenticated') router.push('/login');
@@ -109,6 +114,55 @@ export default function AgentLayout({ children }) {
           body { background: #111827; color: #F9FAFB; }
         }
       `}</style>
+
+      {/* Top header */}
+      <header style={{
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        padding: '0 16px', height: 52, background: 'white',
+        borderBottom: '1px solid #E5E7EB', flexShrink: 0,
+      }}>
+        {/* Logo */}
+        <div style={{ display: 'flex', alignItems: 'center' }}>
+          {(logoIconUrl || logoUrl) ? (
+            <img
+              src={logoIconUrl || logoUrl}
+              alt="Logo"
+              style={{ height: logoIconUrl ? logoIconSize : logoHeight, maxHeight: 36, objectFit: 'contain' }}
+            />
+          ) : (
+            <span style={{ fontWeight: 700, fontSize: 16, color: '#1B4FD8', letterSpacing: '-0.3px' }}>Jumla</span>
+          )}
+        </div>
+
+        {/* Right: avatar + logout */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          {/* Avatar / initials */}
+          <div style={{
+            width: 34, height: 34, borderRadius: '50%', background: '#EFF6FF',
+            color: '#1B4FD8', fontWeight: 700, fontSize: 13,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            flexShrink: 0,
+          }}>
+            {initials}
+          </div>
+
+          {/* Logout */}
+          <button
+            onClick={() => signOut({ callbackUrl: '/login' })}
+            title="Se déconnecter"
+            style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              width: 34, height: 34, borderRadius: 8, border: 'none',
+              background: '#FEE2E2', color: '#DC2626', cursor: 'pointer',
+              flexShrink: 0,
+            }}
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ width: 17, height: 17 }}>
+              <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/>
+            </svg>
+          </button>
+        </div>
+      </header>
 
       {/* Main scrollable content */}
       <main style={{ flex: 1, overflowY: 'auto', paddingBottom: 72 }}>
