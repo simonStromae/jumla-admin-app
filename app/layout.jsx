@@ -5,6 +5,7 @@ export const metadata = {
   title: 'Jumla Shipping',
   description: 'Fret international · Douala ↔ Montréal',
   manifest: '/manifest.json',
+  icons: { icon: '/api/favicon' },
 };
 
 export default function RootLayout({ children }) {

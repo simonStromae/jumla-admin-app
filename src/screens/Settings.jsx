@@ -174,11 +174,13 @@ function SectionCompany() {
   const [logoIconUrl,  setLogoIconUrl]  = useState('');
   const [logoSizeH,    setLogoSizeH]    = useState(36);
   const [logoIconSize, setLogoIconSize] = useState(32);
+  const [faviconUrl,   setFaviconUrl]   = useState('');
   const [logoSaving,   setLogoSaving]   = useState(false);
   const [logoSaved,    setLogoSaved]    = useState(false);
   const [logoError,    setLogoError]    = useState('');
   const fileInputRef     = useRef(null);
   const iconInputRef     = useRef(null);
+  const faviconInputRef  = useRef(null);
 
   useEffect(() => {
     fetch('/api/settings').then(r => r.json()).then(d => {
@@ -193,6 +195,7 @@ function SectionCompany() {
       }));
       if (d.company_logo)      setLogoUrl(d.company_logo);
       if (d.company_logo_icon) setLogoIconUrl(d.company_logo_icon);
+      if (d.company_favicon)   setFaviconUrl(d.company_favicon);
       if (d.logo_size_h)    setLogoSizeH(parseInt(d.logo_size_h) || 36);
       if (d.logo_icon_size) setLogoIconSize(parseInt(d.logo_icon_size) || 32);
     }).catch(() => {});
@@ -221,8 +224,9 @@ function SectionCompany() {
     e.target.value = '';
   }
 
-  const handleLogoChange = (e) => handleLogoFile(e, 'company_logo', setLogoUrl);
-  const handleIconChange = (e) => handleLogoFile(e, 'company_logo_icon', setLogoIconUrl);
+  const handleLogoChange    = (e) => handleLogoFile(e, 'company_logo',      setLogoUrl);
+  const handleIconChange    = (e) => handleLogoFile(e, 'company_logo_icon', setLogoIconUrl);
+  const handleFaviconChange = (e) => handleLogoFile(e, 'company_favicon',   setFaviconUrl);
 
   const set = (k) => (e) => setFields(f => ({ ...f, [k]: e.target.value }));
 
@@ -261,8 +265,9 @@ function SectionCompany() {
         </div>
       </SettingsCard>
       <SettingsCard title="Apparence & marque" sub="Logo, couleurs et pied de page des documents.">
-        <input ref={fileInputRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handleLogoChange} />
-        <input ref={iconInputRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handleIconChange} />
+        <input ref={fileInputRef}    type="file" accept="image/*" style={{ display: 'none' }} onChange={handleLogoChange} />
+        <input ref={iconInputRef}    type="file" accept="image/*" style={{ display: 'none' }} onChange={handleIconChange} />
+        <input ref={faviconInputRef} type="file" accept="image/png,image/x-icon,image/svg+xml,image/jpeg" style={{ display: 'none' }} onChange={handleFaviconChange} />
         {logoError && <div style={{ fontSize: 12, color: 'var(--bad-600)', marginBottom: 10 }}>{logoError}</div>}
         {logoSaved  && <div style={{ fontSize: 12, color: 'var(--ok-700)', fontWeight: 600, marginBottom: 10 }}>✓ Image sauvegardée</div>}
 
@@ -300,6 +305,23 @@ function SectionCompany() {
           </div>
           <button className="btn btn--ghost btn--sm" onClick={() => iconInputRef.current?.click()} disabled={logoSaving}>
             <I.Upload />{logoSaving ? 'Envoi…' : logoIconUrl ? 'Changer' : 'Téléverser'}
+          </button>
+        </div>
+
+        {/* Favicon */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 16, padding: '14px 16px', background: 'var(--bg-soft)', borderRadius: 8, marginBottom: 10 }}>
+          <div style={{ width: 48, height: 48, borderRadius: 10, border: '1px solid var(--border)', background: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', flexShrink: 0 }}>
+            {faviconUrl
+              ? <img src={faviconUrl} alt="Favicon" style={{ width: 32, height: 32, objectFit: 'contain' }} />
+              : <span style={{ fontSize: 20 }}>🌐</span>
+            }
+          </div>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontSize: 13, fontWeight: 600 }}>Favicon</div>
+            <div style={{ fontSize: 12, color: 'var(--ink-400)', marginTop: 2 }}>Icône affichée dans l'onglet du navigateur · PNG, ICO ou SVG · idéalement 32×32 px · max 2 Mo</div>
+          </div>
+          <button className="btn btn--ghost btn--sm" onClick={() => faviconInputRef.current?.click()} disabled={logoSaving}>
+            <I.Upload />{logoSaving ? 'Envoi…' : faviconUrl ? 'Changer' : 'Téléverser'}
           </button>
         </div>
 
