@@ -102,7 +102,7 @@ export default function AllSlipsScreen({ onNav }) {
       <div className="toolbar">
         <div className="tabs">
           {[
-            { id: 'all',       l: t.parcels.filterAll,  n: counts.all },
+            { id: 'all',       l: t.parcels.filterAll,   n: counts.all },
             { id: 'pending',   l: t.verify.pending,      n: counts.pending },
             { id: 'validated', l: t.blStatus.valide,     n: counts.validated },
             { id: 'released',  l: /* TODO: no exact i18n key for "Libérés" */ 'Libérés', n: counts.released },
@@ -142,10 +142,8 @@ export default function AllSlipsScreen({ onNav }) {
             <th>{t.nav.campaigns}</th>
             <th>{t.parcels.table.client}</th>
             <th>{t.nav.parcels}</th>
-            {/* TODO: no exact i18n key for "Pièces" */}
             <th style={{ textAlign: 'center' }}>Pièces</th>
             <th style={{ textAlign: 'right' }}>{t.common.weight}</th>
-            {/* TODO: no exact i18n key for "Statut BL" (BL-specific status) */}
             <th>{t.common.status} BL</th>
             <th>{t.parcels.table.payment}</th>
             <th style={{ borderRadius: 0, width: 70 }}></th>

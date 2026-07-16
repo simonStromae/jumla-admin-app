@@ -95,6 +95,7 @@ const fr = {
     views: { grid: 'Vue grille', list: 'Vue liste' },
     actions: { viewParcels: 'Voir les colis', edit: 'Modifier', exportCsv: 'Exporter CSV', importParcels: 'Importer des colis' },
     empty: 'Aucune cargaison correspondant aux filtres',
+    table: { noCampaigns: 'Aucune cargaison correspondant aux filtres', route: 'Route' },
     // CampaignDetail
     detail: {
       parcels: 'Colis de la cargaison',
@@ -133,7 +134,9 @@ const fr = {
     allCampaigns: 'Toutes les cargaisons',
     kpi: { total: 'Total colis', kg: 'Total kg', invoiced: 'Montant facturé', unpaid: 'Impayés' },
     filters: { all: 'Tous', registered: 'Enregistré', transit: 'En transit', arrived: 'Arrivé', delivered: 'Livré', cancelled: 'Annulé' },
+    filterAll: 'Tous',
     headers: { tracking: 'N° Colis', client: 'Client', content: 'Contenu', weight: 'Poids', price: 'Prix', status: 'Statut', campaign: 'Cargaison', date: 'Date', actions: 'Actions' },
+    table: { client: 'Client', campaign: 'Cargaison', trackingId: 'N° Colis', weight: 'Poids', amount: 'Montant', payment: 'Paiement', status: 'Statut' },
     empty: 'Aucun colis trouvé',
     // ParcelDetail
     detail: {
@@ -176,6 +179,7 @@ const fr = {
     txHeaders: { date: 'Date', client: 'Client', reference: 'Référence', amount: 'Montant', method: 'Méthode', status: 'Statut', note: 'Note' },
     invHeaders: { number: 'N° Facture', client: 'Client', date: 'Date', amount: 'Montant', paid: 'Payé', balance: 'Solde', status: 'Statut' },
     recordModal: { title: 'Enregistrer un paiement', client: 'Client', amount: 'Montant', method: 'Méthode de paiement', reference: 'Référence / N° de transaction', note: 'Note', allocate: 'Allouer à une facture' },
+    table: { client: 'Client', amount: 'Montant', method: 'Méthode', reference: 'Référence' },
     settleModal: { title: 'Solder la facture', received: 'Montant reçu', method: 'Méthode', paymentDate: 'Date de paiement' },
     invPreview: { invoice: 'Facture', issued: "Date d'émission", due: "Date d'échéance", terms: 'Conditions de paiement', subtotal: 'Sous-total', taxes: 'Taxes', total: 'Total', balance: 'Solde dû' },
   },
@@ -394,6 +398,7 @@ const en = {
     views: { grid: 'Grid view', list: 'List view' },
     actions: { viewParcels: 'View parcels', edit: 'Edit', exportCsv: 'Export CSV', importParcels: 'Import parcels' },
     empty: 'No shipments match the filters',
+    table: { noCampaigns: 'No shipments match the filters', route: 'Route' },
     detail: {
       parcels: 'Shipment parcels',
       flights: 'Flights & AWB',
@@ -430,7 +435,9 @@ const en = {
     allCampaigns: 'All shipments',
     kpi: { total: 'Total parcels', kg: 'Total kg', invoiced: 'Invoiced amount', unpaid: 'Unpaid' },
     filters: { all: 'All', registered: 'Registered', transit: 'In transit', arrived: 'Arrived', delivered: 'Delivered', cancelled: 'Cancelled' },
+    filterAll: 'All',
     headers: { tracking: 'Tracking #', client: 'Client', content: 'Content', weight: 'Weight', price: 'Price', status: 'Status', campaign: 'Shipment', date: 'Date', actions: 'Actions' },
+    table: { client: 'Client', campaign: 'Shipment', trackingId: 'Tracking #', weight: 'Weight', amount: 'Amount', payment: 'Payment', status: 'Status' },
     empty: 'No parcels found',
     detail: {
       sender: 'Sender', recipient: 'Recipient', declaredContent: 'Declared content',
@@ -472,6 +479,7 @@ const en = {
     txHeaders: { date: 'Date', client: 'Client', reference: 'Reference', amount: 'Amount', method: 'Method', status: 'Status', note: 'Note' },
     invHeaders: { number: 'Invoice #', client: 'Client', date: 'Date', amount: 'Amount', paid: 'Paid', balance: 'Balance', status: 'Status' },
     recordModal: { title: 'Record a payment', client: 'Client', amount: 'Amount', method: 'Payment method', reference: 'Reference / Transaction #', note: 'Note', allocate: 'Allocate to an invoice' },
+    table: { client: 'Client', amount: 'Amount', method: 'Method', reference: 'Reference' },
     settleModal: { title: 'Settle invoice', received: 'Amount received', method: 'Method', paymentDate: 'Payment date' },
     invPreview: { invoice: 'Invoice', issued: 'Issue date', due: 'Due date', terms: 'Payment terms', subtotal: 'Subtotal', taxes: 'Taxes', total: 'Total', balance: 'Balance due' },
   },
