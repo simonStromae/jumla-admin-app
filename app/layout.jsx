@@ -19,11 +19,12 @@ export default function RootLayout({ children }) {
           rel="stylesheet"
         />
         <meta name="theme-color" content="#1B4FD8" />
-        {/* iOS PWA */}
+        {/* PWA */}
+        <meta name="mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
         <meta name="apple-mobile-web-app-title" content="Jumla" />
-        <link rel="apple-touch-icon" href="/jumla-icon.png" />
+        <link rel="apple-touch-icon" href="/api/favicon" />
       </head>
       <body><Providers>{children}</Providers></body>
     </html>
