@@ -230,7 +230,7 @@ export function Sidebar({ route, onNav }) {
   );
 }
 
-export function Topbar({ title, sub, actions, onNav }) {
+export function Topbar({ title, sub, actions, onNav, onToggleSidebar, sidebarOpen }) {
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQ, setSearchQ]     = useState('');
   const inputRef = useRef(null);
