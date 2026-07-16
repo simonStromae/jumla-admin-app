@@ -1,20 +1,23 @@
 import { useState, useEffect } from 'react';
 import I from '../components/Icons.jsx';
 import { Bi, RoutePill, StatusDot, Progress, Skel, useCan } from '../components/Shell.jsx';
+import { useAdminT } from '../lib/useAdminT.js';
 
-const CAMPAIGN_STATUS = {
-  enr: { label: 'Ouverte',          dot: 'brand' },
-  exp: { label: 'Expédiée',         dot: 'warn' },
-  tra: { label: 'En transit',       dot: 'warn' },
-  apd: { label: 'Arrivée au pays',  dot: 'info' },
-  dou: { label: 'En douane',        dot: 'warn' },
-  lib: { label: 'Libérée douanes',  dot: 'ok' },
-  ard: { label: 'Entrepôt dest.',   dot: 'ok' },
-  pdl: { label: 'Prête livraison',  dot: 'info' },
-  ok:  { label: 'Clôturée',         dot: 'neutral' },
-};
+const getCampaignStatus = (t) => ({
+  enr: { label: t.campaignStatus.open,     dot: 'brand' },
+  exp: { label: 'Expédiée',               dot: 'warn' },   // TODO: no exact translation key
+  tra: { label: t.campaignStatus.transit,  dot: 'warn' },
+  apd: { label: t.campaignStatus.arrived,  dot: 'info' },
+  dou: { label: 'En douane',              dot: 'warn' },   // TODO: no exact translation key
+  lib: { label: 'Libérée douanes',        dot: 'ok' },    // TODO: no exact translation key
+  ard: { label: 'Entrepôt dest.',         dot: 'ok' },    // TODO: no exact translation key
+  pdl: { label: 'Prête livraison',        dot: 'info' },  // TODO: no exact translation key
+  ok:  { label: t.campaignStatus.closed,   dot: 'neutral' },
+});
 
 export function CampaignCard({ c, onClick }) {
+  const t = useAdminT();
+  const CAMPAIGN_STATUS = getCampaignStatus(t);
   const s   = CAMPAIGN_STATUS[c.status] ?? { label: c.status, dot: 'neutral' };
   const pct = (c.invoiced ?? 0) > 0 ? Math.min(100, Math.round((c.collected ?? 0) / c.invoiced * 100)) : 0;
   const outstanding = Math.max(0, (c.invoiced ?? 0) - (c.collected ?? 0));
@@ -39,14 +42,14 @@ export function CampaignCard({ c, onClick }) {
         <div className="mono" style={{ fontSize: 15, fontWeight: 700, letterSpacing: '-.01em', color: 'var(--ink-900)', marginBottom: 4 }}>{c.code}</div>
         <div style={{ fontSize: 12, color: 'var(--ink-400)', display: 'flex', alignItems: 'center', gap: 6 }}>
           <I.Calendar style={{ width: 11, height: 11 }} />
-          Départ <span style={{ color: 'var(--ink-700)', fontWeight: 600 }}>{c.dep}</span>
+          {t.campaigns.detail.info.departure} <span style={{ color: 'var(--ink-700)', fontWeight: 600 }}>{c.dep}</span>
         </div>
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, margin: '14px 0 12px', paddingTop: 12, borderTop: '1px solid var(--border-soft)' }}>
           {[
-            { l: 'Colis',   v: c.parcels,                                          suffix: '' },
-            { l: 'Poids',   v: (c.weight ?? 0).toLocaleString('fr'),              suffix: ' kg' },
-            { l: 'Facturé', v: ((c.invoiced ?? 0) / 1000).toFixed(1) + 'k',       suffix: ' CAD' },
+            { l: t.campaigns.kpi.parcels,  v: c.parcels,                                          suffix: '' },
+            { l: t.common.weight,          v: (c.weight ?? 0).toLocaleString('fr'),              suffix: ' kg' },
+            { l: t.campaigns.kpi.revenue,  v: ((c.invoiced ?? 0) / 1000).toFixed(1) + 'k',       suffix: ' CAD' }, // TODO: "Facturé" (invoiced) mapped to nearest key revenue
           ].map(({ l, v, suffix }) => (
             <div key={l}>
               <div style={{ fontSize: 10.5, color: 'var(--ink-400)', textTransform: 'uppercase', letterSpacing: '.04em', fontWeight: 600 }}>{l}</div>
@@ -57,6 +60,7 @@ export function CampaignCard({ c, onClick }) {
 
         <div>
           <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, marginBottom: 5 }}>
+            {/* TODO: no translation key for "Paiements" in this card context */}
             <span style={{ color: 'var(--ink-400)' }}>Paiements</span>
             <span style={{ fontWeight: 600, color: pct >= 95 ? 'var(--ok-600)' : pct >= 70 ? 'var(--warn-700)' : 'var(--bad-600)' }} className="mono">
               {pct}% · {(c.collected ?? 0).toLocaleString('fr')} / {(c.invoiced ?? 0).toLocaleString('fr')}
@@ -65,6 +69,7 @@ export function CampaignCard({ c, onClick }) {
           <Progress pct={pct} kind={pct >= 95 ? null : pct >= 70 ? 'warn' : 'bad'} />
           {outstanding > 0 && (
             <div style={{ fontSize: 11, color: 'var(--bad-600)', marginTop: 5 }}>
+              {/* TODO: no translation key for "Reste à percevoir" */}
               Reste à percevoir · <span className="mono" style={{ fontWeight: 600 }}>{outstanding.toLocaleString('fr')} CAD</span>
             </div>
           )}
@@ -80,6 +85,7 @@ export function CampaignCard({ c, onClick }) {
 
 export default function CampaignsScreen({ onNav, onNewCampaign }) {
   const can = useCan();
+  const t = useAdminT();
   const [year, setYear]               = useState(2026);
   const [filter, setFilter]           = useState('all');
   const [routeFilter, setRouteFilter] = useState('all');
@@ -127,6 +133,7 @@ export default function CampaignsScreen({ onNav, onNewCampaign }) {
       <div className="page__head">
         <div>
           <div className="page__title"><Bi fr="Cargaisons" en="Shipments" /></div>
+          {/* TODO: no translation key for this subtitle */}
           <div className="page__sub">Vue d'ensemble — toutes vos cargaisons {year}, par mois.</div>
         </div>
         <div className="page__actions">
@@ -136,28 +143,31 @@ export default function CampaignsScreen({ onNav, onNewCampaign }) {
               <option>2026</option><option>2025</option><option>2024</option>
             </select>
           </div>
-          <button className="btn btn--ghost"><I.Download />Exporter</button>
-          {can('campaigns', 'create') && <button className="btn btn--brand" onClick={onNewCampaign}><I.Plus />Nouvelle cargaison</button>}
+          <button className="btn btn--ghost"><I.Download />{t.common.export}</button>
+          {can('campaigns', 'create') && <button className="btn btn--brand" onClick={onNewCampaign}><I.Plus />{t.campaigns.newCampaign}</button>}
         </div>
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14, marginBottom: 18 }}>
         <div className="kpi">
-          <div className="kpi__label">CA encaissé <span style={{ textTransform: 'none', color: 'var(--ink-300)' }}>/ Revenue</span></div>
+          <div className="kpi__label">{t.campaigns.kpi.revenue} <span style={{ textTransform: 'none', color: 'var(--ink-300)' }}>/ Revenue</span></div>
           <div className="kpi__value">{(totalCollected / 1000).toFixed(1)}k <span style={{ fontSize: 14, color: 'var(--ink-400)' }}>CAD</span></div>
         </div>
         <div className="kpi">
+          {/* TODO: no translation key for "Taux de recouvrement" */}
           <div className="kpi__label">Taux de recouvrement <span style={{ textTransform: 'none', color: 'var(--ink-300)' }}>/ Recovery</span></div>
           <div className="kpi__value">{recoveryRate}<span style={{ fontSize: 20 }}>%</span></div>
           <Progress pct={recoveryRate} />
         </div>
         <div className="kpi">
+          {/* TODO: no translation key for "Impayés en cours" */}
           <div className="kpi__label">Impayés en cours <span style={{ textTransform: 'none', color: 'var(--ink-300)' }}>/ Outstanding</span></div>
           <div className="kpi__value" style={{ color: outstanding > 0 ? 'var(--bad-600)' : 'var(--ok-600)' }}>
             {Math.max(0, outstanding / 1000).toFixed(1)}k <span style={{ fontSize: 14, color: 'var(--ink-400)' }}>CAD</span>
           </div>
         </div>
         <div className="kpi">
+          {/* TODO: no translation key for "Poids moyen / colis" */}
           <div className="kpi__label">Poids moyen / colis <span style={{ textTransform: 'none', color: 'var(--ink-300)' }}>/ Avg weight</span></div>
           <div className="kpi__value">{avgWeight}<span style={{ fontSize: 20 }}> kg</span></div>
         </div>
@@ -166,14 +176,14 @@ export default function CampaignsScreen({ onNav, onNewCampaign }) {
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
         <div className="tabs">
           {[
-            { id: 'all',     l: 'Tous',       n: campaigns.length },
-            { id: 'enr',     l: 'Ouvertes',   n: campaigns.filter(c => c.status === 'enr').length },
-            { id: 'transit', l: 'En transit', n: campaigns.filter(c => ['exp','tra','apd','dou','lib'].includes(c.status)).length },
-            { id: 'ard',     l: 'Arrivées',   n: campaigns.filter(c => c.status === 'ard' || c.status === 'pdl').length },
-            { id: 'ok',      l: 'Clôturées',  n: campaigns.filter(c => c.status === 'ok').length },
-          ].map(t => (
-            <button key={t.id} className={'tab ' + (filter === t.id ? 'is-active' : '')} onClick={() => setFilter(t.id)}>
-              {t.l} {t.n > 0 && <span className="count">{t.n}</span>}
+            { id: 'all',     l: t.parcels.filterAll,       n: campaigns.length },
+            { id: 'enr',     l: t.campaignStatus.open,     n: campaigns.filter(c => c.status === 'enr').length },
+            { id: 'transit', l: t.campaignStatus.transit,  n: campaigns.filter(c => ['exp','tra','apd','dou','lib'].includes(c.status)).length },
+            { id: 'ard',     l: t.campaignStatus.arrived,  n: campaigns.filter(c => c.status === 'ard' || c.status === 'pdl').length },
+            { id: 'ok',      l: t.campaignStatus.closed,   n: campaigns.filter(c => c.status === 'ok').length },
+          ].map(tab => (
+            <button key={tab.id} className={'tab ' + (filter === tab.id ? 'is-active' : '')} onClick={() => setFilter(tab.id)}>
+              {tab.l} {tab.n > 0 && <span className="count">{tab.n}</span>}
             </button>
           ))}
         </div>
@@ -181,11 +191,13 @@ export default function CampaignsScreen({ onNav, onNewCampaign }) {
         <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '4px 6px 4px 10px', border: '1px solid var(--border)', borderRadius: 7, background: 'white', fontSize: 12 }}>
           <I.Route style={{ width: 12, height: 12, color: 'var(--ink-400)' }} />
           <select value={routeFilter} onChange={e => setRouteFilter(e.target.value)} style={{ border: 0, background: 'transparent', fontWeight: 600, paddingRight: 4 }}>
+            {/* TODO: no translation key for "Toutes les routes" */}
             <option value="all">Toutes les routes</option>
             {routes.map(r => <option key={r.id} value={r.id}>{r.code}</option>)}
           </select>
         </div>
         <div style={{ display: 'inline-flex', border: '1px solid var(--border)', borderRadius: 7, padding: 2, background: 'white' }}>
+          {/* TODO: no translation keys for grid/list view toggle labels */}
           <button className={'btn--xs btn ' + (view === 'grid' ? 'btn--soft' : 'btn--ghost')} style={{ border: 0 }} onClick={() => setView('grid')}>Grille</button>
           <button className={'btn--xs btn ' + (view === 'list' ? 'btn--soft' : 'btn--ghost')} style={{ border: 0 }} onClick={() => setView('list')}>Liste</button>
         </div>
@@ -218,8 +230,8 @@ export default function CampaignsScreen({ onNav, onNewCampaign }) {
       {!loading && filtered.length === 0 && (
         <div style={{ padding: 60, textAlign: 'center', color: 'var(--ink-400)' }}>
           <I.Box style={{ width: 40, height: 40, opacity: .3, marginBottom: 12 }} />
-          <div style={{ marginBottom: 12 }}>Aucune cargaison.</div>
-          {can('campaigns', 'create') && <button className="btn btn--brand btn--sm" onClick={onNewCampaign}><I.Plus />Créer la première</button>}
+          <div style={{ marginBottom: 12 }}>{t.campaigns.table.noCampaigns}</div>
+          {can('campaigns', 'create') && <button className="btn btn--brand btn--sm" onClick={onNewCampaign}><I.Plus />{t.common.create}</button>}
         </div>
       )}
 
@@ -228,6 +240,7 @@ export default function CampaignsScreen({ onNav, onNewCampaign }) {
           <div style={{ display: 'flex', alignItems: 'center', gap: 12, margin: '4px 0 12px' }}>
             <h3 style={{ margin: 0, fontSize: 14, fontWeight: 700, color: 'var(--ink-800)' }}>{month}</h3>
             <span style={{ fontSize: 11, color: 'var(--ink-400)', background: 'var(--ink-100)', padding: '2px 8px', borderRadius: 999, fontWeight: 600 }}>
+              {/* TODO: no translation key for "cargaison(s)" */}
               {list.length} cargaison{list.length > 1 ? 's' : ''}
             </span>
             <div style={{ flex: 1, height: 1, background: 'var(--border-soft)' }} />

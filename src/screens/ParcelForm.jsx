@@ -1,7 +1,9 @@
 import { useState, useEffect, useCallback } from 'react';
 import I from '../components/Icons.jsx';
 import { RoutePill } from '../components/Shell.jsx';
+import { useAdminT } from '../lib/useAdminT.js';
 
+// TODO: PRODUCT_TYPES labels/descs have no matching i18n keys — move inside component and translate if keys are added
 const PRODUCT_TYPES = [
   { id: 'standard',     label: 'Standard',                       desc: 'Savons, pagnes, articles généraux' },
   { id: 'vetements',    label: 'Vêtements / Chaussures / Sacs',  desc: '+2 $/kg supplément' },
@@ -41,6 +43,7 @@ function PriceRow({ label, value, bold }) {
 
 export default function ParcelFormPage({ mode = 'create', parcel, campaign, onNav }) {
   const isEdit = mode === 'edit';
+  const t = useAdminT();
 
   const [campaigns, setCampaigns]   = useState([]);
   const [clients, setClients]       = useState([]);
@@ -155,6 +158,7 @@ export default function ParcelFormPage({ mode = 'create', parcel, campaign, onNa
   ).slice(0, 20);
 
   async function handleSubmit() {
+    // TODO: no i18n keys for these validation messages
     if (!data.campaignId) { setErr('Veuillez sélectionner une cargaison'); return; }
     if (!data.clientId)   { setErr('Veuillez sélectionner un client'); return; }
     if (totalKg <= 0) { setErr('Le poids total des articles est obligatoire'); return; }
@@ -198,17 +202,17 @@ export default function ParcelFormPage({ mode = 'create', parcel, campaign, onNa
         }),
       });
       const json = await res.json();
-      if (!res.ok) { setErr(json.error || 'Erreur lors de la création'); setSaving(false); return; }
+      if (!res.ok) { setErr(json.error || t.common.error); setSaving(false); return; }
       if (campaign) onNav('/campaign/' + campaign.id);
       else onNav('/parcels');
-    } catch { setErr('Erreur réseau'); setSaving(false); }
+    } catch { setErr(t.common.networkError); setSaving(false); }
   }
 
   if (loading) {
     return (
       <div className="page">
-        <div className="page__head"><div className="page__title">Nouveau colis</div></div>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '60px 0', color: 'var(--ink-400)', fontSize: 14 }}>Chargement…</div>
+        <div className="page__head"><div className="page__title">{t.parcels.title}</div></div>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '60px 0', color: 'var(--ink-400)', fontSize: 14 }}>{t.common.loading}</div>
       </div>
     );
   }
@@ -217,7 +221,7 @@ export default function ParcelFormPage({ mode = 'create', parcel, campaign, onNa
     <div className="page">
       {/* Breadcrumb */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12.5, color: 'var(--ink-400)', marginBottom: 8 }}>
-        <a style={{ cursor: 'pointer' }} onClick={() => onNav('/')}>Cargaisons</a>
+        <a style={{ cursor: 'pointer' }} onClick={() => onNav('/')}>{t.campaigns.title}</a>
         {campaign && (
           <>
             <I.ChevronRight style={{ width: 12, height: 12 }} />
@@ -225,25 +229,28 @@ export default function ParcelFormPage({ mode = 'create', parcel, campaign, onNa
           </>
         )}
         <I.ChevronRight style={{ width: 12, height: 12 }} />
-        <span style={{ color: 'var(--ink-600)', fontWeight: 600 }}>{isEdit ? 'Modifier' : 'Nouveau colis'}</span>
+        {/* TODO: no i18n key for "Nouveau colis" — using edit/parcels title as close match */}
+        <span style={{ color: 'var(--ink-600)', fontWeight: 600 }}>{isEdit ? t.common.edit : `${t.common.new} ${t.parcels.title}`}</span>
       </div>
 
       <div className="page__head" style={{ marginBottom: 22 }}>
         <div>
           <div className="page__title">
-            {isEdit ? 'Modifier le colis' : 'Nouveau colis'}
+            {/* TODO: no i18n key for "Modifier le colis" / "Nouveau colis" — using close matches */}
+            {isEdit ? t.common.edit : `${t.common.new} ${t.parcels.title}`}
             <span style={{ color: 'var(--ink-400)', fontWeight: 400, fontSize: '.7em', marginLeft: 8 }}>/ {isEdit ? 'Edit parcel' : 'New parcel'}</span>
           </div>
           <div className="page__sub">
             {activeCampaign
-              ? <>Cargaison <span className="mono" style={{ fontWeight: 600 }}>{activeCampaign.code}</span> · {activeCampaign.from} → {activeCampaign.to}</>
-              : 'Sélectionnez une cargaison'}
+              ? <>{t.campaigns.title} <span className="mono" style={{ fontWeight: 600 }}>{activeCampaign.code}</span> · {activeCampaign.from} → {activeCampaign.to}</>
+              : /* TODO: no i18n key for "Sélectionnez une cargaison" */ 'Sélectionnez une cargaison'}
           </div>
         </div>
         <div className="page__actions">
-          <button className="btn btn--ghost" onClick={() => campaign ? onNav('/campaign/' + campaign.id) : onNav('/parcels')}>Annuler</button>
+          <button className="btn btn--ghost" onClick={() => campaign ? onNav('/campaign/' + campaign.id) : onNav('/parcels')}>{t.common.cancel}</button>
           <button className="btn btn--brand" onClick={handleSubmit} disabled={saving}>
-            <I.Check />{saving ? 'Enregistrement…' : isEdit ? 'Enregistrer' : 'Créer le colis'}
+            {/* TODO: no i18n key for "Créer le colis" — using t.common.create as close match */}
+            <I.Check />{saving ? t.common.saving : isEdit ? t.common.save : t.common.create}
           </button>
         </div>
       </div>
@@ -260,16 +267,19 @@ export default function ParcelFormPage({ mode = 'create', parcel, campaign, onNa
           {!campaign && (
             <div className="card" style={{ padding: 16, marginBottom: 14 }}>
               <div className="section-title" style={{ marginBottom: 12 }}>
-                <I.Plane style={{ width: 14, height: 14, color: 'var(--brand-600)' }} /> Cargaison
+                {/* TODO: t.campaigns.title is plural ("Cargaisons"); no singular i18n key available */}
+                <I.Plane style={{ width: 14, height: 14, color: 'var(--brand-600)' }} /> {t.campaigns.title}
               </div>
               <div className="field" style={{ marginBottom: 0 }}>
-                <label className="label">Cargaison <span className="opt">/ Shipment</span></label>
+                <label className="label">{t.campaigns.title} <span className="opt">/ Shipment</span></label>
                 {campaigns.length === 0 ? (
                   <div style={{ padding: '10px 12px', background: 'var(--warn-50)', color: 'var(--warn-700)', borderRadius: 6, fontSize: 13, fontWeight: 500, border: '1px solid var(--warn-200)' }}>
+                    {/* TODO: no i18n key for this warning message */}
                     Aucune cargaison ouverte — les colis ne peuvent être ajoutés qu'aux cargaisons en statut "Ouverte".
                   </div>
                 ) : (
                   <select className="select" value={data.campaignId} onChange={e => upd('campaignId', e.target.value)}>
+                    {/* TODO: no i18n key for "Choisir une cargaison" */}
                     <option value="">— Choisir une cargaison</option>
                     {campaigns.map(c => (
                       <option key={c.id} value={c.id}>{c.code} · {c.from} → {c.to}</option>
@@ -283,15 +293,16 @@ export default function ParcelFormPage({ mode = 'create', parcel, campaign, onNa
           {/* Client */}
           <div className="card" style={{ padding: 16, marginBottom: 14 }}>
             <div className="section-title" style={{ marginBottom: 12 }}>
-              <I.Users style={{ width: 14, height: 14, color: 'var(--brand-600)' }} /> Client / Expéditeur
+              {/* TODO: "/ Expéditeur" has no i18n key */}
+              <I.Users style={{ width: 14, height: 14, color: 'var(--brand-600)' }} /> {t.clients.title} / Expéditeur
             </div>
             <div className="field" style={{ marginBottom: 8 }}>
-              <label className="label">Rechercher un client</label>
+              <label className="label">{t.clients.searchPlaceholder}</label>
               <div style={{ position: 'relative' }}>
                 <I.Search style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', width: 13, height: 13, color: 'var(--ink-400)' }} />
                 <input
                   className="input"
-                  placeholder="Nom, email, téléphone…"
+                  placeholder={t.clients.searchPlaceholder}
                   value={clientSearch}
                   onChange={e => setClientSearch(e.target.value)}
                   style={{ paddingLeft: 32 }}
@@ -300,7 +311,7 @@ export default function ParcelFormPage({ mode = 'create', parcel, campaign, onNa
             </div>
             <div style={{ display: 'grid', gap: 6, maxHeight: 180, overflowY: 'auto' }}>
               {filteredClients.length === 0 && (
-                <div style={{ fontSize: 12, color: 'var(--ink-400)', padding: '8px 0', textAlign: 'center' }}>Aucun client trouvé</div>
+                <div style={{ fontSize: 12, color: 'var(--ink-400)', padding: '8px 0', textAlign: 'center' }}>{t.clients.noClients}</div>
               )}
               {filteredClients.map(c => (
                 <label key={c.id} style={{
@@ -320,7 +331,7 @@ export default function ParcelFormPage({ mode = 'create', parcel, campaign, onNa
             </div>
             {clients.length === 0 && (
               <div style={{ marginTop: 8, fontSize: 12, color: 'var(--ink-400)', textAlign: 'center' }}>
-                Aucun client. <a style={{ color: 'var(--brand-600)', cursor: 'pointer', fontWeight: 600 }} onClick={() => onNav('/admin/clients')}>Créer un client →</a>
+                {t.clients.noClients}. <a style={{ color: 'var(--brand-600)', cursor: 'pointer', fontWeight: 600 }} onClick={() => onNav('/admin/clients')}>{t.clients.newClient} →</a>
               </div>
             )}
           </div>
@@ -328,17 +339,20 @@ export default function ParcelFormPage({ mode = 'create', parcel, campaign, onNa
           {/* Product & Weight - multi-line */}
           <div className="card" style={{ padding: 16, marginBottom: 14 }}>
             <div className="section-title" style={{ marginBottom: 12 }}>
+              {/* TODO: no i18n key for "Contenu & Poids" */}
               <I.Box style={{ width: 14, height: 14, color: 'var(--brand-600)' }} /> Contenu & Poids
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 160px 90px 70px 32px', gap: 6, marginBottom: 8, padding: '0 2px' }}>
-              {['Description', 'Type produit', 'Poids kg', 'Pièces', ''].map((h, i) => (
+              {/* TODO: "Type produit" and "Pièces" have no exact i18n keys; using t.common.description, t.common.type, t.common.weight as close matches */}
+              {[t.common.description, t.common.type, t.common.weight, /* TODO: no i18n key for "Pièces" */'Pièces', ''].map((h, i) => (
                 <div key={i} style={{ fontSize: 10.5, fontWeight: 700, color: 'var(--ink-400)', textTransform: 'uppercase', letterSpacing: '.04em' }}>{h}</div>
               ))}
             </div>
 
             {items.map(item => (
               <div key={item.id} style={{ display: 'grid', gridTemplateColumns: '1fr 160px 90px 70px 32px', gap: 6, marginBottom: 6 }}>
+                {/* TODO: no i18n key for description placeholder */}
                 <input className="input input--sm" value={item.description}
                   onChange={e => updItem(item.id, 'description', e.target.value)}
                   placeholder="Ex: Vêtements, cosmétiques…" />
@@ -356,10 +370,11 @@ export default function ParcelFormPage({ mode = 'create', parcel, campaign, onNa
             ))}
 
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 10, paddingTop: 10, borderTop: '1px solid var(--border-soft)' }}>
-              <button className="btn btn--ghost btn--sm" onClick={addItem}><I.Plus />Ajouter une ligne</button>
+              {/* TODO: no i18n key for "Ajouter une ligne"; using t.common.add as close match */}
+              <button className="btn btn--ghost btn--sm" onClick={addItem}><I.Plus />{t.common.add}</button>
               {totalKg > 0 && (
                 <span style={{ fontSize: 13, color: 'var(--ink-500)' }}>
-                  Total : <strong style={{ color: 'var(--ink-900)' }}>{totalKg.toFixed(1)} kg</strong>
+                  {t.common.total} : <strong style={{ color: 'var(--ink-900)' }}>{totalKg.toFixed(1)} kg</strong>
                 </span>
               )}
             </div>
@@ -368,9 +383,11 @@ export default function ParcelFormPage({ mode = 'create', parcel, campaign, onNa
           {/* Packaging */}
           <div className="card" style={{ padding: 16, marginBottom: 14 }}>
             <div className="section-title" style={{ marginBottom: 14 }}>
+              {/* TODO: no i18n key for "Emballage & Conditionnement" */}
               <I.Tag style={{ width: 14, height: 14, color: 'var(--brand-600)' }} /> Emballage & Conditionnement
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10, marginBottom: 14 }}>
+              {/* TODO: no i18n keys for packaging labels (Cartons, Petits sacs, etc.) */}
               <NumField label="Cartons" value={data.nbCartons} onChange={v => upd('nbCartons', v)} />
               <NumField label="Petits sacs" value={data.nbPetitsSacs} onChange={v => upd('nbPetitsSacs', v)} />
               <NumField label="Sacs moyens" value={data.nbSacsMoyens} onChange={v => upd('nbSacsMoyens', v)} />
@@ -383,6 +400,7 @@ export default function ParcelFormPage({ mode = 'create', parcel, campaign, onNa
 
             {dominantType === 'biere' && (
               <>
+                {/* TODO: no i18n key for SAQ beer crate labels */}
                 <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.06em', color: 'var(--ink-400)', marginBottom: 10 }}>Frais SAQ — Casiers de bière</div>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10 }}>
                   <NumField label="Casiers 24×65cl" value={data.nbCasiers24x65} onChange={v => upd('nbCasiers24x65', v)} />
@@ -396,9 +414,11 @@ export default function ParcelFormPage({ mode = 'create', parcel, campaign, onNa
           {/* Delivery + Notes */}
           <div className="card" style={{ padding: 16, marginBottom: 14 }}>
             <div className="section-title" style={{ marginBottom: 12 }}>
+              {/* TODO: no i18n key for "Livraison & Notes" */}
               <I.Truck style={{ width: 14, height: 14, color: 'var(--brand-600)' }} /> Livraison & Notes
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 14 }}>
+              {/* TODO: no i18n keys for delivery option labels (Retrait entrepôt, Livraison à domicile, Gratuit) */}
               {[
                 { id: 'pickup', label: 'Retrait entrepôt', en: 'Warehouse pickup', extra: 'Gratuit' },
                 { id: 'home',   label: 'Livraison à domicile', en: 'Home delivery', extra: '+25 $ CAD' },
@@ -420,10 +440,12 @@ export default function ParcelFormPage({ mode = 'create', parcel, campaign, onNa
             </div>
             {data.delivery === 'home' && (
               <div style={{ marginTop: 12, padding: 14, background: 'var(--bg-soft)', borderRadius: 8, border: '1px solid var(--border-soft)', marginBottom: 14 }}>
+                {/* TODO: no i18n key for "Destinataire & Adresse de livraison" */}
                 <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.06em', color: 'var(--ink-500)', marginBottom: 12 }}>Destinataire &amp; Adresse de livraison</div>
 
                 {clientAddresses.length > 0 && (
                   <div className="field" style={{ marginBottom: 10 }}>
+                    {/* TODO: no i18n key for "Adresse sauvegardée du client" */}
                     <label className="label">Adresse sauvegardée du client</label>
                     <select className="select" defaultValue="" onChange={e => {
                       const addr = clientAddresses.find(a => a.id === e.target.value);
@@ -435,6 +457,7 @@ export default function ParcelFormPage({ mode = 'create', parcel, campaign, onNa
                         upd('recipPostal',   addr.postal   || '');
                       }
                     }}>
+                      {/* TODO: no i18n key for "Choisir une adresse sauvegardée…" */}
                       <option value="">Choisir une adresse sauvegardée…</option>
                       {clientAddresses.map(a => (
                         <option key={a.id} value={a.id}>
@@ -447,6 +470,7 @@ export default function ParcelFormPage({ mode = 'create', parcel, campaign, onNa
 
                 {clientRecipients.length > 0 && (
                   <div className="field" style={{ marginBottom: 10 }}>
+                    {/* TODO: no i18n key for "Destinataire fréquent" */}
                     <label className="label">Destinataire fréquent</label>
                     <select className="select" defaultValue="" onChange={e => {
                       const r = clientRecipients.find(x => x.id === e.target.value);
@@ -456,6 +480,7 @@ export default function ParcelFormPage({ mode = 'create', parcel, campaign, onNa
                         if (r.city) upd('recipCity', r.city);
                       }
                     }}>
+                      {/* TODO: no i18n key for "Choisir un destinataire fréquent…" */}
                       <option value="">Choisir un destinataire fréquent…</option>
                       {clientRecipients.map(r => (
                         <option key={r.id} value={r.id}>
@@ -468,28 +493,33 @@ export default function ParcelFormPage({ mode = 'create', parcel, campaign, onNa
 
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 8 }}>
                   <div className="field" style={{ marginBottom: 0 }}>
-                    <label className="label">Nom destinataire</label>
-                    <input className="input input--sm" value={data.recipName} onChange={e => upd('recipName', e.target.value)} placeholder="Nom complet" />
+                    {/* TODO: "destinataire" qualifier has no i18n key; using t.common.name as close match */}
+                    <label className="label">{t.common.name}</label>
+                    <input className="input input--sm" value={data.recipName} onChange={e => upd('recipName', e.target.value)} placeholder={t.common.name} />
                   </div>
                   <div className="field" style={{ marginBottom: 0 }}>
-                    <label className="label">Téléphone destinataire</label>
+                    {/* TODO: "destinataire" qualifier has no i18n key; using t.common.phone as close match */}
+                    <label className="label">{t.common.phone}</label>
                     <input className="input input--sm" value={data.recipPhone} onChange={e => upd('recipPhone', e.target.value)} placeholder="+237 6XX XXX XXX" />
                   </div>
                 </div>
                 <div className="field" style={{ marginBottom: 8 }}>
-                  <label className="label">Adresse (numéro et rue)</label>
+                  {/* TODO: "(numéro et rue)" qualifier has no i18n key; using t.common.address as close match */}
+                  <label className="label">{t.common.address}</label>
                   <input className="input input--sm" value={data.recipAddress} onChange={e => upd('recipAddress', e.target.value)} placeholder="123 rue Sainte-Catherine" />
                 </div>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 60px 140px', gap: 8 }}>
                   <div className="field" style={{ marginBottom: 0 }}>
-                    <label className="label">Ville</label>
+                    <label className="label">{t.common.city}</label>
                     <input className="input input--sm" value={data.recipCity} onChange={e => upd('recipCity', e.target.value)} placeholder="Montréal" />
                   </div>
                   <div className="field" style={{ marginBottom: 0 }}>
+                    {/* TODO: no i18n key for "Province" */}
                     <label className="label">Province</label>
                     <input className="input input--sm" value={data.recipProvince} onChange={e => upd('recipProvince', e.target.value)} placeholder="QC" />
                   </div>
                   <div className="field" style={{ marginBottom: 0 }}>
+                    {/* TODO: no i18n key for "Code postal" */}
                     <label className="label">Code postal</label>
                     <input className="input input--sm" value={data.recipPostal} onChange={e => upd('recipPostal', e.target.value)} placeholder="H3H 1A1" />
                   </div>
@@ -498,7 +528,8 @@ export default function ParcelFormPage({ mode = 'create', parcel, campaign, onNa
             )}
 
             <div className="field" style={{ marginBottom: 0 }}>
-              <label className="label">Notes internes <span className="opt">/ optionnel</span></label>
+              <label className="label">{t.common.notes} <span className="opt">/ {t.common.optional}</span></label>
+              {/* TODO: no i18n key for this placeholder */}
               <textarea className="textarea" rows={2} value={data.notes} onChange={e => upd('notes', e.target.value)} placeholder="Instructions, précautions…" />
             </div>
           </div>
@@ -506,9 +537,11 @@ export default function ParcelFormPage({ mode = 'create', parcel, campaign, onNa
           {/* Margin */}
           <div className="card" style={{ padding: 16, marginBottom: 14 }}>
             <div className="section-title" style={{ marginBottom: 12 }}>
+              {/* TODO: no i18n key for "Marge commerciale" */}
               <I.Tag style={{ width: 14, height: 14, color: 'var(--brand-600)' }} /> Marge commerciale
             </div>
             <div className="field" style={{ marginBottom: 0 }}>
+              {/* TODO: no i18n key for "Marge commerciale (%)" */}
               <label className="label">Marge commerciale (%)</label>
               <input className="input mono" type="number" min="0" step="1"
                 value={data.marginPct} onChange={e => upd('marginPct', e.target.value)} />
@@ -521,6 +554,7 @@ export default function ParcelFormPage({ mode = 'create', parcel, campaign, onNa
           <div className="card" style={{ overflow: 'hidden' }}>
             <div style={{ padding: '14px 16px', background: 'linear-gradient(135deg, var(--ink-900), var(--ink-800))', color: 'white' }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
+                {/* TODO: no i18n key for "Calcul du prix" */}
                 <span style={{ fontSize: 13, fontWeight: 700, opacity: .7 }}>Calcul du prix</span>
                 {activeCampaign && <RoutePill from={activeCampaign.from} to={activeCampaign.to} />}
               </div>
@@ -530,6 +564,7 @@ export default function ParcelFormPage({ mode = 'create', parcel, campaign, onNa
                   : totalKg > 0 ? '—' : '— $'}
               </div>
               <div style={{ fontSize: 11, opacity: .55, marginTop: 2 }}>
+                {/* TODO: "CAD · Marge" label has no i18n key */}
                 CAD · Marge {data.marginPct}% · {totalKg.toFixed(1)} kg
               </div>
             </div>
@@ -537,16 +572,18 @@ export default function ParcelFormPage({ mode = 'create', parcel, campaign, onNa
             <div style={{ padding: 16 }}>
               {!pricing && !calcLoading && (
                 <div style={{ color: 'var(--ink-400)', fontSize: 12, textAlign: 'center', padding: '12px 0' }}>
+                  {/* TODO: no i18n key for "Saisissez le poids pour calculer le prix" */}
                   Saisissez le poids pour calculer le prix
                 </div>
               )}
               {calcLoading && (
                 <div style={{ color: 'var(--ink-400)', fontSize: 12, textAlign: 'center', padding: '12px 0' }}>
-                  Calcul en cours…
+                  {t.common.loading}
                 </div>
               )}
               {pricing && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                  {/* TODO: price breakdown labels (Transport, Manutention, Douane, etc.) have no i18n keys */}
                   <PriceRow label="Transport" value={pricing.transport} />
                   {pricing.cartons > 0   && <PriceRow label="Cartons" value={pricing.cartons} />}
                   {pricing.sacs > 0      && <PriceRow label="Sacs" value={pricing.sacs} />}
@@ -571,7 +608,7 @@ export default function ParcelFormPage({ mode = 'create', parcel, campaign, onNa
               if (!c) return null;
               return (
                 <div style={{ padding: '10px 16px', borderTop: '1px solid var(--border-soft)', background: 'var(--bg-soft)' }}>
-                  <div style={{ fontSize: 10.5, color: 'var(--ink-400)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.04em', marginBottom: 4 }}>Client</div>
+                  <div style={{ fontSize: 10.5, color: 'var(--ink-400)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.04em', marginBottom: 4 }}>{t.clients.title}</div>
                   <div style={{ fontSize: 13, fontWeight: 600 }}>{c.name}</div>
                   <div style={{ fontSize: 11.5, color: 'var(--ink-500)' }}>{c.email}</div>
                 </div>

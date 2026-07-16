@@ -1,13 +1,15 @@
 import { useState, useEffect } from 'react';
 
 import I from '../components/Icons.jsx';
-import { Bi, Avatar, Drawer, Skel, Modal, useCan } from '../components/Shell.jsx';
+import { Avatar, Drawer, Skel, Modal, useCan } from '../components/Shell.jsx';
 import { HelpTip } from '../components/HelpCenter.jsx';
 import { Pagination, ViewToggle } from '../components/Pagination.jsx';
 import ClientFormModal from './ClientForm.jsx';
+import { useAdminT } from '../lib/useAdminT.js';
 
 export default function ClientsScreen({ onNav }) {
   const can = useCan();
+  const t = useAdminT();
   const [open, setOpen] = useState(null);
   const [editing, setEditing] = useState(null);
   const [view, setView] = useState('grid');
@@ -26,12 +28,12 @@ export default function ClientsScreen({ onNav }) {
         if (Array.isArray(d)) {
           setClients(d);
         } else {
-          setFetchError(d?.error || 'Erreur de chargement');
+          setFetchError(d?.error || t.common.error);
         }
         setLoading(false);
       })
       .catch(() => {
-        setFetchError('Erreur réseau');
+        setFetchError(t.common.networkError);
         setLoading(false);
       });
   };
@@ -40,6 +42,7 @@ export default function ClientsScreen({ onNav }) {
 
   const handleToggleStatus = async (cl) => {
     const newStatus = cl.status === 'suspended' ? 'active' : 'suspended';
+    // TODO: no i18n key for 'Suspendre'/'Réactiver'
     const label = newStatus === 'suspended' ? 'Suspendre' : 'Réactiver';
     if (!confirm(`${label} ${cl.name} ?`)) return;
     await fetch(`/api/users/${cl.id}`, {
@@ -54,12 +57,13 @@ export default function ClientsScreen({ onNav }) {
     <div className="page">
       <div className="page__head">
         <div>
-          <div className="page__title"><Bi fr="Expéditeurs" en="Senders" /></div>
+          <div className="page__title">{t.clients.title}</div>
+          {/* TODO: no i18n key for page subtitle */}
           <div className="page__sub">Expéditeurs enregistrés — basés à Douala, Lagos et autres villes d'origine</div>
         </div>
         <div className="page__actions">
-          <button className="btn btn--ghost"><I.Download />Exporter CSV</button>
-          {can('clients', 'create') && <button className="btn btn--brand" onClick={() => setEditing('new')}><I.UserPlus />Nouvel expéditeur</button>}
+          <button className="btn btn--ghost"><I.Download />{t.parcels.exportCsv}</button>
+          {can('clients', 'create') && <button className="btn btn--brand" onClick={() => setEditing('new')}><I.UserPlus />{t.clients.newClient}</button>}
         </div>
       </div>
 
@@ -67,8 +71,9 @@ export default function ClientsScreen({ onNav }) {
         <div className="spacer" />
         <div style={{ position: 'relative' }}>
           <I.Search style={{ position: 'absolute', left: 10, top: 9, width: 14, height: 14, color: 'var(--ink-400)' }} />
-          <input className="input input--sm" placeholder="Nom, téléphone, code client..." style={{ width: 260, paddingLeft: 32 }} />
+          <input className="input input--sm" placeholder={t.clients.searchPlaceholder} style={{ width: 260, paddingLeft: 32 }} />
         </div>
+        {/* TODO: no i18n key for 'Filtres' */}
         <button className="btn btn--ghost btn--sm"><I.Filter />Filtres</button>
         <ViewToggle value={view} onChange={setView} />
       </div>
@@ -93,12 +98,13 @@ export default function ClientsScreen({ onNav }) {
         </div>
       ) : fetchError ? (
         <div style={{ padding: 40, textAlign: 'center', color: 'var(--err-600)', fontSize: 14 }}>
-          Erreur : {fetchError}
+          {t.common.error} : {fetchError}
         </div>
       ) : clients.length === 0 ? (
         <div style={{ padding: 48, textAlign: 'center', color: 'var(--ink-400)', fontSize: 14 }}>
           <I.Users style={{ width: 32, height: 32, marginBottom: 12, opacity: 0.3 }} />
-          <div style={{ fontWeight: 600, marginBottom: 4 }}>Aucun expéditeur enregistré</div>
+          <div style={{ fontWeight: 600, marginBottom: 4 }}>{t.clients.noClients}</div>
+          {/* TODO: no i18n key for empty-state description */}
           <div style={{ fontSize: 12 }}>Les clients qui se créent un compte apparaissent ici.</div>
         </div>
       ) : view === 'grid'
@@ -145,12 +151,14 @@ export default function ClientsScreen({ onNav }) {
 }
 
 function ClientsGridView({ clients, setOpen }) {
+  const t = useAdminT();
   return (
     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 12, background: 'white', border: '1px solid var(--border)', borderTop: 0, padding: 14 }}>
       {clients.map(cl => (
         <div key={cl.id} className="card" style={{ padding: 14, position: 'relative', cursor: 'pointer', opacity: cl.status === 'suspended' ? .7 : 1 }} onClick={() => setOpen(cl)}>
           <div style={{ position: 'absolute', top: 12, right: 12, display: 'flex', gap: 4 }}>
-            {cl.status === 'suspended' && <span className="badge" style={{ background: 'var(--bad-50)', color: 'var(--bad-700)', border: '1px solid var(--bad-200)', fontSize: 10 }}>Suspendu</span>}
+            {cl.status === 'suspended' && <span className="badge" style={{ background: 'var(--bad-50)', color: 'var(--bad-700)', border: '1px solid var(--bad-200)', fontSize: 10 }}>{t.common.inactive}</span>}
+            {/* TODO: no i18n key for 'Non vérifié' badge */}
             {!cl.emailVerified && <span className="badge" style={{ background: 'var(--warn-50)', color: 'var(--warn-700)', border: '1px solid var(--warn-200)', fontSize: 10 }}>Non vérifié</span>}
             {cl.loyal && <I.Star style={{ width: 14, height: 14, color: 'var(--brand-500)' }} />}
           </div>
@@ -172,13 +180,16 @@ function ClientsGridView({ clients, setOpen }) {
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 6, padding: '10px 0', borderTop: '1px solid var(--border-soft)', borderBottom: '1px solid var(--border-soft)', marginBottom: 10 }}>
+            {/* TODO: no i18n key for 'Cargaisons' mini label */}
             <Mini label="Cargaisons" v={cl.campaigns} />
-            <Mini label="Poids" v={cl.weight + ' kg'} />
+            <Mini label={t.common.weight} v={cl.weight + ' kg'} />
+            {/* TODO: no i18n key for 'CA' (chiffre d'affaires) */}
             <Mini label="CA" v={(cl.amount / 1000).toFixed(1) + 'k'} unit="CAD" />
           </div>
 
           <div style={{ fontSize: 11.5, color: 'var(--ink-500)', display: 'flex', alignItems: 'center', gap: 6 }}>
             <I.Calendar style={{ width: 11, height: 11 }} />
+            {/* TODO: no i18n key for 'Dernière :' label */}
             Dernière : <span className="mono" style={{ color: 'var(--ink-700)', fontWeight: 600 }}>{cl.lastCampaign}</span>
           </div>
         </div>
@@ -188,19 +199,22 @@ function ClientsGridView({ clients, setOpen }) {
 }
 
 function ClientsListView({ clients, setOpen, onToggleStatus, page, pageSize }) {
+  const t = useAdminT();
   const paged = clients.slice((page - 1) * pageSize, page * pageSize);
   return (
     <table className="tbl" style={{ borderTopLeftRadius: 0, borderTopRightRadius: 0 }}>
       <thead>
         <tr>
           <th style={{ width: 32, borderRadius: 0 }}><input type="checkbox" style={{ accentColor: 'var(--brand-500)' }} /></th>
-          <th>Expéditeur</th>
-          <th>Statut</th>
-          <th>Ville</th>
-          <th>Téléphone</th>
-          <th style={{ textAlign: 'center' }}>Nb d'envois</th>
-          <th style={{ textAlign: 'right' }}>Poids</th>
+          <th>{t.clients.table.name}</th>
+          <th>{t.common.status}</th>
+          <th>{t.common.city}</th>
+          <th>{t.common.phone}</th>
+          <th style={{ textAlign: 'center' }}>{t.clients.table.parcels}</th>
+          <th style={{ textAlign: 'right' }}>{t.common.weight}</th>
+          {/* TODO: no i18n key for 'CA total' */}
           <th style={{ textAlign: 'right' }}>CA total</th>
+          {/* TODO: no i18n key for 'Dernière' column */}
           <th>Dernière</th>
           <th style={{ borderRadius: 0, width: 110 }}></th>
         </tr>
@@ -226,8 +240,9 @@ function ClientsListView({ clients, setOpen, onToggleStatus, page, pageSize }) {
               <td>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 4, alignItems: 'flex-start' }}>
                   {suspended
-                    ? <span className="badge" style={{ background: 'var(--bad-50)', color: 'var(--bad-700)', border: '1px solid var(--bad-200)' }}>Suspendu</span>
-                    : <span className="badge" style={{ background: 'var(--ok-50)', color: 'var(--ok-700)', border: '1px solid var(--ok-100)' }}>Actif</span>}
+                    ? <span className="badge" style={{ background: 'var(--bad-50)', color: 'var(--bad-700)', border: '1px solid var(--bad-200)' }}>{t.common.inactive}</span>
+                    : <span className="badge" style={{ background: 'var(--ok-50)', color: 'var(--ok-700)', border: '1px solid var(--ok-100)' }}>{t.common.active}</span>}
+                  {/* TODO: no i18n key for 'Email non vérifié' badge */}
                   {!cl.emailVerified && <span className="badge" style={{ background: 'var(--warn-50)', color: 'var(--warn-700)', border: '1px solid var(--warn-200)', fontSize: 10 }}>Email non vérifié</span>}
                 </div>
               </td>
@@ -246,6 +261,7 @@ function ClientsListView({ clients, setOpen, onToggleStatus, page, pageSize }) {
                     className="btn btn--ghost btn--xs"
                     style={{ fontSize: 11, color: suspended ? 'var(--ok-700)' : 'var(--bad-600)' }}
                     onClick={() => onToggleStatus(cl)}>
+                    {/* TODO: no i18n key for 'Réactiver'/'Suspendre' */}
                     {suspended ? 'Réactiver' : 'Suspendre'}
                   </button>
                   <button className="icon-btn" onClick={() => setOpen(cl)}><I.ChevronRight /></button>
@@ -282,6 +298,7 @@ const CAMP_STATUS_LBL = {
 };
 
 function ClientDrawer({ cl, onClose, onEdit, onNav, onStatusChange, onDeleted }) {
+  const t = useAdminT();
   const [detail,  setDetail]  = useState(null);
   const [loading, setLoading] = useState(true);
   const [togglingStatus, setTogglingStatus] = useState(false);
@@ -300,14 +317,14 @@ function ClientDrawer({ cl, onClose, onEdit, onNav, onStatusChange, onDeleted })
       const res = await fetch(`/api/clients/${cl.id}`, { method: 'DELETE' });
       const d = await res.json();
       if (!res.ok) {
-        setDeleteErr(d.error || 'Erreur lors de la suppression');
+        setDeleteErr(d.error || t.common.error);
         setDeleting(false);
         return;
       }
       onDeleted?.(cl.id);
       onClose();
     } catch {
-      setDeleteErr('Erreur réseau');
+      setDeleteErr(t.common.networkError);
       setDeleting(false);
     }
   };
@@ -319,14 +336,15 @@ function ClientDrawer({ cl, onClose, onEdit, onNav, onStatusChange, onDeleted })
     try {
       const res = await fetch(`/api/admin/clients/${cl.id}/resend-verification`, { method: 'POST' });
       const d = await res.json();
-      if (!res.ok) { setResendErr(d.error || 'Erreur'); }
+      if (!res.ok) { setResendErr(d.error || t.common.error); }
       else { setResendOk(true); }
-    } catch { setResendErr('Erreur réseau'); }
+    } catch { setResendErr(t.common.networkError); }
     setResending(false);
   };
 
   const handleToggleStatus = async () => {
     const newStatus = cl.status === 'suspended' ? 'active' : 'suspended';
+    // TODO: no i18n key for 'Suspendre'/'Réactiver'
     const label = newStatus === 'suspended' ? 'Suspendre' : 'Réactiver';
     if (!confirm(`${label} ce client ?`)) return;
     setTogglingStatus(true);
@@ -360,6 +378,7 @@ function ClientDrawer({ cl, onClose, onEdit, onNav, onStatusChange, onDeleted })
     <Drawer width={560} onClose={onClose}>
       <div className="drawer__head">
         <div style={{ flex: 1 }}>
+          {/* TODO: no i18n key for 'Profil client' drawer heading */}
           <div style={{ fontSize: 11, color: 'var(--ink-400)', textTransform: 'uppercase', letterSpacing: '.04em', fontWeight: 600 }}>Profil client</div>
         </div>
         <button className="icon-btn" onClick={onClose}><I.Cross /></button>
@@ -375,17 +394,18 @@ function ClientDrawer({ cl, onClose, onEdit, onNav, onStatusChange, onDeleted })
                 {cl.loyal && <I.Star style={{ width: 14, height: 14, color: 'var(--brand-500)', marginLeft: 6, verticalAlign: -1 }} />}
               </div>
               {cl.status === 'suspended' && (
-                <span className="badge" style={{ background: 'var(--bad-50)', color: 'var(--bad-700)', border: '1px solid var(--bad-200)' }}>Suspendu</span>
+                <span className="badge" style={{ background: 'var(--bad-50)', color: 'var(--bad-700)', border: '1px solid var(--bad-200)' }}>{t.common.inactive}</span>
               )}
               {!cl.emailVerified && (
                 <span className="badge" style={{ background: 'var(--warn-50)', color: 'var(--warn-700)', border: '1px solid var(--warn-200)' }}>
+                  {/* TODO: no i18n key for 'Email non vérifié' */}
                   Email non vérifié
                   <HelpTip text="Le client n'a pas encore confirmé son adresse email. Utilisez le bouton ci-dessous pour renvoyer le code de vérification." position="left" />
                 </span>
               )}
             </div>
             <div style={{ fontSize: 12, color: 'var(--ink-400)', marginTop: 2 }}>
-              Client depuis {since}
+              {t.clients.profile.info.memberSince} {since}
             </div>
             {cl.city && cl.city !== '—' && (
               <div style={{ marginTop: 6, fontSize: 12.5, color: 'var(--ink-600)', fontWeight: 500 }}>{cl.city}</div>
@@ -397,9 +417,11 @@ function ClientDrawer({ cl, onClose, onEdit, onNav, onStatusChange, onDeleted })
           {loading ? [1,2,3].map(i => (
             <div key={i}><Skel w="50%" h={10} style={{ marginBottom: 6 }} /><Skel w="70%" h={20} /></div>
           )) : [
-            { label: 'Colis',      value: parcels.length },
-            { label: 'CA total',   value: totalAmt.toLocaleString('fr') + ' CAD', color: 'var(--ok-600)' },
-            { label: 'Impayés',    value: unpaidAmt > 0 ? unpaidAmt.toLocaleString('fr') + ' CAD' : '0 CAD', color: unpaidAmt > 0 ? 'var(--bad-600)' : 'var(--ink-400)' },
+            { label: t.clients.profile.info.totalParcels, value: parcels.length },
+            // TODO: no i18n key for 'CA total'; using analytics.kpi.revenue as closest match
+            { label: t.analytics.kpi.revenue,             value: totalAmt.toLocaleString('fr') + ' CAD', color: 'var(--ok-600)' },
+            // TODO: no i18n key for 'Impayés'
+            { label: 'Impayés',                           value: unpaidAmt > 0 ? unpaidAmt.toLocaleString('fr') + ' CAD' : '0 CAD', color: unpaidAmt > 0 ? 'var(--bad-600)' : 'var(--ink-400)' },
           ].map(({ label, value, color }) => (
             <div key={label}>
               <div style={{ fontSize: 11, color: 'var(--ink-400)', textTransform: 'uppercase', letterSpacing: '.04em', fontWeight: 600 }}>{label}</div>
@@ -409,12 +431,13 @@ function ClientDrawer({ cl, onClose, onEdit, onNav, onStatusChange, onDeleted })
         </div>
 
         <div style={{ padding: '16px 22px', borderBottom: '1px solid var(--border-soft)' }}>
+          {/* TODO: no i18n key for 'Contact' section title */}
           <div className="section-title" style={{ marginBottom: 10 }}>Contact</div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-            <DrawerRow icon={<I.Phone />}    label="Téléphone" value={cl.phone !== '—' ? cl.phone : '—'} mono />
-            <DrawerRow icon={<I.Pin />}      label="Ville"     value={cl.city  !== '—' ? cl.city  : '—'} />
-            <DrawerRow icon={<I.Whatsapp />} label="WhatsApp"  value={detail?.whatsapp ?? cl.phone ?? '—'} mono />
-            <DrawerRow icon={<I.Mail />}     label="Email"     value={detail?.email    ?? '—'} />
+            <DrawerRow icon={<I.Phone />}    label={t.common.phone}  value={cl.phone !== '—' ? cl.phone : '—'} mono />
+            <DrawerRow icon={<I.Pin />}      label={t.common.city}   value={cl.city  !== '—' ? cl.city  : '—'} />
+            <DrawerRow icon={<I.Whatsapp />} label="WhatsApp"        value={detail?.whatsapp ?? cl.phone ?? '—'} mono />
+            <DrawerRow icon={<I.Mail />}     label={t.common.email}  value={detail?.email    ?? '—'} />
           </div>
         </div>
 
@@ -422,6 +445,7 @@ function ClientDrawer({ cl, onClose, onEdit, onNav, onStatusChange, onDeleted })
           <div style={{ padding: '16px 22px', borderBottom: '1px solid var(--border-soft)' }}>
             <div className="section-title" style={{ marginBottom: 10 }}>
               <I.Users style={{ width: 13, height: 13, color: 'var(--brand-600)', marginRight: 4 }} />
+              {/* TODO: no i18n key for 'Destinataires fréquents' */}
               Destinataires fréquents
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
@@ -445,6 +469,7 @@ function ClientDrawer({ cl, onClose, onEdit, onNav, onStatusChange, onDeleted })
           <div style={{ padding: '16px 22px', borderBottom: '1px solid var(--border-soft)' }}>
             <div className="section-title" style={{ marginBottom: 10 }}>
               <I.Truck style={{ width: 13, height: 13, color: 'var(--brand-600)', marginRight: 4 }} />
+              {/* TODO: no i18n key for 'Adresses de livraison' */}
               Adresses de livraison
             </div>
             {(detail?.deliveryAddress || detail?.deliveryPhone) && (
@@ -477,7 +502,7 @@ function ClientDrawer({ cl, onClose, onEdit, onNav, onStatusChange, onDeleted })
 
         <div style={{ padding: '16px 22px' }}>
           <div className="section-title">
-            Historique de colis <span className="section-title__count">{parcels.length}</span>
+            {t.clients.profile.parcels.title} <span className="section-title__count">{parcels.length}</span>
           </div>
           {loading ? (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
@@ -485,16 +510,19 @@ function ClientDrawer({ cl, onClose, onEdit, onNav, onStatusChange, onDeleted })
             </div>
           ) : parcels.length === 0 ? (
             <div style={{ fontSize: 13, color: 'var(--ink-400)', padding: '12px 0' }}>
-              Aucun colis enregistré.
+              {t.clients.profile.parcels.noParcel}
             </div>
           ) : (
             <table className="tbl tbl--compact">
               <thead>
                 <tr>
+                  {/* TODO: no i18n key for 'Code' (tracking code column) */}
                   <th style={{ borderRadius: 0 }}>Code</th>
+                  {/* TODO: no i18n key for 'Cargaison' column */}
                   <th>Cargaison</th>
-                  <th style={{ textAlign: 'right' }}>Poids</th>
-                  <th style={{ textAlign: 'right' }}>Montant</th>
+                  <th style={{ textAlign: 'right' }}>{t.common.weight}</th>
+                  <th style={{ textAlign: 'right' }}>{t.common.amount}</th>
+                  {/* TODO: no i18n key for 'Paiement' column header */}
                   <th style={{ borderRadius: 0 }}>Paiement</th>
                 </tr>
               </thead>
@@ -517,17 +545,20 @@ function ClientDrawer({ cl, onClose, onEdit, onNav, onStatusChange, onDeleted })
                     </td>
                     <td>
                       {p.displayStatus === 'paid' && (
-                        <span className="badge badge--dot badge--ok">Payé</span>
+                        <span className="badge badge--dot badge--ok">{t.paymentStatus.paid}</span>
                       )}
+                      {/* TODO: no i18n key for 'Payé · Suppl.' */}
                       {p.displayStatus === 'paid_supp_pending' && (
                         <span className="badge badge--dot" style={{ background: 'var(--info-100)', color: 'var(--info-700)', borderColor: 'var(--info-100)' }}>Payé · Suppl.</span>
                       )}
+                      {/* TODO: no i18n key for 'Partiel' */}
                       {p.displayStatus === 'partial' && (
                         <span className="badge badge--dot badge--warn">Partiel</span>
                       )}
                       {p.displayStatus === 'pending' && (
-                        <span className="badge badge--dot badge--warn">En attente</span>
+                        <span className="badge badge--dot badge--warn">{t.paymentStatus.pending}</span>
                       )}
+                      {/* TODO: no i18n key for 'Sans facture' */}
                       {(!p.displayStatus || p.displayStatus === 'none') && (
                         <span className="badge badge--dot badge--neutral">Sans facture</span>
                       )}
@@ -542,7 +573,7 @@ function ClientDrawer({ cl, onClose, onEdit, onNav, onStatusChange, onDeleted })
 
       <div className="drawer__foot" style={{ flexDirection: 'column', gap: 8, alignItems: 'stretch' }}>
         <div style={{ display: 'flex', gap: 6 }}>
-          <button className="btn btn--ghost" style={{ flex: 1, justifyContent: 'center' }} onClick={onEdit}><I.Edit />Modifier</button>
+          <button className="btn btn--ghost" style={{ flex: 1, justifyContent: 'center' }} onClick={onEdit}><I.Edit />{t.common.edit}</button>
           <button className="btn btn--soft" style={{ flex: 1, justifyContent: 'center' }} onClick={() => setShowWa(true)}>
             <I.Whatsapp style={{ color: 'var(--ok-600)' }} />WhatsApp
           </button>
@@ -551,6 +582,7 @@ function ClientDrawer({ cl, onClose, onEdit, onNav, onStatusChange, onDeleted })
             style={{ flex: 1, justifyContent: 'center', color: cl.status === 'suspended' ? 'var(--ok-700)' : 'var(--bad-600)' }}
             onClick={handleToggleStatus}
             disabled={togglingStatus}>
+            {/* TODO: no i18n key for 'Réactiver'/'Suspendre' */}
             {cl.status === 'suspended' ? 'Réactiver' : 'Suspendre'}
           </button>
         </div>
@@ -562,7 +594,8 @@ function ClientDrawer({ cl, onClose, onEdit, onNav, onStatusChange, onDeleted })
               onClick={handleResendVerification}
               disabled={resending || resendOk}>
               <I.Mail style={{ width: 13, height: 13 }} />
-              {resending ? 'Envoi en cours…' : resendOk ? 'Email envoyé ✓' : 'Renvoyer l\'email de vérification'}
+              {/* TODO: no i18n key for resend verification labels */}
+              {resending ? t.common.sending : resendOk ? 'Email envoyé ✓' : 'Renvoyer l\'email de vérification'}
             </button>
             {resendErr && (
               <div style={{ fontSize: 12, color: 'var(--bad-700)', background: 'var(--bad-50)', border: '1px solid var(--bad-200)', borderRadius: 6, padding: '6px 10px', marginTop: 4 }}>
@@ -581,7 +614,7 @@ function ClientDrawer({ cl, onClose, onEdit, onNav, onStatusChange, onDeleted })
             className="btn btn--ghost"
             style={{ justifyContent: 'center', color: 'var(--bad-600)', fontSize: 12 }}
             onClick={() => setDeleteConfirm(true)}>
-            <I.Trash style={{ width: 13, height: 13 }} />Supprimer ce client
+            <I.Trash style={{ width: 13, height: 13 }} />{t.common.delete}
           </button>
         ) : (
           <div style={{ display: 'flex', gap: 6 }}>
@@ -591,10 +624,11 @@ function ClientDrawer({ cl, onClose, onEdit, onNav, onStatusChange, onDeleted })
               onClick={handleDelete}
               disabled={deleting}>
               <I.Trash style={{ width: 13, height: 13 }} />
-              {deleting ? 'Suppression...' : 'Confirmer la suppression'}
+              {/* TODO: no i18n key for 'Suppression...' */}
+              {deleting ? 'Suppression...' : t.common.confirm}
             </button>
             <button className="btn btn--ghost" style={{ fontSize: 12 }} onClick={() => { setDeleteConfirm(false); setDeleteErr(''); }}>
-              Annuler
+              {t.common.cancel}
             </button>
           </div>
         )}
@@ -632,6 +666,7 @@ const WA_TEMPLATE_DEFAULTS = [
 ];
 
 function WhatsappModal({ client, parcels, onClose }) {
+  const t = useAdminT();
   const activeParcels = parcels.filter(p => p.status !== 'livre');
   const [selectedParcelIds, setSelectedParcelIds] = useState(
     activeParcels.length > 0 ? [activeParcels[0].id] : parcels.slice(0, 1).map(p => p.id)
@@ -644,20 +679,20 @@ function WhatsappModal({ client, parcels, onClose }) {
 
   useEffect(() => {
     fetch('/api/settings').then(r => r.json()).then(d => {
-      const loaded = WA_TEMPLATE_DEFAULTS.map(t => ({
-        ...t,
-        label: d[`wa_tmpl_${t.id}_label`] ?? t.label,
-        body:  d[`wa_tmpl_${t.id}_body`]  ?? t.body,
+      const loaded = WA_TEMPLATE_DEFAULTS.map(tmpl => ({
+        ...tmpl,
+        label: d[`wa_tmpl_${tmpl.id}_label`] ?? tmpl.label,
+        body:  d[`wa_tmpl_${tmpl.id}_body`]  ?? tmpl.body,
       }));
       setTemplates(loaded);
-      const current = loaded.find(t => t.id === 'arrival');
+      const current = loaded.find(tmpl => tmpl.id === 'arrival');
       if (current) setBody(current.body);
     }).catch(() => {});
   }, []);
 
   const onTemplateChange = (id) => {
     setTemplateId(id);
-    const found = templates.find(t => t.id === id);
+    const found = templates.find(tmpl => tmpl.id === id);
     if (found) setBody(found.body);
   };
 
@@ -677,7 +712,7 @@ function WhatsappModal({ client, parcels, onClose }) {
       const json = await res.json();
       setResult(json);
     } catch {
-      setResult({ ok: false, error: 'Erreur réseau' });
+      setResult({ ok: false, error: t.common.networkError });
     }
     setSending(false);
   };
@@ -689,17 +724,18 @@ function WhatsappModal({ client, parcels, onClose }) {
       footer={result ? (
         <>
           <div style={{ flex: 1, fontSize: 13, color: result.sentCount > 0 ? 'var(--ok-700)' : 'var(--bad-700)' }}>
-            {result.sentCount > 0 ? `✓ ${result.sentCount} message(s) envoyé(s)` : `Échec : ${result.error || 'Erreur'}`}
+            {/* TODO: no i18n key for sent/failure message */}
+            {result.sentCount > 0 ? `✓ ${result.sentCount} message(s) envoyé(s)` : `Échec : ${result.error || t.common.error}`}
           </div>
-          <button className="btn btn--ghost" onClick={onClose}>Fermer</button>
+          <button className="btn btn--ghost" onClick={onClose}>{t.common.close}</button>
         </>
       ) : (
         <>
           <div style={{ flex: 1 }} />
-          <button className="btn btn--ghost" onClick={onClose}>Annuler</button>
+          <button className="btn btn--ghost" onClick={onClose}>{t.common.cancel}</button>
           <button className="btn btn--brand" onClick={handleSend} disabled={sending || !selectedParcelIds.length}>
             <I.Whatsapp style={{ width: 14, height: 14 }} />
-            {sending ? 'Envoi…' : 'Envoyer'}
+            {sending ? t.common.sending : t.common.send}
           </button>
         </>
       )}>
@@ -707,10 +743,11 @@ function WhatsappModal({ client, parcels, onClose }) {
       <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
         {parcels.length === 0 ? (
           <div style={{ padding: 16, background: 'var(--bg-soft)', borderRadius: 8, fontSize: 13, color: 'var(--ink-500)', textAlign: 'center' }}>
-            Ce client n'a pas de colis enregistré.
+            {t.clients.profile.parcels.noParcel}
           </div>
         ) : (
           <div>
+            {/* TODO: no i18n key for 'Colis concerné(s)' */}
             <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--ink-500)', textTransform: 'uppercase', letterSpacing: '.04em', marginBottom: 8 }}>Colis concerné(s)</div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
               {parcels.map(p => (
@@ -724,7 +761,7 @@ function WhatsappModal({ client, parcels, onClose }) {
                   <span className="mono" style={{ fontSize: 12, fontWeight: 700, color: 'var(--brand-700)' }}>{p.trackingCode}</span>
                   <span style={{ fontSize: 12, color: 'var(--ink-500)', flex: 1 }}>{p.campaign.code}</span>
                   <span className={'badge badge--dot badge--' + (p.paid ? 'ok' : 'warn')} style={{ fontSize: 10.5 }}>
-                    {p.paid ? 'Payé' : 'Impayé'}
+                    {p.paid ? t.paymentStatus.paid : t.paymentStatus.pending}
                   </span>
                 </label>
               ))}
@@ -733,12 +770,14 @@ function WhatsappModal({ client, parcels, onClose }) {
         )}
 
         <div>
+          {/* TODO: no i18n key for 'Modèle' */}
           <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--ink-500)', textTransform: 'uppercase', letterSpacing: '.04em', marginBottom: 8 }}>Modèle</div>
           <select className="select" value={templateId} onChange={e => onTemplateChange(e.target.value)} style={{ marginBottom: 10 }}>
-            {templates.map(t => <option key={t.id} value={t.id}>{t.label}</option>)}
+            {templates.map(tmpl => <option key={tmpl.id} value={tmpl.id}>{tmpl.label}</option>)}
           </select>
           <textarea className="textarea" rows={8} value={body} onChange={e => setBody(e.target.value)}
             style={{ fontSize: 12.5, fontFamily: 'var(--ff-mono)', lineHeight: 1.6 }} />
+          {/* TODO: no i18n key for 'Variables disponibles :' */}
           <div style={{ fontSize: 11, color: 'var(--ink-400)', marginTop: 6 }}>
             Variables disponibles : {'{first_name}'} {'{parcel_code}'} {'{amount}'} {'{weight}'} {'{arrival_date}'}
           </div>

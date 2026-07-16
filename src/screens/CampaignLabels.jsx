@@ -2,8 +2,10 @@
 import { useState, useEffect } from 'react';
 import I from '../components/Icons.jsx';
 import { Skel } from '../components/Shell.jsx';
+import { useAdminT } from '../lib/useAdminT.js';
 
 export default function CampaignLabelsScreen({ id, onNav }) {
+  const t = useAdminT();
   const [campaign, setCampaign] = useState(null);
   const [loading,  setLoading]  = useState(true);
   const [error,    setError]    = useState('');
@@ -16,7 +18,7 @@ export default function CampaignLabelsScreen({ id, onNav }) {
         else setCampaign(d);
         setLoading(false);
       })
-      .catch(() => { setError('Erreur réseau'); setLoading(false); });
+      .catch(() => { setError(t.common.networkError); setLoading(false); });
   }, [id]);
 
   const parcels = campaign?.parcels ?? [];
@@ -27,18 +29,20 @@ export default function CampaignLabelsScreen({ id, onNav }) {
     <div style={{ minHeight: '100vh', background: '#f4f5f7' }}>
       <div className="labels-toolbar">
         <button className="btn btn--ghost btn--sm" onClick={() => onNav('/admin/campaigns/' + id)}>
-          <I.ArrowLeft />Retour
+          <I.ArrowLeft />{t.common.back}
         </button>
         <div style={{ flex: 1 }}>
           <div style={{ fontSize: 14, fontWeight: 700 }}>
+            {/* TODO: translate "Étiquettes colis" (parcel labels screen title) */}
             {loading ? '…' : campaign?.code ?? '—'} — Étiquettes colis
           </div>
           <div style={{ fontSize: 12, color: 'var(--ink-400)' }}>
+            {/* TODO: translate "étiquette(s)" (label count unit) */}
             {loading ? '…' : parcels.length + ' étiquette' + (parcels.length > 1 ? 's' : '') + ' · Format A6 · 2 par ligne A4'}
           </div>
         </div>
         <button className="btn btn--ghost btn--sm" onClick={() => window.print()}>
-          <I.Print />Imprimer tout
+          <I.Print />{t.common.print}
         </button>
       </div>
 
@@ -55,7 +59,7 @@ export default function CampaignLabelsScreen({ id, onNav }) {
       {!loading && !error && parcels.length === 0 && (
         <div style={{ textAlign: 'center', padding: '60px 24px', color: 'var(--ink-400)' }}>
           <I.Box style={{ width: 40, height: 40, margin: '0 auto 12px', display: 'block' }} />
-          <div style={{ fontSize: 14, fontWeight: 600 }}>Aucun colis dans cette cargaison</div>
+          <div style={{ fontSize: 14, fontWeight: 600 }}>{t.parcels.noParcels}</div>
         </div>
       )}
 
@@ -78,6 +82,7 @@ export default function CampaignLabelsScreen({ id, onNav }) {
 
               <div className="label-parties">
                 <div className="label-party">
+                  {/* TODO: translate "CLIENT / EXPÉDITEUR" (sender label tag on parcel label) */}
                   <div className="label-party-tag">CLIENT / EXPÉDITEUR</div>
                   <div className="label-party-name">{p.client?.name ?? '—'}</div>
                   <div className="label-party-detail">{p.client?.phone ?? '—'}</div>
@@ -85,6 +90,7 @@ export default function CampaignLabelsScreen({ id, onNav }) {
                 </div>
                 <div className="label-arrow">→</div>
                 <div className="label-party label-party--right">
+                  {/* TODO: translate "DESTINATION" (destination label tag on parcel label) */}
                   <div className="label-party-tag">DESTINATION</div>
                   <div className="label-party-name">{to}</div>
                   <div className="label-party-detail">Jumla Shipping</div>

@@ -1,8 +1,10 @@
 import { useState, useEffect, useCallback } from 'react';
 import I from '../components/Icons.jsx';
 import { RoutePill, Avatar, Modal } from '../components/Shell.jsx';
+import { useAdminT } from '../lib/useAdminT.js';
 
 // Main linear flow (shown in timeline)
+// TODO: i18n — step labels are not covered by translation keys
 const STEPS = [
   { id: 'enr', label: 'Enregistré',              icon: '📝', color: '#6b7280' },
   { id: 'exp', label: 'Expédié',                  icon: '🚀', color: '#0e7490' },
@@ -22,6 +24,7 @@ const ALL_STEPS = STEPS;
 const STEP_LABELS = Object.fromEntries(STEPS.map(s => [s.id, s.label]));
 const STEP_ICONS  = Object.fromEntries(STEPS.map(s => [s.id, s.icon]));
 
+// TODO: i18n — step effect descriptions are not covered by translation keys
 const STEP_EFFECTS = {
   exp: 'Tous les colis reçus/préparés seront automatiquement passés à "Expédié" (EXP).',
   tra: 'Nouvelle escale enregistrée. La note de transit sera mise à jour.',
@@ -35,11 +38,13 @@ const STEP_EFFECTS = {
   ok:  'La cargaison sera définitivement clôturée. Cette action est irréversible.',
 };
 
+// TODO: i18n — use t.paymentStatus.* in render instead of these labels
 const PAYMENT_STATUS = {
   completed: { label: 'Payé',       cls: 'ok' },
   pending:   { label: 'En attente', cls: 'warn' },
   failed:    { label: 'Échoué',     cls: 'bad' },
 };
+// TODO: i18n — parcel status labels are not covered by translation keys
 const PARCEL_STATUS = {
   enr: 'Enregistré',  rec: 'Reçu entrepôt',    pre: 'Vérifié/Préparé',
   exp: 'Expédié',     tra: 'En transit',        apd: 'Arrivé pays dest.',
@@ -51,6 +56,7 @@ const PARCEL_STATUS = {
 };
 
 export default function CampaignDetailScreen({ id, onNav }) {
+  const t = useAdminT();
   const [campaign,           setCampaign]           = useState(null);
   const [loading,            setLoading]            = useState(true);
   const [advancing,          setAdvancing]          = useState(false);
@@ -79,7 +85,7 @@ export default function CampaignDetailScreen({ id, onNav }) {
       <div className="page" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 320 }}>
         <div style={{ textAlign: 'center', color: 'var(--ink-400)' }}>
           <div style={{ fontSize: 28, marginBottom: 12 }}>⏳</div>
-          <div style={{ fontSize: 14 }}>Chargement de la cargaison…</div>
+          <div style={{ fontSize: 14 }}>{t.common.loading}</div>
         </div>
       </div>
     );
@@ -90,8 +96,9 @@ export default function CampaignDetailScreen({ id, onNav }) {
       <div className="page" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 320 }}>
         <div style={{ textAlign: 'center', color: 'var(--ink-400)' }}>
           <div style={{ fontSize: 28, marginBottom: 12 }}>📦</div>
+          {/* TODO: i18n — no translation key for "Cargaison introuvable" */}
           <div style={{ fontSize: 16, fontWeight: 600, color: 'var(--ink-700)' }}>Cargaison introuvable</div>
-          <button className="btn btn--ghost" style={{ marginTop: 16 }} onClick={() => onNav('/')}>← Retour</button>
+          <button className="btn btn--ghost" style={{ marginTop: 16 }} onClick={() => onNav('/')}>← {t.common.back}</button>
         </div>
       </div>
     );
@@ -110,6 +117,13 @@ export default function CampaignDetailScreen({ id, onNav }) {
 
   const unpaidCount = parcels.filter(p => p.payment?.status !== 'completed').length;
 
+  const getPaymentLabel = (status) => {
+    if (status === 'completed') return t.paymentStatus.paid;
+    if (status === 'pending') return t.paymentStatus.pending;
+    if (status === 'failed') return t.paymentStatus.cancelled; // TODO: no exact match for 'failed' status
+    return PAYMENT_STATUS[status]?.label || status || '—';
+  };
+
   async function doAdvance(targetStep, note) {
     setAdvancing(true);
     setAdvanceError('');
@@ -121,14 +135,14 @@ export default function CampaignDetailScreen({ id, onNav }) {
       });
       const json = await res.json();
       if (!res.ok) {
-        setAdvanceError(json.error || `Erreur ${res.status}`);
+        setAdvanceError(json.error || `${t.common.error} ${res.status}`);
       } else {
         const updated = await fetch('/api/campaigns/' + id).then(r => r.json());
         setCampaign(updated);
         setStatusNotes(updated.statusNotes ?? {});
       }
     } catch {
-      setAdvanceError('Erreur réseau — réessayez.');
+      setAdvanceError(t.common.networkError);
     } finally {
       setAdvancing(false);
     }
@@ -152,7 +166,7 @@ export default function CampaignDetailScreen({ id, onNav }) {
     <div className="page">
       {/* Breadcrumb */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12.5, color: 'var(--ink-400)', marginBottom: 8 }}>
-        <a style={{ cursor: 'pointer' }} onClick={() => onNav('/')}>Cargaisons</a>
+        <a style={{ cursor: 'pointer' }} onClick={() => onNav('/')}>{t.nav.campaigns}</a>
         <I.ChevronRight style={{ width: 12, height: 12 }} />
         <span style={{ color: 'var(--ink-600)', fontWeight: 600 }}>{campaign.code}</span>
       </div>
@@ -176,14 +190,14 @@ export default function CampaignDetailScreen({ id, onNav }) {
           </div>
           <div className="page__sub">
             <I.Calendar style={{ width: 12, height: 12, display: 'inline', verticalAlign: -2, marginRight: 4 }} />
-            Départ <strong style={{ color: 'var(--ink-700)' }}>{depDate}</strong>
+            {t.campaigns.detail.info.departure} <strong style={{ color: 'var(--ink-700)' }}>{depDate}</strong>
             {' · '}
-            Arrivée estimée <strong style={{ color: 'var(--ink-700)' }}>{arrDate}</strong>
+            {t.campaigns.detail.info.arrival} <strong style={{ color: 'var(--ink-700)' }}>{arrDate}</strong>
           </div>
         </div>
         <div className="page__actions">
           <button className="btn btn--ghost" onClick={() => onNav('/admin/campaigns/' + campaign.id + '/edit')}>
-            <I.Edit />Modifier
+            <I.Edit />{t.common.edit}
           </button>
           <button onClick={() => {
             setBroadcastResult(null);
@@ -197,6 +211,7 @@ export default function CampaignDetailScreen({ id, onNav }) {
             color: '#25D366', fontSize: 13, fontWeight: 700, cursor: 'pointer',
           }}>
             <svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16"><path d="M17.5 14.4c-.3-.1-1.7-.9-2-1s-.5-.1-.7.1c-.2.3-.7 1-.9 1.1-.2.2-.3.2-.6 0-.3-.1-1.2-.5-2.3-1.4-.8-.7-1.4-1.7-1.6-2-.2-.3 0-.5.1-.6l.5-.5c.1-.2.2-.3.3-.5 0-.2 0-.4-.1-.5 0-.1-.7-1.6-1-2.2-.2-.6-.5-.5-.7-.5h-.6c-.2 0-.5.1-.7.4-.3.3-1 1-1 2.4s1 2.8 1.2 3.1c.2.2 2 3 4.8 4.3.7.3 1.2.4 1.6.6.7.2 1.3.2 1.8.1.6-.1 1.7-.7 1.9-1.3.3-.7.3-1.2.2-1.3-.1-.2-.3-.3-.6-.4zM12 21a9 9 0 0 1-4.6-1.3L3 21l1.3-4.3A9 9 0 1 1 12 21z" /></svg>
+            {/* TODO: i18n — no translation key for "Notifier les clients" */}
             Notifier les clients
           </button>
           <button onClick={() => onNav('/messaging?campaignId=' + campaign.id)} style={{
@@ -206,6 +221,7 @@ export default function CampaignDetailScreen({ id, onNav }) {
             color: 'var(--ink-600)', fontSize: 13, fontWeight: 600, cursor: 'pointer',
           }}>
             <svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16"><path d="M17.5 14.4c-.3-.1-1.7-.9-2-1s-.5-.1-.7.1c-.2.3-.7 1-.9 1.1-.2.2-.3.2-.6 0-.3-.1-1.2-.5-2.3-1.4-.8-.7-1.4-1.7-1.6-2-.2-.3 0-.5.1-.6l.5-.5c.1-.2.2-.3.3-.5 0-.2 0-.4-.1-.5 0-.1-.7-1.6-1-2.2-.2-.6-.5-.5-.7-.5h-.6c-.2 0-.5.1-.7.4-.3.3-1 1-1 2.4s1 2.8 1.2 3.1c.2.2 2 3 4.8 4.3.7.3 1.2.4 1.6.6.7.2 1.3.2 1.8.1.6-.1 1.7-.7 1.9-1.3.3-.7.3-1.2.2-1.3-.1-.2-.3-.3-.6-.4zM12 21a9 9 0 0 1-4.6-1.3L3 21l1.3-4.3A9 9 0 1 1 12 21z" /></svg>
+            {/* TODO: i18n — no translation key for "WhatsApp groupe" */}
             WhatsApp groupe
           </button>
           {campaign.status === 'enr' && (
@@ -213,7 +229,7 @@ export default function CampaignDetailScreen({ id, onNav }) {
               className="btn btn--brand"
               onClick={() => onNav('/parcels/new?campaign=' + id)}
             >
-              <I.Plus />Ajouter un colis
+              <I.Plus />{t.campaigns.detail.parcels.addParcel}
             </button>
           )}
         </div>
@@ -222,12 +238,12 @@ export default function CampaignDetailScreen({ id, onNav }) {
       {/* KPI strip */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', background: 'white', border: '1px solid var(--border)', borderRadius: 12, overflow: 'hidden', marginBottom: 16 }}>
         {[
-          { l: 'Colis',             v: parcels.length,                          u: '' },
-          { l: 'Poids total',       v: totalWeight.toLocaleString('fr'),         u: 'kg' },
-          { l: 'Facturé',           v: invoiced.toLocaleString('fr'),            u: 'CAD' },
-          { l: 'Perçu',             v: collected.toLocaleString('fr'),           u: 'CAD', col: 'var(--ok-600)' },
-          { l: 'Reste à percevoir', v: outstanding.toLocaleString('fr'),         u: 'CAD', col: outstanding > 0 ? 'var(--bad-600)' : 'var(--ok-600)' },
-          { l: 'Taux recouvrement', v: pct,                                      u: '%',   col: pct >= 95 ? 'var(--ok-600)' : 'var(--warn-700)' },
+          { l: t.campaigns.kpi.parcels,              v: parcels.length,                  u: '' },
+          { l: /* TODO: i18n */ 'Poids total',        v: totalWeight.toLocaleString('fr'), u: 'kg' },
+          { l: /* TODO: i18n */ 'Facturé',            v: invoiced.toLocaleString('fr'),    u: 'CAD' },
+          { l: /* TODO: i18n */ 'Perçu',              v: collected.toLocaleString('fr'),   u: 'CAD', col: 'var(--ok-600)' },
+          { l: /* TODO: i18n */ 'Reste à percevoir',  v: outstanding.toLocaleString('fr'), u: 'CAD', col: outstanding > 0 ? 'var(--bad-600)' : 'var(--ok-600)' },
+          { l: /* TODO: i18n */ 'Taux recouvrement',  v: pct,                              u: '%',   col: pct >= 95 ? 'var(--ok-600)' : 'var(--warn-700)' },
         ].map((k, i) => (
           <div key={i} style={{ padding: '14px 18px', borderRight: i < 5 ? '1px solid var(--border-soft)' : 'none' }}>
             <div className="kpi__label" style={{ fontSize: 10.5, color: 'var(--ink-400)', textTransform: 'uppercase', letterSpacing: '.04em', fontWeight: 600, marginBottom: 4 }}>{k.l}</div>
@@ -240,7 +256,7 @@ export default function CampaignDetailScreen({ id, onNav }) {
 
       {/* Status controls */}
       <div className="card" style={{ marginBottom: 16, padding: '14px 20px', display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
-        <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--ink-500)', whiteSpace: 'nowrap' }}>Changer le statut :</span>
+        <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--ink-500)', whiteSpace: 'nowrap' }}>{t.campaigns.detail.status.updateStatus}</span>
         <select
           className="input"
           style={{ flex: 1, minWidth: 220, maxWidth: 360 }}
@@ -257,6 +273,7 @@ export default function CampaignDetailScreen({ id, onNav }) {
             }
           }}
         >
+          {/* TODO: i18n — optgroup and option labels are not in translation keys */}
           <optgroup label="Flux principal">
             <option value="enr">📝 Enregistré</option>
             <option value="exp">🚀 Expédié</option>
@@ -285,7 +302,8 @@ export default function CampaignDetailScreen({ id, onNav }) {
             disabled={advancing}
             style={{ whiteSpace: 'nowrap' }}
           >
-            {advancing ? 'Mise à jour…' : nextStep.id === 'ok' ? 'Clôturer' : `→ ${nextStep.label}`}
+            {/* TODO: i18n — "Clôturer" has no exact translation key */}
+            {advancing ? t.common.saving : nextStep.id === 'ok' ? 'Clôturer' : `→ ${nextStep.label}`}
           </button>
         )}
       </div>
@@ -320,26 +338,30 @@ export default function CampaignDetailScreen({ id, onNav }) {
 
       {/* ── Broadcast modal ── */}
       {showBroadcast && (
-        <Modal title="Notifier tous les clients" onClose={() => { setShowBroadcast(false); setBroadcastResult(null); }}>
+        <Modal title={/* TODO: i18n */ 'Notifier tous les clients'} onClose={() => { setShowBroadcast(false); setBroadcastResult(null); }}>
           {broadcastResult ? (
             <div style={{ textAlign: 'center', padding: '8px 0 16px' }}>
               <div style={{ fontSize: 40, marginBottom: 12 }}>{broadcastResult.failed === 0 ? '✅' : '⚠️'}</div>
               <div style={{ fontSize: 18, fontWeight: 700, marginBottom: 6 }}>
+                {/* TODO: i18n — pluralized "messages envoyés" has no translation key */}
                 {broadcastResult.sent} message{broadcastResult.sent > 1 ? 's' : ''} envoyé{broadcastResult.sent > 1 ? 's' : ''}
               </div>
               {broadcastResult.failed > 0 && (
                 <div style={{ fontSize: 13, color: 'var(--bad-600)', marginBottom: 8 }}>
+                  {/* TODO: i18n — failure count message has no translation key */}
                   {broadcastResult.failed} échec{broadcastResult.failed > 1 ? 's' : ''} — vérifiez les numéros manquants dans les fiches clients
                 </div>
               )}
+              {/* TODO: i18n — "clients contactés" has no translation key */}
               <div style={{ fontSize: 12, color: 'var(--ink-400)' }}>{broadcastResult.total} clients contactés</div>
               <button className="btn btn--brand" style={{ marginTop: 20 }} onClick={() => { setShowBroadcast(false); setBroadcastResult(null); }}>
-                Fermer
+                {t.common.close}
               </button>
             </div>
           ) : (
             <div>
               <div style={{ background: 'var(--bg-soft)', borderRadius: 10, padding: '14px 16px', marginBottom: 16, fontSize: 13, color: 'var(--ink-600)', lineHeight: 1.6 }}>
+                {/* TODO: i18n — "Message qui sera envoyé" has no translation key */}
                 <strong>Message qui sera envoyé :</strong>
                 <pre style={{ marginTop: 8, fontFamily: 'inherit', whiteSpace: 'pre-wrap', color: 'var(--ink-700)' }}>{`Bonjour [Prénom] 👋\n\nNouvelle cargaison disponible — départ prévu le ${campaign.departureDate ? new Date(campaign.departureDate).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' }) : 'à définir'}.\n\nRéservez votre place dès maintenant.\n\nJumla Shipping`}</pre>
               </div>
@@ -349,11 +371,12 @@ export default function CampaignDetailScreen({ id, onNav }) {
                   <strong style={{ color: 'var(--info-700)' }}>
                     {broadcastPreview ? broadcastPreview.total : '…'} client{broadcastPreview?.total !== 1 ? 's' : ''} actif{broadcastPreview?.total !== 1 ? 's' : ''}
                   </strong>
+                  {/* TODO: i18n — "Tous les clients avec un numéro de téléphone" has no translation key */}
                   <div style={{ color: 'var(--info-600)', fontSize: 12 }}>Tous les clients avec un numéro de téléphone</div>
                 </div>
               </div>
               <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
-                <button className="btn btn--ghost" onClick={() => setShowBroadcast(false)}>Annuler</button>
+                <button className="btn btn--ghost" onClick={() => setShowBroadcast(false)}>{t.common.cancel}</button>
                 <button
                   className="btn btn--brand"
                   disabled={broadcasting || !broadcastPreview}
@@ -365,7 +388,8 @@ export default function CampaignDetailScreen({ id, onNav }) {
                     setBroadcastResult(json);
                   }}
                 >
-                  {broadcasting ? 'Envoi en cours…' : `Envoyer à ${broadcastPreview?.total ?? '…'} clients`}
+                  {/* TODO: i18n — "Envoyer à X clients" has no translation key */}
+                  {broadcasting ? t.common.sending : `Envoyer à ${broadcastPreview?.total ?? '…'} clients`}
                 </button>
               </div>
             </div>
@@ -383,11 +407,13 @@ export default function CampaignDetailScreen({ id, onNav }) {
       {parcels.length === 0 ? (
         <div className="card" style={{ padding: '48px 24px', textAlign: 'center' }}>
           <div style={{ fontSize: 32, marginBottom: 12 }}>📦</div>
+          {/* TODO: i18n — "Aucun colis dans cette cargaison" has no exact translation key */}
           <div style={{ fontSize: 16, fontWeight: 600, color: 'var(--ink-700)', marginBottom: 6 }}>Aucun colis dans cette cargaison</div>
+          {/* TODO: i18n — "Ajoutez le premier colis pour commencer." has no translation key */}
           <div style={{ fontSize: 13, color: 'var(--ink-400)', marginBottom: 20 }}>Ajoutez le premier colis pour commencer.</div>
           {campaign.status === 'enr' && (
             <button className="btn btn--brand" onClick={() => onNav('/parcels/new?campaign=' + id)}>
-              <I.Plus />Ajouter un colis
+              <I.Plus />{t.campaigns.detail.parcels.addParcel}
             </button>
           )}
         </div>
@@ -395,18 +421,19 @@ export default function CampaignDetailScreen({ id, onNav }) {
         <table className="tbl">
           <thead>
             <tr>
-              <th>Code</th>
-              <th>Client</th>
-              <th>Poids (kg)</th>
-              <th>Contenu</th>
-              <th style={{ textAlign: 'right' }}>Montant (CAD)</th>
-              <th>Paiement</th>
-              <th>Statut colis</th>
+              <th>{t.campaigns.detail.parcels.columns.trackingId}</th>
+              <th>{t.parcels.table.client}</th>
+              <th>{t.parcels.table.weight}</th>
+              <th>{t.common.description}</th>
+              <th style={{ textAlign: 'right' }}>{t.parcels.table.amount}</th>
+              <th>{t.parcels.table.payment}</th>
+              <th>{t.parcels.table.status}</th>
             </tr>
           </thead>
           <tbody>
             {parcels.map(p => {
               const payInfo = PAYMENT_STATUS[p.payment?.status] || { label: p.payment?.status || '—', cls: 'neutral' };
+              const payLabel = getPaymentLabel(p.payment?.status);
               const parcelLabel = PARCEL_STATUS[p.status] || p.status || '—';
               const clientName = p.client?.name || '—';
               const initials = clientName.split(' ').map(x => x[0]).join('').slice(0, 2).toUpperCase();
@@ -447,7 +474,7 @@ export default function CampaignDetailScreen({ id, onNav }) {
                   </td>
                   <td>
                     <span className={`badge badge--dot badge--${payInfo.cls}`}>
-                      {payInfo.label}
+                      {payLabel}
                     </span>
                   </td>
                   <td>
@@ -460,6 +487,7 @@ export default function CampaignDetailScreen({ id, onNav }) {
         </table>
       )}
 
+      {/* TODO: i18n — "colis · Capacité" has no translation key */}
       <div style={{ marginTop: 12, fontSize: 12, color: 'var(--ink-400)', marginBottom: 8 }}>
         {parcels.length} colis · Capacité {campaign.capacityKg != null ? campaign.capacityKg + ' kg' : '—'}
       </div>
@@ -469,6 +497,7 @@ export default function CampaignDetailScreen({ id, onNav }) {
 
 /* ── Campaign Legs (airlines + AWB) ── */
 function CampaignLegsPanel({ campaignId }) {
+  const t = useAdminT();
   const [legs,     setLegs]     = useState(null);
   const [airlines, setAirlines] = useState([]);
   const [adding,   setAdding]   = useState(false);
@@ -501,7 +530,7 @@ function CampaignLegsPanel({ campaignId }) {
   }
 
   async function handleSave() {
-    if (!form.airlineId) { setErr('Sélectionnez une compagnie'); return; }
+    if (!form.airlineId) { setErr(/* TODO: i18n */ 'Sélectionnez une compagnie'); return; }
     setSaving(true);
     setErr('');
     const body = editId
@@ -513,7 +542,7 @@ function CampaignLegsPanel({ campaignId }) {
       body: JSON.stringify(body),
     });
     const data = await res.json();
-    if (!res.ok) { setErr(data.error ?? 'Erreur'); setSaving(false); return; }
+    if (!res.ok) { setErr(data.error ?? t.common.error); setSaving(false); return; }
     setSaving(false);
     setAdding(false);
     setEditId(null);
@@ -534,11 +563,12 @@ function CampaignLegsPanel({ campaignId }) {
     <div className="card" style={{ marginBottom: 16, padding: '16px 20px' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
         <div className="section-title" style={{ flex: 1, marginBottom: 0 }}>
-          <I.Plane style={{ width: 14, height: 14, color: 'var(--brand-600)' }} /> Compagnies aériennes & AWB
+          {/* TODO: i18n — using t.airlines.title as close match for "Compagnies aériennes"; "& AWB" suffix has no key */}
+          <I.Plane style={{ width: 14, height: 14, color: 'var(--brand-600)' }} /> {t.airlines.title} & AWB
         </div>
         {!adding && (
           <button className="btn btn--ghost btn--sm" onClick={startAdd}>
-            <I.Plus style={{ width: 13, height: 13 }} /> Ajouter
+            <I.Plus style={{ width: 13, height: 13 }} /> {t.common.add}
           </button>
         )}
       </div>
@@ -549,8 +579,10 @@ function CampaignLegsPanel({ campaignId }) {
           {err && <div style={{ marginBottom: 10, padding: '8px 12px', background: 'var(--bad-50)', borderRadius: 6, fontSize: 12.5, color: 'var(--bad-700)' }}>{err}</div>}
           <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr 1fr', gap: 10, marginBottom: 10 }}>
             <div className="field" style={{ marginBottom: 0 }}>
+              {/* TODO: i18n — "Compagnie" label has no translation key */}
               <label className="label">Compagnie *</label>
               <select className="input" value={form.airlineId} onChange={e => upd('airlineId', e.target.value)}>
+                {/* TODO: i18n — "— Sélectionner —" has no translation key */}
                 <option value="">— Sélectionner —</option>
                 {airlines.filter(a => a.active).map(a => (
                   <option key={a.id} value={a.id}>{a.iata ? `${a.iata} — ` : ''}{a.name}</option>
@@ -558,32 +590,34 @@ function CampaignLegsPanel({ campaignId }) {
               </select>
             </div>
             <div className="field" style={{ marginBottom: 0 }}>
+              {/* TODO: i18n — "N° AWB" has no translation key */}
               <label className="label">N° AWB</label>
               <input className="input" value={form.awbNumber} onChange={e => upd('awbNumber', e.target.value)} placeholder="Ex: 220-12345678" />
             </div>
             <div className="field" style={{ marginBottom: 0 }}>
-              <label className="label">Poids (kg)</label>
+              <label className="label">{t.common.weight}</label>
               <input className="input" type="number" min="0" value={form.weightKg} onChange={e => upd('weightKg', e.target.value)} placeholder="Ex: 120" />
             </div>
           </div>
           <div className="field" style={{ marginBottom: 10 }}>
-            <label className="label">Note</label>
+            <label className="label">{t.common.note}</label>
             <input className="input" value={form.notes} onChange={e => upd('notes', e.target.value)} placeholder="Ex: Poissons fumés, Effets personnels…" />
           </div>
           <div style={{ display: 'flex', gap: 8 }}>
             <button className="btn btn--brand btn--sm" disabled={saving} onClick={handleSave}>
-              <I.Check style={{ width: 13, height: 13 }} /> {saving ? '…' : editId ? 'Mettre à jour' : 'Ajouter'}
+              <I.Check style={{ width: 13, height: 13 }} /> {saving ? '…' : editId ? t.common.update : t.common.add}
             </button>
-            <button className="btn btn--ghost btn--sm" onClick={() => { setAdding(false); setEditId(null); }}>Annuler</button>
+            <button className="btn btn--ghost btn--sm" onClick={() => { setAdding(false); setEditId(null); }}>{t.common.cancel}</button>
           </div>
         </div>
       )}
 
       {/* Legs list */}
       {legs === null ? (
-        <div style={{ fontSize: 13, color: 'var(--ink-400)', padding: '8px 0' }}>Chargement…</div>
+        <div style={{ fontSize: 13, color: 'var(--ink-400)', padding: '8px 0' }}>{t.common.loading}</div>
       ) : legs.length === 0 ? (
         <div style={{ fontSize: 13, color: 'var(--ink-400)', padding: '8px 0', textAlign: 'center' }}>
+          {/* TODO: i18n — "Aucune compagnie assignée" message has no translation key */}
           Aucune compagnie assignée — cliquez "Ajouter" pour lier des transporteurs.
         </div>
       ) : (
@@ -633,6 +667,7 @@ function CampaignLegsPanel({ campaignId }) {
 const OPTIONAL_STEPS = new Set(['ins', 'ret']);
 
 function CampaignTimeline({ campaign }) {
+  const t = useAdminT();
   const rawNotes = campaign.statusNotes ?? {};
 
   // Helper: get { at, note } from statusNotes entry (handles legacy string format)
@@ -669,6 +704,7 @@ function CampaignTimeline({ campaign }) {
   return (
     <div className="card" style={{ padding: '18px 22px', marginBottom: 16 }}>
       <div className="section-title" style={{ marginBottom: 20 }}>
+        {/* TODO: i18n — "Timeline de la cargaison" has no translation key */}
         <I.History style={{ width: 14, height: 14, color: 'var(--brand-600)' }} /> Timeline de la cargaison
       </div>
       <div style={{ overflowX: 'auto' }}>
@@ -726,7 +762,7 @@ function CampaignTimeline({ campaign }) {
                         marginTop: 3, fontSize: 8, fontWeight: 700, letterSpacing: '.05em',
                         background: step.color, color: 'white',
                         padding: '1px 4px', borderRadius: 3, display: 'inline-block',
-                      }}>ACTUEL</div>
+                      }}>{/* TODO: i18n — "ACTUEL" has no translation key */}ACTUEL</div>
                     )}
                     {date && (
                       <div style={{ fontSize: 9, color: isCurrent ? step.color : '#9ca3af', marginTop: 2, fontWeight: isCurrent ? 600 : 400 }}>{date}</div>
@@ -747,28 +783,31 @@ function CampaignTimeline({ campaign }) {
 
 /* ── Confirmation modal for non-transit steps ── */
 function ConfirmAdvanceModal({ campaign, targetStep, unpaidCount, advancing, onClose, onConfirm }) {
+  const t = useAdminT();
   const isClosure = targetStep.id === 'ok';
   const effect = STEP_EFFECTS[targetStep.id];
 
   return (
     <Modal
-      title={isClosure ? 'Clôturer la cargaison' : 'Confirmer le changement de statut'}
+      title={/* TODO: i18n */ isClosure ? 'Clôturer la cargaison' : 'Confirmer le changement de statut'}
       onClose={onClose}
       footer={
         <>
-          <button className="btn btn--ghost" onClick={onClose} disabled={advancing}>Annuler</button>
+          <button className="btn btn--ghost" onClick={onClose} disabled={advancing}>{t.common.cancel}</button>
           <button
             className={isClosure ? 'btn btn--danger' : 'btn btn--primary'}
             onClick={onConfirm}
             disabled={advancing}
           >
-            {advancing ? 'Mise à jour…' : isClosure ? 'Confirmer la clôture' : `Confirmer → ${targetStep.label}`}
+            {/* TODO: i18n — "Confirmer la clôture" / "Confirmer →" have no translation keys */}
+            {advancing ? t.common.saving : isClosure ? 'Confirmer la clôture' : `Confirmer → ${targetStep.label}`}
           </button>
         </>
       }
     >
       <div style={{ padding: '4px 0 8px', display: 'grid', gap: 14 }}>
         <p style={{ fontSize: 14, color: 'var(--ink-700)', margin: 0 }}>
+          {/* TODO: i18n — status change description text has no translation key */}
           Vous êtes sur le point de faire passer la cargaison{' '}
           <strong>{campaign.code}</strong> au statut{' '}
           <strong style={{ color: targetStep.color }}>{targetStep.label}</strong>.
@@ -788,9 +827,11 @@ function ConfirmAdvanceModal({ campaign, targetStep, unpaidCount, advancing, onC
         {isClosure && unpaidCount > 0 && (
           <div style={{ background: 'var(--bad-50)', border: '1px solid var(--bad-200)', borderRadius: 8, padding: '10px 14px' }}>
             <div style={{ fontWeight: 700, color: 'var(--bad-700)', marginBottom: 4 }}>
+              {/* TODO: i18n — "colis non payé" has no translation key */}
               ⚠️ {unpaidCount} colis non payé{unpaidCount > 1 ? 's' : ''}
             </div>
             <div style={{ fontSize: 12.5, color: 'var(--bad-600)' }}>
+              {/* TODO: i18n */}
               Ces colis resteront en attente de paiement après la clôture.
             </div>
           </div>
@@ -798,6 +839,7 @@ function ConfirmAdvanceModal({ campaign, targetStep, unpaidCount, advancing, onC
 
         {isClosure && unpaidCount === 0 && (
           <div style={{ background: 'var(--ok-50)', border: '1px solid var(--ok-200)', borderRadius: 8, padding: '10px 14px' }}>
+            {/* TODO: i18n — "Tous les colis sont réglés" has no translation key */}
             <div style={{ fontWeight: 700, color: 'var(--ok-700)' }}>✓ Tous les colis sont réglés</div>
           </div>
         )}
@@ -808,29 +850,32 @@ function ConfirmAdvanceModal({ campaign, targetStep, unpaidCount, advancing, onC
 
 /* ── Departure note modal (transit steps) ── */
 function DepartureNoteModal({ targetStep, advancing, onClose, onConfirm }) {
+  const t = useAdminT();
   const [note, setNote] = useState('');
   return (
     <Modal
       width={420}
       onClose={onClose}
-      title="Confirmer le départ"
+      title={/* TODO: i18n */ 'Confirmer le départ'}
       sub={targetStep.label}
       footer={
         <>
-          <button className="btn btn--ghost" onClick={onClose} disabled={advancing}>Annuler</button>
+          <button className="btn btn--ghost" onClick={onClose} disabled={advancing}>{t.common.cancel}</button>
           <button className="btn btn--brand" onClick={() => onConfirm(note)} disabled={advancing}>
-            {advancing ? 'Mise à jour…' : 'Confirmer le départ'}
+            {/* TODO: i18n — "Confirmer le départ" has no translation key */}
+            {advancing ? t.common.saving : 'Confirmer le départ'}
           </button>
         </>
       }
     >
       <div style={{ display: 'grid', gap: 14 }}>
         <p style={{ margin: 0, fontSize: 13.5, color: 'var(--ink-700)' }}>
+          {/* TODO: i18n — departure confirmation message has no translation key */}
           Tous les colis reçus seront automatiquement passés en transit.
         </p>
         <div>
           <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--ink-600)', display: 'block', marginBottom: 6 }}>
-            Note de transit <span style={{ fontWeight: 400, color: 'var(--ink-400)' }}>(optionnel · ex: DLA → BRU)</span>
+            {t.common.note} <span style={{ fontWeight: 400, color: 'var(--ink-400)' }}>({t.common.optional} · ex: DLA → BRU)</span>
           </label>
           <input
             className="input"

@@ -3,7 +3,9 @@ import I from '../components/Icons.jsx';
 import { Bi, Avatar, Skel } from '../components/Shell.jsx';
 import { Pagination, ViewToggle } from '../components/Pagination.jsx';
 import AgentFormModal from './AgentForm.jsx';
+import { useAdminT } from '../lib/useAdminT.js';
 
+// TODO: no translation keys for individual permission labels
 const permLabels = {
   campaigns:  'Créer cargaisons',
   parcels:    'Modifier colis',
@@ -23,10 +25,11 @@ function countGranted(perms) {
 }
 
 function StatusBadge({ status }) {
+  const t = useAdminT();
   if (status === 'suspended') {
-    return <span className="badge" style={{ background: 'var(--bad-50)', color: 'var(--bad-700)', border: '1px solid var(--bad-200)' }}>Suspendu</span>;
+    return <span className="badge" style={{ background: 'var(--bad-50)', color: 'var(--bad-700)', border: '1px solid var(--bad-200)' }}>{t.common.inactive}</span>;
   }
-  return <span className="badge" style={{ background: 'var(--ok-50)', color: 'var(--ok-700)', border: '1px solid var(--ok-100)' }}>Actif</span>;
+  return <span className="badge" style={{ background: 'var(--ok-50)', color: 'var(--ok-700)', border: '1px solid var(--ok-100)' }}>{t.common.active}</span>;
 }
 
 function Mini({ label, v, unit }) {
@@ -41,6 +44,7 @@ function Mini({ label, v, unit }) {
 }
 
 function AgentsGridView({ agents, setEditing, onToggleStatus, onDelete }) {
+  const t = useAdminT();
   return (
     <div style={{
       display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(360px, 1fr))', gap: 12,
@@ -59,6 +63,7 @@ function AgentsGridView({ agents, setEditing, onToggleStatus, onDelete }) {
                   <span style={{ fontSize: 15, fontWeight: 700 }}>{a.name}</span>
                   {a.role === 'admin'    && <span className="badge badge--brand">Admin</span>}
                   {a.role === 'agent'    && <span className="badge badge--info">Agent</span>}
+                  {/* TODO: no translation key for 'readonly' role label */}
                   {a.role === 'readonly' && <span className="badge badge--neutral">Lecture seule</span>}
                   <StatusBadge status={a.status} />
                 </div>
@@ -71,18 +76,19 @@ function AgentsGridView({ agents, setEditing, onToggleStatus, onDelete }) {
               </div>
               <div style={{ display: 'flex', gap: 2 }}>
                 <button className="icon-btn" onClick={() => setEditing(a)}><I.Edit /></button>
-                <button className="icon-btn" style={{ color: 'var(--bad-500)' }} onClick={() => onDelete(a)} title="Supprimer"><I.Trash /></button>
+                <button className="icon-btn" style={{ color: 'var(--bad-500)' }} onClick={() => onDelete(a)} title={t.common.delete}><I.Trash /></button>
               </div>
             </div>
 
             <div style={{ padding: '10px 14px', display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 6, background: 'var(--bg-soft)', borderBottom: '1px solid var(--border-soft)' }}>
-              <Mini label="Cargaisons" v={a.campaigns} />
-              <Mini label="Colis gérés" v={a.parcels} />
+              <Mini label={t.nav.campaigns} v={a.campaigns} />
+              <Mini label={t.nav.parcels} v={a.parcels} />
+              {/* TODO: no translation key for 'Encaissé' */}
               <Mini label="Encaissé" v={(a.collected / 1000).toFixed(0) + 'k'} unit="CAD" />
             </div>
 
             <div style={{ padding: 14 }}>
-              <div style={{ fontSize: 10.5, fontWeight: 700, letterSpacing: '.04em', color: 'var(--ink-400)', textTransform: 'uppercase', marginBottom: 8 }}>Permissions</div>
+              <div style={{ fontSize: 10.5, fontWeight: 700, letterSpacing: '.04em', color: 'var(--ink-400)', textTransform: 'uppercase', marginBottom: 8 }}>{t.agents.table.permissions}</div>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5 }}>
                 {Object.entries(perms).map(([k, v]) => {
                   const active = Array.isArray(v) ? v.length > 0 : Boolean(v);
@@ -104,13 +110,14 @@ function AgentsGridView({ agents, setEditing, onToggleStatus, onDelete }) {
                   className="btn btn--ghost btn--xs"
                   style={suspended ? { color: 'var(--ok-700)' } : { color: 'var(--bad-600)' }}
                   onClick={() => onToggleStatus(a)}>
+                  {/* TODO: no translation keys for 'Réactiver'/'Suspendre' */}
                   {suspended ? 'Réactiver' : 'Suspendre'}
                 </button>
                 <button
                   className="btn btn--ghost btn--xs"
                   style={{ color: 'var(--bad-600)' }}
                   onClick={() => onDelete(a)}>
-                  <I.Trash style={{ width: 11, height: 11 }} />Supprimer
+                  <I.Trash style={{ width: 11, height: 11 }} />{t.common.delete}
                 </button>
               </div>
             </div>
@@ -126,7 +133,8 @@ function AgentsGridView({ agents, setEditing, onToggleStatus, onDelete }) {
         <div style={{ width: 44, height: 44, borderRadius: 999, background: 'var(--bg-soft)', display: 'grid', placeItems: 'center', marginBottom: 10 }}>
           <I.UserPlus />
         </div>
-        <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--ink-700)' }}>Inviter un agent</div>
+        <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--ink-700)' }}>{t.agents.newAgent}</div>
+        {/* TODO: no translation key for temporary password WhatsApp message */}
         <div style={{ fontSize: 11.5, marginTop: 4, textAlign: 'center' }}>Un mot de passe temporaire sera envoyé par WhatsApp.</div>
       </div>
     </div>
@@ -134,19 +142,22 @@ function AgentsGridView({ agents, setEditing, onToggleStatus, onDelete }) {
 }
 
 function AgentsListView({ agents, setEditing, onToggleStatus, onDelete, page, pageSize }) {
+  const t = useAdminT();
   const paged = agents.slice((page - 1) * pageSize, page * pageSize);
   return (
     <table className="tbl" style={{ borderTopLeftRadius: 0, borderTopRightRadius: 0 }}>
       <thead>
         <tr>
           <th style={{ width: 32, borderRadius: 0 }}><input type="checkbox" style={{ accentColor: 'var(--brand-500)' }} /></th>
-          <th>Agent</th>
-          <th>Rôle</th>
-          <th>Statut</th>
+          <th>{t.agents.table.name}</th>
+          <th>{t.agents.table.role}</th>
+          <th>{t.agents.table.status}</th>
+          {/* TODO: no translation key for 'Site' */}
           <th>Site</th>
-          <th style={{ textAlign: 'center' }}>Cargaisons</th>
-          <th style={{ textAlign: 'center' }}>Colis gérés</th>
-          <th>Permissions</th>
+          <th style={{ textAlign: 'center' }}>{t.nav.campaigns}</th>
+          <th style={{ textAlign: 'center' }}>{t.nav.parcels}</th>
+          <th>{t.agents.table.permissions}</th>
+          {/* TODO: no translation key for 'Créé le' */}
           <th>Créé le</th>
           <th style={{ borderRadius: 0, width: 100 }}></th>
         </tr>
@@ -172,6 +183,7 @@ function AgentsListView({ agents, setEditing, onToggleStatus, onDelete, page, pa
               <td>
                 {a.role === 'admin'    && <span className="badge badge--brand">Admin</span>}
                 {a.role === 'agent'    && <span className="badge badge--info">Agent</span>}
+                {/* TODO: no translation key for 'readonly' role label */}
                 {a.role === 'readonly' && <span className="badge badge--neutral">Lecture seule</span>}
               </td>
               <td><StatusBadge status={a.status} /></td>
@@ -192,18 +204,19 @@ function AgentsListView({ agents, setEditing, onToggleStatus, onDelete, page, pa
               <td style={{ fontSize: 12, color: 'var(--ink-500)' }}>{a.lastLogin}</td>
               <td>
                 <div style={{ display: 'flex', gap: 2, justifyContent: 'flex-end' }}>
-                  <button className="icon-btn" onClick={() => setEditing(a)} title="Modifier"><I.Edit /></button>
+                  <button className="icon-btn" onClick={() => setEditing(a)} title={t.common.edit}><I.Edit /></button>
                   <button
                     className="btn btn--ghost btn--xs"
                     style={suspended ? { color: 'var(--ok-700)', fontSize: 11 } : { color: 'var(--bad-600)', fontSize: 11 }}
                     onClick={() => onToggleStatus(a)}>
+                    {/* TODO: no translation keys for 'Réactiver'/'Suspendre' */}
                     {suspended ? 'Réactiver' : 'Suspendre'}
                   </button>
                   <button
                     className="icon-btn"
                     style={{ color: 'var(--bad-500)' }}
                     onClick={() => onDelete(a)}
-                    title="Supprimer">
+                    title={t.common.delete}>
                     <I.Trash />
                   </button>
                 </div>
@@ -217,6 +230,7 @@ function AgentsListView({ agents, setEditing, onToggleStatus, onDelete, page, pa
 }
 
 export default function AgentsScreen({ onNav }) {
+  const t = useAdminT();
   const [agents, setAgents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState('all');
@@ -236,6 +250,7 @@ export default function AgentsScreen({ onNav }) {
 
   const handleToggleStatus = async (agent) => {
     const newStatus = agent.status === 'suspended' ? 'active' : 'suspended';
+    // TODO: no translation keys for 'Suspendre'/'Réactiver'
     const label = newStatus === 'suspended' ? 'Suspendre' : 'Réactiver';
     if (!confirm(`${label} ${agent.name} ?`)) return;
     await fetch(`/api/users/${agent.id}`, {
@@ -247,11 +262,12 @@ export default function AgentsScreen({ onNav }) {
   };
 
   const handleDeleteAgent = async (agent) => {
+    // TODO: no translation key for delete confirmation message
     if (!confirm(`Supprimer définitivement ${agent.name} ? Cette action est irréversible.`)) return;
     const res = await fetch(`/api/users/${agent.id}`, { method: 'DELETE' });
     const d = await res.json();
     if (!res.ok) {
-      alert(d.error || 'Erreur lors de la suppression');
+      alert(d.error || t.common.error);
       return;
     }
     loadAgents();
@@ -305,27 +321,30 @@ export default function AgentsScreen({ onNav }) {
           <div className="page__title"><Bi fr="Agents & permissions" en="Agents & permissions" /></div>
           <div className="page__sub">
             {agents.length} membres · {adminCount} admins · {agentCount} agents
+            {/* TODO: no translation keys for 'lecture seule' / 'suspendu(s)' in subtitle */}
             {readonlyCount > 0 ? ` · ${readonlyCount} lecture seule` : ''}
             {suspendedCount > 0 ? ` · ${suspendedCount} suspendu${suspendedCount > 1 ? 's' : ''}` : ''}
           </div>
         </div>
         <div className="page__actions">
-          <button className="btn btn--ghost"><I.Download />Export liste</button>
-          <button className="btn btn--brand" onClick={() => setEditing('new')}><I.UserPlus />Inviter un agent</button>
+          <button className="btn btn--ghost"><I.Download />{t.common.export}</button>
+          <button className="btn btn--brand" onClick={() => setEditing('new')}><I.UserPlus />{t.agents.newAgent}</button>
         </div>
       </div>
 
       <div className="toolbar">
         <div className="tabs">
+          {/* TODO: no translation key for 'Tous' tab */}
           <button className={'tab ' + (tab === 'all'      ? 'is-active' : '')} onClick={() => setTab('all')}>Tous <span className="count">{agents.length}</span></button>
           <button className={'tab ' + (tab === 'admin'    ? 'is-active' : '')} onClick={() => setTab('admin')}>Admins <span className="count">{adminCount}</span></button>
-          <button className={'tab ' + (tab === 'agent'    ? 'is-active' : '')} onClick={() => setTab('agent')}>Agents <span className="count">{agentCount}</span></button>
+          <button className={'tab ' + (tab === 'agent'    ? 'is-active' : '')} onClick={() => setTab('agent')}>{t.nav.agents} <span className="count">{agentCount}</span></button>
+          {/* TODO: no translation key for 'Lecture seule' role tab */}
           <button className={'tab ' + (tab === 'readonly' ? 'is-active' : '')} onClick={() => setTab('readonly')}>Lecture seule <span className="count">{readonlyCount}</span></button>
         </div>
         <div className="spacer" />
         <div style={{ position: 'relative' }}>
           <I.Search style={{ position: 'absolute', left: 10, top: 9, width: 14, height: 14, color: 'var(--ink-400)' }} />
-          <input className="input input--sm" placeholder="Rechercher..." style={{ width: 220, paddingLeft: 32 }} />
+          <input className="input input--sm" placeholder={t.agents.searchPlaceholder} style={{ width: 220, paddingLeft: 32 }} />
         </div>
         <ViewToggle value={view} onChange={setView} />
       </div>

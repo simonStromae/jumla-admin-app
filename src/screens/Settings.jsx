@@ -1,8 +1,9 @@
 import { useState, useEffect, useRef, Fragment } from 'react';
 import I from '../components/Icons.jsx';
 import { invalidateCompanyAssets } from '../lib/useCompanyAssets.js';
-import { Bi, RoutePill, Modal, Drawer } from '../components/Shell.jsx';
+import { RoutePill, Drawer } from '../components/Shell.jsx';
 import LandingEditor from './LandingEditor.jsx';
+import { useAdminT } from '../lib/useAdminT.js';
 
 // Grille tarifaire par défaut (miroir de DEFAULT_ROUTE_FEES dans pricing.ts)
 const DEFAULT_TIERS = [
@@ -40,11 +41,13 @@ function fmtRate(flat, perKg) {
 }
 
 function TarifGrid({ tiers, fees, currency = 'CAD', isDefault = false }) {
+  const t = useAdminT();
   const cur = currency;
   return (
     <div>
       {isDefault && (
         <div style={{ fontSize: 11.5, color: 'var(--ink-400)', background: 'var(--bg-soft)', padding: '6px 10px', borderRadius: 6, marginBottom: 12, fontStyle: 'italic' }}>
+          {/* TODO i18n: no key for default grid notice */}
           Grille par défaut — aucune personnalisation configurée pour cette route
         </div>
       )}
@@ -52,6 +55,7 @@ function TarifGrid({ tiers, fees, currency = 'CAD', isDefault = false }) {
         <table className="tbl" style={{ marginBottom: 12, fontSize: 12 }}>
           <thead>
             <tr>
+              {/* TODO i18n: no keys for pricing table headers */}
               <th>Tranche</th>
               <th>Transport</th>
               <th>Manutention</th>
@@ -60,21 +64,22 @@ function TarifGrid({ tiers, fees, currency = 'CAD', isDefault = false }) {
             </tr>
           </thead>
           <tbody>
-            {tiers.map((t, i) => (
+            {tiers.map((tier, i) => (
               <tr key={i}>
                 <td className="mono" style={{ fontWeight: 700, whiteSpace: 'nowrap' }}>
-                  {t.to >= 99999 ? `> ${t.from} kg` : `${t.from} – ${t.to} kg`}
+                  {tier.to >= 99999 ? `> ${tier.from} kg` : `${tier.from} – ${tier.to} kg`}
                 </td>
-                <td style={{ whiteSpace: 'nowrap' }}>{fmtTransport(t)}</td>
-                <td style={{ whiteSpace: 'nowrap' }}>{fmtManut(t)}</td>
-                <td style={{ whiteSpace: 'nowrap' }}>{fmtRate(t.douaneFlat, t.douanePerKg)}</td>
-                <td style={{ whiteSpace: 'nowrap' }}>{fmtRate(t.formalitesFlat, t.formalitesPerKg)}</td>
+                <td style={{ whiteSpace: 'nowrap' }}>{fmtTransport(tier)}</td>
+                <td style={{ whiteSpace: 'nowrap' }}>{fmtManut(tier)}</td>
+                <td style={{ whiteSpace: 'nowrap' }}>{fmtRate(tier.douaneFlat, tier.douanePerKg)}</td>
+                <td style={{ whiteSpace: 'nowrap' }}>{fmtRate(tier.formalitesFlat, tier.formalitesPerKg)}</td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, fontSize: 12 }}>
+        {/* TODO i18n: no keys for packaging/SAQ/supplement section labels */}
         <div style={{ background: 'var(--bg-soft)', borderRadius: 6, padding: '10px 12px' }}>
           <div style={{ fontWeight: 700, color: 'var(--ink-600)', marginBottom: 6, fontSize: 11, textTransform: 'uppercase', letterSpacing: '.04em' }}>Emballages</div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 3, color: 'var(--ink-700)' }}>
@@ -159,6 +164,7 @@ function ToggleRow({ label, sub, checked, onChange }) {
 
 /* ── Entreprise ──────────────────────────────────────────── */
 function SectionCompany() {
+  const t = useAdminT();
   const [fields, setFields] = useState({
     company_name:      'Jumla Shipping',
     company_legal:     'Jumla Shipping Inc.',
@@ -205,8 +211,8 @@ function SectionCompany() {
     const file = e.target.files?.[0];
     if (!file) return;
     setLogoError('');
-    if (!file.type.startsWith('image/')) { setLogoError('Fichier non supporté — PNG, JPG ou SVG uniquement.'); return; }
-    if (file.size > 2 * 1024 * 1024)    { setLogoError('Fichier trop lourd — maximum 2 Mo.'); return; }
+    if (!file.type.startsWith('image/')) { setLogoError(/* TODO i18n */ 'Fichier non supporté — PNG, JPG ou SVG uniquement.'); return; }
+    if (file.size > 2 * 1024 * 1024)    { setLogoError(/* TODO i18n */ 'Fichier trop lourd — maximum 2 Mo.'); return; }
     const reader = new FileReader();
     reader.onload = async (ev) => {
       const dataUrl = ev.target.result;
@@ -238,53 +244,54 @@ function SectionCompany() {
 
   return (
     <>
-      <SettingsCard title="Identité de l'entreprise" sub="Ces informations apparaissent sur vos bordereaux et messages clients.">
+      <SettingsCard title={t.settings.company.title} sub={/* TODO i18n */ "Ces informations apparaissent sur vos bordereaux et messages clients."}>
         <div className="field-row field-row--2">
-          <div className="field"><label className="label">Nom commercial</label><input className="input" value={fields.company_name} onChange={set('company_name')} /></div>
-          <div className="field"><label className="label">Raison sociale</label><input className="input" value={fields.company_legal} onChange={set('company_legal')} /></div>
+          <div className="field"><label className="label">{t.settings.company.name}</label><input className="input" value={fields.company_name} onChange={set('company_name')} /></div>
+          <div className="field"><label className="label">{/* TODO i18n: Raison sociale */}Raison sociale</label><input className="input" value={fields.company_legal} onChange={set('company_legal')} /></div>
         </div>
         <div className="field-row field-row--2">
-          <div className="field"><label className="label">Téléphone Douala</label><input className="input mono" value={fields.phone_douala} onChange={set('phone_douala')} placeholder="+237 6** ** ** **" /></div>
-          <div className="field"><label className="label">Téléphone Montréal</label><input className="input mono" value={fields.phone_montreal} onChange={set('phone_montreal')} placeholder="+1 514 *** ****" /></div>
+          <div className="field"><label className="label">{t.settings.company.phone} Douala</label><input className="input mono" value={fields.phone_douala} onChange={set('phone_douala')} placeholder="+237 6** ** ** **" /></div>
+          <div className="field"><label className="label">{t.settings.company.phone} Montréal</label><input className="input mono" value={fields.phone_montreal} onChange={set('phone_montreal')} placeholder="+1 514 *** ****" /></div>
         </div>
         <div className="field">
-          <label className="label">WhatsApp contact client <span className="opt">/ numéro affiché aux clients pour support</span></label>
+          <label className="label">{/* TODO i18n: WhatsApp contact client */}WhatsApp contact client <span className="opt">/ numéro affiché aux clients pour support</span></label>
           <input className="input mono" value={fields.contact_whatsapp} onChange={set('contact_whatsapp')} placeholder="+1 514 *** ****" />
         </div>
         <div className="field">
-          <label className="label">Adresse entrepôt arrivée</label>
+          <label className="label">{t.settings.company.address}</label>
           <input className="input" value={fields.warehouse_addr} onChange={set('warehouse_addr')} />
         </div>
         <div className="field">
-          <label className="label">Courriel de paiement Interac <span className="opt">/ affiché sur toutes les factures et instructions de paiement</span></label>
+          <label className="label">{t.settings.company.email} <span className="opt">/ {/* TODO i18n */}affiché sur toutes les factures et instructions de paiement</span></label>
           <input className="input mono" value={fields.payment_email} onChange={set('payment_email')} placeholder="incjumla@gmail.com" />
         </div>
         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, alignItems: 'center', marginTop: 4 }}>
-          {saved && <span style={{ fontSize: 12, color: 'var(--ok-700)', fontWeight: 600 }}>✓ Sauvegardé</span>}
-          <button className="btn btn--brand btn--sm" disabled={saving} onClick={handleSave}><I.Check />{saving ? 'Enregistrement…' : 'Enregistrer'}</button>
+          {saved && <span style={{ fontSize: 12, color: 'var(--ok-700)', fontWeight: 600 }}>✓ {/* TODO i18n: 'Sauvegardé' */}Sauvegardé</span>}
+          <button className="btn btn--brand btn--sm" disabled={saving} onClick={handleSave}><I.Check />{saving ? t.common.saving : t.common.save}</button>
         </div>
       </SettingsCard>
+      {/* TODO i18n: "Apparence & marque" / "Logo, couleurs et pied de page des documents." */}
       <SettingsCard title="Apparence & marque" sub="Logo, couleurs et pied de page des documents.">
         <input ref={fileInputRef}    type="file" accept="image/*" style={{ display: 'none' }} onChange={handleLogoChange} />
         <input ref={iconInputRef}    type="file" accept="image/*" style={{ display: 'none' }} onChange={handleIconChange} />
         <input ref={faviconInputRef} type="file" accept="image/png,image/x-icon,image/svg+xml,image/jpeg" style={{ display: 'none' }} onChange={handleFaviconChange} />
         {logoError && <div style={{ fontSize: 12, color: 'var(--bad-600)', marginBottom: 10 }}>{logoError}</div>}
-        {logoSaved  && <div style={{ fontSize: 12, color: 'var(--ok-700)', fontWeight: 600, marginBottom: 10 }}>✓ Image sauvegardée</div>}
+        {logoSaved  && <div style={{ fontSize: 12, color: 'var(--ok-700)', fontWeight: 600, marginBottom: 10 }}>✓ {/* TODO i18n: 'Image sauvegardée' */}Image sauvegardée</div>}
 
         {/* Logo complet */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 16, padding: '14px 16px', background: 'var(--bg-soft)', borderRadius: 8, marginBottom: 10 }}>
           <div style={{ width: 120, height: 48, borderRadius: 10, border: '1px solid var(--border)', background: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', flexShrink: 0 }}>
             {logoUrl
               ? <img src={logoUrl} alt="Logo" style={{ width: '100%', height: '100%', objectFit: 'contain', padding: 4 }} />
-              : <span style={{ fontSize: 11, color: 'var(--ink-300)', fontStyle: 'italic' }}>Aucun</span>
+              : <span style={{ fontSize: 11, color: 'var(--ink-300)', fontStyle: 'italic' }}>{/* TODO i18n */}Aucun</span>
             }
           </div>
           <div style={{ flex: 1 }}>
-            <div style={{ fontSize: 13, fontWeight: 600 }}>Logo complet</div>
-            <div style={{ fontSize: 12, color: 'var(--ink-400)', marginTop: 2 }}>Format paysage — affiché dans la nav, le footer et les en-têtes · PNG/SVG transparent · max 2 Mo</div>
+            <div style={{ fontSize: 13, fontWeight: 600 }}>{t.settings.company.logo}</div>
+            <div style={{ fontSize: 12, color: 'var(--ink-400)', marginTop: 2 }}>{/* TODO i18n */}Format paysage — affiché dans la nav, le footer et les en-têtes · PNG/SVG transparent · max 2 Mo</div>
           </div>
           <button className="btn btn--ghost btn--sm" onClick={() => fileInputRef.current?.click()} disabled={logoSaving}>
-            <I.Upload />{logoSaving ? 'Envoi…' : logoUrl ? 'Changer' : 'Téléverser'}
+            <I.Upload />{logoSaving ? t.common.sending : logoUrl ? t.common.change : t.common.upload}
           </button>
         </div>
 
@@ -300,11 +307,11 @@ function SectionCompany() {
             }
           </div>
           <div style={{ flex: 1 }}>
-            <div style={{ fontSize: 13, fontWeight: 600 }}>Icône / Logo carré</div>
-            <div style={{ fontSize: 12, color: 'var(--ink-400)', marginTop: 2 }}>Format carré — affiché dans la sidebar, le mobile et les petits espaces · PNG/SVG transparent · max 2 Mo</div>
+            <div style={{ fontSize: 13, fontWeight: 600 }}>{/* TODO i18n: Icône / Logo carré */}Icône / Logo carré</div>
+            <div style={{ fontSize: 12, color: 'var(--ink-400)', marginTop: 2 }}>{/* TODO i18n */}Format carré — affiché dans la sidebar, le mobile et les petits espaces · PNG/SVG transparent · max 2 Mo</div>
           </div>
           <button className="btn btn--ghost btn--sm" onClick={() => iconInputRef.current?.click()} disabled={logoSaving}>
-            <I.Upload />{logoSaving ? 'Envoi…' : logoIconUrl ? 'Changer' : 'Téléverser'}
+            <I.Upload />{logoSaving ? t.common.sending : logoIconUrl ? t.common.change : t.common.upload}
           </button>
         </div>
 
@@ -317,37 +324,37 @@ function SectionCompany() {
             }
           </div>
           <div style={{ flex: 1 }}>
-            <div style={{ fontSize: 13, fontWeight: 600 }}>Favicon</div>
-            <div style={{ fontSize: 12, color: 'var(--ink-400)', marginTop: 2 }}>Icône affichée dans l'onglet du navigateur · PNG, ICO ou SVG · idéalement 32×32 px · max 2 Mo</div>
+            <div style={{ fontSize: 13, fontWeight: 600 }}>{t.settings.company.favicon}</div>
+            <div style={{ fontSize: 12, color: 'var(--ink-400)', marginTop: 2 }}>{/* TODO i18n */}Icône affichée dans l'onglet du navigateur · PNG, ICO ou SVG · idéalement 32×32 px · max 2 Mo</div>
           </div>
           <button className="btn btn--ghost btn--sm" onClick={() => faviconInputRef.current?.click()} disabled={logoSaving}>
-            <I.Upload />{logoSaving ? 'Envoi…' : faviconUrl ? 'Changer' : 'Téléverser'}
+            <I.Upload />{logoSaving ? t.common.sending : faviconUrl ? t.common.change : t.common.upload}
           </button>
         </div>
 
         {/* Tailles */}
         <div style={{ borderTop: '1px solid var(--border-soft)', paddingTop: 16 }}>
-          <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--ink-800)', marginBottom: 12 }}>Tailles d'affichage</div>
+          <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--ink-800)', marginBottom: 12 }}>{/* TODO i18n: Tailles d'affichage */}Tailles d'affichage</div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
             <div>
-              <label className="label">Hauteur du logo complet (px)</label>
+              <label className="label">{/* TODO i18n: Hauteur du logo complet (px) */}Hauteur du logo complet (px)</label>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                 <input type="range" min={20} max={72} value={logoSizeH}
                   onChange={e => setLogoSizeH(parseInt(e.target.value))}
                   style={{ flex: 1 }} />
                 <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--ink-700)', minWidth: 32 }}>{logoSizeH}px</span>
               </div>
-              <div style={{ fontSize: 11, color: 'var(--ink-400)', marginTop: 4 }}>Hauteur dans la nav et le footer</div>
+              <div style={{ fontSize: 11, color: 'var(--ink-400)', marginTop: 4 }}>{/* TODO i18n */}Hauteur dans la nav et le footer</div>
             </div>
             <div>
-              <label className="label">Taille de l'icône carrée (px)</label>
+              <label className="label">{/* TODO i18n: Taille de l'icône carrée (px) */}Taille de l'icône carrée (px)</label>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                 <input type="range" min={18} max={56} value={logoIconSize}
                   onChange={e => setLogoIconSize(parseInt(e.target.value))}
                   style={{ flex: 1 }} />
                 <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--ink-700)', minWidth: 32 }}>{logoIconSize}px</span>
               </div>
-              <div style={{ fontSize: 11, color: 'var(--ink-400)', marginTop: 4 }}>Taille dans la sidebar et l'écran de connexion</div>
+              <div style={{ fontSize: 11, color: 'var(--ink-400)', marginTop: 4 }}>{/* TODO i18n */}Taille dans la sidebar et l'écran de connexion</div>
             </div>
           </div>
           <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 12 }}>
@@ -361,7 +368,7 @@ function SectionCompany() {
               setLogoSaving(false); setLogoSaved(true);
               setTimeout(() => setLogoSaved(false), 3000);
             }}>
-              <I.Check />{logoSaving ? 'Enregistrement…' : 'Appliquer les tailles'}
+              <I.Check />{logoSaving ? t.common.saving : <>{t.common.apply}{/* TODO i18n: ' les tailles' */} les tailles</>}
             </button>
           </div>
         </div>
@@ -372,6 +379,7 @@ function SectionCompany() {
 
 /* ── Routes ──────────────────────────────────────────────── */
 function MigrationBanner({ onDone }) {
+  const t = useAdminT();
   const [status, setStatus] = useState('idle'); // idle | running | done | error
   const run = async () => {
     setStatus('running');
@@ -384,40 +392,43 @@ function MigrationBanner({ onDone }) {
   };
   if (status === 'done') return (
     <div style={{ display: 'flex', gap: 10, alignItems: 'center', padding: '10px 14px', background: 'var(--ok-50)', border: '1px solid var(--ok-100)', borderRadius: 8, marginBottom: 14, fontSize: 13 }}>
-      <span style={{ color: 'var(--ok-600)', fontWeight: 700 }}>✓ Migration réussie — vous pouvez maintenant cliquer Enregistrer.</span>
+      <span style={{ color: 'var(--ok-600)', fontWeight: 700 }}>✓ {/* TODO i18n: Migration réussie */}Migration réussie — vous pouvez maintenant cliquer {t.common.save}.</span>
     </div>
   );
   if (status === 'error') return (
     <div style={{ display: 'flex', gap: 10, alignItems: 'center', padding: '10px 14px', background: 'var(--bad-50)', border: '1px solid var(--bad-200)', borderRadius: 8, marginBottom: 14, fontSize: 13 }}>
-      <span style={{ color: 'var(--bad-700)', fontWeight: 700 }}>✕ Échec de la migration — contactez le support.</span>
-      <button className="btn btn--ghost btn--sm" onClick={run}>Réessayer</button>
+      <span style={{ color: 'var(--bad-700)', fontWeight: 700 }}>✕ {/* TODO i18n: Échec de la migration */}Échec de la migration — contactez le support.</span>
+      <button className="btn btn--ghost btn--sm" onClick={run}>{/* TODO i18n: Réessayer */}Réessayer</button>
     </div>
   );
   return (
     <div style={{ display: 'flex', gap: 12, alignItems: 'center', padding: '12px 16px', background: 'var(--warn-50)', border: '1px solid var(--warn-200)', borderRadius: 8, marginBottom: 14, fontSize: 13 }}>
       <span style={{ fontSize: 18 }}>⚠️</span>
       <div style={{ flex: 1 }}>
-        <div style={{ fontWeight: 700, color: 'var(--warn-800)', marginBottom: 2 }}>Migration de base de données requise</div>
+        <div style={{ fontWeight: 700, color: 'var(--warn-800)', marginBottom: 2 }}>{/* TODO i18n: Migration de base de données requise */}Migration de base de données requise</div>
         <div style={{ color: 'var(--warn-700)', fontSize: 12 }}>
+          {/* TODO i18n: column migration description */}
           Les colonnes <code style={{ fontFamily: 'var(--ff-mono)', background: 'var(--warn-100)', padding: '1px 5px', borderRadius: 4 }}>fees</code>, <code style={{ fontFamily: 'var(--ff-mono)', background: 'var(--warn-100)', padding: '1px 5px', borderRadius: 4 }}>transitDays</code> et <code style={{ fontFamily: 'var(--ff-mono)', background: 'var(--warn-100)', padding: '1px 5px', borderRadius: 4 }}>currency</code> n'existent pas encore en base. La grille tarifaire ne peut pas être sauvegardée.
         </div>
       </div>
       <button className="btn btn--warn btn--sm" onClick={run} disabled={status === 'running'}>
-        {status === 'running' ? 'En cours…' : '⚡ Lancer la migration'}
+        {status === 'running' ? /* TODO i18n */ 'En cours…' : /* TODO i18n */ '⚡ Lancer la migration'}
       </button>
     </div>
   );
 }
 
 function SectionRoutes({ routes, onEdit, onDetail }) {
+  const t = useAdminT();
   return (
     <SettingsCard
-      title="Routes commerciales"
-      sub="Définissez les trajets que vous opérez. Chaque cargaison est rattachée à une route."
-      actions={<button className="btn btn--brand btn--sm" onClick={() => onEdit('new')}><I.Plus />Nouvelle route</button>}>
+      title={t.settings.routes.title}
+      sub={/* TODO i18n: "Définissez les trajets que vous opérez. Chaque cargaison est rattachée à une route." */ "Définissez les trajets que vous opérez. Chaque cargaison est rattachée à une route."}
+      actions={<button className="btn btn--brand btn--sm" onClick={() => onEdit('new')}><I.Plus />{t.settings.routes.newRoute}</button>}>
       <div style={{ display: 'grid', gap: 10 }}>
         {routes.length === 0 && (
           <div style={{ padding: '32px 0', textAlign: 'center', color: 'var(--ink-400)', fontSize: 13 }}>
+            {/* TODO i18n: Aucune route configurée. Créez votre première route pour commencer. */}
             Aucune route configurée. Créez votre première route pour commencer.
           </div>
         )}
@@ -433,17 +444,18 @@ function SectionRoutes({ routes, onEdit, onDetail }) {
                     <span style={{ fontSize: 15, fontWeight: 700 }}>{r.label || r.code}</span>
                     <RoutePill from={r.fromIATA} to={r.toIATA} />
                     {r.active
-                      ? <span className="badge badge--dot badge--ok">Active</span>
-                      : <span className="badge badge--dot badge--neutral">Archivée</span>}
+                      ? <span className="badge badge--dot badge--ok">{t.common.active}</span>
+                      : <span className="badge badge--dot badge--neutral">{t.common.archived}</span>}
                   </div>
                   <div style={{ fontSize: 12, color: 'var(--ink-500)' }}>
+                    {/* TODO i18n: "Transit X j" label */}
                     Transit {r.transitDays ?? 14} j · {r.currency ?? 'CAD'}
                     {r.fees?.tiers?.length > 0 && ` · ${r.fees.tiers.length} tranche${r.fees.tiers.length > 1 ? 's' : ''} tarifaire${r.fees.tiers.length > 1 ? 's' : ''}`}
                   </div>
                 </div>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 18 }}>
-                <button className="btn btn--ghost btn--sm" onClick={e => { e.stopPropagation(); onEdit(r); }}><I.Edit />Modifier</button>
+                <button className="btn btn--ghost btn--sm" onClick={e => { e.stopPropagation(); onEdit(r); }}><I.Edit />{t.common.edit}</button>
                 <I.ChevronRight style={{ color: 'var(--ink-300)' }} />
               </div>
             </div>
@@ -455,18 +467,22 @@ function SectionRoutes({ routes, onEdit, onDetail }) {
 }
 
 function SectionPricing({ routes, onEdit }) {
+  const t = useAdminT();
+  // TODO i18n: "Grille tarifaire" / "Résumé de la tarification par route active."
   return (
     <SettingsCard title="Grille tarifaire" sub="Résumé de la tarification par route active.">
       {routes.length === 0 ? (
         <div style={{ padding: '24px 0', textAlign: 'center', color: 'var(--ink-400)', fontSize: 13 }}>
+          {/* TODO i18n: Configurez vos routes d'abord pour définir les tarifs. */}
           Configurez vos routes d'abord pour définir les tarifs.
         </div>
       ) : (
         <table className="tbl">
           <thead>
             <tr>
+              {/* TODO i18n: pricing table headers (Route, Devise, Transit, Tarification) */}
               <th style={{ borderRadius: 0 }}>Route</th>
-              <th style={{ borderRadius: 0 }}>Devise</th>
+              <th style={{ borderRadius: 0 }}>{t.common.currency}</th>
               <th style={{ borderRadius: 0 }}>Transit</th>
               <th style={{ borderRadius: 0 }}>Tarification</th>
             </tr>
@@ -479,14 +495,14 @@ function SectionPricing({ routes, onEdit }) {
                   <span style={{ marginLeft: 8, fontSize: 12.5, fontWeight: 600 }}>{r.label || r.code}</span>
                 </td>
                 <td className="mono" style={{ fontSize: 12.5, fontWeight: 600 }}>{r.currency ?? 'CAD'}</td>
-                <td style={{ fontSize: 12.5 }}>{r.transitDays ?? 14} jours</td>
+                <td style={{ fontSize: 12.5 }}>{r.transitDays ?? 14} {/* TODO i18n: jours */}jours</td>
                 <td>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                     {r.fees?.tiers?.length > 0
                       ? <span style={{ fontSize: 12, color: 'var(--ok-700)', fontWeight: 600 }}>✓ {r.fees.tiers.length} tranche{r.fees.tiers.length > 1 ? 's' : ''}</span>
-                      : <span style={{ fontSize: 12, color: 'var(--ink-400)', fontStyle: 'italic' }}>À configurer</span>}
+                      : <span style={{ fontSize: 12, color: 'var(--ink-400)', fontStyle: 'italic' }}>{/* TODO i18n: À configurer */}À configurer</span>}
                     <button className="btn btn--ghost btn--sm" onClick={() => onEdit(r)} style={{ fontSize: 11.5 }}>
-                      {r.fees?.tiers?.length > 0 ? '· Voir / Modifier' : '+ Configurer'}
+                      {r.fees?.tiers?.length > 0 ? /* TODO i18n */ '· Voir / Modifier' : /* TODO i18n */ '+ Configurer'}
                     </button>
                   </div>
                 </td>
@@ -501,6 +517,7 @@ function SectionPricing({ routes, onEdit }) {
 
 /* ── WhatsApp ─────────────────────────────────────────────── */
 function SectionWhatsapp() {
+  const t = useAdminT();
   const [status,     setStatus]     = useState(null);
   const [accountSid, setAccountSid] = useState('');
   const [authToken,  setAuthToken]  = useState('');
@@ -524,7 +541,7 @@ function SectionWhatsapp() {
   async function handleTest() {
     setTesting(true); setTestResult(null);
     const res = await fetch('/api/messaging/test').catch(() => null);
-    const data = res ? await res.json() : { ok: false, error: 'Erreur réseau' };
+    const data = res ? await res.json() : { ok: false, error: t.common.networkError };
     setTestResult(data); setTesting(false);
     if (data.ok) {
       const s = await fetch('/api/settings/whatsapp').then(r => r.json()).catch(() => null);
@@ -545,12 +562,14 @@ function SectionWhatsapp() {
 
   const configured = status?.configured;
 
+  // TODO i18n: "Connexion API Twilio" / "Connectez votre compte Twilio pour l'envoi de messages WhatsApp."
   return (
     <SettingsCard title="Connexion API Twilio" sub="Connectez votre compte Twilio pour l'envoi de messages WhatsApp.">
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '14px 16px', background: configured ? 'var(--ok-50)' : 'var(--bg-soft)', border: '1px solid ' + (configured ? 'var(--ok-100)' : 'var(--border)'), borderRadius: 8, marginBottom: 16 }}>
         <span style={{ width: 10, height: 10, borderRadius: 999, background: configured ? 'var(--ok-500)' : 'var(--ink-300)', flexShrink: 0 }} />
         <div style={{ flex: 1 }}>
           <div style={{ fontSize: 13, fontWeight: 700, color: configured ? 'var(--ok-700)' : 'var(--ink-600)' }}>
+            {/* TODO i18n: API connected / not configured status */}
             {configured ? 'API connectée · opérationnelle' : 'Non configuré — renseignez vos identifiants Twilio ci-dessous'}
           </div>
           {configured && <div style={{ fontSize: 12, color: 'var(--ok-600)', marginTop: 2 }}>Twilio · {status.fromNumber}</div>}
@@ -560,7 +579,7 @@ function SectionWhatsapp() {
         <div className="field">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
             <label className="label" style={{ margin: 0 }}>Account SID</label>
-            {accountSid && <button type="button" className="btn btn--ghost btn--xs" onClick={() => setAccountSid('')}>Effacer</button>}
+            {accountSid && <button type="button" className="btn btn--ghost btn--xs" onClick={() => setAccountSid('')}>{t.common.remove}</button>}
           </div>
           <div style={{ position: 'relative' }}>
             <input className="input mono" type={showSid ? 'text' : 'password'} placeholder="ACxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
@@ -574,7 +593,7 @@ function SectionWhatsapp() {
         <div className="field">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
             <label className="label" style={{ margin: 0 }}>Auth Token</label>
-            {authToken && <button type="button" className="btn btn--ghost btn--xs" onClick={() => setAuthToken('')}>Effacer</button>}
+            {authToken && <button type="button" className="btn btn--ghost btn--xs" onClick={() => setAuthToken('')}>{t.common.remove}</button>}
           </div>
           <div style={{ position: 'relative' }}>
             <input className="input mono" type={showToken ? 'text' : 'password'} placeholder="Auth token Twilio"
@@ -587,10 +606,11 @@ function SectionWhatsapp() {
         </div>
       </div>
       <div className="field" style={{ marginBottom: 8 }}>
-        <label className="label">Numéro expéditeur WhatsApp</label>
+        <label className="label">{/* TODO i18n: Numéro expéditeur WhatsApp */}Numéro expéditeur WhatsApp</label>
         <input className="input mono" placeholder="+14155238886" value={fromNumber} onChange={e => setFromNumber(e.target.value)} />
       </div>
       <div style={{ fontSize: 12, color: 'var(--ink-500)', background: 'var(--info-50)', border: '1px solid var(--info-100)', borderRadius: 8, padding: '10px 14px', marginBottom: 16, lineHeight: 1.6 }}>
+        {/* TODO i18n: Twilio sandbox instructions */}
         <strong>Sandbox Twilio (phase de test) :</strong> le numéro est toujours <span style={{ fontFamily: 'monospace', fontWeight: 700 }}>+14155238886</span>.<br />
         Trouve-le dans <strong>Twilio Console → Messaging → Try it out → Send a WhatsApp message</strong>.<br />
         ⚠️ Chaque destinataire doit d'abord envoyer le mot-clé du sandbox à ce numéro avant de recevoir tes messages.<br />
@@ -598,32 +618,34 @@ function SectionWhatsapp() {
       </div>
       <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
         <button className="btn btn--brand btn--sm" disabled={saving} onClick={handleSave}>
-          {saving ? 'Enregistrement…' : 'Enregistrer'}
+          {saving ? t.common.saving : t.common.save}
         </button>
         <button className="btn btn--ghost btn--sm" disabled={testing} onClick={handleTest}>
-          {testing ? 'Test en cours…' : '⚡ Tester la connexion'}
+          {testing ? /* TODO i18n */ 'Test en cours…' : /* TODO i18n */ '⚡ Tester la connexion'}
         </button>
-        {saved && <span style={{ fontSize: 12, color: 'var(--ok-700)', fontWeight: 600 }}>✓ Sauvegardé</span>}
+        {saved && <span style={{ fontSize: 12, color: 'var(--ok-700)', fontWeight: 600 }}>✓ {/* TODO i18n */}Sauvegardé</span>}
       </div>
       {testResult && (
         <div style={{ marginTop: 12, padding: '10px 14px', borderRadius: 8, background: testResult.ok ? 'var(--ok-50)' : 'var(--bad-50)', border: '1px solid ' + (testResult.ok ? 'var(--ok-200)' : 'var(--bad-200)') }}>
           {testResult.ok ? (
             <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--ok-700)' }}>
+              {/* TODO i18n: Connexion réussie */}
               ✓ Connexion réussie — compte : <span style={{ fontFamily: 'monospace' }}>{testResult.accountName}</span> ({testResult.status})
             </div>
           ) : (
             <>
               <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--bad-700)', marginBottom: 6 }}>
+                {/* TODO i18n: Échec — code X */}
                 ✕ Échec — code {testResult.code} : {testResult.error}
               </div>
               {(testResult.sidPreview || testResult.tokenPreview) && (
                 <div style={{ fontSize: 11.5, fontFamily: 'monospace', color: 'var(--ink-600)', marginBottom: 8, background: 'white', padding: '6px 10px', borderRadius: 6, border: '1px solid var(--bad-100)' }}>
-                  <div>SID stocké&nbsp;&nbsp;: <strong>{testResult.sidPreview}</strong></div>
-                  <div>Token stocké : <strong>{testResult.tokenPreview}</strong></div>
+                  <div>{/* TODO i18n */}SID stocké&nbsp;&nbsp;: <strong>{testResult.sidPreview}</strong></div>
+                  <div>{/* TODO i18n */}Token stocké : <strong>{testResult.tokenPreview}</strong></div>
                 </div>
               )}
               <div style={{ fontSize: 12, color: 'var(--ink-600)', lineHeight: 1.6 }}>
-                Vérifiez que ces valeurs correspondent à <strong>Twilio Console → Account → Account Info</strong>.
+                {/* TODO i18n */}Vérifiez que ces valeurs correspondent à <strong>Twilio Console → Account → Account Info</strong>.
               </div>
             </>
           )}
@@ -635,6 +657,7 @@ function SectionWhatsapp() {
 
 /* ── Push Notifications ───────────────────────────────────── */
 function SectionPushSetup() {
+  const t = useAdminT();
   const [status,  setStatus]  = useState(null); // null | 'loading' | { configured, publicKey }
   const [setting, setSetting] = useState(false);
   const [result,  setResult]  = useState('');
@@ -648,21 +671,23 @@ function SectionPushSetup() {
   async function handleSetup() {
     setSetting(true); setResult('');
     const res = await fetch('/api/push/setup').catch(() => null);
-    if (!res?.ok) { setResult('Erreur lors de la configuration.'); setSetting(false); return; }
+    if (!res?.ok) { setResult(/* TODO i18n */ 'Erreur lors de la configuration.'); setSetting(false); return; }
     const d = await res.json();
     setStatus({ configured: true, publicKey: d.publicKey });
-    setResult('Clés VAPID générées et enregistrées.');
+    setResult(/* TODO i18n */ 'Clés VAPID générées et enregistrées.');
     setSetting(false);
   }
 
   const configured = status?.configured;
+  // TODO i18n: "Push Notifications" / "Notifications natives sur navigateur et appareils mobiles..."
   return (
     <SettingsCard title="Push Notifications" sub="Notifications natives sur navigateur et appareils mobiles — canal complémentaire au WhatsApp.">
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '14px 16px', background: configured ? 'var(--ok-50)' : 'var(--bg-soft)', border: '1px solid ' + (configured ? 'var(--ok-100)' : 'var(--border)'), borderRadius: 8, marginBottom: 16 }}>
         <span style={{ width: 10, height: 10, borderRadius: 999, background: configured ? 'var(--ok-500)' : 'var(--ink-300)', flexShrink: 0 }} />
         <div style={{ flex: 1 }}>
           <div style={{ fontSize: 13, fontWeight: 700, color: configured ? 'var(--ok-700)' : 'var(--ink-600)' }}>
-            {status === null ? 'Chargement…' : configured ? 'Push configuré · clés VAPID actives' : 'Non configuré — cliquez sur « Configurer » pour générer les clés'}
+            {/* TODO i18n: push status messages */}
+            {status === null ? t.common.loading : configured ? 'Push configuré · clés VAPID actives' : 'Non configuré — cliquez sur « Configurer » pour générer les clés'}
           </div>
           {configured && status?.publicKey && (
             <div style={{ fontSize: 11, color: 'var(--ok-600)', marginTop: 2, fontFamily: 'monospace', wordBreak: 'break-all' }}>
@@ -672,13 +697,14 @@ function SectionPushSetup() {
         </div>
       </div>
       <p style={{ fontSize: 12.5, color: 'var(--ink-500)', marginBottom: 14, lineHeight: 1.6 }}>
+        {/* TODO i18n: VAPID keys description */}
         Les clés VAPID sont générées une seule fois et stockées de façon sécurisée.
         Une fois configuré, les clients pourront activer les notifications push dans leur espace client —
         ils recevront une alerte native à chaque changement de statut de colis.
       </p>
       {!configured && (
         <button className="btn btn--brand btn--sm" onClick={handleSetup} disabled={setting || status === null}>
-          {setting ? 'Configuration…' : 'Configurer les push notifications'}
+          {setting ? /* TODO i18n */ 'Configuration…' : /* TODO i18n */ 'Configurer les push notifications'}
         </button>
       )}
       {result && <div style={{ marginTop: 10, fontSize: 12.5, color: 'var(--ok-600)' }}>{result}</div>}
@@ -703,6 +729,7 @@ const WA_TMPL_DEFS = {
 };
 
 function SectionWaTemplates() {
+  const t = useAdminT();
   const [group,     setGroup]     = useState('manual');
   const [active,    setActive]    = useState('arrival');
   const [templates, setTemplates] = useState(() =>
@@ -730,15 +757,15 @@ function SectionWaTemplates() {
   const tmpl      = templates[active] ?? { label: '', body: '' };
   const def       = WA_TMPL_DEFS[active];
 
-  const set = (k) => (e) => setTemplates(t => ({ ...t, [active]: { ...t[active], [k]: e.target.value } }));
-  const reset = () => setTemplates(t => ({ ...t, [active]: { label: WA_TMPL_DEFS[active].label, body: WA_TMPL_DEFS[active].body } }));
+  const set = (k) => (e) => setTemplates(prev => ({ ...prev, [active]: { ...prev[active], [k]: e.target.value } }));
+  const reset = () => setTemplates(prev => ({ ...prev, [active]: { label: WA_TMPL_DEFS[active].label, body: WA_TMPL_DEFS[active].body } }));
 
   async function handleSave() {
     setSaving(true);
     const payload = {};
-    for (const [id, t] of Object.entries(templates)) {
-      payload[`wa_tmpl_${id}_label`] = t.label;
-      payload[`wa_tmpl_${id}_body`]  = t.body;
+    for (const [id, tmplEntry] of Object.entries(templates)) {
+      payload[`wa_tmpl_${id}_label`] = tmplEntry.label;
+      payload[`wa_tmpl_${id}_body`]  = tmplEntry.body;
     }
     await fetch('/api/settings', {
       method: 'PUT', headers: { 'Content-Type': 'application/json' },
@@ -752,6 +779,7 @@ function SectionWaTemplates() {
     setActive(Object.entries(WA_TMPL_DEFS).find(([,v]) => v.group === g)?.[0] ?? 'arrival');
   };
 
+  // TODO i18n: "Modèles de messages WhatsApp" / "Personnalisez chaque message..."
   return (
     <SettingsCard
       title="Modèles de messages WhatsApp"
@@ -759,6 +787,7 @@ function SectionWaTemplates() {
 
       {/* Group selector */}
       <div style={{ display: 'flex', gap: 4, marginBottom: 14, background: 'var(--bg-soft)', padding: 4, borderRadius: 8, width: 'fit-content' }}>
+        {/* TODO i18n: Envoi manuel / Automatiques */}
         {[{ id: 'manual', l: 'Envoi manuel (5)' }, { id: 'auto', l: 'Automatiques (5)' }].map(g => (
           <button key={g.id} onClick={() => switchGroup(g.id)}
             className="btn btn--sm"
@@ -782,23 +811,24 @@ function SectionWaTemplates() {
       {/* Trigger info for auto templates */}
       {def?.trigger && (
         <div style={{ fontSize: 12, color: 'var(--ink-500)', background: 'var(--bg-soft)', padding: '8px 12px', borderRadius: 6, marginBottom: 14, display: 'flex', alignItems: 'center', gap: 8 }}>
-          <span style={{ fontSize: 14 }}>⚡</span> <span><strong>Déclencheur :</strong> {def.trigger}</span>
+          <span style={{ fontSize: 14 }}>⚡</span> <span><strong>{/* TODO i18n: Déclencheur */}Déclencheur :</strong> {def.trigger}</span>
         </div>
       )}
 
       {/* Editor */}
       <div className="field">
-        <label className="label">Libellé du modèle <span className="opt">/ affiché dans le sélecteur</span></label>
+        <label className="label">{/* TODO i18n: Libellé du modèle */}Libellé du modèle <span className="opt">/ {/* TODO i18n */}affiché dans le sélecteur</span></label>
         <input className="input" value={tmpl.label} onChange={set('label')} />
       </div>
       <div className="field" style={{ marginBottom: 6 }}>
-        <label className="label">Corps du message</label>
+        <label className="label">{/* TODO i18n: Corps du message */}Corps du message</label>
         <textarea className="textarea" rows={9} value={tmpl.body} onChange={set('body')}
           style={{ fontSize: 12.5, fontFamily: 'var(--ff-mono)', lineHeight: 1.7 }} />
       </div>
 
       {/* Variables */}
       <div style={{ fontSize: 11, color: 'var(--ink-400)', marginBottom: 14, lineHeight: 1.9 }}>
+        {/* TODO i18n: Variables disponibles pour ce modèle */}
         Variables disponibles pour ce modèle :&nbsp;
         {(def?.vars ?? []).map(v => (
           <code key={v} style={{ fontFamily: 'var(--ff-mono)', background: 'var(--bg-soft)', padding: '1px 6px', borderRadius: 4, margin: '0 2px', fontSize: 10.5, border: '1px solid var(--border-soft)' }}>{v}</code>
@@ -806,10 +836,10 @@ function SectionWaTemplates() {
       </div>
 
       <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, alignItems: 'center' }}>
-        {saved && <span style={{ fontSize: 12, color: 'var(--ok-700)', fontWeight: 600 }}>✓ Sauvegardé</span>}
-        <button className="btn btn--ghost btn--sm" onClick={reset}>Réinitialiser</button>
+        {saved && <span style={{ fontSize: 12, color: 'var(--ok-700)', fontWeight: 600 }}>✓ {/* TODO i18n */}Sauvegardé</span>}
+        <button className="btn btn--ghost btn--sm" onClick={reset}>{/* TODO i18n: Réinitialiser */}Réinitialiser</button>
         <button className="btn btn--brand btn--sm" disabled={saving} onClick={handleSave}>
-          <I.Check />{saving ? 'Enregistrement…' : 'Enregistrer'}
+          <I.Check />{saving ? t.common.saving : t.common.save}
         </button>
       </div>
     </SettingsCard>
@@ -818,6 +848,7 @@ function SectionWaTemplates() {
 
 /* ── Auto-notifications ──────────────────────────────────── */
 function SectionAutoNotif() {
+  const t = useAdminT();
   const DEFAULTS = { notif_arrival: true, notif_reminder: true, notif_delivery: true, notif_overrun: false, notif_invoice: true, notif_broadcast: false };
   const [toggles, setToggles] = useState(DEFAULTS);
 
@@ -839,6 +870,7 @@ function SectionAutoNotif() {
     await fetch('/api/settings', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
   };
 
+  // TODO i18n: trigger labels and descriptions do not have matching translation keys
   const triggers = [
     { id: 'notif_arrival',   l: "Avis d'arrivée",             d: 'Envoyé automatiquement quand la cargaison passe à "Arrivée"' },
     { id: 'notif_reminder',  l: 'Relance paiement J+3',        d: "Envoyé 3 jours après l'arrivée si paiement non confirmé" },
@@ -848,29 +880,31 @@ function SectionAutoNotif() {
     { id: 'notif_broadcast', l: 'Annonce nouvelle cargaison',  d: "Notifie les clients fidèles à l'ouverture d'une cargaison" },
   ];
 
+  // TODO i18n: "Notifications automatiques" / "Activez ou désactivez chaque déclencheur. Les modèles sont gérés dans la Messagerie."
   return (
     <SettingsCard title="Notifications automatiques" sub="Activez ou désactivez chaque déclencheur. Les modèles sont gérés dans la Messagerie.">
       <div style={{ display: 'grid', gap: 8, marginBottom: 16 }}>
-        {triggers.map(t => (
-          <div key={t.id} style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '12px 14px', border: '1px solid var(--border)', borderRadius: 8 }}>
+        {triggers.map(trig => (
+          <div key={trig.id} style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '12px 14px', border: '1px solid var(--border)', borderRadius: 8 }}>
             <div style={{ flex: 1 }}>
-              <div style={{ fontSize: 13.5, fontWeight: 600 }}>{t.l}</div>
-              <div style={{ fontSize: 12, color: 'var(--ink-500)', marginTop: 2 }}>{t.d}</div>
+              <div style={{ fontSize: 13.5, fontWeight: 600 }}>{trig.l}</div>
+              <div style={{ fontSize: 12, color: 'var(--ink-500)', marginTop: 2 }}>{trig.d}</div>
             </div>
-            <span style={{ fontSize: 11, color: toggles[t.id] ? 'var(--ok-700)' : 'var(--ink-400)', fontWeight: 600, minWidth: 60, textAlign: 'right' }}>
-              {toggles[t.id] ? 'Activé' : 'Désactivé'}
+            <span style={{ fontSize: 11, color: toggles[trig.id] ? 'var(--ok-700)' : 'var(--ink-400)', fontWeight: 600, minWidth: 60, textAlign: 'right' }}>
+              {toggles[trig.id] ? t.common.active : t.common.inactive}
             </span>
-            <button onClick={() => toggle(t.id)} style={{
+            <button onClick={() => toggle(trig.id)} style={{
               width: 36, height: 20, borderRadius: 999,
-              background: toggles[t.id] ? 'var(--brand-500)' : 'var(--ink-200)',
+              background: toggles[trig.id] ? 'var(--brand-500)' : 'var(--ink-200)',
               border: 'none', cursor: 'pointer', position: 'relative', transition: 'background .15s', flexShrink: 0,
             }}>
-              <span style={{ position: 'absolute', left: toggles[t.id] ? 18 : 2, top: 2, width: 16, height: 16, borderRadius: 999, background: 'white', boxShadow: '0 1px 3px rgba(0,0,0,.2)', transition: 'left .15s' }} />
+              <span style={{ position: 'absolute', left: toggles[trig.id] ? 18 : 2, top: 2, width: 16, height: 16, borderRadius: 999, background: 'white', boxShadow: '0 1px 3px rgba(0,0,0,.2)', transition: 'left .15s' }} />
             </button>
           </div>
         ))}
       </div>
       <div style={{ fontSize: 12, color: 'var(--warn-700)', background: 'var(--warn-50)', border: '1px solid var(--warn-100)', borderRadius: 8, padding: '10px 14px' }}>
+        {/* TODO i18n: WhatsApp API required warning */}
         ⚠️ Les envois automatiques nécessitent que l'API WhatsApp soit configurée dans l'onglet <strong>WhatsApp</strong>.
       </div>
     </SettingsCard>
@@ -879,6 +913,7 @@ function SectionAutoNotif() {
 
 /* ── Paramètres cargaisons ───────────────────────────────── */
 function SectionCampaigns() {
+  const t = useAdminT();
   const [fields, setFields] = useState({ default_transit_days: '14', default_currency: 'CAD', weight_rounding: '0.5' });
   const [saving, setSaving] = useState(false);
   const [saved,  setSaved]  = useState(false);
@@ -902,17 +937,17 @@ function SectionCampaigns() {
   }
 
   return (
-    <SettingsCard title="Paramètres des cargaisons" sub="Valeurs par défaut appliquées à la création d'une cargaison.">
+    <SettingsCard title={t.settings.campaigns.title} sub={/* TODO i18n: "Valeurs par défaut appliquées à la création d'une cargaison." */ "Valeurs par défaut appliquées à la création d'une cargaison."}>
       <div className="field-row field-row--2">
         <div className="field">
-          <label className="label">Durée de transit par défaut</label>
+          <label className="label">{/* TODO i18n: Durée de transit par défaut */}Durée de transit par défaut</label>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <input className="input" value={fields.default_transit_days} onChange={set('default_transit_days')} type="number" min="1" style={{ flex: 1 }} />
-            <span style={{ fontSize: 12, color: 'var(--ink-400)', whiteSpace: 'nowrap' }}>jours</span>
+            <span style={{ fontSize: 12, color: 'var(--ink-400)', whiteSpace: 'nowrap' }}>{/* TODO i18n: jours */}jours</span>
           </div>
         </div>
         <div className="field">
-          <label className="label">Devise par défaut</label>
+          <label className="label">{t.common.currency}</label>
           <select className="select" value={fields.default_currency} onChange={set('default_currency')}>
             <option value="CAD">CAD</option><option value="EUR">EUR</option>
             <option value="USD">USD</option><option value="XAF">XAF</option>
@@ -921,15 +956,15 @@ function SectionCampaigns() {
       </div>
       <div className="field-row field-row--2">
         <div className="field">
-          <label className="label">Arrondi poids facturé</label>
+          <label className="label">{/* TODO i18n: Arrondi poids facturé */}Arrondi poids facturé</label>
           <select className="select" value={fields.weight_rounding} onChange={set('weight_rounding')}>
-            <option value="0.5">0,5 kg</option><option value="1">1 kg</option><option value="exact">Exact</option>
+            <option value="0.5">0,5 kg</option><option value="1">1 kg</option><option value="exact">{/* TODO i18n */}Exact</option>
           </select>
         </div>
       </div>
       <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, alignItems: 'center', marginTop: 4 }}>
-        {saved && <span style={{ fontSize: 12, color: 'var(--ok-700)', fontWeight: 600 }}>✓ Sauvegardé</span>}
-        <button className="btn btn--brand btn--sm" disabled={saving} onClick={handleSave}><I.Check />{saving ? 'Enregistrement…' : 'Enregistrer'}</button>
+        {saved && <span style={{ fontSize: 12, color: 'var(--ok-700)', fontWeight: 600 }}>✓ {/* TODO i18n */}Sauvegardé</span>}
+        <button className="btn btn--brand btn--sm" disabled={saving} onClick={handleSave}><I.Check />{saving ? t.common.saving : t.common.save}</button>
       </div>
     </SettingsCard>
   );
@@ -937,6 +972,7 @@ function SectionCampaigns() {
 
 /* ── Codes & numérotation ────────────────────────────────── */
 function SectionCodes() {
+  const t = useAdminT();
   const DEFAULTS = {
     code_campaign: '{ORIG}-{DEST}-{MMM}-{NN}',
     code_parcel:   'P-{NNNN}',
@@ -978,8 +1014,10 @@ function SectionCodes() {
     setSaving(false); setSaved(true); setTimeout(() => setSaved(false), 3000);
   }
 
+  // TODO i18n: "Format des codes" / "Personnalisez le format des codes générés automatiquement."
   return (
     <SettingsCard title="Format des codes" sub="Personnalisez le format des codes générés automatiquement.">
+      {/* TODO i18n: LABELS keys (Code cargaison, Code colis, Code bordereau, Code client) */}
       {Object.keys(DEFAULTS).map(k => (
         <div key={k} style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '10px 0', borderBottom: '1px solid var(--border-soft)' }}>
           <span style={{ width: 140, fontSize: 13, fontWeight: 600, color: 'var(--ink-700)', flexShrink: 0 }}>{LABELS[k]}</span>
@@ -988,8 +1026,8 @@ function SectionCodes() {
         </div>
       ))}
       <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, alignItems: 'center', marginTop: 14 }}>
-        {saved && <span style={{ fontSize: 12, color: 'var(--ok-700)', fontWeight: 600 }}>✓ Sauvegardé</span>}
-        <button className="btn btn--brand btn--sm" disabled={saving} onClick={handleSave}><I.Check />{saving ? 'Enregistrement…' : 'Enregistrer'}</button>
+        {saved && <span style={{ fontSize: 12, color: 'var(--ok-700)', fontWeight: 600 }}>✓ {/* TODO i18n */}Sauvegardé</span>}
+        <button className="btn btn--brand btn--sm" disabled={saving} onClick={handleSave}><I.Check />{saving ? t.common.saving : t.common.save}</button>
       </div>
     </SettingsCard>
   );
@@ -1055,6 +1093,7 @@ function tierToApi(t) {
 }
 
 function RouteEditModal({ editRoute, onClose, onSaved }) {
+  const t = useAdminT();
   const isNew = editRoute === 'new';
   const r = isNew ? null : editRoute;
   const [saving, setSaving] = useState(false);
@@ -1118,7 +1157,7 @@ function RouteEditModal({ editRoute, onClose, onSaved }) {
   }]);
 
   const handleSave = async () => {
-    if (!origin.trim() || !destination.trim()) { setErr('Codes IATA obligatoires'); return; }
+    if (!origin.trim() || !destination.trim()) { setErr(/* TODO i18n */ 'Codes IATA obligatoires'); return; }
     setSaving(true); setErr('');
     try {
       const fees = {
@@ -1152,43 +1191,43 @@ function RouteEditModal({ editRoute, onClose, onSaved }) {
       const url    = isNew ? '/api/routes' : `/api/routes/${r.id}`;
       const method = isNew ? 'POST' : 'PUT';
       const res = await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
-      if (!res.ok) { const d = await res.json(); setErr(d.error || 'Erreur'); setSaving(false); return; }
+      if (!res.ok) { const d = await res.json(); setErr(d.error || t.common.error); setSaving(false); return; }
       onSaved?.();
       onClose();
-    } catch { setErr('Erreur réseau'); setSaving(false); }
+    } catch { setErr(t.common.networkError); setSaving(false); }
   };
 
   return (
     <div style={{ position: 'fixed', inset: 0, zIndex: 1000, background: 'white', overflowY: 'auto', display: 'flex', flexDirection: 'column' }}>
       {/* Header sticky */}
       <div style={{ position: 'sticky', top: 0, zIndex: 10, background: 'white', borderBottom: '1px solid var(--border)', padding: '0 24px', height: 56, display: 'flex', alignItems: 'center', gap: 16, flexShrink: 0 }}>
-        <button className="btn btn--ghost btn--sm" onClick={onClose}><I.ArrowLeft />Retour</button>
-        <div style={{ flex: 1, fontSize: 15, fontWeight: 700 }}>{isNew ? 'Nouvelle route' : `Modifier — ${r?.label ?? r?.code ?? ''}`}</div>
+        <button className="btn btn--ghost btn--sm" onClick={onClose}><I.ArrowLeft />{t.common.back}</button>
+        <div style={{ flex: 1, fontSize: 15, fontWeight: 700 }}>{isNew ? t.settings.routes.newRoute : `${t.common.edit} — ${r?.label ?? r?.code ?? ''}`}</div>
         {err && <span style={{ fontSize: 12, color: 'var(--bad-700)' }}>{err}</span>}
-        <button className="btn btn--brand" onClick={handleSave} disabled={saving}><I.Check />{saving ? 'Enregistrement…' : 'Enregistrer'}</button>
+        <button className="btn btn--brand" onClick={handleSave} disabled={saving}><I.Check />{saving ? t.common.saving : t.common.save}</button>
       </div>
 
       {/* Content */}
       <div style={{ maxWidth: 960, margin: '0 auto', padding: '28px 24px', width: '100%' }}>
 
         {/* Section 1 — Infos de base */}
-        <SectionTitle>Informations de base</SectionTitle>
+        <SectionTitle>{/* TODO i18n: Informations de base */}Informations de base</SectionTitle>
         <div className="card" style={{ padding: 20, marginBottom: 20 }}>
           <div className="field-row field-row--2">
-            <div className="field"><label className="label">Code IATA départ</label><input className="input mono" value={origin} onChange={e => setOrigin(e.target.value.toUpperCase())} placeholder="DLA" maxLength={3} /></div>
-            <div className="field"><label className="label">Code IATA arrivée</label><input className="input mono" value={destination} onChange={e => setDestination(e.target.value.toUpperCase())} placeholder="YUL" maxLength={3} /></div>
+            <div className="field"><label className="label">{t.settings.routes.from}</label><input className="input mono" value={origin} onChange={e => setOrigin(e.target.value.toUpperCase())} placeholder="DLA" maxLength={3} /></div>
+            <div className="field"><label className="label">{t.settings.routes.to}</label><input className="input mono" value={destination} onChange={e => setDestination(e.target.value.toUpperCase())} placeholder="YUL" maxLength={3} /></div>
           </div>
           <div className="field">
-            <label className="label">Libellé <span className="opt">/ optionnel</span></label>
+            <label className="label">{/* TODO i18n: Libellé */}Libellé <span className="opt">/ {t.common.optional}</span></label>
             <input className="input" value={label} onChange={e => setLabel(e.target.value)} placeholder="ex: Douala → Montréal" />
           </div>
           <div className="field-row field-row--2">
             <div className="field">
-              <label className="label">Transit (jours)</label>
+              <label className="label">{/* TODO i18n: Transit (jours) */}Transit (jours)</label>
               <input className="input" type="number" value={transitDays} onChange={e => setTransitDays(e.target.value)} min="1" />
             </div>
             <div className="field">
-              <label className="label">Devise</label>
+              <label className="label">{t.common.currency}</label>
               <select className="select" value={currency} onChange={e => setCurrency(e.target.value)}>
                 <option value="CAD">CAD</option><option value="EUR">EUR</option><option value="XAF">XAF</option>
               </select>
@@ -1197,9 +1236,9 @@ function RouteEditModal({ editRoute, onClose, onSaved }) {
           {!isNew && (
             <div className="field-row field-row--2">
               <div className="field">
-                <label className="label">Statut</label>
+                <label className="label">{t.common.status}</label>
                 <select className="select" value={active ? 'active' : 'archived'} onChange={e => setActive(e.target.value === 'active')}>
-                  <option value="active">Active</option><option value="archived">Archivée</option>
+                  <option value="active">{t.common.active}</option><option value="archived">{t.common.archived}</option>
                 </select>
               </div>
             </div>
@@ -1207,15 +1246,17 @@ function RouteEditModal({ editRoute, onClose, onSaved }) {
         </div>
 
         {/* Section 2 — Paliers de poids */}
-        <SectionTitle>Paliers de poids</SectionTitle>
+        <SectionTitle>{/* TODO i18n: Paliers de poids */}Paliers de poids</SectionTitle>
         <div className="card" style={{ padding: 20, marginBottom: 20 }}>
           <p style={{ fontSize: 12, color: 'var(--ink-400)', marginBottom: 14 }}>
+            {/* TODO i18n: tier selection description */}
             Le palier est sélectionné en fonction du poids total du colis. Les taux s'appliquent aux composantes de prix correspondantes.
           </p>
           <div style={{ overflowX: 'auto' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12.5, minWidth: 900 }}>
               <thead>
                 <tr style={{ background: 'var(--bg-soft)' }}>
+                  {/* TODO i18n: tier table headers */}
                   <th style={{ padding: '8px 10px', textAlign: 'left', fontWeight: 700, color: 'var(--ink-500)', fontSize: 11, textTransform: 'uppercase' }}>De (kg)</th>
                   <th style={{ padding: '8px 10px', textAlign: 'left', fontWeight: 700, color: 'var(--ink-500)', fontSize: 11, textTransform: 'uppercase' }}>À (kg)</th>
                   <th style={{ padding: '8px 10px', textAlign: 'left', fontWeight: 700, color: 'var(--ink-500)', fontSize: 11, textTransform: 'uppercase' }}>Transport</th>
@@ -1232,6 +1273,7 @@ function RouteEditModal({ editRoute, onClose, onSaved }) {
                     <td style={{ padding: '6px 8px' }}><input className="input input--sm mono" type="number" value={tier.from} onChange={e => updTier(tier.id, 'from', e.target.value)} style={{ width: 65 }} /></td>
                     <td style={{ padding: '6px 8px' }}><input className="input input--sm mono" type="number" value={tier.to} onChange={e => updTier(tier.id, 'to', e.target.value)} placeholder="∞" style={{ width: 65 }} /></td>
                     <td style={{ padding: '6px 8px' }}>
+                      {/* TODO i18n: Forfait / $/kg / $/carton / $/unité tier type options */}
                       <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
                         <select className="select input--sm" value={tier.transportType} onChange={e => updTier(tier.id, 'transportType', e.target.value)} style={{ fontSize: 11, padding: '2px 4px', width: 70 }}>
                           <option value="flat">Forfait</option>
@@ -1288,12 +1330,13 @@ function RouteEditModal({ editRoute, onClose, onSaved }) {
               </tbody>
             </table>
           </div>
-          <button className="btn btn--ghost btn--sm" style={{ marginTop: 10 }} onClick={addTier}><I.Plus />Ajouter un palier</button>
+          <button className="btn btn--ghost btn--sm" style={{ marginTop: 10 }} onClick={addTier}><I.Plus />{t.common.add} {/* TODO i18n: un palier */}un palier</button>
         </div>
 
         {/* Section 3 — Emballages & conditionnement */}
-        <SectionTitle>Emballages & conditionnement</SectionTitle>
+        <SectionTitle>{/* TODO i18n: Emballages & conditionnement */}Emballages & conditionnement</SectionTitle>
         <div className="card" style={{ padding: 20, marginBottom: 20 }}>
+          {/* TODO i18n: packaging labels (Carton, Petit sac, Moyen sac, Grand sac, Plastique) */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 12 }}>
             {[
               { label: 'Carton', sub: '(1er palier : forfait)', val: '1', readOnly: true },
@@ -1312,12 +1355,13 @@ function RouteEditModal({ editRoute, onClose, onSaved }) {
             ))}
           </div>
           <div style={{ marginTop: 12, fontSize: 12, color: 'var(--ink-400)' }}>
+            {/* TODO i18n: carton tier description */}
             Le carton est configuré par palier (forfait sur le 1er palier, 1,50 {currency}/carton sur les suivants par défaut).
           </div>
         </div>
 
         {/* Section 4 — Frais SAQ */}
-        <SectionTitle>Frais SAQ (bière)</SectionTitle>
+        <SectionTitle>{/* TODO i18n: Frais SAQ (bière) */}Frais SAQ (bière)</SectionTitle>
         <div className="card" style={{ padding: 20, marginBottom: 20 }}>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12 }}>
             {[
@@ -1337,8 +1381,9 @@ function RouteEditModal({ editRoute, onClose, onSaved }) {
         </div>
 
         {/* Section 5 — Suppléments */}
-        <SectionTitle>Suppléments par catégorie</SectionTitle>
+        <SectionTitle>{/* TODO i18n: Suppléments par catégorie */}Suppléments par catégorie</SectionTitle>
         <div className="card" style={{ padding: 20, marginBottom: 20 }}>
+          {/* TODO i18n: supplement category labels */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 12 }}>
             {[
               { label: 'Vêtements',    icon: '👗', val: suppVetements,    set: setSuppVetements    },
@@ -1357,27 +1402,28 @@ function RouteEditModal({ editRoute, onClose, onSaved }) {
             ))}
           </div>
           <div style={{ marginTop: 10, fontSize: 12, color: 'var(--ink-400)' }}>
+            {/* TODO i18n: supplement description */}
             Les suppléments s'ajoutent au transport pour chaque ligne de colis de cette catégorie. Un montant négatif est une réduction.
           </div>
         </div>
 
         {/* Section 6 — Marge & livraison */}
-        <SectionTitle>Marge & livraison</SectionTitle>
+        <SectionTitle>{/* TODO i18n: Marge & livraison */}Marge & livraison</SectionTitle>
         <div className="card" style={{ padding: 20, marginBottom: 20 }}>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12 }}>
             <div className="field" style={{ marginBottom: 0 }}>
-              <label className="label">Marge par défaut (%)</label>
+              <label className="label">{/* TODO i18n: Marge par défaut (%) */}Marge par défaut (%)</label>
               <input className="input mono" type="number" step="1" value={marginPct} onChange={e => setMarginPct(e.target.value)} />
             </div>
             <div className="field" style={{ marginBottom: 0 }}>
-              <label className="label">Livraison île de Montréal</label>
+              <label className="label">{/* TODO i18n: Livraison île de Montréal */}Livraison île de Montréal</label>
               <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                 <input className="input mono" type="number" step="1" value={deliveryFeeIle} onChange={e => setDeliveryFeeIle(e.target.value)} style={{ flex: 1 }} />
                 <span style={{ fontSize: 12, color: 'var(--ink-400)' }}>{currency}</span>
               </div>
             </div>
             <div className="field" style={{ marginBottom: 0 }}>
-              <label className="label">Livraison Grand Montréal</label>
+              <label className="label">{/* TODO i18n: Livraison Grand Montréal */}Livraison Grand Montréal</label>
               <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                 <input className="input mono" type="number" step="1" value={String(Math.round((parseFloat(deliveryFeeIle) || 25) * 1.2))} readOnly style={{ flex: 1, background: 'var(--bg-soft)' }} />
                 <span style={{ fontSize: 12, color: 'var(--ink-400)' }}>{currency} <span style={{ fontSize: 11, color: 'var(--ink-300)' }}>(auto)</span></span>
@@ -1387,14 +1433,15 @@ function RouteEditModal({ editRoute, onClose, onSaved }) {
         </div>
 
         {/* Section 7 — Contact & dépôt (côté départ) */}
-        <SectionTitle>Dépôt — côté départ</SectionTitle>
+        <SectionTitle>{/* TODO i18n: Dépôt — côté départ */}Dépôt — côté départ</SectionTitle>
         <div className="card" style={{ padding: 20, marginBottom: 20 }}>
           <p style={{ fontSize: 12, color: 'var(--ink-400)', marginBottom: 14, lineHeight: 1.5 }}>
+            {/* TODO i18n: dropoff info description */}
             Ces informations sont affichées au client dans sa confirmation de réservation pour qu'il sache où et comment déposer son colis.
           </p>
           <div className="field-row field-row--2">
             <div className="field">
-              <label className="label">Téléphone contact dépôt</label>
+              <label className="label">{/* TODO i18n: Téléphone contact dépôt */}Téléphone contact dépôt</label>
               <input className="input" type="tel" value={dropoffPhone} onChange={e => setDropoffPhone(e.target.value)} placeholder="+237 6 XX XX XX XX" />
             </div>
             <div className="field">
@@ -1403,15 +1450,15 @@ function RouteEditModal({ editRoute, onClose, onSaved }) {
             </div>
           </div>
           <div className="field">
-            <label className="label">Adresse de dépôt</label>
+            <label className="label">{/* TODO i18n: Adresse de dépôt */}Adresse de dépôt</label>
             <input className="input" value={dropoffAddress} onChange={e => setDropoffAddress(e.target.value)} placeholder="ex: 45 Rue de la Réunification, Akwa, Douala" />
           </div>
           <div className="field">
-            <label className="label">Horaires</label>
+            <label className="label">{/* TODO i18n: Horaires */}Horaires</label>
             <input className="input" value={dropoffHours} onChange={e => setDropoffHours(e.target.value)} placeholder="ex: Lun–Sam · 08h–18h" />
           </div>
           <div className="field" style={{ marginBottom: 0 }}>
-            <label className="label">Instructions de dépôt <span className="opt">/ texte libre</span></label>
+            <label className="label">{/* TODO i18n: Instructions de dépôt */}Instructions de dépôt <span className="opt">/ {/* TODO i18n */}texte libre</span></label>
             <textarea className="input" rows={4} value={dropoffInstructions} onChange={e => setDropoffInstructions(e.target.value)}
               style={{ resize: 'vertical' }}
               placeholder="ex: Venez avec une pièce d'identité et votre numéro de suivi. Un reçu vous sera remis sur place. Prévenez-nous 24h avant votre venue par WhatsApp." />
@@ -1419,9 +1466,10 @@ function RouteEditModal({ editRoute, onClose, onSaved }) {
         </div>
 
         {/* Section 8 — Retrait côté destination (pour notifications WhatsApp d'arrivée) */}
-        <SectionTitle>Retrait — côté destination</SectionTitle>
+        <SectionTitle>{/* TODO i18n: Retrait — côté destination */}Retrait — côté destination</SectionTitle>
         <div className="card" style={{ padding: 20, marginBottom: 20 }}>
           <p style={{ fontSize: 12, color: 'var(--ink-400)', marginBottom: 14, lineHeight: 1.5 }}>
+            {/* TODO i18n: arrival info description */}
             Ces informations sont insérées automatiquement dans les notifications WhatsApp d'arrivée envoyées aux clients
             (variables <code style={{ fontSize: 11, background: 'var(--bg-soft)', padding: '1px 5px', borderRadius: 4 }}>{'{destination_city}'}</code>,{' '}
             <code style={{ fontSize: 11, background: 'var(--bg-soft)', padding: '1px 5px', borderRadius: 4 }}>{'{warehouse_address}'}</code>,{' '}
@@ -1429,18 +1477,18 @@ function RouteEditModal({ editRoute, onClose, onSaved }) {
           </p>
           <div className="field-row field-row--2">
             <div className="field">
-              <label className="label">Ville de destination</label>
+              <label className="label">{/* TODO i18n: Ville de destination */}Ville de destination</label>
               <input className="input" value={arrivalCity} onChange={e => setArrivalCity(e.target.value)}
                 placeholder="ex: Montréal · ex: Douala" />
             </div>
             <div className="field">
-              <label className="label">Téléphone contact retrait</label>
+              <label className="label">{/* TODO i18n: Téléphone contact retrait */}Téléphone contact retrait</label>
               <input className="input" type="tel" value={arrivalPhone} onChange={e => setArrivalPhone(e.target.value)}
                 placeholder="ex: +1 514 998 0709" />
             </div>
           </div>
           <div className="field" style={{ marginBottom: 0 }}>
-            <label className="label">Adresse de retrait / entrepôt</label>
+            <label className="label">{/* TODO i18n: Adresse de retrait / entrepôt */}Adresse de retrait / entrepôt</label>
             <input className="input" value={arrivalAddress} onChange={e => setArrivalAddress(e.target.value)}
               placeholder="ex: 5500 Pl. de la Savane, Lachine · ex: 45 Rue de la Réunification, Akwa, Douala" />
           </div>
@@ -1453,6 +1501,7 @@ function RouteEditModal({ editRoute, onClose, onSaved }) {
 
 /* ── Main screen ──────────────────────────────────────────── */
 export default function SettingsScreen({ onNav }) {
+  const t = useAdminT();
   const initialTab = typeof window !== 'undefined'
     ? (new URLSearchParams(window.location.search).get('tab') ?? 'company')
     : 'company';
@@ -1476,8 +1525,8 @@ export default function SettingsScreen({ onNav }) {
     <div className="page">
       <div className="page__head">
         <div>
-          <div className="page__title"><Bi fr="Paramètres" en="Settings" /></div>
-          <div className="page__sub">Configurez votre entreprise, vos routes, vos tarifs et vos automatisations</div>
+          <div className="page__title">{t.settings.title}</div>
+          <div className="page__sub">{/* TODO i18n: "Configurez votre entreprise, vos routes, vos tarifs et vos automatisations" */}Configurez votre entreprise, vos routes, vos tarifs et vos automatisations</div>
         </div>
       </div>
 
@@ -1514,14 +1563,14 @@ export default function SettingsScreen({ onNav }) {
               <div style={{ fontSize: 16, fontWeight: 700 }}>{routeDetail.label || routeDetail.code}</div>
               <div style={{ fontSize: 12, color: 'var(--ink-400)', marginTop: 4, display: 'flex', gap: 8 }}>
                 <RoutePill from={routeDetail.fromIATA} to={routeDetail.toIATA} />
-                <span>{routeDetail.active ? '✓ Active' : 'Archivée'}</span>
+                <span>{routeDetail.active ? `✓ ${t.common.active}` : t.common.archived}</span>
                 <span>· Transit {routeDetail.transitDays ?? 14} j · {routeDetail.currency ?? 'CAD'}</span>
               </div>
             </div>
-            <button className="btn btn--ghost btn--sm" onClick={() => { setRouteDetail(null); setEditRoute(routeDetail); }}><I.Edit />Modifier</button>
+            <button className="btn btn--ghost btn--sm" onClick={() => { setRouteDetail(null); setEditRoute(routeDetail); }}><I.Edit />{t.common.edit}</button>
           </div>
           <div className="drawer__body" style={{ padding: 22 }}>
-            <div className="section-title" style={{ marginBottom: 12 }}>Grille tarifaire</div>
+            <div className="section-title" style={{ marginBottom: 12 }}>{/* TODO i18n: Grille tarifaire */}Grille tarifaire</div>
             {routeDetail.fees?.tiers?.length > 0 ? (
               <TarifGrid
                 tiers={routeDetail.fees.tiers}

@@ -1,7 +1,11 @@
 import { useState, useEffect, useCallback } from 'react';
 import I from '../components/Icons.jsx';
 import { Bi, RoutePill, useCan } from '../components/Shell.jsx';
+import { useAdminT } from '../lib/useAdminT.js';
 
+// TODO: i18n - COST_FIELDS labels and hints need specific translation keys not yet available in admin-i18n.js
+// t.costs.categories only covers 4 generic types (transport, customs, handling, other) which cannot
+// distinguish all 6 operational cost types below without duplicate labels across languages.
 const COST_FIELDS = [
   { key: 'fret',        label: 'Transport aérien',       hint: 'Coût du fret aérien facturé par la compagnie', color: 'var(--brand-500)' },
   { key: 'douane',      label: 'Douane & dédouanement',  hint: "Frais de dédouanement, taxes à l'import", color: 'var(--warn-500)'  },
@@ -24,6 +28,7 @@ function hasCosts(cd) {
 
 // ── Modal de saisie des coûts ──────────────────────────────────────
 function CostModal({ campaign, currentCosts, onSave, onClose }) {
+  const t = useAdminT();
   const route = { fromIATA: campaign.from, toIATA: campaign.to };
   const currency = 'CAD';
   const [draft, setDraft] = useState(
@@ -91,7 +96,7 @@ function CostModal({ campaign, currentCosts, onSave, onClose }) {
           <div style={{ flex: 1 }}>
             <div className="mono" style={{ fontSize: 15, fontWeight: 800, color: 'var(--ink-900)' }}>{campaign.code}</div>
             <div style={{ fontSize: 12, color: 'var(--ink-400)', marginTop: 2 }}>
-              {campaign.dep} · {campaign.parcels} colis · {(campaign.weight / 1000).toFixed(1)} t
+              {campaign.dep} · {campaign.parcels} {t.nav.parcels} · {(campaign.weight / 1000).toFixed(1)} t
             </div>
           </div>
           <button onClick={onClose}
@@ -102,6 +107,7 @@ function CostModal({ campaign, currentCosts, onSave, onClose }) {
 
         {/* CA encaissé */}
         <div style={{ padding: '10px 20px', background: 'var(--brand-50)', borderBottom: '1px solid var(--brand-100)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          {/* TODO: i18n - no translation key for 'CA encaissé (référence)' */}
           <span style={{ fontSize: 12.5, color: 'var(--brand-700)', fontWeight: 600 }}>CA encaissé (référence)</span>
           <span className="mono" style={{ fontSize: 18, fontWeight: 800, color: 'var(--brand-700)' }}>
             {col.toLocaleString('fr')}
@@ -112,6 +118,7 @@ function CostModal({ campaign, currentCosts, onSave, onClose }) {
         {/* Form */}
         <div style={{ padding: '18px 20px', display: 'flex', flexDirection: 'column', gap: 11 }}>
           <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--ink-400)', textTransform: 'uppercase', letterSpacing: '.07em', marginBottom: 2 }}>
+            {/* TODO: i18n - no translation key for 'Postes de coût opérationnel' */}
             Postes de coût opérationnel
           </div>
 
@@ -153,21 +160,22 @@ function CostModal({ campaign, currentCosts, onSave, onClose }) {
         {/* Custom cost items */}
         <div style={{ margin: '0 20px 16px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+            {/* TODO: i18n - no translation key for 'Coûts supplémentaires' */}
             <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--ink-400)', textTransform: 'uppercase', letterSpacing: '.07em' }}>Coûts supplémentaires</span>
             <div style={{ flex: 1, height: 1, background: 'var(--border-soft)' }} />
             <button className="btn btn--ghost btn--sm" onClick={() => setAddingItem(v => !v)}>
-              <I.Plus style={{ width: 12, height: 12 }} /> Ajouter
+              <I.Plus style={{ width: 12, height: 12 }} /> {t.common.add}
             </button>
           </div>
 
           {addingItem && (
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr auto', gap: 8, marginBottom: 10, alignItems: 'end' }}>
               <div className="field" style={{ marginBottom: 0 }}>
-                <label className="label">Libellé</label>
+                <label className="label">{t.costs.form.label}</label>
                 <input className="input" value={newItemLabel} onChange={e => setNewItemLabel(e.target.value)} placeholder="Ex: Assurance, Emballage..." />
               </div>
               <div className="field" style={{ marginBottom: 0 }}>
-                <label className="label">Montant ({currency})</label>
+                <label className="label">{t.costs.form.amount} ({currency})</label>
                 <input className="input" type="number" min="0" value={newItemAmt} onChange={e => setNewItemAmt(e.target.value)} placeholder="0" />
               </div>
               <button className="btn btn--brand btn--sm" onClick={addItem}>
@@ -201,8 +209,8 @@ function CostModal({ campaign, currentCosts, onSave, onClose }) {
         {/* Live calculation */}
         <div style={{ margin: '0 20px 16px', background: 'var(--bg-soft)', border: '1.5px solid var(--border)', borderRadius: 8, padding: '13px 16px' }}>
           {[
-            { l: 'Total coûts',  v: total, color: 'var(--ink-900)' },
-            { l: 'Marge brute',  v: mg,    color: mg >= 0 ? 'var(--ok-600)' : 'var(--bad-500)' },
+            { l: t.costs.total,        v: total, color: 'var(--ink-900)' },
+            { l: /* TODO: i18n - no translation key for 'Marge brute' */ 'Marge brute', v: mg, color: mg >= 0 ? 'var(--ok-600)' : 'var(--bad-500)' },
           ].map(row => (
             <div key={row.l} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
               <span style={{ fontSize: 12.5, color: 'var(--ink-500)' }}>{row.l}</span>
@@ -213,6 +221,7 @@ function CostModal({ campaign, currentCosts, onSave, onClose }) {
           ))}
           <div style={{ height: 1, background: 'var(--border-soft)', margin: '8px 0' }} />
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            {/* TODO: i18n - no translation key for 'Taux de marge' */}
             <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--ink-700)' }}>Taux de marge</span>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
               <div style={{ width: 80, height: 6, background: 'var(--ink-100)', borderRadius: 999, overflow: 'hidden' }}>
@@ -226,10 +235,10 @@ function CostModal({ campaign, currentCosts, onSave, onClose }) {
 
         {/* Actions */}
         <div style={{ padding: '13px 20px', borderTop: '1px solid var(--border)', display: 'flex', gap: 8, justifyContent: 'flex-end', background: 'var(--bg-soft)' }}>
-          <button className="btn btn--ghost" onClick={onClose}>Annuler</button>
+          <button className="btn btn--ghost" onClick={onClose}>{t.common.cancel}</button>
           <button className="btn btn--primary" onClick={save}>
             <I.Check style={{ width: 14, height: 14 }} />
-            Enregistrer les coûts
+            {t.costs.form.submit}
           </button>
         </div>
       </div>
@@ -239,6 +248,7 @@ function CostModal({ campaign, currentCosts, onSave, onClose }) {
 
 // ── Main screen ────────────────────────────────────────────────────
 export default function CostsScreen({ onNav }) {
+  const t = useAdminT();
   const can = useCan();
   const [campaigns, setCampaigns]     = useState([]);
   const [costsData, setCostsData]     = useState({});
@@ -296,27 +306,30 @@ export default function CostsScreen({ onNav }) {
       <div className="page__head">
         <div>
           <div className="page__title"><Bi fr="Coûts & Marges" en="Cost tracking" /></div>
+          {/* TODO: i18n - no translation key for this subtitle */}
           <div className="page__sub">Saisie des coûts opérationnels par cargaison · marge brute calculée en temps réel</div>
         </div>
         <div className="page__actions">
           <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '4px 6px 4px 10px', border: '1px solid var(--border)', borderRadius: 8, background: 'white', fontSize: 12.5 }}>
             <I.Route style={{ width: 14, height: 14, color: 'var(--ink-400)' }} />
             <select value={routeFilter} onChange={e => setRouteFilter(e.target.value)} style={{ border: 0, background: 'transparent', fontWeight: 600, paddingRight: 4 }}>
+              {/* TODO: i18n - no translation key for 'Toutes les routes' */}
               <option value="all">Toutes les routes</option>
               {routes.map(r => <option key={r.id} value={r.id}>{r.code}</option>)}
             </select>
           </div>
-          <button className="btn btn--ghost"><I.Download />Export</button>
+          <button className="btn btn--ghost"><I.Download />{t.common.export}</button>
         </div>
       </div>
 
       {/* KPIs */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 12, marginBottom: 18 }}>
-        <CostKpi icon="📉" label="Coûts totaux"       value={(allCosts / 1000).toFixed(1) + 'k'}  unit="CAD" color="var(--bad-500)" />
-        <CostKpi icon="📈" label="Marge brute"         value={(allMargin / 1000).toFixed(1) + 'k'} unit="CAD" color="var(--ok-500)" />
-        <CostKpi icon="%" label="Taux de marge"        value={allPct}  unit="%" color={allPct >= 55 ? 'var(--ok-500)' : 'var(--warn-500)'} progress={allPct} />
-        <CostKpi icon="⚖️" label="Coût moyen / kg"    value={costPerKg} unit="CAD/kg" color="var(--brand-500)" />
-        <CostKpi icon="🏆" label="Meilleure marge"     value={best ? marginPct(best) + '%' : '—'} unit="" color="var(--ok-600)" sub={best?.code} />
+        {/* TODO: i18n - KPI labels below (Marge brute, Taux de marge, Coût moyen / kg, Meilleure marge) have no matching translation keys */}
+        <CostKpi icon="📉" label={t.costs.total}              value={(allCosts / 1000).toFixed(1) + 'k'}  unit="CAD" color="var(--bad-500)" />
+        <CostKpi icon="📈" label="Marge brute"                value={(allMargin / 1000).toFixed(1) + 'k'} unit="CAD" color="var(--ok-500)" />
+        <CostKpi icon="%" label="Taux de marge"               value={allPct}  unit="%" color={allPct >= 55 ? 'var(--ok-500)' : 'var(--warn-500)'} progress={allPct} />
+        <CostKpi icon="⚖️" label="Coût moyen / kg"           value={costPerKg} unit="CAD/kg" color="var(--brand-500)" />
+        <CostKpi icon="🏆" label="Meilleure marge"            value={best ? marginPct(best) + '%' : '—'} unit="" color="var(--ok-600)" sub={best?.code} />
       </div>
 
       {/* Table */}
@@ -324,12 +337,13 @@ export default function CostsScreen({ onNav }) {
         <table className="tbl">
           <thead>
             <tr>
+              {/* TODO: i18n - 'Cargaison' and 'CA encaissé' have no translation keys; 'Taux' has no key */}
               <th>Cargaison</th>
               <th style={{ textAlign: 'right' }}>CA encaissé</th>
-              <th style={{ textAlign: 'right' }}>Total coûts</th>
+              <th style={{ textAlign: 'right' }}>{t.costs.total}</th>
               <th style={{ textAlign: 'right' }}>Marge brute</th>
               <th style={{ textAlign: 'center' }}>Taux</th>
-              <th style={{ textAlign: 'center', borderRadius: 0 }}>Coûts</th>
+              <th style={{ textAlign: 'center', borderRadius: 0 }}>{t.costs.title}</th>
             </tr>
           </thead>
           <tbody>
@@ -346,11 +360,11 @@ export default function CostsScreen({ onNav }) {
                       <div>
                         <div className="mono" style={{ fontSize: 12.5, fontWeight: 700 }}>{c.code}</div>
                         <div style={{ fontSize: 11, color: 'var(--ink-400)', marginTop: 1 }}>
-                          {c.dep} · {c.parcels} colis · {(c.weight / 1000).toFixed(1)} t
+                          {c.dep} · {c.parcels} {t.nav.parcels} · {(c.weight / 1000).toFixed(1)} t
                         </div>
                       </div>
                       <span className={'badge badge--' + (c.status === 'ok' ? 'ok' : 'info') + ' badge--dot'}>
-                        {c.status === 'ok' ? 'Clôturé' : 'En transit'}
+                        {c.status === 'ok' ? t.campaignStatus.closed : t.campaignStatus.transit}
                       </span>
                     </div>
                   </td>
@@ -367,6 +381,7 @@ export default function CostsScreen({ onNav }) {
                         <span style={{ fontSize: 10.5, color: 'var(--ink-400)', marginLeft: 3 }}>CAD</span>
                       </>
                     ) : (
+                      /* TODO: i18n - no translation key for 'Non renseigné' */
                       <span style={{ fontSize: 12, color: 'var(--ink-300)', fontStyle: 'italic' }}>Non renseigné</span>
                     )}
                   </td>
@@ -396,11 +411,12 @@ export default function CostsScreen({ onNav }) {
                         onClick={() => setModal(c)}
                       >
                         {renseigné
-                          ? <><I.Edit style={{ width: 12, height: 12 }} />Modifier</>
-                          : <><I.Plus style={{ width: 12, height: 12 }} />Saisir</>
+                          ? <><I.Edit style={{ width: 12, height: 12 }} />{t.common.edit}</>
+                          : <><I.Plus style={{ width: 12, height: 12 }} />{t.common.add}</>
                         }
                       </button>
                     ) : (
+                      /* TODO: i18n - no translation key for 'Lecture seule' */
                       <span style={{ fontSize: 12, color: 'var(--ink-300)' }}>Lecture seule</span>
                     )}
                   </td>
@@ -410,6 +426,7 @@ export default function CostsScreen({ onNav }) {
 
             {/* Totals */}
             <tr style={{ background: 'var(--ink-50)', borderTop: '2px solid var(--border)' }}>
+              {/* TODO: i18n - 'cargaisons' has no translation key; closest would be t.campaigns.title */}
               <td><span style={{ fontSize: 12, fontWeight: 700, color: 'var(--ink-600)' }}>Total · {campaigns.length} cargaisons</span></td>
               <td style={{ textAlign: 'right' }}>
                 <span className="mono" style={{ fontWeight: 800 }}>{allCollected.toLocaleString('fr')}</span>
@@ -449,13 +466,14 @@ export default function CostsScreen({ onNav }) {
                 <RoutePill from={from} to={to} />
                 <div>
                   <div style={{ fontSize: 13, fontWeight: 700 }}>{r.code}</div>
+                  {/* TODO: i18n - 'cargaisons' has no translation key */}
                   <div style={{ fontSize: 11, color: 'var(--ink-400)' }}>{rc.length} cargaisons · {(rWt / 1000).toFixed(1)} t</div>
                 </div>
               </div>
               {[
-                { l: 'CA encaissé', v: rColl,  color: 'var(--brand-600)' },
-                { l: 'Total coûts', v: rCosts, color: 'var(--bad-500)'   },
-                { l: 'Marge brute', v: rMg,    color: 'var(--ok-600)'    },
+                { l: /* TODO: i18n - no key for 'CA encaissé' */ 'CA encaissé', v: rColl,  color: 'var(--brand-600)' },
+                { l: t.costs.total,                                              v: rCosts, color: 'var(--bad-500)'   },
+                { l: /* TODO: i18n - no key for 'Marge brute' */ 'Marge brute', v: rMg,    color: 'var(--ok-600)'    },
               ].map(row => (
                 <div key={row.l} style={{ display: 'flex', justifyContent: 'space-between', padding: '5px 0', borderBottom: '1px solid var(--border-soft)', fontSize: 12.5 }}>
                   <span style={{ color: 'var(--ink-500)' }}>{row.l}</span>
@@ -464,6 +482,7 @@ export default function CostsScreen({ onNav }) {
               ))}
               <div style={{ marginTop: 10 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 5, fontSize: 11.5 }}>
+                  {/* TODO: i18n - no translation key for 'Taux de marge' */}
                   <span style={{ color: 'var(--ink-500)' }}>Taux de marge</span>
                   <span style={{ fontWeight: 700, color: rPct >= 55 ? 'var(--ok-600)' : 'var(--warn-600)' }}>{rPct}%</span>
                 </div>

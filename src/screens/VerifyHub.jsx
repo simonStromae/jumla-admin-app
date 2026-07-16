@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react';
+import { useAdminT } from '../lib/useAdminT.js';
 import I from '../components/Icons.jsx';
 import { RoutePill, Skel } from '../components/Shell.jsx';
 
 export default function VerifyHubScreen({ onNav }) {
   const [campaigns, setCampaigns] = useState([]);
   const [loading, setLoading] = useState(true);
+  const t = useAdminT();
 
   useEffect(() => {
     fetch('/api/campaigns')
@@ -24,7 +26,8 @@ export default function VerifyHubScreen({ onNav }) {
       <div className="page">
         <div className="page__head" style={{ marginBottom: 20 }}>
           <div>
-            <div className="page__title">Vérification d'arrivée</div>
+            <div className="page__title">{t.verify.title}</div>
+            {/* TODO: no translation key for page subtitle */}
             <div className="page__sub">Contrôle article par article des colis à la réception de la cargaison</div>
           </div>
         </div>
@@ -63,7 +66,8 @@ export default function VerifyHubScreen({ onNav }) {
     <div className="page">
       <div className="page__head" style={{ marginBottom: 20 }}>
         <div>
-          <div className="page__title">Vérification d'arrivée</div>
+          <div className="page__title">{t.verify.title}</div>
+          {/* TODO: no translation key for page subtitle */}
           <div className="page__sub">Contrôle article par article des colis à la réception de la cargaison</div>
         </div>
       </div>
@@ -71,20 +75,25 @@ export default function VerifyHubScreen({ onNav }) {
       {/* KPIs */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 14, marginBottom: 24 }}>
         <div className="kpi">
+          {/* TODO: no translation key for 'Cargaisons en transit' */}
           <div className="kpi__label">Cargaisons en transit</div>
           <div className="kpi__value">{pending.length}</div>
+          {/* TODO: no translation key for 'en attente de réception' */}
           <div className="kpi__delta">en attente de réception</div>
         </div>
         <div className="kpi" style={{ background: 'var(--warn-50)', borderColor: 'var(--warn-100)' }}>
-          <div className="kpi__label" style={{ color: 'var(--warn-700)' }}>Colis à vérifier</div>
+          <div className="kpi__label" style={{ color: 'var(--warn-700)' }}>{t.verify.pending}</div>
           <div className="kpi__value" style={{ color: 'var(--warn-700)' }}>
             {pending.reduce((acc, c) => acc + (c.parcels || 0), 0)}
           </div>
+          {/* TODO: no translation key for 'tous statuts confondus' */}
           <div className="kpi__delta">tous statuts confondus</div>
         </div>
         <div className="kpi">
+          {/* TODO: no translation key for 'Articles totaux' */}
           <div className="kpi__label">Articles totaux</div>
           <div className="kpi__value">{pending.reduce((acc, c) => acc + (c.parcels || 0) * 2, 0)}</div>
+          {/* TODO: no translation key for 'estimé ~2 articles/colis' */}
           <div className="kpi__delta">estimé ~2 articles/colis</div>
         </div>
       </div>
@@ -97,7 +106,8 @@ export default function VerifyHubScreen({ onNav }) {
           borderRadius: 'var(--radius-xl)', color: 'var(--ink-400)', textAlign: 'center',
         }}>
           <I.Check style={{ width: 40, height: 40, color: 'var(--ok-400)' }} />
-          <div style={{ fontSize: 15, fontWeight: 600, color: 'var(--ok-700)' }}>Aucune vérification en attente</div>
+          <div style={{ fontSize: 15, fontWeight: 600, color: 'var(--ok-700)' }}>{t.verify.noItems}</div>
+          {/* TODO: no translation key for empty state description */}
           <div style={{ fontSize: 13 }}>Toutes les cargaisons sont clôturées ou non encore en transit.</div>
         </div>
       ) : (
@@ -121,14 +131,17 @@ export default function VerifyHubScreen({ onNav }) {
                   <span className="mono" style={{ fontSize: 14, fontWeight: 800, color: 'var(--ink-900)' }}>{c.code}</span>
                   <RoutePill from={c.from} to={c.to} size="sm" />
                   {c.status === 'ard' || c.status === 'pdl' ? (
+                    /* TODO: no translation key for 'Arrivée entrepôt' */
                     <span style={{ fontSize: 11, fontWeight: 700, padding: '2px 8px', borderRadius: 999, background: 'var(--ok-100)', color: 'var(--ok-800)' }}>Arrivée entrepôt</span>
                   ) : (
-                    <span style={{ fontSize: 11, fontWeight: 700, padding: '2px 8px', borderRadius: 999, background: 'var(--warn-100)', color: 'var(--warn-800)' }}>En transit</span>
+                    <span style={{ fontSize: 11, fontWeight: 700, padding: '2px 8px', borderRadius: 999, background: 'var(--warn-100)', color: 'var(--warn-800)' }}>{t.campaignStatus.transit}</span>
                   )}
                 </div>
                 <div style={{ fontSize: 12, color: 'var(--ink-500)', display: 'flex', gap: 14 }}>
+                  {/* TODO: no translation key for 'colis' unit label */}
                   <span><I.Box style={{ width: 12, height: 12, display: 'inline', verticalAlign: -2, marginRight: 4 }} />{c.parcels} colis</span>
                   <span><I.Scale style={{ width: 12, height: 12, display: 'inline', verticalAlign: -2, marginRight: 4 }} />{(c.weight || 0).toLocaleString('fr')} kg</span>
+                  {/* TODO: no translation key for 'Départ' date label */}
                   <span><I.Calendar style={{ width: 12, height: 12, display: 'inline', verticalAlign: -2, marginRight: 4 }} />Départ {c.dep}</span>
                 </div>
               </div>
@@ -140,10 +153,10 @@ export default function VerifyHubScreen({ onNav }) {
               >
                 <I.Check />
                 {c.verifiedBordereaux >= c.totalBordereaux && c.totalBordereaux > 0
-                  ? 'Voir la vérification'
+                  ? t.verify.verified
                   : c.verifiedBordereaux > 0
-                  ? 'Continuer la vérification'
-                  : 'Lancer la vérification'}
+                  ? 'Continuer la vérification' // TODO: no translation key for 'Continuer la vérification'
+                  : t.verify.actions.verify}
               </button>
             </div>
           ))}
@@ -157,6 +170,7 @@ export default function VerifyHubScreen({ onNav }) {
         borderRadius: 'var(--radius-xl)',
       }}>
         <I.Info style={{ width: 16, height: 16, color: 'var(--info-600, #2563EB)', flexShrink: 0, marginTop: 1 }} />
+        {/* TODO: no translation key for info box description text */}
         <div style={{ fontSize: 12.5, color: 'var(--ink-700)', lineHeight: 1.6 }}>
           La vérification permet de contrôler chaque article des colis à la réception : quantités reçues, état, manquants.
           Les anomalies sont enregistrées et restent visibles dans le détail de la cargaison.

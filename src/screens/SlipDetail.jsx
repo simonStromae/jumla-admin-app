@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import I from '../components/Icons.jsx';
 import { Avatar, Skel } from '../components/Shell.jsx';
+import { useAdminT } from '../lib/useAdminT.js';
 
 const TYPE_LABELS = {
   carton:   'Carton',
@@ -10,21 +11,6 @@ const TYPE_LABELS = {
   bouteille: 'Bouteille',
 };
 
-const VERIFY_STATUS = {
-  ok:      { lbl: '✓ Conforme',   cls: 'ok' },
-  missing: { lbl: '✗ Manquant',   cls: 'bad' },
-  issue:   { lbl: '⚠ Problème',   cls: 'warn' },
-  pending: { lbl: '? À vérifier', cls: 'neutral' },
-};
-
-const BL_STATUS = {
-  en_attente: { l: 'À vérifier',  cls: 'neutral' },
-  en_cours:   { l: 'En cours',    cls: 'warn' },
-  valide:     { l: 'Validé',      cls: 'ok' },
-  libere:     { l: 'Libéré',      cls: 'ok' },
-  verifie:    { l: 'Vérifié',     cls: 'ok' },
-  ecart:      { l: 'Écart',       cls: 'bad' },
-};
 
 export default function SlipDetailScreen({ id, onNav }) {
   const [slip,    setSlip]    = useState(null);
@@ -32,6 +18,25 @@ export default function SlipDetailScreen({ id, onNav }) {
   const [loading, setLoading] = useState(true);
   const [saving,  setSaving]  = useState(false);
   const [saved,   setSaved]   = useState(false);
+
+  const t = useAdminT();
+
+  // Localized status label maps (defined inside component to access translation hook)
+  const VERIFY_STATUS = {
+    ok:      { lbl: `✓ ${t.verify.verified}`,  cls: 'ok' },
+    missing: { lbl: '✗ Manquant',              cls: 'bad' },    // TODO: no translation key for 'missing'
+    issue:   { lbl: '⚠ Problème',              cls: 'warn' },   // TODO: no translation key for 'issue'
+    pending: { lbl: `? ${t.verify.pending}`,   cls: 'neutral' },
+  };
+
+  const BL_STATUS = {
+    en_attente: { l: t.verify.pending,   cls: 'neutral' },
+    en_cours:   { l: 'En cours',         cls: 'warn' },     // TODO: no translation key for 'en_cours'
+    valide:     { l: t.blStatus.valide,  cls: 'ok' },
+    libere:     { l: 'Libéré',           cls: 'ok' },       // TODO: no translation key for 'libere'
+    verifie:    { l: t.verify.verified,  cls: 'ok' },
+    ecart:      { l: 'Écart',            cls: 'bad' },      // TODO: no translation key for 'ecart'
+  };
 
   useEffect(() => {
     fetch('/api/bordereaux/' + id)
@@ -94,7 +99,7 @@ export default function SlipDetailScreen({ id, onNav }) {
   };
 
   const validate = async () => {
-    if (!confirm('Valider ce bordereau ?')) return;
+    if (!confirm('Valider ce bordereau ?')) return; // TODO: no translation key for this confirm message
     setSaving(true);
     const itemsToSave = items.map(it => ({
       ...(it._orig ?? it),
@@ -123,6 +128,7 @@ export default function SlipDetailScreen({ id, onNav }) {
 
   if (!slip) return (
     <div className="page">
+      {/* TODO: no translation key for 'Bordereau introuvable' */}
       <div style={{ padding: 32, color: 'var(--bad-700)' }}>Bordereau introuvable : {id}</div>
     </div>
   );
@@ -132,7 +138,7 @@ export default function SlipDetailScreen({ id, onNav }) {
   return (
     <div className="page">
       <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12.5, color: 'var(--ink-400)', marginBottom: 8 }}>
-        <a style={{ cursor: 'pointer' }} onClick={() => onNav('/admin/campaigns')}>Cargaisons</a>
+        <a style={{ cursor: 'pointer' }} onClick={() => onNav('/admin/campaigns')}>{t.nav.campaigns}</a>
         <I.ChevronRight style={{ width: 12, height: 12 }} />
         {slip.campaign && (
           <>
@@ -140,28 +146,31 @@ export default function SlipDetailScreen({ id, onNav }) {
             <I.ChevronRight style={{ width: 12, height: 12 }} />
           </>
         )}
+        {/* TODO: no translation key for 'Bordereau' (slip label) */}
         <span style={{ color: 'var(--ink-600)', fontWeight: 600 }}>Bordereau {slip.code}</span>
       </div>
 
       <div className="page__head" style={{ marginBottom: 16 }}>
         <div style={{ flex: 1 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 6 }}>
+            {/* TODO: no translation key for 'Bordereau du colis' */}
             <h1 className="page__title" style={{ margin: 0 }}>Bordereau du colis</h1>
             <span className="mono badge badge--lg badge--neutral">{slip.code}</span>
             <span className={'badge badge--lg badge--dot badge--' + blSt.cls}>{blSt.l}</span>
           </div>
           <div className="page__sub">
+            {/* TODO: no translation key for 'Colis' (parcel label used as prefix) */}
             Colis <strong className="mono">{slip.parcel?.trackingCode}</strong>
-            {slip.campaign && <> · Cargaison <strong>{slip.campaign.code}</strong></>}
+            {slip.campaign && <> · {t.nav.campaigns} <strong>{slip.campaign.code}</strong></>}
           </div>
         </div>
         <div className="page__actions">
           <button className="btn btn--ghost" onClick={() => window.open('/admin/slips/' + slip.code + '/print', '_blank')}>
-            <I.Print />Imprimer
+            <I.Print />{t.common.print}
           </button>
           {!['valide', 'libere', 'verifie', 'ecart'].includes(slip.status) && (
             <button className="btn btn--brand" onClick={validate} disabled={saving}>
-              <I.Check />{saving ? '…' : 'Valider'}
+              <I.Check />{saving ? '…' : t.blStatus.valide}
             </button>
           )}
         </div>
@@ -170,6 +179,7 @@ export default function SlipDetailScreen({ id, onNav }) {
       <div className="layout-2col">
         <div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginBottom: 14 }}>
+            {/* TODO: no translation keys for 'Expéditeur'/'Destinataire' (sender/recipient) */}
             <PartyCard kind="Expéditeur" en="Sender"
               data={{ name: slip.client?.name, phone: slip.client?.phone, city: slip.client?.city }} color={1} />
             <PartyCard kind="Destinataire" en="Recipient"
@@ -179,20 +189,23 @@ export default function SlipDetailScreen({ id, onNav }) {
           <div className="card" style={{ overflow: 'hidden' }}>
             <div style={{ padding: '14px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid var(--border)' }}>
               <div>
+                {/* TODO: no translation keys for 'Vérification du contenu', 'Aucune ligne déclarée', 'Pointage à l\'arrivée' */}
                 <div style={{ fontSize: 14, fontWeight: 700 }}>Vérification du contenu</div>
                 <div style={{ fontSize: 12, color: 'var(--ink-400)', marginTop: 2 }}>
                   {items.length === 0 ? 'Aucune ligne déclarée' : 'Pointage à l\'arrivée'}
                 </div>
               </div>
               <div style={{ display: 'flex', gap: 16, fontSize: 12 }}>
-                <Stat label="Lignes"    value={items.length} />
-                <Stat label="Total"     value={totalCount} />
-                <Stat label="Conformes" value={okCount}    color="var(--ok-600)" />
-                <Stat label="Écarts"    value={totalDiscr} color={totalDiscr > 0 ? 'var(--bad-600)' : null} />
+                {/* TODO: no translation keys for 'Lignes', 'Conformes', 'Écarts' */}
+                <Stat label="Lignes"             value={items.length} />
+                <Stat label={t.common.total}     value={totalCount} />
+                <Stat label="Conformes"          value={okCount}    color="var(--ok-600)" />
+                <Stat label="Écarts"             value={totalDiscr} color={totalDiscr > 0 ? 'var(--bad-600)' : null} />
               </div>
             </div>
 
             {items.length === 0 ? (
+              // TODO: no translation key for 'Aucune ligne déclarée pour ce bordereau'
               <div style={{ padding: 24, textAlign: 'center', color: 'var(--ink-400)', fontSize: 13 }}>
                 Aucune ligne déclarée pour ce bordereau.
               </div>
@@ -201,14 +214,15 @@ export default function SlipDetailScreen({ id, onNav }) {
                 <thead>
                   <tr>
                     <th style={{ borderRadius: 0, width: 28 }}>#</th>
+                    {/* TODO: no translation keys for 'Désignation', 'Nb', 'Pièces', 'Vérification', 'Écart' */}
                     <th>Désignation</th>
-                    <th style={{ width: 140 }}>Description</th>
-                    <th style={{ width: 80 }}>Type</th>
+                    <th style={{ width: 140 }}>{t.common.description}</th>
+                    <th style={{ width: 80 }}>{t.common.type}</th>
                     <th style={{ width: 55, textAlign: 'center' }}>Nb</th>
                     <th style={{ width: 70, textAlign: 'center' }}>Pièces</th>
                     <th style={{ width: 150 }}>Vérification</th>
                     <th style={{ width: 55, textAlign: 'center' }}>Écart</th>
-                    <th style={{ borderRadius: 0 }}>Note</th>
+                    <th style={{ borderRadius: 0 }}>{t.common.note}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -248,6 +262,7 @@ export default function SlipDetailScreen({ id, onNav }) {
               {totalDiscr > 0 ? (
                 <>
                   <I.Alert style={{ width: 15, height: 15, color: 'var(--bad-600)' }} />
+                  {/* TODO: no translation key for discrepancy summary message */}
                   <span style={{ fontSize: 12.5, color: 'var(--bad-700)', flex: 1 }}>
                     <strong>{totalDiscr} écart{totalDiscr > 1 ? 's' : ''}</strong> détecté{totalDiscr > 1 ? 's' : ''}. La validation reste possible.
                   </span>
@@ -255,13 +270,14 @@ export default function SlipDetailScreen({ id, onNav }) {
               ) : (
                 <>
                   <I.Check style={{ width: 15, height: 15, color: 'var(--ok-600)' }} />
+                  {/* TODO: no translation key for 'Contenu conforme. Prêt pour validation.' */}
                   <span style={{ fontSize: 12.5, color: 'var(--ok-700)', flex: 1 }}>
                     Contenu conforme. Prêt pour validation.
                   </span>
                 </>
               )}
               <button className="btn btn--ghost btn--sm" onClick={saveItems} disabled={saving}>
-                {saved ? '✓ Sauvegardé' : saving ? '…' : 'Sauvegarder'}
+                {saved ? `✓ ${t.common.success}` : saving ? t.common.saving : t.common.save}
               </button>
             </div>
           </div>
@@ -280,6 +296,7 @@ export default function SlipDetailScreen({ id, onNav }) {
                 {slip.clientConfirmed ? '✓' : '⏳'}
               </div>
               <div>
+                {/* TODO: no translation keys for client attestation messages */}
                 <div style={{ fontSize: 12.5, fontWeight: 700, color: slip.clientConfirmed ? 'var(--ok-800)' : 'var(--ink-700)' }}>
                   {slip.clientConfirmed ? 'Contenu attesté par le client' : 'En attente d\'attestation client'}
                 </div>
@@ -300,11 +317,11 @@ export default function SlipDetailScreen({ id, onNav }) {
           <div className="card" style={{ padding: 16, marginBottom: 14 }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
               <div className="section-title" style={{ margin: 0 }}>
-                <I.Wallet style={{ width: 14, height: 14, color: 'var(--brand-600)' }} /> Paiement
+                <I.Wallet style={{ width: 14, height: 14, color: 'var(--brand-600)' }} /> {t.nav.payments}
               </div>
               {slip.payment && (
                 <span className={'badge badge--dot badge--' + (slip.payment.status === 'completed' ? 'ok' : 'warn')}>
-                  {slip.payment.status === 'completed' ? 'Payé' : 'En attente'}
+                  {slip.payment.status === 'completed' ? t.paymentStatus.paid : t.paymentStatus.pending}
                 </span>
               )}
             </div>
@@ -312,20 +329,23 @@ export default function SlipDetailScreen({ id, onNav }) {
             {slip.payment ? (
               <>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', padding: '10px 0', borderTop: '1px solid var(--border)', marginBottom: 10 }}>
-                  <span style={{ fontWeight: 700 }}>Total dû</span>
+                  {/* TODO: no translation key for 'Total dû' — using t.common.total as close match */}
+                  <span style={{ fontWeight: 700 }}>{t.common.total}</span>
                   <span className="mono" style={{ fontSize: 20, fontWeight: 700 }}>
                     {slip.payment.amount?.toLocaleString('fr')} <span style={{ fontSize: 12, color: 'var(--ink-400)' }}>CAD</span>
                   </span>
                 </div>
                 {slip.payment.status === 'completed' && (
+                  // TODO: no translation key for 'Réglé' — using t.paymentStatus.paid as close match
                   <div style={{ padding: 10, background: 'var(--ok-50)', border: '1px solid var(--ok-100)', borderRadius: 6, fontSize: 11.5, color: 'var(--ok-700)' }}>
-                    <strong>Réglé</strong>
+                    <strong>{t.paymentStatus.paid}</strong>
                     {slip.payment.paidAt && ` le ${new Date(slip.payment.paidAt).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}`}
                     {slip.payment.interacRef && ` · Réf. ${slip.payment.interacRef}`}
                   </div>
                 )}
               </>
             ) : (
+              // TODO: no translation key for 'Paiement non créé'
               <div style={{ fontSize: 13, color: 'var(--ink-400)' }}>Paiement non créé</div>
             )}
           </div>
@@ -333,6 +353,7 @@ export default function SlipDetailScreen({ id, onNav }) {
           {slip.recipient?.address && (
             <div className="card" style={{ padding: 16, marginBottom: 14 }}>
               <div className="section-title" style={{ marginBottom: 12 }}>
+                {/* TODO: no translation key for 'Livraison' (delivery) */}
                 <I.Truck style={{ width: 14, height: 14, color: 'var(--brand-600)' }} /> Livraison
               </div>
               <div style={{ fontSize: 13, color: 'var(--ink-700)', lineHeight: 1.7 }}>
@@ -345,13 +366,14 @@ export default function SlipDetailScreen({ id, onNav }) {
 
           <div className="card" style={{ padding: 16 }}>
             <div className="section-title" style={{ marginBottom: 12 }}>
-              <I.History style={{ width: 14, height: 14, color: 'var(--brand-600)' }} /> Cargaison
+              <I.History style={{ width: 14, height: 14, color: 'var(--brand-600)' }} /> {t.nav.campaigns}
             </div>
             {slip.campaign && (
               <div style={{ fontSize: 13, color: 'var(--ink-700)', lineHeight: 1.7 }}>
                 <div style={{ fontWeight: 700, fontSize: 14 }}>{slip.campaign.code}</div>
                 <div style={{ color: 'var(--ink-500)', fontSize: 12 }}>{slip.campaign.from} → {slip.campaign.to}</div>
                 {slip.campaign.arrivalDate && (
+                  // TODO: no translation key for 'Arrivée prévue'
                   <div style={{ fontSize: 12, color: 'var(--ink-400)', marginTop: 4 }}>
                     Arrivée prévue : {new Date(slip.campaign.arrivalDate).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' })}
                   </div>

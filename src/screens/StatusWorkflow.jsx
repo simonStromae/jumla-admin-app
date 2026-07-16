@@ -2,7 +2,12 @@ import { useState } from 'react';
 import { STATUS_STEPS } from '../data.js';
 import I from '../components/Icons.jsx';
 import { Modal } from '../components/Shell.jsx';
+import { useAdminT } from '../lib/useAdminT.js';
 
+// TODO i18n: All strings inside TRANSITIONS (title, description, effects[].what, requires[].label,
+// requires[].action, cta) are hardcoded French. This module-level constant cannot use hooks.
+// Move these strings to the admin-i18n translation files and load them inside the consuming
+// component (StatusTransitionModal) via the useAdminT hook.
 const TRANSITIONS = {
   'draft → open': {
     title: 'Ouvrir la cargaison',
@@ -105,12 +110,14 @@ export function StatusPanel({ status, onAdvance, onJump }) {
   const idx = STATUS_STEPS.findIndex(s => s.id === status);
   const next = STATUS_STEPS[idx + 1];
   const current = STATUS_STEPS[idx];
+  const t = useAdminT();
 
   return (
     <div className="card" style={{ padding: 0, overflow: 'hidden', marginBottom: 16 }}>
       <div style={{ padding: '14px 18px', display: 'flex', alignItems: 'center', gap: 16, borderBottom: '1px solid var(--border-soft)' }}>
         <div style={{ flex: 1 }}>
           <div style={{ fontSize: 10.5, color: 'var(--ink-400)', textTransform: 'uppercase', letterSpacing: '.04em', fontWeight: 700, marginBottom: 4 }}>
+            {/* TODO i18n: no key for "Statut actuel" (current status) — t.common.status gives only "Statut" */}
             Statut actuel <span style={{ color: 'var(--ink-300)', fontWeight: 500, textTransform: 'none', letterSpacing: 0, marginLeft: 2 }}>/ Status</span>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -120,11 +127,12 @@ export function StatusPanel({ status, onAdvance, onJump }) {
         </div>
         {next && (
           <button className="btn btn--brand" onClick={onAdvance}>
+            {/* TODO i18n: no key for "Passer à" (advance to next status) — closest is t.campaigns.detail.status.updateStatus */}
             Passer à <strong style={{ marginLeft: 4 }}>{next.label}</strong>
             <I.ArrowRight />
           </button>
         )}
-        {!next && <span className="badge badge--ok badge--dot badge--lg">Cargaison clôturée</span>}
+        {!next && <span className="badge badge--ok badge--dot badge--lg">{t.campaignStatus.closed}</span>}
       </div>
 
       <div style={{ padding: '14px 18px', background: 'var(--bg-soft)' }}>
@@ -171,17 +179,22 @@ export function StatusTransitionModal({ from, to, onClose, onConfirm }) {
   const t = TRANSITIONS[key];
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [notify, setNotify] = useState(true);
+  // Note: `i18n` is used instead of `t` here because `t` is already bound to the TRANSITIONS entry.
+  const i18n = useAdminT();
 
   if (!t) return null;
   const blocked = t.requires?.some(r => !r.ok);
 
+  // TODO i18n: "De … vers …" sub-label uses hardcoded French prepositions; no exact key exists.
+  // TODO i18n: t.title, t.description, t.cta and effect labels come from the TRANSITIONS constant
+  //            which must be moved to admin-i18n translation files (see comment above TRANSITIONS).
   return (
     <Modal width={620} onClose={onClose}
       title={t.title}
       sub={<>De <strong>{STATUS_STEPS.find(s => s.id === from)?.label}</strong> vers <strong>{STATUS_STEPS.find(s => s.id === to)?.label}</strong></>}
       footer={
         <>
-          <button className="btn btn--ghost" onClick={onClose}>Annuler</button>
+          <button className="btn btn--ghost" onClick={onClose}>{i18n.common.cancel}</button>
           <div className="spacer" style={{ flex: 1 }} />
           <button className={'btn btn--' + (t.tone || 'brand')} onClick={onConfirm} disabled={blocked} style={blocked ? { opacity: 0.5, cursor: 'not-allowed' } : {}}>
             <I.Check />{t.cta}
@@ -196,6 +209,7 @@ export function StatusTransitionModal({ from, to, onClose, onConfirm }) {
 
       {t.requires && t.requires.length > 0 && (
         <div style={{ marginBottom: 18 }}>
+          {/* TODO i18n: no key for "Pré-requis" (prerequisites section title) */}
           <div className="section-title">Pré-requis</div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
             {t.requires.map((r, i) => (
@@ -214,9 +228,12 @@ export function StatusTransitionModal({ from, to, onClose, onConfirm }) {
         </div>
       )}
 
+      {/* TODO i18n: no key for "Répercussions à la confirmation" (effects section title) */}
       <div className="section-title">Répercussions à la confirmation</div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 16 }}>
         {t.effects.map((e, i) => {
+          // TODO i18n: lbl values ('Activé','Bloqué','Notification','Automatique','Système') have
+          // no exact keys in admin-i18n. Add keys (e.g. t.common.active for 'Activé') once available.
           const cfg = {
             enable:  { c: 'var(--ok-600)',   bg: 'var(--ok-50)',    icon: I.Check,    lbl: 'Activé' },
             disable: { c: 'var(--ink-500)',  bg: 'var(--bg-soft)',  icon: I.Lock,     lbl: 'Bloqué' },
@@ -241,6 +258,7 @@ export function StatusTransitionModal({ from, to, onClose, onConfirm }) {
 
       {t.needsDate && (
         <div className="field" style={{ marginBottom: 0 }}>
+          {/* TODO i18n: no key for "Date effective" — closest is i18n.common.date */}
           <label className="label">Date effective <span className="opt">/ Effective date</span></label>
           <div className="field-row field-row--2">
             <input className="input" type="date" value={date} onChange={e => setDate(e.target.value)} />
@@ -252,6 +270,7 @@ export function StatusTransitionModal({ from, to, onClose, onConfirm }) {
       {t.effects.some(e => e.kind === 'notify') && (
         <label style={{ display: 'flex', alignItems: 'center', gap: 8, padding: 10, background: 'var(--bg-soft)', borderRadius: 7, fontSize: 13, marginTop: 8, cursor: 'pointer' }}>
           <input type="checkbox" checked={notify} onChange={() => setNotify(!notify)} style={{ accentColor: 'var(--brand-500)' }} />
+          {/* TODO i18n: no key for WhatsApp notification checkbox text */}
           <span>Envoyer les notifications WhatsApp maintenant <span style={{ color: 'var(--ink-400)' }}>(sinon mises en file pour plus tard)</span></span>
         </label>
       )}
@@ -265,12 +284,14 @@ import { Bi, RoutePill } from '../components/Shell.jsx';
 
 export default function StatusWorkflowScreen({ onNav }) {
   const [transition, setTransition] = useState(null);
+  const t = useAdminT();
 
   return (
     <div className="page">
       <div className="page__head">
         <div>
           <div className="page__title"><Bi fr="Workflow & statuts" en="Workflow & status" /></div>
+          {/* TODO i18n: no key for page subtitle "Avancement des cargaisons à travers les étapes opérationnelles" */}
           <div className="page__sub">Avancement des cargaisons à travers les étapes opérationnelles</div>
         </div>
       </div>
@@ -287,6 +308,7 @@ export default function StatusWorkflowScreen({ onNav }) {
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontWeight: 700, fontSize: 14 }} className="mono">{c.code}</div>
                 <div style={{ fontSize: 12, color: 'var(--ink-400)', marginTop: 2 }}>
+                  {/* TODO i18n: "colis" → t.nav.parcels; "kg" is a unit; "départ" has no exact key */}
                   {c.parcels} colis · {c.totalKg} kg · départ {c.dep}
                 </div>
               </div>

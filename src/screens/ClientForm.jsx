@@ -1,8 +1,10 @@
 import { useState } from 'react';
 import I from '../components/Icons.jsx';
 import { Modal, Avatar } from '../components/Shell.jsx';
+import { useAdminT } from '../lib/useAdminT.js';
 
 export default function ClientFormModal({ mode = 'create', client, onClose, onSave }) {
+  const t = useAdminT();
   const isEdit = mode === 'edit';
   const [data, setData] = useState(() => ({
     name:            client?.name  || '',
@@ -25,7 +27,7 @@ export default function ClientFormModal({ mode = 'create', client, onClose, onSa
 
   const handleSave = async (andNew = false) => {
     if (!data.name.trim() || !data.email.trim()) {
-      setSaveErr('Nom et email requis');
+      setSaveErr('Nom et email requis'); // TODO: no exact translation key for "Nom et email requis"
       return;
     }
     setSaving(true);
@@ -48,10 +50,10 @@ export default function ClientFormModal({ mode = 'create', client, onClose, onSa
         }),
       });
       const json = await res.json();
-      if (!res.ok) { setSaveErr(json.error || 'Erreur'); setSaving(false); return; }
+      if (!res.ok) { setSaveErr(json.error || t.common.error); setSaving(false); return; }
       onSave(andNew);
     } catch {
-      setSaveErr('Erreur réseau');
+      setSaveErr(t.common.networkError);
       setSaving(false);
     }
   };
@@ -69,7 +71,9 @@ export default function ClientFormModal({ mode = 'create', client, onClose, onSa
   return (
     <Modal width={820} onClose={onClose}
       title={
-        <span>{isEdit ? "Modifier l'expéditeur" : 'Nouvel expéditeur'}
+        <span>
+          {/* TODO: no exact translation key for "Modifier l'expéditeur" / "Nouvel expéditeur" */}
+          {isEdit ? "Modifier l'expéditeur" : 'Nouvel expéditeur'}
           <span style={{ color: 'var(--ink-400)', fontWeight: 400, fontSize: '.85em', marginLeft: 6 }}>
             / {isEdit ? 'Edit sender' : 'New sender'}
           </span>
@@ -77,29 +81,29 @@ export default function ClientFormModal({ mode = 'create', client, onClose, onSa
       }
       sub={isEdit
         ? <><span className="mono">{data.code}</span> · {data.name}</>
-        : "Expéditeur enregistré dans le système — basé en pays d'origine"}
+        : /* TODO: no exact translation key for this description */ "Expéditeur enregistré dans le système — basé en pays d'origine"}
       footer={
         <>
           {isEdit && (
             <button className="btn btn--ghost" style={{ color: 'var(--bad-600)' }}
               onClick={async () => {
-                if (!confirm('Supprimer ce client ?')) return;
+                if (!confirm('Supprimer ce client ?')) return; // TODO: no exact translation key for "Supprimer ce client ?"
                 await fetch(`/api/clients/${client.id}`, { method: 'DELETE' });
                 onSave();
               }}>
-              <I.Trash />Supprimer
+              <I.Trash />{t.common.delete}
             </button>
           )}
           <div style={{ flex: 1 }} />
           {saveErr && <span style={{ fontSize: 12, color: 'var(--bad-600)' }}>{saveErr}</span>}
-          <button className="btn btn--ghost" onClick={onClose}>Annuler</button>
+          <button className="btn btn--ghost" onClick={onClose}>{t.common.cancel}</button>
           {!isEdit && (
             <button className="btn btn--soft" onClick={() => handleSave(true)} disabled={saving}>
-              Enregistrer &amp; nouveau
+              {t.common.save} &amp; {t.common.new}
             </button>
           )}
           <button className="btn btn--brand" onClick={() => handleSave(false)} disabled={saving}>
-            <I.Check />{saving ? 'Enregistrement…' : isEdit ? 'Enregistrer' : "Créer l'expéditeur"}
+            <I.Check />{saving ? t.common.saving : isEdit ? t.common.save : t.common.create}
           </button>
         </>
       }>
@@ -107,6 +111,7 @@ export default function ClientFormModal({ mode = 'create', client, onClose, onSa
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 280px', gap: 22 }}>
         <div>
           {/* Identity block */}
+          {/* TODO: no exact translation key for "Identité" */}
           <div className="section-title">Identité</div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 14, padding: 14, background: 'var(--bg-soft)', borderRadius: 10 }}>
             <Avatar
@@ -117,10 +122,12 @@ export default function ClientFormModal({ mode = 'create', client, onClose, onSa
             <div style={{ flex: 1 }}>
               <div className="field-row field-row--2" style={{ marginBottom: 0 }}>
                 <div className="field" style={{ marginBottom: 0 }}>
+                  {/* TODO: no exact translation key for "Nom complet" (t.common.name is just "Nom") */}
                   <label className="label">Nom complet</label>
                   <input className="input" value={data.name} onChange={e => upd('name', e.target.value)} placeholder="Ex: Client M" />
                 </div>
                 <div className="field" style={{ marginBottom: 0 }}>
+                  {/* TODO: no exact translation key for "Code expéditeur" */}
                   <label className="label">Code expéditeur <span className="opt">/ Auto</span></label>
                   <input className="input mono" value={data.code} onChange={e => upd('code', e.target.value)} />
                 </div>
@@ -146,16 +153,18 @@ export default function ClientFormModal({ mode = 'create', client, onClose, onSa
             </div>
             <div className="field-row field-row--2">
               <div className="field">
+                {/* TODO: no exact translation key for "Téléphone Douala" */}
                 <label className="label">Téléphone Douala <span className="opt">/ Sender phone</span></label>
                 <input className="input mono" value={data.phone} onChange={e => upd('phone', e.target.value)} placeholder="+237 6** ** ** **" />
               </div>
               <div className="field">
+                {/* TODO: no exact translation key for "Si différent" */}
                 <label className="label">WhatsApp <span className="opt">/ Si différent</span></label>
                 <input className="input mono" value={data.whatsapp} onChange={e => upd('whatsapp', e.target.value)} placeholder="+237 6** ** ** **" />
               </div>
             </div>
             <div className="field" style={{ marginBottom: 0 }}>
-              <label className="label">Email <span className="opt">/ Optionnel</span></label>
+              <label className="label">{t.common.email} <span className="opt">/ {t.common.optional}</span></label>
               <input className="input" type="email" value={data.email} onChange={e => upd('email', e.target.value)} placeholder="client@example.com" />
             </div>
           </div>
@@ -163,9 +172,11 @@ export default function ClientFormModal({ mode = 'create', client, onClose, onSa
           {/* Location block */}
           <div className="card" style={{ padding: 16, marginBottom: 14 }}>
             <div className="section-title" style={{ marginBottom: 12 }}>
+              {/* TODO: no exact translation key for "Localisation (origine)" */}
               <I.Pin style={{ width: 14, height: 14, color: 'var(--brand-600)' }} /> Localisation (origine)
             </div>
             <div className="field" style={{ marginBottom: 0 }}>
+              {/* TODO: no exact translation key for "Ville d'origine" (t.common.city is just "Ville") */}
               <label className="label">Ville d'origine</label>
               <select className="select" value={data.city} onChange={e => upd('city', e.target.value)}>
                 {CITIES.map(c => <option key={c}>{c}</option>)}
@@ -176,18 +187,21 @@ export default function ClientFormModal({ mode = 'create', client, onClose, onSa
           {/* Delivery block */}
           <div className="card" style={{ padding: 16, marginBottom: 14 }}>
             <div className="section-title" style={{ marginBottom: 12 }}>
+              {/* TODO: no exact translation key for "Livraison (destination)" */}
               <I.Truck style={{ width: 14, height: 14, color: 'var(--brand-600)' }} /> Livraison (destination)
               <span style={{ fontSize: 11, color: 'var(--ink-400)', fontWeight: 400, marginLeft: 6 }}>/ Delivery info</span>
             </div>
             <div className="field">
+              {/* TODO: no exact translation key for "Nom du destinataire" */}
               <label className="label">Nom du destinataire <span className="opt">/ Si différent de l'expéditeur</span></label>
               <input className="input" value={data.deliveryName} onChange={e => upd('deliveryName', e.target.value)} placeholder="Nom complet" />
             </div>
             <div className="field">
-              <label className="label">Adresse de livraison</label>
+              <label className="label">{t.common.address}</label>
               <input className="input" value={data.deliveryAddress} onChange={e => upd('deliveryAddress', e.target.value)} placeholder="1234 Rue Saint-Denis, Montréal H2X 3K2" />
             </div>
             <div className="field" style={{ marginBottom: 0 }}>
+              {/* TODO: no exact translation key for "Téléphone de livraison" */}
               <label className="label">Téléphone de livraison <span className="opt">/ À Montréal</span></label>
               <input className="input mono" value={data.deliveryPhone} onChange={e => upd('deliveryPhone', e.target.value)} placeholder="+1 514 *** ****" />
             </div>
@@ -196,9 +210,11 @@ export default function ClientFormModal({ mode = 'create', client, onClose, onSa
           {/* Notes + Loyal */}
           <div className="card" style={{ padding: 16, marginBottom: 14 }}>
             <div className="section-title" style={{ marginBottom: 12 }}>
+              {/* TODO: no exact translation key for "Préférences" */}
               <I.Tag style={{ width: 14, height: 14, color: 'var(--brand-600)' }} /> Préférences
             </div>
             <div className="field">
+              {/* TODO: no exact translation key for "Expéditeur fidèle" */}
               <label className="label">Expéditeur fidèle</label>
               <div style={{
                 display: 'flex', alignItems: 'center', gap: 10,
@@ -209,16 +225,19 @@ export default function ClientFormModal({ mode = 'create', client, onClose, onSa
               }}>
                 <I.Star style={{ width: 14, height: 14, color: data.loyal ? 'var(--brand-500)' : 'var(--ink-300)' }} />
                 <span style={{ flex: 1, fontSize: 13, color: data.loyal ? 'var(--brand-700)' : 'var(--ink-500)', fontWeight: 600 }}>
+                  {/* TODO: no exact translation key for "Marqué comme fidèle" / "Non marqué" */}
                   {data.loyal ? 'Marqué comme fidèle' : 'Non marqué'}
                 </span>
                 <button className="btn btn--ghost btn--xs" onClick={() => upd('loyal', !data.loyal)}>
-                  {data.loyal ? 'Retirer' : 'Marquer'}
+                  {data.loyal ? t.common.remove : t.common.add}
                 </button>
               </div>
+              {/* TODO: no exact translation key for this hint text */}
               <div className="hint">Notifié en priorité à l'ouverture d'une cargaison.</div>
             </div>
             <div className="field" style={{ marginBottom: 0 }}>
-              <label className="label">Notes internes <span className="opt">/ Visible aux agents uniquement</span></label>
+              {/* t.common.notes used as closest match for "Notes internes" */}
+              <label className="label">{t.common.notes} <span className="opt">/ Visible aux agents uniquement</span></label>
               <textarea className="textarea" rows={3} value={data.notes} onChange={e => upd('notes', e.target.value)} placeholder="Particularités, instructions, historique..." />
             </div>
           </div>
@@ -229,7 +248,8 @@ export default function ClientFormModal({ mode = 'create', client, onClose, onSa
           <div style={{ position: 'sticky', top: 0 }}>
             <div className="card" style={{ overflow: 'hidden' }}>
               <div style={{ padding: '14px 16px', background: 'var(--bg-soft)', borderBottom: '1px solid var(--border)' }}>
-                <div style={{ fontSize: 10.5, color: 'var(--ink-400)', textTransform: 'uppercase', letterSpacing: '.04em', fontWeight: 700 }}>Aperçu fiche</div>
+                {/* t.common.preview used as closest match for "Aperçu fiche" */}
+                <div style={{ fontSize: 10.5, color: 'var(--ink-400)', textTransform: 'uppercase', letterSpacing: '.04em', fontWeight: 700 }}>{t.common.preview}</div>
               </div>
               <div style={{ padding: 16 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
@@ -240,6 +260,7 @@ export default function ClientFormModal({ mode = 'create', client, onClose, onSa
                   />
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ fontSize: 14, fontWeight: 700 }}>
+                      {/* TODO: no exact translation key for "Sans nom" */}
                       {data.name || 'Sans nom'}
                       {data.loyal && <I.Star style={{ width: 12, height: 12, color: 'var(--brand-500)', marginLeft: 4, verticalAlign: -1 }} />}
                     </div>
@@ -255,6 +276,7 @@ export default function ClientFormModal({ mode = 'create', client, onClose, onSa
               </div>
               <div style={{ padding: '12px 16px', borderTop: '1px solid var(--border-soft)', background: 'var(--bg-soft)', fontSize: 11.5, color: 'var(--ink-500)', display: 'flex', alignItems: 'center', gap: 8 }}>
                 <I.Info style={{ width: 12, height: 12, color: 'var(--ink-400)' }} />
+                {/* TODO: no exact translation keys for these info messages */}
                 {isEdit
                   ? 'Modifications enregistrées et propagées aux colis liés'
                   : "L'expéditeur sera disponible pour les nouveaux colis"}

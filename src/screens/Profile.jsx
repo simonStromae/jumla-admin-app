@@ -2,9 +2,11 @@ import { useState } from 'react';
 import { useSession, signOut } from 'next-auth/react';
 import I from '../components/Icons.jsx';
 import { Avatar } from '../components/Shell.jsx';
+import { useAdminT } from '../lib/useAdminT.js';
 
 export default function ProfileScreen({ onNav }) {
   const { data: session } = useSession();
+  const t = useAdminT();
   const user = session?.user;
   const [pwData, setPwData] = useState({ current: '', next: '', confirm: '' });
   const [pwSaving, setPwSaving] = useState(false);
@@ -15,8 +17,8 @@ export default function ProfileScreen({ onNav }) {
     : '?';
 
   const roleLabel =
-    user?.role === 'admin' ? 'Administrateur'
-    : user?.role === 'agent' ? 'Agent'
+    user?.role === 'admin' ? t.agents.roles.admin
+    : user?.role === 'agent' ? 'Agent' // TODO: no translation key for 'agent' role label
     : user?.role || '—';
 
   const upd = (k, v) => setPwData(d => ({ ...d, [k]: v }));
@@ -24,9 +26,9 @@ export default function ProfileScreen({ onNav }) {
   const handlePasswordChange = async (e) => {
     e.preventDefault();
     setPwMsg('');
-    if (!pwData.current) { setPwMsg('Veuillez saisir le mot de passe actuel.'); return; }
-    if (pwData.next.length < 8) { setPwMsg('Le nouveau mot de passe doit contenir au moins 8 caractères.'); return; }
-    if (pwData.next !== pwData.confirm) { setPwMsg('Les mots de passe ne correspondent pas.'); return; }
+    if (!pwData.current) { setPwMsg('Veuillez saisir le mot de passe actuel.'); return; } // TODO: no translation key for this validation message
+    if (pwData.next.length < 8) { setPwMsg('Le nouveau mot de passe doit contenir au moins 8 caractères.'); return; } // TODO: no translation key for this validation message
+    if (pwData.next !== pwData.confirm) { setPwMsg('Les mots de passe ne correspondent pas.'); return; } // TODO: no translation key for this validation message
     setPwSaving(true);
     try {
       const res = await fetch('/api/auth/change-password', {
@@ -35,15 +37,16 @@ export default function ProfileScreen({ onNav }) {
         body: JSON.stringify({ currentPassword: pwData.current, newPassword: pwData.next }),
       });
       const json = await res.json();
-      if (!res.ok) { setPwMsg(json.error || 'Erreur'); }
+      if (!res.ok) { setPwMsg(json.error || t.common.error); }
       else { setPwMsg('success'); setPwData({ current: '', next: '', confirm: '' }); }
-    } catch { setPwMsg('Erreur réseau'); }
+    } catch { setPwMsg(t.common.networkError); }
     setPwSaving(false);
   };
 
   return (
     <div className="page" style={{ maxWidth: 600, margin: '0 auto' }}>
       <div className="page__head">
+        {/* TODO: add profile.title translation key */}
         <div className="page__title">Mon profil</div>
       </div>
 
@@ -79,11 +82,13 @@ export default function ProfileScreen({ onNav }) {
 
       {/* Password change */}
       <div className="card" style={{ padding: 24, marginBottom: 16 }}>
+        {/* TODO: add profile.changePassword translation key */}
         <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--ink-900)', marginBottom: 18 }}>
           Changer le mot de passe
         </div>
         <form onSubmit={handlePasswordChange}>
           <div className="field" style={{ marginBottom: 14 }}>
+            {/* TODO: add profile.currentPassword translation key */}
             <label className="label">Mot de passe actuel</label>
             <input
               className="input"
@@ -95,6 +100,7 @@ export default function ProfileScreen({ onNav }) {
             />
           </div>
           <div className="field" style={{ marginBottom: 14 }}>
+            {/* TODO: add profile.newPassword translation key */}
             <label className="label">Nouveau mot de passe</label>
             <input
               className="input"
@@ -106,6 +112,7 @@ export default function ProfileScreen({ onNav }) {
             />
           </div>
           <div className="field" style={{ marginBottom: 18 }}>
+            {/* TODO: add profile.confirmPassword translation key */}
             <label className="label">Confirmer le nouveau mot de passe</label>
             <input
               className="input"
@@ -132,12 +139,14 @@ export default function ProfileScreen({ onNav }) {
               display: 'flex', alignItems: 'center', gap: 8,
             }}>
               <I.Check style={{ width: 14, height: 14 }} />
+              {/* TODO: add profile.passwordUpdated translation key */}
               Mot de passe mis à jour avec succès.
             </div>
           )}
 
           <button className="btn btn--brand" type="submit" disabled={pwSaving}>
-            {pwSaving ? 'Enregistrement…' : 'Mettre à jour le mot de passe'}
+            {/* TODO: add profile.updatePassword translation key for the non-saving label */}
+          {pwSaving ? t.common.saving : 'Mettre à jour le mot de passe'}
           </button>
         </form>
       </div>
@@ -147,6 +156,7 @@ export default function ProfileScreen({ onNav }) {
         <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--ink-900)', marginBottom: 6 }}>
           Session
         </div>
+        {/* TODO: add profile.logoutHint translation key */}
         <div style={{ fontSize: 13, color: 'var(--ink-500)', marginBottom: 16 }}>
           Vous serez redirigé vers la page de connexion.
         </div>
@@ -156,7 +166,7 @@ export default function ProfileScreen({ onNav }) {
           onClick={() => signOut({ callbackUrl: '/login' })}
         >
           <I.Logout />
-          Se déconnecter
+          {t.topbar.logout}
         </button>
       </div>
     </div>

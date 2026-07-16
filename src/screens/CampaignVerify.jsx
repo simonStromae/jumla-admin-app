@@ -1,12 +1,6 @@
 import { useState } from 'react';
 import I from '../components/Icons.jsx';
-
-const VERIF_OPTIONS = [
-  { value: 'pending', label: '— En attente',  color: 'var(--ink-400)' },
-  { value: 'ok',      label: '✓ Conforme',    color: 'var(--ok-700)' },
-  { value: 'issue',   label: '⚠ Écart',      color: 'var(--warn-700)' },
-  { value: 'missing', label: '✕ Manquant',   color: 'var(--bad-700)' },
-];
+import { useAdminT } from '../lib/useAdminT.js';
 
 const TH = ({ children, right }) => (
   <th style={{
@@ -30,6 +24,17 @@ const TD = ({ children, mono, right, muted, style: sx }) => (
 );
 
 export default function CampaignVerifyPanel({ parcels, campaign, onExit, onSaveParcel, onClose, closing }) {
+  const t = useAdminT();
+
+  // Verify status options — labels translated where keys exist
+  // TODO: no exact translation keys for 'Écart' (issue) and 'Manquant' (missing)
+  const VERIF_OPTIONS = [
+    { value: 'pending', label: '— ' + t.verify.pending,  color: 'var(--ink-400)' },
+    { value: 'ok',      label: '✓ ' + t.verify.verified, color: 'var(--ok-700)' },
+    { value: 'issue',   label: '⚠ Écart',                color: 'var(--warn-700)' },
+    { value: 'missing', label: '✕ Manquant',             color: 'var(--bad-700)' },
+  ];
+
   const [expanded, setExpanded]   = useState({});
   // A parcel is pre-saved if all its bordereaux already have a non-pending status
   const [saved, setSaved] = useState(() =>
@@ -121,24 +126,28 @@ export default function CampaignVerifyPanel({ parcels, campaign, onExit, onSaveP
         <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 10 }}>
           <div style={{ flex: 1 }}>
             <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--ink-900)' }}>
-              Contrôle arrivée — <span className="mono">{campaign.code}</span>
+              {/* TODO: no exact translation key for 'Contrôle arrivée'; using t.verify.title as close match */}
+              {t.verify.title} — <span className="mono">{campaign.code}</span>
             </div>
             <div style={{ fontSize: 12, color: 'var(--ink-500)', marginTop: 2, display: 'flex', gap: 10 }}>
+              {/* TODO: no exact translation key for 'traités' */}
               <span>{done}/{total} traités</span>
-              {counts.ok      > 0 && <span style={{ color: 'var(--ok-600)',   fontWeight: 600 }}>✓ {counts.ok} conformes</span>}
+              {counts.ok      > 0 && <span style={{ color: 'var(--ok-600)',   fontWeight: 600 }}>✓ {counts.ok} {t.verify.verified}</span>}
+              {/* TODO: no exact translation key for 'écarts' */}
               {counts.issue   > 0 && <span style={{ color: 'var(--bad-600)', fontWeight: 600 }}>⚠ {counts.issue} écarts</span>}
-              {counts.pending > 0 && <span style={{ color: 'var(--ink-400)' }}>{counts.pending} en attente</span>}
+              {counts.pending > 0 && <span style={{ color: 'var(--ink-400)' }}>{counts.pending} {t.verify.pending}</span>}
             </div>
           </div>
-          <button className="btn btn--ghost btn--sm" onClick={onExit}>Quitter</button>
+          <button className="btn btn--ghost btn--sm" onClick={onExit}>{t.common.close}</button>
           <button
             className="btn btn--primary btn--sm"
             disabled={!allSaved || closing}
             onClick={onClose}
-            title={!allSaved ? 'Sauvegardez tous les colis d\'abord' : ''}
+            title={!allSaved ? 'Sauvegardez tous les colis d\'abord' : '' /* TODO: no exact translation key */}
             style={!allSaved || closing ? { opacity: 0.45, cursor: 'not-allowed' } : {}}
           >
-            <I.Check />{closing ? 'Enregistrement…' : 'Valider et clôturer'}
+            {/* TODO: 'Valider et clôturer' has no exact key; using t.common.confirm as close match */}
+            <I.Check />{closing ? t.common.saving : t.common.confirm}
           </button>
         </div>
         <div style={{ height: 6, background: 'var(--ink-100)', borderRadius: 999, overflow: 'hidden' }}>
@@ -200,14 +209,15 @@ export default function CampaignVerifyPanel({ parcels, campaign, onExit, onSaveP
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--ink-800)' }}>{p.senderName}</div>
                   <div style={{ fontSize: 11, color: 'var(--ink-400)', marginTop: 1 }}>
+                    {/* TODO: no exact translation key for 'ligne(s)' */}
                     {rows.length} ligne{rows.length > 1 ? 's' : ''} · {p.actualKg} kg
                   </div>
                 </div>
                 <div style={{ fontSize: 11.5, color: 'var(--ink-400)', flexShrink: 0, whiteSpace: 'nowrap' }}>
-                  {checkedNb}/{rows.length} vérifiés
+                  {checkedNb}/{rows.length} {t.verify.verified}
                 </div>
                 {isSaved && (
-                  <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--ok-700)', flexShrink: 0 }}>✓ Sauvegardé</span>
+                  <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--ok-700)', flexShrink: 0 }}>✓ {t.common.save}</span>
                 )}
                 <div style={{ color: 'var(--ink-400)', flexShrink: 0 }}>
                   {isOpen ? <I.ChevronUp style={{ width: 16, height: 16 }} /> : <I.ChevronDown style={{ width: 16, height: 16 }} />}
@@ -220,6 +230,7 @@ export default function CampaignVerifyPanel({ parcels, campaign, onExit, onSaveP
                   {/* Sender / Recipient info */}
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 0, borderBottom: '1px solid var(--border-soft)' }}>
                     {[
+                      // TODO: no exact translation keys for 'Expéditeur' / 'Destinataire'
                       { label: 'Expéditeur / Sender', name: p.senderName, phone: p.senderPhone, city: '' },
                       { label: 'Destinataire / Recipient', name: p.recipName, phone: p.senderPhone, city: p.recipCity },
                     ].map((side, i) => (
@@ -252,13 +263,16 @@ export default function CampaignVerifyPanel({ parcels, campaign, onExit, onSaveP
                   {/* Table header */}
                   <div style={{ padding: '10px 16px 6px', display: 'flex', alignItems: 'baseline', gap: 14, borderBottom: '1px solid var(--border-soft)' }}>
                     <div>
-                      <div style={{ fontSize: 13, fontWeight: 700 }}>Vérification du contenu</div>
-                      <div style={{ fontSize: 11, color: 'var(--ink-400)' }}>Pointage à l'arrivée</div>
+                      {/* TODO: 'Vérification du contenu' has no exact key; using t.verify.title as close match */}
+                      <div style={{ fontSize: 13, fontWeight: 700 }}>{t.verify.title}</div>
+                      {/* TODO: no exact translation key for 'Pointage à l'arrivée' */}
+                      <div style={{ fontSize: 11, color: 'var(--ink-400)' }}>Pointage à l&apos;arrivée</div>
                     </div>
                     <div style={{ flex: 1 }} />
                     {[
+                      // TODO: no exact translation keys for 'Lignes', 'Conformes', 'Écarts'
                       { l: 'Lignes',    v: rows.length, color: 'var(--ink-700)' },
-                      { l: 'Total',     v: totalNb,     color: 'var(--ink-700)' },
+                      { l: t.common.total, v: totalNb,  color: 'var(--ink-700)' },
                       { l: 'Conformes', v: conformes,   color: 'var(--ok-600)' },
                       { l: 'Écarts',    v: ecarts,      color: ecarts > 0 ? 'var(--bad-600)' : 'var(--ink-400)' },
                     ].map(({ l, v, color }) => (
@@ -275,14 +289,18 @@ export default function CampaignVerifyPanel({ parcels, campaign, onExit, onSaveP
                       <thead>
                         <tr>
                           <TH>#</TH>
+                          {/* TODO: no exact translation key for 'Désignation' */}
                           <TH>Désignation</TH>
-                          <TH>Description</TH>
-                          <TH>Type</TH>
+                          <TH>{t.common.description}</TH>
+                          <TH>{t.common.type}</TH>
+                          {/* TODO: no exact translation keys for 'NB' and 'Pièces' */}
                           <TH right>NB</TH>
                           <TH right>Pièces</TH>
-                          <TH>Vérification</TH>
+                          {/* TODO: 'Vérification' col header; using t.verify.title as close match */}
+                          <TH>{t.verify.title}</TH>
+                          {/* TODO: no exact translation key for 'Écart' */}
                           <TH right>Écart</TH>
-                          <TH>Note</TH>
+                          <TH>{t.common.note}</TH>
                         </tr>
                       </thead>
                       <tbody>
@@ -342,7 +360,7 @@ export default function CampaignVerifyPanel({ parcels, campaign, onExit, onSaveP
                                 <input
                                   type="text"
                                   value={rv.note || ''}
-                                  placeholder={hasIssue ? 'Observation…' : '—'}
+                                  placeholder={hasIssue ? t.common.notes : '—'}
                                   disabled={!hasIssue}
                                   onChange={e => setRowField(p.id, row.id, 'note', e.target.value)}
                                   onClick={e => e.stopPropagation()}
@@ -372,17 +390,20 @@ export default function CampaignVerifyPanel({ parcels, campaign, onExit, onSaveP
                   }}>
                     {isOk && (
                       <span style={{ fontSize: 13, color: 'var(--ok-700)', fontWeight: 600, flex: 1 }}>
+                        {/* TODO: no exact translation key for this confirmation message */}
                         ✓ Contenu conforme. Prêt pour validation.
                       </span>
                     )}
                     {isIssue && (
                       <span style={{ fontSize: 13, color: 'var(--warn-700)', fontWeight: 600, flex: 1 }}>
+                        {/* TODO: no exact translation key for this issue count message */}
                         ⚠ {rows.filter(r => ['issue','missing'].includes(verifs[p.id]?.[r.id]?.status ?? '')).length} écart(s) signalé(s).
                       </span>
                     )}
                     {pStatus === 'pending' && (
                       <span style={{ fontSize: 13, color: 'var(--ink-400)', flex: 1 }}>
-                        En cours de vérification…
+                        {/* TODO: 'En cours de vérification…' has no exact key; using t.verify.pending as close match */}
+                        {t.verify.pending}…
                       </span>
                     )}
 
@@ -392,6 +413,7 @@ export default function CampaignVerifyPanel({ parcels, campaign, onExit, onSaveP
                         style={{ background: 'var(--ok-500)', color: 'white', border: 'none' }}
                         onClick={e => { e.stopPropagation(); markAllOk(p); }}
                       >
+                        {/* TODO: no exact translation key for 'Tout conforme' */}
                         <I.Check style={{ width: 13, height: 13 }} /> Tout conforme
                       </button>
                     )}
@@ -401,7 +423,7 @@ export default function CampaignVerifyPanel({ parcels, campaign, onExit, onSaveP
                       onClick={e => { e.stopPropagation(); handleSave(p); }}
                       style={checkedNb < rows.length ? { opacity: 0.4, cursor: 'not-allowed' } : {}}
                     >
-                      {isSaving ? 'Sauvegarde…' : isSaved ? '✓ Sauvegardé' : 'Sauvegarder'}
+                      {isSaving ? t.common.saving : isSaved ? '✓ ' + t.common.save : t.common.save}
                     </button>
                   </div>
                 </div>
@@ -420,6 +442,7 @@ export default function CampaignVerifyPanel({ parcels, campaign, onExit, onSaveP
           borderRadius: 12, display: 'flex', alignItems: 'center', gap: 12,
         }}>
           <div style={{ flex: 1, fontSize: 13, fontWeight: 600, color: counts.issue > 0 ? 'var(--warn-800)' : 'var(--ok-700)' }}>
+            {/* TODO: no exact translation keys for these summary banner messages */}
             {counts.issue > 0
               ? `Vérification terminée avec ${counts.issue} colis signalé${counts.issue > 1 ? 's' : ''}.`
               : `Tous les colis sont conformes. La cargaison peut être distribuée.`}
@@ -429,7 +452,8 @@ export default function CampaignVerifyPanel({ parcels, campaign, onExit, onSaveP
             disabled={closing}
             onClick={onClose}
           >
-            <I.Check />{closing ? 'Enregistrement…' : 'Valider et clôturer'}
+            {/* TODO: 'Valider et clôturer' has no exact key; using t.common.confirm as close match */}
+            <I.Check />{closing ? t.common.saving : t.common.confirm}
           </button>
         </div>
       )}

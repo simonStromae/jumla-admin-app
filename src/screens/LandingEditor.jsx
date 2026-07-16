@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import I from '../components/Icons.jsx';
+import { useAdminT } from '../lib/useAdminT.js';
 
 const DEFAULTS = {
   fr: {
@@ -149,6 +150,7 @@ export default function LandingEditor() {
   const [saving, setSaving]   = useState(false);
   const [saved,  setSaved]    = useState(false);
   const [loaded, setLoaded]   = useState(false);
+  const t = useAdminT();
 
   useEffect(() => {
     fetch('/api/settings').then(r => r.json()).then(d => {
@@ -206,6 +208,7 @@ export default function LandingEditor() {
     [langTab]: { ...c[langTab], loginSlides: (c[langTab].loginSlides || []).filter((_, idx) => idx !== i) },
   }));
 
+  // TODO: i18n — tab labels below have no matching keys in admin-i18n.js
   const TABS = [
     { id: 'hero',      label: 'Héro',            icon: I.Plane },
     { id: 'story',     label: 'Notre histoire',   icon: I.Globe },
@@ -219,7 +222,7 @@ export default function LandingEditor() {
   const c = content[langTab];
 
   if (!loaded) return (
-    <div style={{ padding: 40, textAlign: 'center', color: 'var(--ink-400)', fontSize: 14 }}>Chargement…</div>
+    <div style={{ padding: 40, textAlign: 'center', color: 'var(--ink-400)', fontSize: 14 }}>{t.common.loading}…</div>
   );
 
   return (
@@ -228,24 +231,27 @@ export default function LandingEditor() {
       <div className="card" style={{ marginBottom: 14, padding: '16px 20px', display: 'flex', alignItems: 'center', gap: 12 }}>
         <I.Globe style={{ width: 18, height: 18, color: 'var(--brand-500)' }} />
         <div style={{ flex: 1 }}>
+          {/* TODO: i18n — no key for 'Éditeur de page d'accueil' */}
           <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--ink-900)' }}>Éditeur de page d'accueil</div>
+          {/* TODO: i18n — no key for the subtitle description below */}
           <div style={{ fontSize: 12, color: 'var(--ink-400)', marginTop: 2 }}>
             Modifiez les textes affichés sur la page publique. Les changements sont visibles instantanément après sauvegarde.
           </div>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          {saved && <span style={{ fontSize: 12, color: 'var(--ok-700)', fontWeight: 600 }}>✓ Sauvegardé</span>}
+          {saved && <span style={{ fontSize: 12, color: 'var(--ok-700)', fontWeight: 600 }}>✓ {t.common.success}</span>}
           <a href="/" target="_blank" rel="noreferrer" style={{ fontSize: 12, color: 'var(--brand-600)', textDecoration: 'none', fontWeight: 600 }}>
-            Voir la page →
+            {t.topbar.viewSite} →
           </a>
           <button className="btn btn--brand btn--sm" disabled={saving} onClick={handleSave}>
-            <I.Check />{saving ? 'Enregistrement…' : 'Enregistrer tout'}
+            <I.Check />{saving ? `${t.common.saving}…` : t.common.save}
           </button>
         </div>
       </div>
 
       {/* Language toggle */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
+        {/* TODO: i18n — no key for 'Langue éditée' */}
         <span style={{ fontSize: 12, color: 'var(--ink-500)', fontWeight: 600 }}>Langue éditée :</span>
         {[{ id: 'fr', flag: '🇫🇷', label: 'Français' }, { id: 'en', flag: '🇬🇧', label: 'English' }].map(l => (
           <button
@@ -263,6 +269,7 @@ export default function LandingEditor() {
             {l.flag} {l.label}
           </button>
         ))}
+        {/* TODO: i18n — no key for the language scope note */}
         <span style={{ fontSize: 11, color: 'var(--ink-400)', marginLeft: 4 }}>
           — Chaque modification s'applique uniquement à la langue sélectionnée
         </span>
@@ -288,9 +295,11 @@ export default function LandingEditor() {
       {/* ── Héro ── */}
       {tab === 'hero' && (
         <>
+          {/* TODO: i18n — InfoBanner texts have no matching keys */}
           <InfoBanner>
             Section visible en haut de la page. La ligne d'accroche, le titre H1, le sous-titre et les 3 statistiques sont éditables ici.
           </InfoBanner>
+          {/* TODO: i18n — EditorCard/Field labels below have no matching keys */}
           <EditorCard title="Bandeau d'accroche" icon={I.Plane}>
             <Field label="Phrase d'accroche" hint="petite ligne au-dessus du titre">
               <input className="input" value={c.hero.eyebrow} onChange={e => set('hero.eyebrow', e.target.value)} />
@@ -312,12 +321,14 @@ export default function LandingEditor() {
           </EditorCard>
 
           <EditorCard title="Statistiques" icon={I.Activity}>
+            {/* TODO: i18n — no key for stats description */}
             <div style={{ fontSize: 12, color: 'var(--ink-500)', marginBottom: 14 }}>
               Ces 3 chiffres apparaissent dans la section "Notre histoire" (côté droit foncé).
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10 }}>
               {c.hero.stats.map((s, i) => (
                 <div key={i} style={{ display: 'flex', flexDirection: 'column', gap: 6, padding: '12px 14px', background: 'var(--bg-soft)', borderRadius: 8 }}>
+                  {/* TODO: i18n — no key for 'Stat N', 'Valeur', 'Label' */}
                   <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.06em', color: 'var(--ink-500)' }}>Stat {i + 1}</div>
                   <Field label="Valeur">
                     <input className="input" value={s.value} onChange={e => set(`hero.stats.${i}.value`, e.target.value)} placeholder="14 jours" />
@@ -335,9 +346,11 @@ export default function LandingEditor() {
       {/* ── Notre histoire ── */}
       {tab === 'story' && (
         <>
+          {/* TODO: i18n — InfoBanner text has no matching key */}
           <InfoBanner>
             Section split photo/fond sombre. La photo cargo est fixe — seuls les textes (badge, titre, description, bouton) sont éditables.
           </InfoBanner>
+          {/* TODO: i18n — 'Section Notre histoire', 'Badge', 'Titre principal', 'Texte du bouton' have no matching keys */}
           <EditorCard title="Section Notre histoire" icon={I.Globe}>
             <Field label="Badge (petit texte coloré en haut)">
               <input className="input" value={c.storyCard?.badge ?? ''} onChange={e => set('storyCard.badge', e.target.value)} />
@@ -345,9 +358,10 @@ export default function LandingEditor() {
             <Field label="Titre principal">
               <input className="input" value={c.storyCard?.title ?? ''} onChange={e => set('storyCard.title', e.target.value)} />
             </Field>
-            <Field label="Description / accroche">
+            <Field label={t.common.description}>
               <textarea className="input" rows={3} value={c.storyCard?.description ?? ''} onChange={e => set('storyCard.description', e.target.value)} style={{ resize: 'vertical' }} />
             </Field>
+            {/* TODO: i18n — no key for 'Texte du bouton' */}
             <Field label="Texte du bouton">
               <input className="input" value={c.storyCard?.button ?? ''} onChange={e => set('storyCard.button', e.target.value)} />
             </Field>
@@ -358,10 +372,12 @@ export default function LandingEditor() {
       {/* ── 4 étapes ── */}
       {tab === 'steps' && (
         <>
+          {/* TODO: i18n — InfoBanner text has no matching key */}
           <InfoBanner>
             Section zigzag "Comment ça marche". Modifiez le titre de chaque étape, sa description et le badge de durée (ex : "3 min", "1 jour"). Les icônes sont fixes.
           </InfoBanner>
 
+          {/* TODO: i18n — 'En-tête de la section', 'Accroche (eyebrow)', 'Bouton CTA', 'Titre (partie normale/cyan)', 'Sous-titre' have no matching keys */}
           <EditorCard title="En-tête de la section" icon={I.ArrowRight}>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
               <Field label="Accroche (eyebrow)">
@@ -384,6 +400,7 @@ export default function LandingEditor() {
             </Field>
           </EditorCard>
 
+          {/* TODO: i18n — 'Étape N', '(sans titre)', 'Durée / badge', 'Titre de l'étape' have no matching keys */}
           {(c.steps ?? []).map((step, i) => (
             <EditorCard key={i} title={`Étape ${i + 1} — ${step.title || '(sans titre)'}`} icon={I.ArrowRight}>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: 10 }}>
@@ -394,7 +411,7 @@ export default function LandingEditor() {
                   <input className="input" value={step.title} onChange={e => set(`steps.${i}.title`, e.target.value)} />
                 </Field>
               </div>
-              <Field label="Description">
+              <Field label={t.common.description}>
                 <textarea className="input" rows={2} value={step.description} onChange={e => set(`steps.${i}.description`, e.target.value)} style={{ resize: 'vertical' }} />
               </Field>
             </EditorCard>
@@ -405,9 +422,11 @@ export default function LandingEditor() {
       {/* ── Section photo plein écran ── */}
       {tab === 'widephoto' && (
         <>
+          {/* TODO: i18n — InfoBanner text has no matching key */}
           <InfoBanner>
             Section plein écran avec photo de fond, juste avant le pied de page. Titre, description et bouton sont éditables.
           </InfoBanner>
+          {/* TODO: i18n — 'Section photo plein écran', 'Titre (partie normale/cyan)', 'Texte du bouton' have no matching keys */}
           <EditorCard title="Section photo plein écran" icon={I.Map}>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
               <Field label="Titre (partie normale)">
@@ -417,9 +436,10 @@ export default function LandingEditor() {
                 <input className="input" value={c.widePhoto?.titleHighlight ?? ''} onChange={e => set('widePhoto.titleHighlight', e.target.value)} placeholder="en 14 jours max." />
               </Field>
             </div>
-            <Field label="Description / accroche">
+            <Field label={t.common.description}>
               <textarea className="input" rows={3} value={c.widePhoto?.description ?? ''} onChange={e => set('widePhoto.description', e.target.value)} style={{ resize: 'vertical' }} />
             </Field>
+            {/* TODO: i18n — no key for 'Texte du bouton' */}
             <Field label="Texte du bouton">
               <input className="input" value={c.widePhoto?.button ?? ''} onChange={e => set('widePhoto.button', e.target.value)} />
             </Field>
@@ -430,9 +450,11 @@ export default function LandingEditor() {
       {/* ── En-têtes ── */}
       {tab === 'headings' && (
         <>
+          {/* TODO: i18n — InfoBanner text has no matching key */}
           <InfoBanner>
             En-têtes des sections intermédiaires (accroche, titre, sous-titre). Ces textes apparaissent au-dessus du simulateur et de la section 4 étapes.
           </InfoBanner>
+          {/* TODO: i18n — 'Section Simulateur de prix', 'Accroche (eyebrow)', 'Titre', 'Sous-titre' have no matching keys */}
           <EditorCard title="Section Simulateur de prix" icon={I.Calculator}>
             <Field label="Accroche (eyebrow)">
               <input className="input" value={c.sectionTitles?.estimator?.eyebrow ?? ''} onChange={e => set('sectionTitles.estimator.eyebrow', e.target.value)} />
@@ -450,17 +472,20 @@ export default function LandingEditor() {
       {/* ── Pied de page ── */}
       {tab === 'footer' && (
         <>
+          {/* TODO: i18n — InfoBanner text and 'Paramètres → Apparence' reference have no matching keys */}
           <InfoBanner>
             Le logo du pied de page utilise le logo principal configuré dans <strong>Paramètres → Apparence</strong>.
           </InfoBanner>
+          {/* TODO: i18n — 'Textes du pied de page', 'Copyright', 'Bureaux / Villes' have no matching keys */}
           <EditorCard title="Textes du pied de page" icon={I.Globe}>
-            <Field label="Description (sous le logo)">
+            <Field label={t.common.description}>
               <textarea className="input" rows={3} value={c.footer?.description ?? ''} onChange={e => set('footer.description', e.target.value)} style={{ resize: 'vertical' }} />
             </Field>
-            <Field label="Email de contact">
+            <Field label={t.common.email}>
               <input className="input" value={c.footer?.email ?? ''} onChange={e => set('footer.email', e.target.value)} />
             </Field>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+              {/* TODO: i18n — no key for 'Copyright' or 'Bureaux / Villes' */}
               <Field label="Copyright">
                 <input className="input" value={c.footer?.copyright ?? ''} onChange={e => set('footer.copyright', e.target.value)} />
               </Field>
@@ -475,17 +500,19 @@ export default function LandingEditor() {
       {/* ── Slides login ── */}
       {tab === 'slides' && (
         <>
+          {/* TODO: i18n — InfoBanner text has no matching key */}
           <InfoBanner>
             Ces messages s'affichent en rotation automatique (fade toutes les 4,5 s) dans la colonne gauche de la page connexion / inscription.
           </InfoBanner>
           {(c.loginSlides || []).map((slide, i) => (
             <div key={i} className="card" style={{ marginBottom: 10, padding: 16 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+                {/* TODO: i18n — no key for 'Message N' */}
                 <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--ink-400)', textTransform: 'uppercase', letterSpacing: '.06em' }}>Message {i + 1}</span>
                 <div style={{ flex: 1 }} />
                 {(c.loginSlides || []).length > 1 && (
                   <button onClick={() => removeSlide(i)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--bad-500)', fontSize: 12, display: 'flex', alignItems: 'center', gap: 4 }}>
-                    <I.Trash style={{ width: 13, height: 13 }} /> Supprimer
+                    <I.Trash style={{ width: 13, height: 13 }} /> {t.common.delete}
                   </button>
                 )}
               </div>
@@ -498,13 +525,13 @@ export default function LandingEditor() {
                     return next;
                   });
                 }}
-                placeholder="Entrez un message marketing..."
+                placeholder="Entrez un message marketing..." // TODO: i18n
                 style={{ resize: 'vertical' }}
               />
             </div>
           ))}
           <button onClick={addSlide} className="btn btn--ghost btn--sm" style={{ marginTop: 4 }}>
-            <I.Plus style={{ width: 14, height: 14 }} /> Ajouter un message
+            <I.Plus style={{ width: 14, height: 14 }} /> {t.common.add}
           </button>
         </>
       )}
@@ -512,9 +539,9 @@ export default function LandingEditor() {
       {/* Floating save */}
       <div style={{ position: 'sticky', bottom: 20, display: 'flex', justifyContent: 'flex-end', marginTop: 16 }}>
         <div style={{ background: 'white', border: '1px solid var(--border)', borderRadius: 10, padding: '10px 16px', boxShadow: '0 4px 20px rgba(0,0,0,.1)', display: 'flex', alignItems: 'center', gap: 12 }}>
-          {saved && <span style={{ fontSize: 12, color: 'var(--ok-700)', fontWeight: 600 }}>✓ Sauvegardé</span>}
+          {saved && <span style={{ fontSize: 12, color: 'var(--ok-700)', fontWeight: 600 }}>✓ {t.common.success}</span>}
           <button className="btn btn--brand btn--sm" disabled={saving} onClick={handleSave}>
-            <I.Check />{saving ? 'Enregistrement…' : 'Enregistrer tout'}
+            <I.Check />{saving ? `${t.common.saving}…` : t.common.save}
           </button>
         </div>
       </div>

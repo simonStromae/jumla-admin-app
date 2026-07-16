@@ -2,6 +2,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import I from '../components/Icons.jsx';
 import { Bi, Avatar } from '../components/Shell.jsx';
+import { useAdminT } from '../lib/useAdminT.js';
 
 
 const TEMPLATE_DEFAULTS = [
@@ -14,6 +15,7 @@ const TEMPLATE_DEFAULTS = [
 const VARIABLES = ['{first_name}', '{amount}', '{weight}', '{parcel_code}', '{arrival_date}', '{warehouse_address}', '{agent_phone}'];
 
 export default function MessagingScreen({ onNav, campaignId }) {
+  const t = useAdminT();
   const [selected,        setSelected]        = useState([]);
   const [templates,       setTemplates]       = useState(TEMPLATE_DEFAULTS);
   const [template,        setTemplate]        = useState('arrival');
@@ -62,13 +64,13 @@ export default function MessagingScreen({ onNav, campaignId }) {
   // Load customised templates from settings
   useEffect(() => {
     fetch('/api/settings').then(r => r.json()).then(d => {
-      const loaded = TEMPLATE_DEFAULTS.map(t => ({
-        ...t,
-        l:    d[`wa_tmpl_${t.id}_label`] ?? t.l,
-        body: d[`wa_tmpl_${t.id}_body`]  ?? t.body,
+      const loaded = TEMPLATE_DEFAULTS.map(tmpl => ({
+        ...tmpl,
+        l:    d[`wa_tmpl_${tmpl.id}_label`] ?? tmpl.l,
+        body: d[`wa_tmpl_${tmpl.id}_body`]  ?? tmpl.body,
       }));
       setTemplates(loaded);
-      const cur = loaded.find(t => t.id === template);
+      const cur = loaded.find(tmpl => tmpl.id === template);
       if (cur) setBody(cur.body);
     }).catch(() => {});
   }, []);
@@ -125,7 +127,7 @@ export default function MessagingScreen({ onNav, campaignId }) {
       // Refresh logs
       fetch('/api/messaging/logs').then(r => r.json()).then(ls => setLogs(Array.isArray(ls) ? ls : []));
     } catch {
-      setSendResult({ error: 'Erreur réseau' });
+      setSendResult({ error: t.common.networkError });
     } finally {
       setSending(false);
     }
@@ -140,7 +142,7 @@ export default function MessagingScreen({ onNav, campaignId }) {
       setCreateResult(data);
       loadWaTemplates();
     } catch {
-      setCreateResult({ error: 'Erreur réseau' });
+      setCreateResult({ error: t.common.networkError });
     } finally {
       setCreatingTmpls(false);
     }
@@ -156,7 +158,7 @@ export default function MessagingScreen({ onNav, campaignId }) {
       // Reload logs after refresh
       fetch('/api/messaging/logs').then(r => r.json()).then(ls => setLogs(Array.isArray(ls) ? ls : []));
     } catch {
-      setRefreshResult({ error: 'Erreur réseau' });
+      setRefreshResult({ error: t.common.networkError });
     } finally {
       setRefreshing(false);
     }
@@ -182,7 +184,8 @@ export default function MessagingScreen({ onNav, campaignId }) {
     <div className="page">
       <div className="page__head">
         <div>
-          <div className="page__title"><Bi fr="Messagerie WhatsApp" en="Messaging" /></div>
+          <div className="page__title">{t.messaging.title}</div>
+          {/* TODO: no i18n key — Envoi manuel · modèles bilingues · suivi de délivrance */}
           <div className="page__sub">Envoi manuel · modèles bilingues · suivi de délivrance</div>
         </div>
         <div className="page__actions">
@@ -194,9 +197,11 @@ export default function MessagingScreen({ onNav, campaignId }) {
           ) : (
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 12px', background: 'var(--warn-50)', border: '1px solid var(--warn-100)', borderRadius: 8 }}>
               <span style={{ width: 8, height: 8, borderRadius: 999, background: 'var(--warn-500)' }} />
+              {/* TODO: no i18n key for "API non configurée" */}
               <span style={{ fontSize: 12.5, fontWeight: 600, color: 'var(--warn-700)' }}>API non configurée</span>
             </div>
           )}
+          {/* TODO: no i18n key for "Configurer" — using t.common.update as closest match */}
           <button className="btn btn--ghost" onClick={() => onNav('/admin/settings?tab=whatsapp')}>
             <I.Settings />Configurer
           </button>
@@ -210,6 +215,7 @@ export default function MessagingScreen({ onNav, campaignId }) {
           display: 'flex', alignItems: 'center', gap: 10,
         }}>
           <svg viewBox="0 0 24 24" fill="#25D366" width="18" height="18"><path d="M17.5 14.4c-.3-.1-1.7-.9-2-1s-.5-.1-.7.1c-.2.3-.7 1-.9 1.1-.2.2-.3.2-.6 0-.3-.1-1.2-.5-2.3-1.4-.8-.7-1.4-1.7-1.6-2-.2-.3 0-.5.1-.6l.5-.5c.1-.2.2-.3.3-.5 0-.2 0-.4-.1-.5 0-.1-.7-1.6-1-2.2-.2-.6-.5-.5-.7-.5h-.6c-.2 0-.5.1-.7.4-.3.3-1 1-1 2.4s1 2.8 1.2 3.1c.2.2 2 3 4.8 4.3.7.3 1.2.4 1.6.6.7.2 1.3.2 1.8.1.6-.1 1.7-.7 1.9-1.3.3-.7.3-1.2.2-1.3-.1-.2-.3-.3-.6-.4zM12 21a9 9 0 0 1-4.6-1.3L3 21l1.3-4.3A9 9 0 1 1 12 21z" /></svg>
+          {/* TODO: no i18n key for "Envoi groupé — Cargaison" or "Voir tous" */}
           <span style={{ fontSize: 13, fontWeight: 700, color: '#166534', flex: 1 }}>
             Envoi groupé — Cargaison <strong>{activeCampaign.code}</strong> · {filtered.length} client{filtered.length !== 1 ? 's' : ''}
           </span>
@@ -265,23 +271,24 @@ export default function MessagingScreen({ onNav, campaignId }) {
         <div className="card" style={{ display: 'flex', flexDirection: 'column', maxHeight: 'calc(100vh - 200px)' }}>
           <div style={{ padding: 14, borderBottom: '1px solid var(--border)' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+              {/* TODO: no i18n key for "Destinataires" or "sélectionnés" */}
               <div className="section-title" style={{ margin: 0 }}>
                 Destinataires <span className="section-title__count">{filtered.length}</span>
               </div>
               <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--brand-700)' }}>{selected.length} sélectionnés</span>
             </div>
             <div style={{ display: 'flex', gap: 6 }}>
-              <button className={'btn btn--sm ' + (filter === 'all' ? 'btn--soft' : 'btn--ghost')} style={{ flex: 1, justifyContent: 'center' }} onClick={() => setFilter('all')}>Tous</button>
-              <button className={'btn btn--sm ' + (filter === 'unpaid' ? 'btn--soft' : 'btn--ghost')} style={{ flex: 1, justifyContent: 'center' }} onClick={() => setFilter('unpaid')}>Impayés</button>
+              <button className={'btn btn--sm ' + (filter === 'all' ? 'btn--soft' : 'btn--ghost')} style={{ flex: 1, justifyContent: 'center' }} onClick={() => setFilter('all')}>{t.parcels.filterAll}</button>
+              <button className={'btn btn--sm ' + (filter === 'unpaid' ? 'btn--soft' : 'btn--ghost')} style={{ flex: 1, justifyContent: 'center' }} onClick={() => setFilter('unpaid')}>{t.parcels.filterUnpaid}</button>
             </div>
           </div>
 
           <div style={{ overflowY: 'auto', flex: 1 }}>
-            {loading && <div style={{ padding: 40, textAlign: 'center', color: 'var(--ink-400)' }}>Chargement…</div>}
+            {loading && <div style={{ padding: 40, textAlign: 'center', color: 'var(--ink-400)' }}>{t.common.loading}</div>}
             {!loading && filtered.length === 0 && (
               <div style={{ padding: 40, textAlign: 'center', color: 'var(--ink-400)' }}>
                 <I.Box style={{ width: 32, height: 32, opacity: .3, marginBottom: 8 }} />
-                <div style={{ fontSize: 13 }}>Aucun colis disponible</div>
+                <div style={{ fontSize: 13 }}>{t.parcels.noParcels}</div>
               </div>
             )}
             {filtered.map(p => {
@@ -304,10 +311,11 @@ export default function MessagingScreen({ onNav, campaignId }) {
                   <div style={{ textAlign: 'right' }}>
                     <div className="mono" style={{ fontSize: 12.5, fontWeight: 700 }}>{(p.amount ?? 0).toLocaleString('fr')} CAD</div>
                     <div style={{ fontSize: 10.5, color: isPaid ? 'var(--ok-600)' : 'var(--bad-600)', fontWeight: 600 }}>
-                      {isPaid ? '✓ Payé' : '○ Impayé'}
+                      {/* TODO: no i18n key for "Impayé" — using t.paymentStatus.paid / t.payments.filterUnpaid */}
+                      {isPaid ? `✓ ${t.paymentStatus.paid}` : '○ Impayé'}
                     </div>
                   </div>
-                  <button className="icon-btn" title="Envoyer maintenant" onClick={e => { e.preventDefault(); handleSendOne(p.id); }}>
+                  <button className="icon-btn" title={t.messaging.compose.send} onClick={e => { e.preventDefault(); handleSendOne(p.id); }}>
                     <I.Send style={{ width: 14, height: 14, color: 'var(--ok-600)' }} />
                   </button>
                 </label>
@@ -317,12 +325,14 @@ export default function MessagingScreen({ onNav, campaignId }) {
 
           <div style={{ padding: 12, borderTop: '1px solid var(--border)', background: 'var(--bg-soft)', display: 'flex', flexDirection: 'column', gap: 6 }}>
             {activeCampaign && (
+              /* TODO: no i18n key for "Sélectionner tous de la cargaison" */
               <button className="btn btn--sm" style={{ justifyContent: 'center', background: '#25D366', color: 'white', border: 'none' }}
                 onClick={() => setSelected(filtered.map(p => p.id))}>
                 Sélectionner tous de la cargaison ({filtered.length})
               </button>
             )}
             <div style={{ display: 'flex', gap: 6 }}>
+            {/* TODO: no i18n key for "Sélectionner les impayés" or "Configurer WhatsApp" */}
             <button className="btn btn--soft btn--sm" style={{ flex: 1, justifyContent: 'center' }}
               onClick={() => setSelected(filtered.filter(p => p.paid !== 'paid').map(p => p.id))}>
               <I.Send />Sélectionner les impayés
@@ -339,7 +349,7 @@ export default function MessagingScreen({ onNav, campaignId }) {
                 disabled={selected.length === 0 || sending}
                 onClick={handleSend}
               >
-                <I.Chat />{sending ? 'Envoi…' : `Envoyer (${selected.length})`}
+                <I.Chat />{sending ? t.common.sending : `${t.messaging.compose.send} (${selected.length})`}
               </button>
             )}
             </div>
@@ -352,16 +362,18 @@ export default function MessagingScreen({ onNav, campaignId }) {
             <div style={{ padding: '14px 16px', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: 10 }}>
               <I.FileText style={{ width: 14, height: 14, color: 'var(--brand-600)' }} />
               <div style={{ flex: 1 }}>
+                {/* TODO: no i18n key for "Modèle de message" or "Variables remplacées automatiquement à l'envoi" */}
                 <div style={{ fontSize: 13, fontWeight: 700 }}>Modèle de message</div>
                 <div style={{ fontSize: 11, color: 'var(--ink-400)' }}>Variables remplacées automatiquement à l'envoi</div>
               </div>
               <select className="select input--sm" style={{ width: 220 }} value={template} onChange={e => onTemplateChange(e.target.value)}>
-                {templates.map(t => <option key={t.id} value={t.id}>{t.l}</option>)}
+                {templates.map(tmpl => <option key={tmpl.id} value={tmpl.id}>{tmpl.l}</option>)}
               </select>
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 320px', gap: 0 }}>
               <div style={{ padding: 16, borderRight: '1px solid var(--border)' }}>
+                {/* TODO: no i18n key for "Variables disponibles" */}
                 <div style={{ fontSize: 11, color: 'var(--ink-500)', marginBottom: 8, fontWeight: 600 }}>Variables disponibles</div>
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5, marginBottom: 14 }}>
                   {VARIABLES.map(v => (
@@ -374,15 +386,16 @@ export default function MessagingScreen({ onNav, campaignId }) {
                 </div>
                 <textarea className="textarea" rows={11} value={body} onChange={e => setBody(e.target.value)} style={{ fontSize: 13, lineHeight: 1.55 }} />
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 12 }}>
+                  {/* TODO: no i18n key for "caractères" or "Réinit." */}
                   <span style={{ fontSize: 11.5, color: 'var(--ink-400)' }}>{body.length} caractères</span>
-                  <button className="btn btn--ghost btn--sm" onClick={() => { const t = templates.find(t => t.id === template); if (t) setBody(t.body); }}>Réinit.</button>
+                  <button className="btn btn--ghost btn--sm" onClick={() => { const tmpl = templates.find(tmpl => tmpl.id === template); if (tmpl) setBody(tmpl.body); }}>Réinit.</button>
                 </div>
               </div>
 
               {/* WhatsApp preview */}
               <div style={{ background: '#E4DDD3', padding: 16, display: 'flex', flexDirection: 'column', gap: 8, minHeight: 360 }}>
                 <div style={{ fontSize: 10.5, fontWeight: 700, letterSpacing: '.04em', color: 'var(--ink-500)', textTransform: 'uppercase', marginBottom: 4, textAlign: 'center' }}>
-                  Aperçu · {previewParcel?.senderName ?? '—'}
+                  {t.common.preview} · {previewParcel?.senderName ?? '—'}
                 </div>
                 <div style={{ alignSelf: 'flex-start', maxWidth: '92%', background: 'white', borderRadius: '10px 10px 10px 2px', padding: '8px 10px', boxShadow: '0 1px 1px rgba(0,0,0,.08)', fontSize: 12, lineHeight: 1.45, whiteSpace: 'pre-wrap' }}>
                   {previewBody}
@@ -392,6 +405,7 @@ export default function MessagingScreen({ onNav, campaignId }) {
             </div>
 
             <div style={{ padding: '12px 16px', background: 'var(--bg-soft)', borderTop: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: 10 }}>
+              {/* TODO: no i18n key for "destinataire(s) sélectionné(s)" or "Configurer WhatsApp pour envoyer" */}
               <div style={{ flex: 1, fontSize: 12.5, color: 'var(--ink-600)' }}>
                 <strong>{selected.length}</strong> destinataire{selected.length !== 1 ? 's' : ''} sélectionné{selected.length !== 1 ? 's' : ''}
               </div>
@@ -405,7 +419,7 @@ export default function MessagingScreen({ onNav, campaignId }) {
                   disabled={selected.length === 0 || sending}
                   onClick={handleSend}
                 >
-                  <I.Send />{sending ? 'Envoi en cours…' : `Envoyer · ${selected.length}`}
+                  <I.Send />{sending ? t.common.sending : `${t.messaging.compose.send} · ${selected.length}`}
                 </button>
               )}
             </div>
@@ -415,6 +429,7 @@ export default function MessagingScreen({ onNav, campaignId }) {
           <div className="card">
             <div style={{ padding: '12px 16px', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: 10 }}>
               <I.History style={{ width: 14, height: 14, color: 'var(--brand-600)' }} />
+              {/* TODO: no i18n key for "Journal d'envois", "message(s)", "Rafraîchir statuts", or "Actualisation…" */}
               <div style={{ flex: 1, fontSize: 13, fontWeight: 700 }}>Journal d'envois</div>
               <span style={{ fontSize: 12, color: 'var(--ink-400)' }}>{logs.length} message{logs.length !== 1 ? 's' : ''}</span>
               {logs.some(l => ['queued','accepted','sending'].includes(l.status)) && (
@@ -432,8 +447,9 @@ export default function MessagingScreen({ onNav, campaignId }) {
             {refreshResult && (
               <div style={{ padding: '8px 16px', background: refreshResult.error ? 'var(--bad-50)' : 'var(--ok-50)', borderBottom: '1px solid var(--border)', fontSize: 12.5, color: refreshResult.error ? 'var(--bad-700)' : 'var(--ok-700)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <span>
+                  {/* TODO: no i18n key for "mis à jour sur" or "Aucun statut mis à jour" */}
                   {refreshResult.error
-                    ? `Erreur : ${refreshResult.error}`
+                    ? `${t.common.error} : ${refreshResult.error}`
                     : refreshResult.updated > 0
                     ? `✓ ${refreshResult.updated} statut${refreshResult.updated > 1 ? 's' : ''} mis à jour sur ${refreshResult.total}`
                     : refreshResult.message ?? 'Aucun statut mis à jour'}
@@ -444,17 +460,18 @@ export default function MessagingScreen({ onNav, campaignId }) {
             {logs.length === 0 ? (
               <div style={{ padding: 40, textAlign: 'center', color: 'var(--ink-400)' }}>
                 <I.Chat style={{ width: 32, height: 32, opacity: .25, marginBottom: 10 }} />
-                <div style={{ fontSize: 13 }}>Aucun message envoyé pour l'instant.</div>
+                <div style={{ fontSize: 13 }}>{t.messaging.noMessages}</div>
               </div>
             ) : (
               <div style={{ overflowY: 'auto', maxHeight: 480 }}>
               <table className="tbl">
                 <thead>
                   <tr>
-                    <th>Date</th>
-                    <th>Destinataire</th>
+                    <th>{t.common.date}</th>
+                    <th>{t.messaging.table.recipient}</th>
+                    {/* TODO: no i18n key for "Colis" (parcel column) or "Réf. Twilio" */}
                     <th>Colis</th>
-                    <th>Statut</th>
+                    <th>{t.common.status}</th>
                     <th>Réf. Twilio</th>
                   </tr>
                 </thead>
@@ -478,6 +495,7 @@ export default function MessagingScreen({ onNav, campaignId }) {
                             const ok  = ['sent','delivered','read'].includes(log.status);
                             const pnd = ['queued','accepted','sending'].includes(log.status);
                             const undeliv = log.status === 'undelivered';
+                            /* TODO: no i18n keys for delivery status labels "Livré", "Envoyé", "En attente", "Non livré", "Échec" */
                             const label = log.status === 'delivered' || log.status === 'read' ? 'Livré'
                               : log.status === 'sent' ? 'Envoyé'
                               : pnd ? 'En attente'
@@ -505,6 +523,7 @@ export default function MessagingScreen({ onNav, campaignId }) {
         <div className="card" style={{ marginTop: 14 }}>
           <div style={{ padding: '12px 16px', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: 10 }}>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--brand-600)" strokeWidth="1.7"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+            {/* TODO: no i18n key for "Templates WhatsApp approuvés", "Masquer ▲", or "Afficher ▼" */}
             <div style={{ flex: 1, fontSize: 13, fontWeight: 700 }}>Templates WhatsApp approuvés</div>
             <button className="btn btn--ghost btn--sm" onClick={() => setShowTemplates(v => !v)}>
               {showTemplates ? 'Masquer ▲' : 'Afficher ▼'}
@@ -513,13 +532,15 @@ export default function MessagingScreen({ onNav, campaignId }) {
 
           {showTemplates && (
             <div style={{ padding: '14px 16px' }}>
+              {/* TODO: no i18n key for the Meta templates explanation paragraph */}
               <p style={{ fontSize: 12.5, color: 'var(--ink-500)', marginBottom: 14, lineHeight: 1.5 }}>
                 Les templates approuvés par Meta permettent d'envoyer des messages <strong>sans fenêtre 24h</strong>. Créez-les une fois, soumettez pour approbation (24–48h), ensuite tous les envois les utilisent automatiquement.
               </p>
 
               {createResult && (
                 <div style={{ marginBottom: 12, padding: '8px 14px', borderRadius: 8, background: createResult.error ? 'var(--bad-50)' : 'var(--ok-50)', border: '1px solid ' + (createResult.error ? 'var(--bad-200)' : 'var(--ok-200)'), fontSize: 12.5, color: createResult.error ? 'var(--bad-700)' : 'var(--ok-700)', display: 'flex', justifyContent: 'space-between' }}>
-                  <span>{createResult.error ? `Erreur : ${createResult.error}` : '✓ Templates créés et soumis pour approbation Meta (24–48h)'}</span>
+                  {/* TODO: no i18n key for "Templates créés et soumis…" */}
+                  <span>{createResult.error ? `${t.common.error} : ${createResult.error}` : '✓ Templates créés et soumis pour approbation Meta (24–48h)'}</span>
                   <button onClick={() => setCreateResult(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 16, opacity: .6 }}>×</button>
                 </div>
               )}
@@ -532,6 +553,7 @@ export default function MessagingScreen({ onNav, campaignId }) {
                   const notYet    = tmpl.approvalStatus === 'not_created';
                   const color = approved ? 'var(--ok-700)' : pending ? 'var(--info-700)' : rejected ? 'var(--bad-700)' : 'var(--ink-400)';
                   const bg    = approved ? 'var(--ok-50)'  : pending ? 'var(--info-50)' : rejected ? 'var(--bad-50)'  : 'var(--bg-soft)';
+                  /* TODO: no i18n keys for template approval status labels "Approuvé", "En attente", "Rejeté", "Non créé" */
                   const label = approved ? '✓ Approuvé' : pending ? '⏳ En attente' : rejected ? '✕ Rejeté' : notYet ? 'Non créé' : tmpl.approvalStatus;
                   return (
                     <div key={tmpl.id} style={{ padding: '10px 12px', borderRadius: 8, border: '1px solid var(--border)', background: bg }}>
@@ -549,7 +571,8 @@ export default function MessagingScreen({ onNav, campaignId }) {
                 onClick={handleCreateTemplates}
                 style={{ width: '100%', justifyContent: 'center' }}
               >
-                {creatingTmpls ? 'Création en cours…' : waTemplates.some(t => t.approvalStatus !== 'not_created') ? '↻ Soumettre les templates manquants' : '📤 Créer et soumettre tous les templates à Meta'}
+                {/* TODO: no i18n keys for "Création en cours…", "Soumettre les templates manquants", "Créer et soumettre tous les templates à Meta" */}
+                {creatingTmpls ? 'Création en cours…' : waTemplates.some(tmpl => tmpl.approvalStatus !== 'not_created') ? '↻ Soumettre les templates manquants' : '📤 Créer et soumettre tous les templates à Meta'}
               </button>
             </div>
           )}

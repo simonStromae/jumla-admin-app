@@ -2,21 +2,24 @@ import { useState, useEffect } from 'react';
 import I from '../components/Icons.jsx';
 import { Bi, Skel } from '../components/Shell.jsx';
 import { Pagination } from '../components/Pagination.jsx';
-
-const SLIP_STATUS = {
-  en_attente: { l: 'À vérifier', cls: 'neutral' },
-  en_cours:   { l: 'En cours',   cls: 'warn' },
-  valide:     { l: 'Validé',     cls: 'ok' },
-  libere:     { l: 'Libéré',     cls: 'ok' },
-};
-
-const PAY_STATUS = {
-  paid:    { l: 'Payé',      cls: 'ok' },
-  pending: { l: 'En attente', cls: 'warn' },
-  unpaid:  { l: 'Impayé',    cls: 'bad' },
-};
+import { useAdminT } from '../lib/useAdminT.js';
 
 export default function AllSlipsScreen({ onNav }) {
+  const t = useAdminT();
+
+  const SLIP_STATUS = {
+    en_attente: { l: t.verify.pending,                           cls: 'neutral' },
+    en_cours:   { l: /* TODO: no exact i18n key for "En cours" */ 'En cours', cls: 'warn' },
+    valide:     { l: t.blStatus.valide,                          cls: 'ok' },
+    libere:     { l: /* TODO: no exact i18n key for "Libéré" */ 'Libéré', cls: 'ok' },
+  };
+
+  const PAY_STATUS = {
+    paid:    { l: t.paymentStatus.paid,                          cls: 'ok' },
+    pending: { l: t.paymentStatus.pending,                       cls: 'warn' },
+    unpaid:  { l: /* TODO: no exact i18n key for "Impayé" */ 'Impayé', cls: 'bad' },
+  };
+
   const [slips, setSlips]               = useState([]);
   const [campaigns, setCampaigns]       = useState([]);
   const [loading, setLoading]           = useState(true);
@@ -62,10 +65,11 @@ export default function AllSlipsScreen({ onNav }) {
       <div className="page__head">
         <div>
           <div className="page__title"><Bi fr="Bordereaux" en="Slips" /></div>
+          {/* TODO: no exact i18n key for this subtitle */}
           <div className="page__sub">Tous les bordereaux de livraison de toutes les cargaisons</div>
         </div>
         <div className="page__actions">
-          <button className="btn btn--ghost"><I.Download />Export PDF lot</button>
+          <button className="btn btn--ghost"><I.Download />{t.common.export} PDF</button>
         </div>
       </div>
 
@@ -75,18 +79,20 @@ export default function AllSlipsScreen({ onNav }) {
           <div key={i} className="kpi"><Skel w="60%" h={11} style={{ marginBottom: 10 }} /><Skel w="40%" h={26} /></div>
         )) : <>
           <div className="kpi">
+            {/* TODO: no exact i18n key for "Total bordereaux" */}
             <div className="kpi__label">Total bordereaux</div>
             <div className="kpi__value">{slips.length}</div>
           </div>
           <div className="kpi">
-            <div className="kpi__label">À vérifier</div>
+            <div className="kpi__label">{t.verify.pending}</div>
             <div className="kpi__value">{counts.pending}</div>
           </div>
           <div className="kpi" style={{ background: 'var(--ok-50)', borderColor: 'var(--ok-100)' }}>
-            <div className="kpi__label" style={{ color: 'var(--ok-700)' }}>Validés</div>
+            <div className="kpi__label" style={{ color: 'var(--ok-700)' }}>{t.blStatus.valide}</div>
             <div className="kpi__value" style={{ color: 'var(--ok-700)' }}>{counts.validated}</div>
           </div>
           <div className="kpi">
+            {/* TODO: no exact i18n key for "Libérés" */}
             <div className="kpi__label">Libérés</div>
             <div className="kpi__value">{counts.released}</div>
           </div>
@@ -96,13 +102,13 @@ export default function AllSlipsScreen({ onNav }) {
       <div className="toolbar">
         <div className="tabs">
           {[
-            { id: 'all',       l: 'Tous',      n: counts.all },
-            { id: 'pending',   l: 'À vérifier', n: counts.pending },
-            { id: 'validated', l: 'Validés',    n: counts.validated },
-            { id: 'released',  l: 'Libérés',   n: counts.released },
-          ].map(t => (
-            <button key={t.id} className={'tab ' + (tab === t.id ? 'is-active' : '')} onClick={() => { setTab(t.id); setPage(1); }}>
-              {t.l} <span className="count">{t.n}</span>
+            { id: 'all',       l: t.parcels.filterAll,  n: counts.all },
+            { id: 'pending',   l: t.verify.pending,      n: counts.pending },
+            { id: 'validated', l: t.blStatus.valide,     n: counts.validated },
+            { id: 'released',  l: /* TODO: no exact i18n key for "Libérés" */ 'Libérés', n: counts.released },
+          ].map(tabItem => (
+            <button key={tabItem.id} className={'tab ' + (tab === tabItem.id ? 'is-active' : '')} onClick={() => { setTab(tabItem.id); setPage(1); }}>
+              {tabItem.l} <span className="count">{tabItem.n}</span>
             </button>
           ))}
         </div>
@@ -111,7 +117,7 @@ export default function AllSlipsScreen({ onNav }) {
           <I.Search style={{ position: 'absolute', left: 10, top: 9, width: 14, height: 14, color: 'var(--ink-400)' }} />
           <input
             className="input input--sm"
-            placeholder="Code BL, client, tracking..."
+            placeholder={/* TODO: no exact i18n key for "Code BL, client, tracking..." */ 'Code BL, client, tracking...'}
             value={search}
             onChange={e => { setSearch(e.target.value); setPage(1); }}
             style={{ width: 240, paddingLeft: 32 }}
@@ -120,6 +126,7 @@ export default function AllSlipsScreen({ onNav }) {
         <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '4px 6px 4px 10px', border: '1px solid var(--border)', borderRadius: 7, background: 'white', fontSize: 12 }}>
           <I.Plane style={{ width: 12, height: 12, color: 'var(--ink-400)' }} />
           <select value={campaignFilter} onChange={e => { setCampaignFilter(e.target.value); setPage(1); }} style={{ border: 0, background: 'transparent', fontWeight: 600 }}>
+            {/* TODO: no exact i18n key for "Toutes cargaisons" */}
             <option value="all">Toutes cargaisons</option>
             {campaigns.map(c => <option key={c.id} value={c.id}>{c.code}</option>)}
           </select>
@@ -130,14 +137,17 @@ export default function AllSlipsScreen({ onNav }) {
         <thead>
           <tr>
             <th style={{ width: 32, borderRadius: 0 }}><input type="checkbox" style={{ accentColor: 'var(--brand-500)' }} /></th>
+            {/* TODO: no exact i18n key for "Bordereau" (BL slip reference) */}
             <th>Bordereau</th>
-            <th>Cargaison</th>
-            <th>Client</th>
-            <th>Colis</th>
+            <th>{t.nav.campaigns}</th>
+            <th>{t.parcels.table.client}</th>
+            <th>{t.nav.parcels}</th>
+            {/* TODO: no exact i18n key for "Pièces" */}
             <th style={{ textAlign: 'center' }}>Pièces</th>
-            <th style={{ textAlign: 'right' }}>Poids</th>
-            <th>Statut BL</th>
-            <th>Paiement</th>
+            <th style={{ textAlign: 'right' }}>{t.common.weight}</th>
+            {/* TODO: no exact i18n key for "Statut BL" (BL-specific status) */}
+            <th>{t.common.status} BL</th>
+            <th>{t.parcels.table.payment}</th>
             <th style={{ borderRadius: 0, width: 70 }}></th>
           </tr>
         </thead>
@@ -194,7 +204,7 @@ export default function AllSlipsScreen({ onNav }) {
           })}
           {!loading && filtered.length === 0 && (
             <tr><td colSpan={10} style={{ textAlign: 'center', padding: 40, color: 'var(--ink-400)', fontSize: 13 }}>
-              Aucun bordereau trouvé.
+              {t.common.noData}
             </td></tr>
           )}
         </tbody>

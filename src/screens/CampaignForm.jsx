@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import I from '../components/Icons.jsx';
 import { RoutePill, Avatar } from '../components/Shell.jsx';
 import { HelpTip } from '../components/HelpCenter.jsx';
+import { useAdminT } from '../lib/useAdminT.js';
 
 function autoCode(route) {
   if (!route) return '';
@@ -12,6 +13,7 @@ function autoCode(route) {
 
 export default function CampaignFormPage({ mode = 'create', campaign, onNav }) {
   const isEdit = mode === 'edit';
+  const t = useAdminT();
 
   const [routes, setRoutes]   = useState([]);
   const [agents, setAgents]   = useState([]);
@@ -58,27 +60,27 @@ export default function CampaignFormPage({ mode = 'create', campaign, onNav }) {
   }
 
   async function handleSubmit() {
-    if (!data.routeId)    { setErr('Veuillez sélectionner une route'); return; }
-    if (!data.code.trim()) { setErr('Le code de cargaison est obligatoire'); return; }
+    if (!data.routeId)    { setErr(/* TODO: add i18n key for "Veuillez sélectionner une route" */ 'Veuillez sélectionner une route'); return; }
+    if (!data.code.trim()) { setErr(/* TODO: add i18n key for "Le code de cargaison est obligatoire" */ 'Le code de cargaison est obligatoire'); return; }
 
     // Date validations
     const today = new Date(); today.setHours(0, 0, 0, 0);
     if (data.depDate) {
       const dep = new Date(data.depDate);
       if (!isEdit && dep < today) {
-        setErr('La date de départ ne peut pas être dans le passé'); return;
+        setErr(/* TODO: add i18n key for "La date de départ ne peut pas être dans le passé" */ 'La date de départ ne peut pas être dans le passé'); return;
       }
     }
     if (data.arrDate) {
       if (!data.depDate) {
-        setErr('Veuillez renseigner la date de départ avant la date d\'arrivée'); return;
+        setErr(/* TODO: add i18n key for "Veuillez renseigner la date de départ avant la date d'arrivée" */ 'Veuillez renseigner la date de départ avant la date d\'arrivée'); return;
       }
       if (new Date(data.arrDate) <= new Date(data.depDate)) {
-        setErr('La date d\'arrivée doit être postérieure à la date de départ'); return;
+        setErr(/* TODO: add i18n key for "La date d'arrivée doit être postérieure à la date de départ" */ 'La date d\'arrivée doit être postérieure à la date de départ'); return;
       }
     }
     if (data.capacityKg && Number(data.capacityKg) <= 0) {
-      setErr('La capacité doit être supérieure à 0'); return;
+      setErr(/* TODO: add i18n key for "La capacité doit être supérieure à 0" */ 'La capacité doit être supérieure à 0'); return;
     }
 
     setSaving(true); setErr('');
@@ -100,19 +102,19 @@ export default function CampaignFormPage({ mode = 'create', campaign, onNav }) {
         },
       );
       const json = await res.json();
-      if (!res.ok) { setErr(json.error || (isEdit ? 'Erreur lors de la modification' : 'Erreur lors de la création')); setSaving(false); return; }
+      if (!res.ok) { setErr(json.error || t.common.error); setSaving(false); return; }
       onNav(isEdit ? '/campaign/' + campaign.id : '/');
-    } catch { setErr('Erreur réseau'); setSaving(false); }
+    } catch { setErr(t.common.networkError); setSaving(false); }
   }
 
   if (loading) {
     return (
       <div className="page">
         <div className="page__head" style={{ marginBottom: 28 }}>
-          <div className="page__title">{isEdit ? 'Modifier la cargaison' : 'Nouvelle cargaison'}</div>
+          <div className="page__title">{isEdit ? t.common.edit : t.campaigns.newCampaign}</div>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '60px 0', color: 'var(--ink-400)', fontSize: 14 }}>
-          Chargement en cours…
+          {t.common.loading}
         </div>
       </div>
     );
@@ -122,10 +124,10 @@ export default function CampaignFormPage({ mode = 'create', campaign, onNav }) {
     <div className="page">
       {/* Breadcrumb */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12.5, color: 'var(--ink-400)', marginBottom: 8 }}>
-        <a style={{ cursor: 'pointer' }} onClick={() => onNav('/')}>Cargaisons</a>
+        <a style={{ cursor: 'pointer' }} onClick={() => onNav('/')}>{t.nav.campaigns}</a>
         <I.ChevronRight style={{ width: 12, height: 12 }} />
         <span style={{ color: 'var(--ink-600)', fontWeight: 600 }}>
-          {isEdit ? campaign?.code : 'Nouvelle cargaison'}
+          {isEdit ? campaign?.code : t.campaigns.newCampaign}
         </span>
       </div>
 
@@ -133,19 +135,19 @@ export default function CampaignFormPage({ mode = 'create', campaign, onNav }) {
       <div className="page__head" style={{ marginBottom: 28 }}>
         <div>
           <div className="page__title">
-            {isEdit ? 'Modifier la cargaison' : 'Nouvelle cargaison'}
+            {isEdit ? t.common.edit : t.campaigns.newCampaign}
             <span style={{ color: 'var(--ink-400)', fontWeight: 400, fontSize: '.7em', marginLeft: 8 }}>
               / {isEdit ? 'Edit shipment' : 'New shipment'}
             </span>
           </div>
           <div className="page__sub">
-            {route ? `${route.fromIATA} → ${route.toIATA} · ${route.label || route.code}` : 'Sélectionnez une route'}
+            {route ? `${route.fromIATA} → ${route.toIATA} · ${route.label || route.code}` : /* TODO: add i18n key for "Sélectionnez une route" */ 'Sélectionnez une route'}
           </div>
         </div>
         <div className="page__actions">
-          <button className="btn btn--ghost" onClick={() => onNav('/')}>Annuler</button>
+          <button className="btn btn--ghost" onClick={() => onNav('/')}>{t.common.cancel}</button>
           <button className="btn btn--brand" onClick={handleSubmit} disabled={saving}>
-            <I.Check />{saving ? 'Enregistrement…' : isEdit ? 'Enregistrer' : 'Créer la cargaison'}
+            <I.Check />{saving ? t.common.saving : isEdit ? t.common.save : t.common.create}
           </button>
         </div>
       </div>
@@ -161,12 +163,12 @@ export default function CampaignFormPage({ mode = 'create', campaign, onNav }) {
           {/* Route */}
           <div className="card" style={{ padding: 20, marginBottom: 16 }}>
             <div className="section-title" style={{ marginBottom: 14 }}>
-              <I.Plane style={{ width: 14, height: 14, color: 'var(--brand-600)' }} /> Route
+              <I.Plane style={{ width: 14, height: 14, color: 'var(--brand-600)' }} /> {t.campaigns.table.route}
             </div>
 
             {routes.length === 0 ? (
               <div style={{ padding: '24px', textAlign: 'center', background: 'var(--bg-soft)', borderRadius: 8, color: 'var(--ink-400)', fontSize: 13 }}>
-                Aucune route active. <a style={{ color: 'var(--brand-600)', cursor: 'pointer', fontWeight: 600 }} onClick={() => onNav('/admin/settings')}>Créer une route dans les paramètres →</a>
+                {/* TODO: add i18n key for "Aucune route active." */}Aucune route active. <a style={{ color: 'var(--brand-600)', cursor: 'pointer', fontWeight: 600 }} onClick={() => onNav('/admin/settings')}>{/* TODO: add i18n key for "Créer une route dans les paramètres →" */}Créer une route dans les paramètres →</a>
               </div>
             ) : (
               <div style={{ display: 'grid', gap: 10, marginBottom: 20 }}>
@@ -198,11 +200,11 @@ export default function CampaignFormPage({ mode = 'create', campaign, onNav }) {
 
             <div className="field-row field-row--2">
               <div className="field" style={{ marginBottom: 0 }}>
-                <label className="label">Code cargaison <span className="opt">/ Auto</span><HelpTip text="Identifiant unique de la cargaison. Généré automatiquement (ex: DLA-MTL-JUL-01). Modifiable." /></label>
+                <label className="label">{/* TODO: add i18n key for "Code cargaison" */}Code cargaison <span className="opt">/ Auto</span><HelpTip text="Identifiant unique de la cargaison. Généré automatiquement (ex: DLA-MTL-JUL-01). Modifiable." /></label>
                 <input className="input mono" value={data.code} onChange={e => upd('code', e.target.value)} />
               </div>
               <div className="field" style={{ marginBottom: 0 }}>
-                <label className="label">Capacité (kg) <span className="opt">/ optionnel</span><HelpTip text="Poids maximum accepté pour cette cargaison. Permet de visualiser le taux de remplissage." /></label>
+                <label className="label">{t.campaigns.wizard.fields.maxWeight} <span className="opt">/ {t.common.optional}</span><HelpTip text="Poids maximum accepté pour cette cargaison. Permet de visualiser le taux de remplissage." /></label>
                 <input className="input mono" type="number" value={data.capacityKg}
                   onChange={e => upd('capacityKg', e.target.value)} placeholder="ex: 500" />
               </div>
@@ -212,17 +214,17 @@ export default function CampaignFormPage({ mode = 'create', campaign, onNav }) {
           {/* Dates */}
           <div className="card" style={{ padding: 20, marginBottom: 16 }}>
             <div className="section-title" style={{ marginBottom: 14 }}>
-              <I.Calendar style={{ width: 14, height: 14, color: 'var(--brand-600)' }} /> Dates
+              <I.Calendar style={{ width: 14, height: 14, color: 'var(--brand-600)' }} /> {/* TODO: add i18n key for "Dates" (t.common.date is singular) */}{t.common.date}
             </div>
             <div className="field-row field-row--2">
               <div className="field" style={{ marginBottom: 0 }}>
-                <label className="label">Date de départ <span className="opt">/ Departure</span><HelpTip text="Date prévue d'envoi depuis l'origine. Ne peut pas être dans le passé lors de la création." /></label>
+                <label className="label">{t.campaigns.detail.info.departure} <span className="opt">/ Departure</span><HelpTip text="Date prévue d'envoi depuis l'origine. Ne peut pas être dans le passé lors de la création." /></label>
                 <input className="input" type="date" value={data.depDate}
                   min={isEdit ? undefined : new Date().toISOString().slice(0, 10)}
                   onChange={e => upd('depDate', e.target.value)} />
               </div>
               <div className="field" style={{ marginBottom: 0 }}>
-                <label className="label">Arrivée estimée <span className="opt">/ ETA</span></label>
+                <label className="label">{t.campaigns.detail.info.arrival} <span className="opt">/ ETA</span></label>
                 <input className="input" type="date" value={data.arrDate}
                   min={data.depDate || new Date().toISOString().slice(0, 10)}
                   onChange={e => upd('arrDate', e.target.value)} />
@@ -234,22 +236,22 @@ export default function CampaignFormPage({ mode = 'create', campaign, onNav }) {
           {agents.length > 0 && (
             <div className="card" style={{ padding: 20, marginBottom: 16 }}>
               <div className="section-title" style={{ marginBottom: 14 }}>
-                <I.Users style={{ width: 14, height: 14, color: 'var(--brand-600)' }} /> Équipe <span style={{ fontSize: 11, color: 'var(--ink-400)', fontWeight: 400 }}>(optionnel)</span>
+                <I.Users style={{ width: 14, height: 14, color: 'var(--brand-600)' }} /> {/* TODO: add i18n key for "Équipe" */}Équipe <span style={{ fontSize: 11, color: 'var(--ink-400)', fontWeight: 400 }}>({t.common.optional})</span>
               </div>
               <div className="field-row field-row--2">
                 <div className="field" style={{ marginBottom: 0 }}>
-                  <label className="label">Responsable origine</label>
+                  <label className="label">{/* TODO: add i18n key for "Responsable origine" */}Responsable origine</label>
                   <select className="select" value={data.agentOrigin} onChange={e => upd('agentOrigin', e.target.value)}>
-                    <option value="">— Choisir</option>
+                    <option value="">{/* TODO: add i18n key for "— Choisir" */}— Choisir</option>
                     {agents.map(a => (
                       <option key={a.id} value={a.id}>{a.name}{a.city && a.city !== '—' ? ` — ${a.city}` : ''}</option>
                     ))}
                   </select>
                 </div>
                 <div className="field" style={{ marginBottom: 0 }}>
-                  <label className="label">Responsable destination</label>
+                  <label className="label">{/* TODO: add i18n key for "Responsable destination" */}Responsable destination</label>
                   <select className="select" value={data.agentDest} onChange={e => upd('agentDest', e.target.value)}>
-                    <option value="">— Choisir</option>
+                    <option value="">{/* TODO: add i18n key for "— Choisir" */}— Choisir</option>
                     {agents.map(a => (
                       <option key={a.id} value={a.id}>{a.name}{a.city && a.city !== '—' ? ` — ${a.city}` : ''}</option>
                     ))}
@@ -262,11 +264,11 @@ export default function CampaignFormPage({ mode = 'create', campaign, onNav }) {
           {/* Notes */}
           <div className="card" style={{ padding: 20, marginBottom: 16 }}>
             <div className="section-title" style={{ marginBottom: 14 }}>
-              <I.Tag style={{ width: 14, height: 14, color: 'var(--brand-600)' }} /> Notes internes
+              <I.Tag style={{ width: 14, height: 14, color: 'var(--brand-600)' }} /> {t.common.notes}
             </div>
             <textarea className="textarea" rows={3}
               value={data.notes} onChange={e => upd('notes', e.target.value)}
-              placeholder="Conditions particulières, instructions de transport..." />
+              placeholder={/* TODO: add i18n key for "Conditions particulières, instructions de transport..." */ 'Conditions particulières, instructions de transport...'} />
           </div>
         </div>
 
@@ -278,16 +280,16 @@ export default function CampaignFormPage({ mode = 'create', campaign, onNav }) {
                 {route && <RoutePill from={route.fromIATA} to={route.toIATA} />}
                 <span className="mono" style={{ fontSize: 13, fontWeight: 700 }}>{data.code || '—'}</span>
               </div>
-              <div style={{ fontSize: 11, color: 'rgba(255,255,255,.5)' }}>Aperçu cargaison</div>
+              <div style={{ fontSize: 11, color: 'rgba(255,255,255,.5)' }}>{t.common.preview}</div>
             </div>
 
             <div style={{ padding: 16, display: 'flex', flexDirection: 'column', gap: 10 }}>
               {[
-                { label: 'Route',           value: route ? `${route.fromIATA} → ${route.toIATA}` : '—' },
-                { label: 'Libellé',         value: route?.label || '—' },
-                { label: 'Départ',          value: data.depDate || '—' },
-                { label: 'Arrivée estimée', value: data.arrDate || '—' },
-                { label: 'Capacité',        value: data.capacityKg ? `${data.capacityKg} kg` : '—' },
+                { label: t.campaigns.table.route,                                                              value: route ? `${route.fromIATA} → ${route.toIATA}` : '—' },
+                { label: /* TODO: add i18n key for "Libellé" */ 'Libellé',                                     value: route?.label || '—' },
+                { label: t.campaigns.detail.info.departure,                                                    value: data.depDate || '—' },
+                { label: t.campaigns.detail.info.arrival,                                                      value: data.arrDate || '—' },
+                { label: t.campaigns.wizard.review.labels.max,                                                 value: data.capacityKg ? `${data.capacityKg} kg` : '—' },
               ].map(({ label, value }) => (
                 <div key={label} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12 }}>
                   <span style={{ color: 'var(--ink-400)' }}>{label}</span>
@@ -298,10 +300,10 @@ export default function CampaignFormPage({ mode = 'create', campaign, onNav }) {
 
             {(data.agentOrigin || data.agentDest) && (
               <div style={{ padding: '12px 16px', borderTop: '1px solid var(--border-soft)', background: 'var(--bg-soft)' }}>
-                <div style={{ fontSize: 10.5, color: 'var(--ink-400)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.04em', marginBottom: 8 }}>Équipe</div>
+                <div style={{ fontSize: 10.5, color: 'var(--ink-400)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.04em', marginBottom: 8 }}>{/* TODO: add i18n key for "Équipe" */}Équipe</div>
                 {[
-                  { id: data.agentOrigin, role: 'Origine' },
-                  { id: data.agentDest,   role: 'Dest.' },
+                  { id: data.agentOrigin, role: /* TODO: add i18n key for "Origine" */ 'Origine' },
+                  { id: data.agentDest,   role: /* TODO: add i18n key for "Dest." */ 'Dest.' },
                 ].map(({ id, role }) => {
                   if (!id) return null;
                   const agent = agents.find(a => a.id === id);

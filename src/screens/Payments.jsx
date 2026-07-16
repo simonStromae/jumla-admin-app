@@ -1,33 +1,37 @@
 import { useState, useEffect, useRef } from 'react';
 import I from '../components/Icons.jsx';
 import { Bi, Avatar, Modal, Progress, Skel, useCan } from '../components/Shell.jsx';
+import { useAdminT } from '../lib/useAdminT.js';
 
+// TODO: i18n — module-level constants cannot use hooks; labels translated inline in components via t.payments.methods / t.paymentStatus
 const METHOD_LABELS = {
-  interac:     'Virement Interac',
-  cash:        'Espèces',
-  mobilemoney: 'Mobile Money',
-  cheque:      'Chèque',
-  virement:    'Virement bancaire',
+  interac:     'Virement Interac',   // → t.payments.methods.interac
+  cash:        'Espèces',            // → t.payments.methods.cash
+  mobilemoney: 'Mobile Money',       // TODO: i18n — no translation key
+  cheque:      'Chèque',             // TODO: i18n — no translation key
+  virement:    'Virement bancaire',  // → t.payments.methods.virement
 };
 
+// TODO: i18n — no translation keys for type labels
 const TYPE_LABELS = {
   payment: 'Paiement',
   credit:  'Crédit accordé',
 };
 
 const PAY_STATUS = {
-  completed: { label: 'Payé',       cls: 'ok'      },
-  paid:      { label: 'Payé',       cls: 'ok'      },
-  pending:   { label: 'En attente', cls: 'warn'    },
-  partial:   { label: 'Partiel',    cls: 'warn'    },
-  unpaid:    { label: 'Impayé',     cls: 'bad'     },
-  failed:    { label: 'Échoué',     cls: 'bad'     },
-  refunded:  { label: 'Remboursé',  cls: 'neutral' },
+  completed: { label: 'Payé',       cls: 'ok'      }, // → t.paymentStatus.paid
+  paid:      { label: 'Payé',       cls: 'ok'      }, // → t.paymentStatus.paid
+  pending:   { label: 'En attente', cls: 'warn'    }, // → t.paymentStatus.pending
+  partial:   { label: 'Partiel',    cls: 'warn'    }, // TODO: i18n — no translation key
+  unpaid:    { label: 'Impayé',     cls: 'bad'     }, // TODO: i18n — no translation key
+  failed:    { label: 'Échoué',     cls: 'bad'     }, // TODO: i18n — no translation key
+  refunded:  { label: 'Remboursé',  cls: 'neutral' }, // TODO: i18n — no translation key
 };
 
 /* ─── Record Payment Modal ───────────────────────────────── */
 
 function RecordPaymentModal({ preselectedClient, preselectedPaymentId, onClose, onSave }) {
+  const t = useAdminT();
   const [form, setForm]             = useState({ type: 'payment', amount: '', method: 'interac', reference: '', note: '' });
   const [clientQuery, setClientQuery] = useState(preselectedClient?.name || '');
   const [clients, setClients]       = useState([]);
@@ -41,11 +45,11 @@ function RecordPaymentModal({ preselectedClient, preselectedPaymentId, onClose, 
   // Client autocomplete
   useEffect(() => {
     if (!clientQuery || clientQuery.length < 2 || selectedClient) { setClients([]); return; }
-    const t = setTimeout(() => {
+    const timer = setTimeout(() => {
       fetch(`/api/clients?search=${encodeURIComponent(clientQuery)}&limit=8`)
         .then(r => r.json()).then(d => setClients(Array.isArray(d) ? d : []));
     }, 250);
-    return () => clearTimeout(t);
+    return () => clearTimeout(timer);
   }, [clientQuery, selectedClient]);
 
   // Load balance when client selected
@@ -88,9 +92,9 @@ function RecordPaymentModal({ preselectedClient, preselectedPaymentId, onClose, 
   const clearClient = () => { setSelectedClient(null); setClientQuery(''); setBalance(null); setAllocations({}); };
 
   const handleSave = async () => {
-    if (!selectedClient) { setErr('Sélectionnez un client'); return; }
-    if (!totalAmount)    { setErr('Montant requis'); return; }
-    if (credit < 0)      { setErr('Le montant alloué dépasse le montant reçu'); return; }
+    if (!selectedClient) { setErr(/* TODO: i18n — no translation key */ 'Sélectionnez un client'); return; }
+    if (!totalAmount)    { setErr(/* TODO: i18n — no translation key */ 'Montant requis'); return; }
+    if (credit < 0)      { setErr(/* TODO: i18n — no translation key */ 'Le montant alloué dépasse le montant reçu'); return; }
     setSaving(true); setErr('');
     const allocs = Object.entries(allocations)
       .filter(([, a]) => Number(a) > 0)
@@ -114,11 +118,11 @@ function RecordPaymentModal({ preselectedClient, preselectedPaymentId, onClose, 
       if (res.ok && json.ok) {
         onSave();
       } else {
-        setErr(json.error || `Erreur ${res.status} — vérifiez que /api/db-migrate a été lancé.`);
+        setErr(json.error || /* TODO: i18n — no translation key */ `Erreur ${res.status} — vérifiez que /api/db-migrate a été lancé.`);
         setSaving(false);
       }
     } catch {
-      setErr('Erreur réseau — vérifiez votre connexion.');
+      setErr(t.common.networkError);
       setSaving(false);
     }
   };
@@ -127,18 +131,18 @@ function RecordPaymentModal({ preselectedClient, preselectedPaymentId, onClose, 
 
   return (
     <Modal width={740} onClose={onClose}
-      title="Enregistrer un paiement reçu"
-      sub="Associez le règlement aux factures impayées du client"
+      title={/* TODO: i18n — no translation key */ "Enregistrer un paiement reçu"}
+      sub={/* TODO: i18n — no translation key */ "Associez le règlement aux factures impayées du client"}
       footer={
         <>
-          <button className="btn btn--ghost" onClick={onClose}>Annuler</button>
+          <button className="btn btn--ghost" onClick={onClose}>{t.common.cancel}</button>
           <div style={{ flex: 1 }} />
           {err && <span style={{ fontSize: 12, color: 'var(--bad-600)' }}>{err}</span>}
           {totalAmount > 0 && totalAllocated === 0 && (
-            <span style={{ fontSize: 11.5, color: 'var(--warn-600)' }}>⚠️ Aucune facture allouée → crédit client</span>
+            <span style={{ fontSize: 11.5, color: 'var(--warn-600)' }}>{/* TODO: i18n — no translation key */}⚠️ Aucune facture allouée → crédit client</span>
           )}
           <button className="btn btn--brand" onClick={handleSave} disabled={saving || !selectedClient || !totalAmount}>
-            <I.Check />{saving ? 'Enregistrement…' : 'Enregistrer'}
+            <I.Check />{saving ? t.common.saving : t.common.save}
           </button>
         </>
       }>
@@ -147,12 +151,12 @@ function RecordPaymentModal({ preselectedClient, preselectedPaymentId, onClose, 
         {/* ── Left: Payment info ── */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
           <div style={{ fontSize: 10.5, fontWeight: 700, color: 'var(--ink-400)', textTransform: 'uppercase', letterSpacing: '.06em', marginBottom: 12 }}>
-            Informations du paiement
+            {/* TODO: i18n — no translation key */}Informations du paiement
           </div>
 
           {/* Client */}
           <div className="field">
-            <label className="label">Client <span style={{ color: 'var(--bad-500)' }}>*</span></label>
+            <label className="label">{t.payments.table.client} <span style={{ color: 'var(--bad-500)' }}>*</span></label>
             {selectedClient ? (
               <div style={{
                 display: 'flex', alignItems: 'center', justifyContent: 'space-between',
@@ -169,7 +173,7 @@ function RecordPaymentModal({ preselectedClient, preselectedPaymentId, onClose, 
               <div style={{ position: 'relative' }}>
                 <input ref={searchRef} className="input" value={clientQuery}
                   onChange={e => setClientQuery(e.target.value)}
-                  placeholder="Rechercher par nom, email, tél…" />
+                  placeholder={t.payments.searchPlaceholder} />
                 {clients.length > 0 && (
                   <div style={{
                     position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 200,
@@ -195,13 +199,13 @@ function RecordPaymentModal({ preselectedClient, preselectedPaymentId, onClose, 
           {balance && (
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 14, padding: '10px 12px', background: 'var(--bg-soft)', borderRadius: 8, fontSize: 12 }}>
               <div>
-                <div style={{ fontSize: 10, color: 'var(--ink-400)', fontWeight: 700, textTransform: 'uppercase', marginBottom: 2 }}>Total dû</div>
+                <div style={{ fontSize: 10, color: 'var(--ink-400)', fontWeight: 700, textTransform: 'uppercase', marginBottom: 2 }}>{/* TODO: i18n — no translation key */}Total dû</div>
                 <div style={{ fontWeight: 800, fontSize: 15, color: balance.totalDue > 0 ? 'var(--bad-600)' : 'var(--ok-600)', fontFamily: 'var(--font-mono)' }}>
                   {balance.totalDue.toLocaleString('fr')} <span style={{ fontSize: 10, fontWeight: 400 }}>CAD</span>
                 </div>
               </div>
               <div>
-                <div style={{ fontSize: 10, color: 'var(--ink-400)', fontWeight: 700, textTransform: 'uppercase', marginBottom: 2 }}>Crédit disponible</div>
+                <div style={{ fontSize: 10, color: 'var(--ink-400)', fontWeight: 700, textTransform: 'uppercase', marginBottom: 2 }}>{/* TODO: i18n — no translation key */}Crédit disponible</div>
                 <div style={{ fontWeight: 800, fontSize: 15, color: balance.creditBalance > 0 ? 'var(--brand-600)' : 'var(--ink-400)', fontFamily: 'var(--font-mono)' }}>
                   {balance.creditBalance.toLocaleString('fr')} <span style={{ fontSize: 10, fontWeight: 400 }}>CAD</span>
                 </div>
@@ -211,16 +215,16 @@ function RecordPaymentModal({ preselectedClient, preselectedPaymentId, onClose, 
 
           {/* Type */}
           <div className="field">
-            <label className="label">Type de mouvement</label>
+            <label className="label">{/* TODO: i18n — no translation key */}Type de mouvement</label>
             <select className="select" value={form.type} onChange={e => upd('type', e.target.value)}>
-              <option value="payment">Paiement reçu du client</option>
-              <option value="credit">Crédit accordé (geste commercial)</option>
+              <option value="payment">{/* TODO: i18n — no translation key */}Paiement reçu du client</option>
+              <option value="credit">{/* TODO: i18n — no translation key */}Crédit accordé (geste commercial)</option>
             </select>
           </div>
 
           {/* Amount */}
           <div className="field">
-            <label className="label">Montant <span style={{ color: 'var(--bad-500)' }}>*</span></label>
+            <label className="label">{t.payments.table.amount} <span style={{ color: 'var(--bad-500)' }}>*</span></label>
             <div style={{ position: 'relative' }}>
               <input className="input mono" type="number" min="0" value={form.amount}
                 onChange={e => upd('amount', e.target.value)} placeholder="0" style={{ paddingRight: 48 }} />
@@ -230,26 +234,26 @@ function RecordPaymentModal({ preselectedClient, preselectedPaymentId, onClose, 
 
           {/* Method */}
           <div className="field">
-            <label className="label">Méthode</label>
+            <label className="label">{t.payments.table.method}</label>
             <select className="select" value={form.method} onChange={e => upd('method', e.target.value)}>
-              <option value="interac">Virement Interac</option>
-              <option value="cash">Espèces</option>
-              <option value="mobilemoney">Mobile Money</option>
-              <option value="cheque">Chèque</option>
-              <option value="virement">Virement bancaire</option>
+              <option value="interac">{t.payments.methods.interac}</option>
+              <option value="cash">{t.payments.methods.cash}</option>
+              <option value="mobilemoney">{/* TODO: i18n — no translation key */}Mobile Money</option>
+              <option value="cheque">{/* TODO: i18n — no translation key */}Chèque</option>
+              <option value="virement">{t.payments.methods.virement}</option>
             </select>
           </div>
 
           {/* Reference */}
           <div className="field">
-            <label className="label">Référence <span className="opt">optionnel</span></label>
+            <label className="label">{t.payments.table.reference} <span className="opt">{t.common.optional}</span></label>
             <input className="input mono" value={form.reference} onChange={e => upd('reference', e.target.value)} placeholder="ex: XK7F2A" />
           </div>
 
           {/* Note */}
           <div className="field" style={{ marginBottom: 0 }}>
-            <label className="label">Note interne <span className="opt">optionnel</span></label>
-            <input className="input" value={form.note} onChange={e => upd('note', e.target.value)} placeholder="Contentieux, accord, …" />
+            <label className="label">{/* TODO: i18n — no key for "Note interne", using closest match */}{t.common.note} <span className="opt">{t.common.optional}</span></label>
+            <input className="input" value={form.note} onChange={e => upd('note', e.target.value)} placeholder={/* TODO: i18n — no translation key */ "Contentieux, accord, …"} />
           </div>
         </div>
 
@@ -257,11 +261,11 @@ function RecordPaymentModal({ preselectedClient, preselectedPaymentId, onClose, 
         <div style={{ display: 'flex', flexDirection: 'column' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
             <div style={{ fontSize: 10.5, fontWeight: 700, color: 'var(--ink-400)', textTransform: 'uppercase', letterSpacing: '.06em' }}>
-              Affecter aux factures impayées
+              {/* TODO: i18n — no translation key */}Affecter aux factures impayées
             </div>
             {unpaid.length > 0 && totalAmount > 0 && (
               <button className="btn btn--soft btn--xs" onClick={autoAllocate} style={{ fontSize: 11.5 }}>
-                ✨ Auto-répartir
+                {/* TODO: i18n — no translation key */}✨ Auto-répartir
               </button>
             )}
           </div>
@@ -274,19 +278,19 @@ function RecordPaymentModal({ preselectedClient, preselectedPaymentId, onClose, 
             }}>
               <div style={{ textAlign: 'center' }}>
                 <div style={{ fontSize: 28, marginBottom: 8 }}>👤</div>
-                Sélectionnez un client pour voir ses factures
+                {/* TODO: i18n — no translation key */}Sélectionnez un client pour voir ses factures
               </div>
             </div>
           ) : !balance ? (
-            <div style={{ padding: 24, textAlign: 'center', color: 'var(--ink-400)', fontSize: 13 }}>Chargement…</div>
+            <div style={{ padding: 24, textAlign: 'center', color: 'var(--ink-400)', fontSize: 13 }}>{t.common.loading}</div>
           ) : unpaid.length === 0 ? (
             <div style={{
               flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 8,
               background: 'var(--ok-50)', borderRadius: 10, border: '1px solid var(--ok-100)', minHeight: 120,
             }}>
               <div style={{ fontSize: 26 }}>✅</div>
-              <div style={{ color: 'var(--ok-700)', fontWeight: 600, fontSize: 13 }}>Toutes les factures sont réglées</div>
-              <div style={{ color: 'var(--ok-600)', fontSize: 12 }}>Ce montant sera crédité au compte client</div>
+              <div style={{ color: 'var(--ok-700)', fontWeight: 600, fontSize: 13 }}>{/* TODO: i18n — no translation key */}Toutes les factures sont réglées</div>
+              <div style={{ color: 'var(--ok-600)', fontSize: 12 }}>{/* TODO: i18n — no translation key */}Ce montant sera crédité au compte client</div>
             </div>
           ) : (
             <>
@@ -316,11 +320,12 @@ function RecordPaymentModal({ preselectedClient, preselectedPaymentId, onClose, 
                           </span>
                           {isSupp && (
                             <span style={{ fontSize: 10, fontWeight: 700, padding: '1px 6px', borderRadius: 4, background: 'var(--info-100)', color: 'var(--info-700)', textTransform: 'uppercase', letterSpacing: '.04em' }}>
-                              Supplément
+                              {/* TODO: i18n — no translation key */}Supplément
                             </span>
                           )}
                         </div>
                         <div style={{ fontSize: 11, color: 'var(--ink-500)', marginTop: 1 }}>
+                          {/* TODO: i18n — mixed dynamic/static content, no translation keys for "Cargaison", "supplément dû", "solde dû" */}
                           Cargaison <strong>{inv.campaignCode}</strong> · {isSupp ? 'supplément dû' : 'solde dû'} : <strong style={{ color: isSupp ? 'var(--info-700)' : 'var(--bad-600)' }}>{inv.remaining.toLocaleString('fr')} CAD</strong>
                         </div>
                       </div>
@@ -341,6 +346,7 @@ function RecordPaymentModal({ preselectedClient, preselectedPaymentId, onClose, 
               {/* Running totals bar */}
               {totalAmount > 0 && (
                 <div style={{ marginTop: 12, background: 'var(--bg-soft)', borderRadius: 8, padding: '12px 14px', display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
+                  {/* TODO: i18n — no translation keys for 'Reçu', 'Alloué', 'Crédit client', 'Dépassement' */}
                   {[
                     { label: 'Reçu',     val: totalAmount,    color: 'var(--ink-800)' },
                     { label: 'Alloué',   val: totalAllocated, color: 'var(--ok-700)' },
@@ -357,6 +363,7 @@ function RecordPaymentModal({ preselectedClient, preselectedPaymentId, onClose, 
               )}
               {credit > 0 && totalAmount > 0 && (
                 <div style={{ marginTop: 8, fontSize: 12, color: 'var(--brand-700)', background: 'var(--brand-50)', padding: '8px 12px', borderRadius: 7, border: '1px solid var(--brand-100)' }}>
+                  {/* TODO: i18n — no translation key */}
                   💳 {credit.toLocaleString('fr')} CAD non alloués seront crédités sur le compte de {selectedClient?.name?.split(' ')[0]}
                 </div>
               )}
@@ -371,6 +378,7 @@ function RecordPaymentModal({ preselectedClient, preselectedPaymentId, onClose, 
 /* ─── Transactions list tab ──────────────────────────────── */
 
 function TransactionsTab({ onRecord }) {
+  const t = useAdminT();
   const [rows, setRows]     = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -397,7 +405,7 @@ function TransactionsTab({ onRecord }) {
       <div className="toolbar">
         <div style={{ position: 'relative' }}>
           <I.Search style={{ position: 'absolute', left: 10, top: 9, width: 14, height: 14, color: 'var(--ink-400)' }} />
-          <input className="input input--sm" placeholder="Client, référence, colis…" style={{ width: 260, paddingLeft: 32 }}
+          <input className="input input--sm" placeholder={t.payments.searchPlaceholder} style={{ width: 260, paddingLeft: 32 }}
             value={search} onChange={e => setSearch(e.target.value)} />
         </div>
       </div>
@@ -405,16 +413,16 @@ function TransactionsTab({ onRecord }) {
       <table className="tbl" style={{ borderTopLeftRadius: 0, borderTopRightRadius: 0 }}>
         <thead>
           <tr>
-            <th style={{ borderRadius: 0 }}>Date</th>
-            <th>Client</th>
-            <th>Type</th>
-            <th style={{ textAlign: 'right' }}>Montant</th>
-            <th>Méthode</th>
-            <th>Référence</th>
-            <th>Colis soldés</th>
-            <th>Crédit généré</th>
-            <th>Agent</th>
-            <th style={{ borderRadius: 0 }}>Note</th>
+            <th style={{ borderRadius: 0 }}>{t.common.date}</th>
+            <th>{t.payments.table.client}</th>
+            <th>{t.common.type}</th>
+            <th style={{ textAlign: 'right' }}>{t.payments.table.amount}</th>
+            <th>{t.payments.table.method}</th>
+            <th>{t.payments.table.reference}</th>
+            <th>{/* TODO: i18n — no translation key */}Colis soldés</th>
+            <th>{/* TODO: i18n — no translation key */}Crédit généré</th>
+            <th>{/* TODO: i18n — no translation key */}Agent</th>
+            <th style={{ borderRadius: 0 }}>{t.common.note}</th>
           </tr>
         </thead>
         <tbody>
@@ -435,7 +443,7 @@ function TransactionsTab({ onRecord }) {
           {!loading && filtered.length === 0 && (
             <tr>
               <td colSpan={10} style={{ textAlign: 'center', padding: 40, color: 'var(--ink-400)', fontSize: 13 }}>
-                {search ? 'Aucun résultat' : 'Aucune transaction enregistrée'}
+                {search ? t.common.noData : /* TODO: i18n — no translation key */ 'Aucune transaction enregistrée'}
               </td>
             </tr>
           )}
@@ -452,6 +460,7 @@ function TransactionsTab({ onRecord }) {
                 </td>
                 <td>
                   <span className={'badge badge--dot badge--' + (r.isLegacy ? 'neutral' : r.type === 'credit' ? 'brand' : 'ok')}>
+                    {/* TODO: i18n — TYPE_LABELS has no translation keys; 'Direct (ancien)' also has no key */}
                     {r.isLegacy ? 'Direct (ancien)' : (TYPE_LABELS[r.type] ?? r.type)}
                   </span>
                 </td>
@@ -461,7 +470,7 @@ function TransactionsTab({ onRecord }) {
                   </span>
                   <span style={{ fontSize: 11, color: 'var(--ok-600)', marginLeft: 3 }}>CAD</span>
                 </td>
-                <td style={{ fontSize: 12, color: 'var(--ink-600)' }}>{METHOD_LABELS[r.method] ?? r.method}</td>
+                <td style={{ fontSize: 12, color: 'var(--ink-600)' }}>{t.payments.methods?.[r.method] ?? METHOD_LABELS[r.method] ?? r.method}</td>
                 <td className="mono" style={{ fontSize: 12, color: 'var(--ink-600)' }}>{r.reference ?? '—'}</td>
                 <td style={{ fontSize: 12 }}>
                   {allocs.length === 0 ? (
@@ -508,6 +517,7 @@ function fmt(date) {
 }
 
 function InvoicePreviewModal({ parcelId, onClose }) {
+  const t = useAdminT();
   const [data, setData]       = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError]     = useState('');
@@ -524,7 +534,7 @@ function InvoicePreviewModal({ parcelId, onClose }) {
     fetch('/api/admin/invoice/' + parcelId)
       .then(r => r.json())
       .then(json => { if (json.error) setError(json.error); else setData(json); setLoading(false); })
-      .catch(() => { setError('Erreur réseau'); setLoading(false); });
+      .catch(() => { setError(t.common.networkError); setLoading(false); });
   }, [parcelId]);
 
   function printInvoice() {
@@ -549,7 +559,7 @@ function InvoicePreviewModal({ parcelId, onClose }) {
   return (
     <Modal title={adjMode ? 'Facture — Supplément' : 'Facture'} onClose={onClose} width={780}>
       {loading && (
-        <div style={{ padding: 40, textAlign: 'center', color: 'var(--ink-400)' }}>Chargement…</div>
+        <div style={{ padding: 40, textAlign: 'center', color: 'var(--ink-400)' }}>{t.common.loading}</div>
       )}
       {error && (
         <div style={{ padding: 40, textAlign: 'center', color: 'var(--bad-600)' }}>{error}</div>
@@ -562,22 +572,23 @@ function InvoicePreviewModal({ parcelId, onClose }) {
                 <button
                   className={'btn btn--xs ' + (!adjMode ? 'btn--brand' : 'btn--ghost')}
                   onClick={() => setAdjMode(false)}
-                >Facture principale</button>
+                >{/* TODO: i18n — no translation key */}Facture principale</button>
                 <button
                   className={'btn btn--xs ' + (adjMode ? 'btn--brand' : 'btn--ghost')}
                   onClick={() => setAdjMode(true)}
-                >Facture supplément</button>
+                >{/* TODO: i18n — no translation key */}Facture supplément</button>
               </div>
             ) : <div />}
             <div style={{ display: 'flex', gap: 8 }}>
-              <button className="btn btn--ghost btn--sm" onClick={onClose}>Fermer</button>
+              <button className="btn btn--ghost btn--sm" onClick={onClose}>{t.common.close}</button>
               <button className="btn btn--brand btn--sm" onClick={printInvoice}>
                 <I.Print style={{ width: 14, height: 14 }} />
-                Imprimer / PDF
+                {t.common.print}{/* TODO: i18n — "/ PDF" suffix has no translation key */} / PDF
               </button>
             </div>
           </div>
 
+          {/* TODO: i18n — invoice print body below is a customer-facing document template; all labels within use French and are not translated via t.* */}
           <div id="invoice-print-area" style={{ background: 'white', borderRadius: 10, overflow: 'hidden', border: '1px solid #e5e7eb' }}>
             {/* Header */}
             <div style={{ background: adjMode ? 'var(--info-700)' : '#1e3a5f', color: 'white', padding: '28px 36px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
@@ -722,6 +733,7 @@ function InvoicePreviewModal({ parcelId, onClose }) {
 /* ─── Invoice Settle Modal (focused per-invoice) ─────────── */
 
 function InvoiceSettleModal({ invoice, onClose, onSave }) {
+  const t = useAdminT();
   const [balance, setBalance] = useState(null);
   const [mode, setMode]       = useState('full');
   const [form, setForm]       = useState({ method: 'interac', reference: '', note: '', amount: '' });
@@ -750,8 +762,8 @@ function InvoiceSettleModal({ invoice, onClose, onSave }) {
   const amount       = mode === 'full' ? totalDue : (Number(form.amount) || 0);
 
   const handleSave = async () => {
-    if (!amount) { setErr('Montant requis'); return; }
-    if (selected.length === 0) { setErr('Sélectionnez au moins une ligne'); return; }
+    if (!amount) { setErr(/* TODO: i18n — no translation key */ 'Montant requis'); return; }
+    if (selected.length === 0) { setErr(/* TODO: i18n — no translation key */ 'Sélectionnez au moins une ligne'); return; }
     setSaving(true); setErr('');
     let left = amount;
     const allocs = [];
@@ -775,7 +787,7 @@ function InvoiceSettleModal({ invoice, onClose, onSave }) {
     const json = await res.json().catch(() => ({}));
     if (res.ok && json.ok) onSave();
     else {
-      const msg = json.error || 'Erreur serveur';
+      const msg = json.error || /* TODO: i18n — no translation key */ 'Erreur serveur';
       setErr(msg.includes('non initialisées') || msg.includes('does not exist')
         ? 'Tables manquantes — visitez /api/db-migrate dans votre navigateur puis réessayez.'
         : msg);
@@ -785,29 +797,29 @@ function InvoiceSettleModal({ invoice, onClose, onSave }) {
 
   return (
     <Modal width={500} onClose={onClose}
-      title={`Règlement · ${invoice.parcel}`}
+      title={/* TODO: i18n — "Règlement" has no translation key */ `Règlement · ${invoice.parcel}`}
       sub={`${invoice.recipName} · Cargaison ${invoice.campaign}`}
       footer={
         <>
-          <button className="btn btn--ghost" onClick={onClose}>Annuler</button>
+          <button className="btn btn--ghost" onClick={onClose}>{t.common.cancel}</button>
           <div style={{ flex: 1 }} />
           {err && <span style={{ fontSize: 12, color: 'var(--bad-600)' }}>{err}</span>}
           <button className="btn btn--brand" onClick={handleSave}
             disabled={saving || !amount || selected.length === 0}>
-            <I.Check />{saving ? 'Enregistrement…' : 'Enregistrer'}
+            <I.Check />{saving ? t.common.saving : t.common.save}
           </button>
         </>
       }
     >
       {!balance ? (
-        <div style={{ padding: '32px 0', textAlign: 'center', color: 'var(--ink-400)', fontSize: 13 }}>Chargement…</div>
+        <div style={{ padding: '32px 0', textAlign: 'center', color: 'var(--ink-400)', fontSize: 13 }}>{t.common.loading}</div>
       ) : lines.length === 0 ? (
-        <div style={{ padding: '32px 0', textAlign: 'center', color: 'var(--ok-600)', fontSize: 14, fontWeight: 600 }}>✓ Toutes les lignes sont réglées</div>
+        <div style={{ padding: '32px 0', textAlign: 'center', color: 'var(--ok-600)', fontSize: 14, fontWeight: 600 }}>{/* TODO: i18n — no translation key */}✓ Toutes les lignes sont réglées</div>
       ) : (
         <>
           {/* Lines */}
           <div style={{ marginBottom: 20 }}>
-            <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.06em', color: 'var(--ink-400)', marginBottom: 10 }}>Lignes à régler</div>
+            <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.06em', color: 'var(--ink-400)', marginBottom: 10 }}>{/* TODO: i18n — no translation key */}Lignes à régler</div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
               {lines.map(line => {
                 const on = !!checked[line.id];
@@ -824,10 +836,11 @@ function InvoiceSettleModal({ invoice, onClose, onSave }) {
                       onChange={e => setChecked(c => ({ ...c, [line.id]: e.target.checked }))} />
                     <div style={{ flex: 1 }}>
                       <div style={{ fontSize: 13, fontWeight: 600, color: sup ? 'var(--info-700)' : 'var(--ink-900)', display: 'flex', alignItems: 'center', gap: 6 }}>
+                        {/* TODO: i18n — no translation keys for 'Supplément — ajustement de prix' / 'Facture principale' */}
                         {sup ? 'Supplément — ajustement de prix' : 'Facture principale'}
                         {sup && <span style={{ fontSize: 10, padding: '1px 6px', background: 'var(--info-100)', color: 'var(--info-700)', borderRadius: 4, fontWeight: 700 }}>SUP</span>}
                       </div>
-                      <div style={{ fontSize: 11, color: 'var(--ink-400)', marginTop: 2 }}>Solde restant</div>
+                      <div style={{ fontSize: 11, color: 'var(--ink-400)', marginTop: 2 }}>{/* TODO: i18n — no translation key */}Solde restant</div>
                     </div>
                     <div style={{ textAlign: 'right', flexShrink: 0 }}>
                       <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: 15, color: sup ? 'var(--info-700)' : 'var(--ink-900)' }}>
@@ -843,8 +856,9 @@ function InvoiceSettleModal({ invoice, onClose, onSave }) {
 
           {/* Mode toggle */}
           <div style={{ marginBottom: 16 }}>
-            <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.06em', color: 'var(--ink-400)', marginBottom: 8 }}>Mode de règlement</div>
+            <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.06em', color: 'var(--ink-400)', marginBottom: 8 }}>{/* TODO: i18n — no translation key */}Mode de règlement</div>
             <div style={{ display: 'flex', gap: 8 }}>
+              {/* TODO: i18n — no translation keys for 'Intégral', 'Acompte / Partiel', 'Montant à saisir' */}
               {[
                 { id: 'full',    label: 'Intégral',         sub: `${totalDue.toLocaleString('fr')} CAD` },
                 { id: 'partial', label: 'Acompte / Partiel', sub: 'Montant à saisir' },
@@ -864,7 +878,7 @@ function InvoiceSettleModal({ invoice, onClose, onSave }) {
           {/* Partial amount */}
           {mode === 'partial' && (
             <div className="field" style={{ marginBottom: 16 }}>
-              <label className="label">Montant reçu</label>
+              <label className="label">{/* TODO: i18n — no translation key */}Montant reçu</label>
               <div style={{ position: 'relative' }}>
                 <input className="input mono" type="number" min="0" max={totalDue}
                   value={form.amount} onChange={e => setForm(f => ({ ...f, amount: e.target.value }))}
@@ -877,6 +891,7 @@ function InvoiceSettleModal({ invoice, onClose, onSave }) {
           {/* Total recap */}
           <div style={{ background: 'var(--bg-soft)', borderRadius: 8, padding: '10px 14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
             <span style={{ fontSize: 13, color: 'var(--ink-600)', fontWeight: 600 }}>
+              {/* TODO: i18n — no translation keys for 'Montant à enregistrer' / 'Versement' */}
               {mode === 'full' ? 'Montant à enregistrer' : 'Versement'}
             </span>
             <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 800, fontSize: 16, color: 'var(--ink-900)' }}>
@@ -887,19 +902,19 @@ function InvoiceSettleModal({ invoice, onClose, onSave }) {
           {/* Method + Reference */}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 12 }}>
             <div className="field">
-              <label className="label">Méthode</label>
+              <label className="label">{t.payments.table.method}</label>
               <select className="input" value={form.method} onChange={e => setForm(f => ({ ...f, method: e.target.value }))}>
-                {Object.entries(METHOD_LABELS).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+                {Object.entries(METHOD_LABELS).map(([v, l]) => <option key={v} value={v}>{t.payments.methods?.[v] ?? l}</option>)}
               </select>
             </div>
             <div className="field">
-              <label className="label">Référence <span style={{ color: 'var(--ink-400)', fontWeight: 400 }}>optionnel</span></label>
+              <label className="label">{t.payments.table.reference} <span style={{ color: 'var(--ink-400)', fontWeight: 400 }}>{t.common.optional}</span></label>
               <input className="input" value={form.reference} onChange={e => setForm(f => ({ ...f, reference: e.target.value }))} placeholder="ex: XK7F2A" />
             </div>
           </div>
           <div className="field">
-            <label className="label">Note interne <span style={{ color: 'var(--ink-400)', fontWeight: 400 }}>optionnel</span></label>
-            <input className="input" value={form.note} onChange={e => setForm(f => ({ ...f, note: e.target.value }))} placeholder="Contentieux, accord, …" />
+            <label className="label">{/* TODO: i18n — no key for "Note interne", using closest match */}{t.common.note} <span style={{ color: 'var(--ink-400)', fontWeight: 400 }}>{t.common.optional}</span></label>
+            <input className="input" value={form.note} onChange={e => setForm(f => ({ ...f, note: e.target.value }))} placeholder={/* TODO: i18n — no translation key */ "Contentieux, accord, …"} />
           </div>
         </>
       )}
@@ -910,6 +925,7 @@ function InvoiceSettleModal({ invoice, onClose, onSave }) {
 /* ─── Invoices list tab (existing payments) ──────────────── */
 
 function InvoicesTab({ onReload }) {
+  const t = useAdminT();
   const can = useCan();
   const [payments, setPayments]         = useState([]);
   const [loading, setLoading]           = useState(true);
@@ -929,10 +945,10 @@ function InvoicesTab({ onReload }) {
   useEffect(() => { loadPayments(); }, []);
 
   const tabs = [
-    { id: 'all',     l: 'Toutes',      n: payments.length },
-    { id: 'paid',    l: 'Payées',      n: payments.filter(p => p.status === 'paid').length,    cls: 'ok'  },
-    { id: 'pending', l: 'En attente',  n: payments.filter(p => p.status === 'pending').length, cls: 'warn' },
-    { id: 'unpaid',  l: 'Impayées',    n: payments.filter(p => p.status === 'unpaid').length,  cls: 'bad'  },
+    { id: 'all',     l: t.payments.filterAll,     n: payments.length },
+    { id: 'paid',    l: t.payments.filterPaid,    n: payments.filter(p => p.status === 'paid').length,    cls: 'ok'  },
+    { id: 'pending', l: t.payments.filterPending, n: payments.filter(p => p.status === 'pending').length, cls: 'warn' },
+    { id: 'unpaid',  l: /* TODO: i18n — no filterUnpaid key in t.payments */ 'Impayées', n: payments.filter(p => p.status === 'unpaid').length, cls: 'bad'  },
   ];
 
   const filtered = payments
@@ -947,16 +963,16 @@ function InvoicesTab({ onReload }) {
     <>
       <div className="toolbar">
         <div className="tabs">
-          {tabs.map(t => (
-            <button key={t.id} className={'tab ' + (tab === t.id ? 'is-active' : '')} onClick={() => setTab(t.id)}>
-              {t.l} <span className="count">{t.n}</span>
+          {tabs.map(tabItem => (
+            <button key={tabItem.id} className={'tab ' + (tab === tabItem.id ? 'is-active' : '')} onClick={() => setTab(tabItem.id)}>
+              {tabItem.l} <span className="count">{tabItem.n}</span>
             </button>
           ))}
         </div>
         <div className="spacer" />
         <div style={{ position: 'relative' }}>
           <I.Search style={{ position: 'absolute', left: 10, top: 9, width: 14, height: 14, color: 'var(--ink-400)' }} />
-          <input className="input input--sm" placeholder="Client, colis, cargaison…" style={{ width: 240, paddingLeft: 32 }}
+          <input className="input input--sm" placeholder={t.payments.searchPlaceholder} style={{ width: 240, paddingLeft: 32 }}
             value={search} onChange={e => setSearch(e.target.value)} />
         </div>
       </div>
@@ -975,13 +991,13 @@ function InvoicesTab({ onReload }) {
       <table className="tbl" style={{ borderTopLeftRadius: 0, borderTopRightRadius: 0 }}>
         <thead>
           <tr>
-            <th style={{ borderRadius: 0 }}>Date</th>
-            <th>Client</th>
-            <th>Cargaison</th>
-            <th>Colis</th>
-            <th style={{ textAlign: 'right' }}>Facturé</th>
-            <th>Statut</th>
-            <th>Référence</th>
+            <th style={{ borderRadius: 0 }}>{t.common.date}</th>
+            <th>{t.payments.table.client}</th>
+            <th>{/* TODO: i18n — no "Cargaison" key in t.payments.table */}Cargaison</th>
+            <th>{/* TODO: i18n — no "Colis" key in t.payments.table */}Colis</th>
+            <th style={{ textAlign: 'right' }}>{/* TODO: i18n — no "Facturé" key, closest is t.payments.table.amount */}Facturé</th>
+            <th>{t.common.status}</th>
+            <th>{t.payments.table.reference}</th>
             <th style={{ borderRadius: 0, width: 140 }}></th>
           </tr>
         </thead>
@@ -999,7 +1015,7 @@ function InvoicesTab({ onReload }) {
             </tr>
           ))}
           {!loading && filtered.length === 0 && (
-            <tr><td colSpan={8} style={{ textAlign: 'center', padding: 40, color: 'var(--ink-400)', fontSize: 13 }}>Aucune facture</td></tr>
+            <tr><td colSpan={8} style={{ textAlign: 'center', padding: 40, color: 'var(--ink-400)', fontSize: 13 }}>{/* TODO: i18n — t.payments.noPayments is closest match */}{t.payments.noPayments}</td></tr>
           )}
           {!loading && filtered.flatMap(p => {
             const s = PAY_STATUS[p.status] ?? { label: p.status, cls: 'neutral' };
@@ -1028,17 +1044,17 @@ function InvoicesTab({ onReload }) {
                 <td className="mono" style={{ fontSize: 12, color: 'var(--ink-500)' }}>{p.interacRef ?? '—'}</td>
                 <td>
                   <div style={{ display: 'flex', gap: 6, alignItems: 'center', justifyContent: 'flex-end' }}>
-                    <button className="btn btn--ghost btn--xs" title="Voir la facture"
+                    <button className="btn btn--ghost btn--xs" title={/* TODO: i18n — no translation key */ "Voir la facture"}
                       onClick={() => setInvoiceParcelId(p.parcelId)} style={{ padding: '4px 8px' }}>
                       <I.FileText style={{ width: 13, height: 13 }} />
                     </button>
                     {p.status === 'paid'
-                      ? <span style={{ fontSize: 12, color: 'var(--ok-600)' }}>✓ Réglé</span>
+                      ? <span style={{ fontSize: 12, color: 'var(--ok-600)' }}>✓ {t.paymentStatus.paid}</span>
                       : can('payments', 'validate')
                         ? <button className="btn btn--brand btn--xs" onClick={() => setSettleInvoice(p)}>
-                            <I.Wallet />Régler
+                            <I.Wallet />{t.payments.markPaid}
                           </button>
-                        : <span style={{ fontSize: 12, color: 'var(--ink-400)' }}>En attente</span>}
+                        : <span style={{ fontSize: 12, color: 'var(--ink-400)' }}>{t.paymentStatus.pending}</span>}
                   </div>
                 </td>
               </tr>
@@ -1053,7 +1069,7 @@ function InvoicesTab({ onReload }) {
                 <td style={{ paddingLeft: 24, fontSize: 13, color: 'var(--info-600)' }}>↳</td>
                 <td>
                   <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--info-700)' }}>
-                    Ajustement de prix
+                    {/* TODO: i18n — no translation key */}Ajustement de prix
                   </span>
                   <span style={{ marginLeft: 6, fontSize: 10, padding: '1px 6px', background: 'var(--info-100)', color: 'var(--info-700)', borderRadius: 4, fontWeight: 700 }}>SUP</span>
                 </td>
@@ -1063,11 +1079,11 @@ function InvoicesTab({ onReload }) {
                   <span className="mono" style={{ fontWeight: 700, color: 'var(--info-700)' }}>{suppAmt.toLocaleString('fr')}</span>
                   <span style={{ fontSize: 11, color: 'var(--ink-400)', marginLeft: 3 }}>CAD</span>
                 </td>
-                <td><span className="badge badge--dot badge--warn">En attente</span></td>
+                <td><span className="badge badge--dot badge--warn">{t.paymentStatus.pending}</span></td>
                 <td style={{ color: 'var(--ink-300)', fontSize: 12 }}>—</td>
                 <td>
                   <div style={{ display: 'flex', gap: 6, justifyContent: 'flex-end', alignItems: 'center' }}>
-                    <button className="btn btn--ghost btn--xs" title="Facture supplément"
+                    <button className="btn btn--ghost btn--xs" title={/* TODO: i18n — no translation key */ "Facture supplément"}
                       onClick={() => setInvoiceParcelId(p.parcelId)} style={{ padding: '4px 8px' }}>
                       <I.FileText style={{ width: 13, height: 13 }} />
                     </button>
@@ -1075,7 +1091,7 @@ function InvoicesTab({ onReload }) {
                       <button
                         onClick={() => setSettleInvoice({ ...p, id: 'sup_' + p.parcelId, due: suppAmt, status: 'pending' })}
                         style={{ padding: '4px 12px', borderRadius: 6, border: '1px solid var(--info-600)', background: 'var(--info-50)', color: 'var(--info-700)', cursor: 'pointer', fontSize: 12, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 4 }}>
-                        <I.Wallet style={{ width: 12, height: 12 }} />Régler suppl.
+                        <I.Wallet style={{ width: 12, height: 12 }} />{/* TODO: i18n — no translation key */}Régler suppl.
                       </button>
                     )}
                   </div>
@@ -1087,7 +1103,7 @@ function InvoicesTab({ onReload }) {
                 <td style={{ paddingLeft: 24, fontSize: 13, color: 'var(--ok-600)' }}>↳</td>
                 <td>
                   <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--ok-700)' }}>
-                    Ajustement de prix
+                    {/* TODO: i18n — no translation key */}Ajustement de prix
                   </span>
                   <span style={{ marginLeft: 6, fontSize: 10, padding: '1px 6px', background: '#dcfce7', color: 'var(--ok-700)', borderRadius: 4, fontWeight: 700 }}>SUP</span>
                 </td>
@@ -1097,15 +1113,15 @@ function InvoicesTab({ onReload }) {
                   <span className="mono" style={{ fontWeight: 700, color: 'var(--ok-700)' }}>{suppAmtPaid.toLocaleString('fr')}</span>
                   <span style={{ fontSize: 11, color: 'var(--ink-400)', marginLeft: 3 }}>CAD</span>
                 </td>
-                <td><span className="badge badge--dot badge--ok">Réglé</span></td>
+                <td><span className="badge badge--dot badge--ok">{t.paymentStatus.paid}</span></td>
                 <td style={{ color: 'var(--ink-300)', fontSize: 12 }}>—</td>
                 <td>
                   <div style={{ display: 'flex', gap: 6, justifyContent: 'flex-end', alignItems: 'center' }}>
-                    <button className="btn btn--ghost btn--xs" title="Facture supplément"
+                    <button className="btn btn--ghost btn--xs" title={/* TODO: i18n — no translation key */ "Facture supplément"}
                       onClick={() => setInvoiceParcelId(p.parcelId)} style={{ padding: '4px 8px' }}>
                       <I.FileText style={{ width: 13, height: 13 }} />
                     </button>
-                    <span style={{ fontSize: 12, color: 'var(--ok-600)' }}>✓ Réglé</span>
+                    <span style={{ fontSize: 12, color: 'var(--ok-600)' }}>✓ {t.paymentStatus.paid}</span>
                   </div>
                 </td>
               </tr>
@@ -1122,6 +1138,7 @@ function InvoicesTab({ onReload }) {
 /* ─── Main Payments screen ───────────────────────────────── */
 
 export default function PaymentsScreen({ onNav }) {
+  const t = useAdminT();
   const can = useCan();
   const [mainTab, setMainTab]   = useState('transactions');
   const [modal, setModal]       = useState(null);
@@ -1150,14 +1167,14 @@ export default function PaymentsScreen({ onNav }) {
     <div className="page">
       <div className="page__head">
         <div>
-          <div className="page__title"><Bi fr="Paiements" en="Payments" /></div>
-          <div className="page__sub">Transactions reçues et suivi des factures</div>
+          <div className="page__title">{t.payments.title}</div>
+          <div className="page__sub">{/* TODO: i18n — no translation key */}Transactions reçues et suivi des factures</div>
         </div>
         <div className="page__actions">
-          <button className="btn btn--ghost"><I.Download />Export comptable</button>
+          <button className="btn btn--ghost"><I.Download />{t.payments.exportCsv}</button>
           {can('payments', 'validate') && (
             <button className="btn btn--brand" onClick={() => setModal({})}>
-              <I.Plus />Enregistrer paiement
+              <I.Plus />{/* TODO: i18n — no "Record payment" key; t.payments.markPaid is closest */}Enregistrer paiement
             </button>
           )}
         </div>
@@ -1165,10 +1182,11 @@ export default function PaymentsScreen({ onNav }) {
 
       {/* KPIs */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14, marginBottom: 18 }}>
+        {/* TODO: i18n — KPI labels 'Facturé', 'Perçu', 'Impayés', 'Taux recouvrement' have no keys in t.payments or t.analytics.kpi */}
         <div className="kpi">
           <div className="kpi__label">Facturé <span style={{ textTransform: 'none', color: 'var(--ink-300)' }}>/ Invoiced</span></div>
           <div className="kpi__value">{facture.toLocaleString('fr')} <span style={{ fontSize: 14, color: 'var(--ink-400)' }}>CAD</span></div>
-          <div className="kpi__delta">{payments.length} facture{payments.length !== 1 ? 's' : ''}</div>
+          <div className="kpi__delta">{payments.length} {/* TODO: i18n — no translation key for "facture(s)" */}facture{payments.length !== 1 ? 's' : ''}</div>
         </div>
         <div className="kpi" style={{ background: 'var(--ok-50)', borderColor: 'var(--ok-100)' }}>
           <div className="kpi__label" style={{ color: 'var(--ok-700)' }}>Perçu <span style={{ textTransform: 'none', opacity: .6 }}>/ Collected</span></div>
@@ -1179,7 +1197,7 @@ export default function PaymentsScreen({ onNav }) {
           <div className="kpi__label" style={{ color: 'var(--bad-700)' }}>Impayés <span style={{ textTransform: 'none', opacity: .6 }}>/ Outstanding</span></div>
           <div className="kpi__value" style={{ color: 'var(--bad-700)' }}>{impayes.toLocaleString('fr')} <span style={{ fontSize: 14, opacity: .6 }}>CAD</span></div>
           <div className="kpi__delta" style={{ color: 'var(--bad-600)' }}>
-            {nbImpayes} en attente
+            {nbImpayes} {t.paymentStatus.pending}
           </div>
         </div>
         <div className="kpi">
@@ -1191,20 +1209,21 @@ export default function PaymentsScreen({ onNav }) {
 
       {/* Main tabs */}
       <div style={{ display: 'flex', gap: 0, borderBottom: '1px solid var(--border)', marginBottom: 16 }}>
+        {/* TODO: i18n — no translation keys for tab labels 'Paiements reçus' / 'Factures' */}
         {[
           { id: 'transactions', label: 'Paiements reçus', icon: '💳' },
           { id: 'invoices',     label: 'Factures',         icon: '📄' },
-        ].map(t => (
-          <button key={t.id}
-            onClick={() => setMainTab(t.id)}
+        ].map(tabItem => (
+          <button key={tabItem.id}
+            onClick={() => setMainTab(tabItem.id)}
             style={{
               padding: '11px 20px', border: 'none', cursor: 'pointer',
-              background: 'none', fontSize: 13.5, fontWeight: mainTab === t.id ? 700 : 400,
-              color: mainTab === t.id ? 'var(--brand-700)' : 'var(--ink-500)',
-              borderBottom: mainTab === t.id ? '2px solid var(--brand-500)' : '2px solid transparent',
+              background: 'none', fontSize: 13.5, fontWeight: mainTab === tabItem.id ? 700 : 400,
+              color: mainTab === tabItem.id ? 'var(--brand-700)' : 'var(--ink-500)',
+              borderBottom: mainTab === tabItem.id ? '2px solid var(--brand-500)' : '2px solid transparent',
               marginBottom: -1,
             }}>
-            {t.icon} {t.label}
+            {tabItem.icon} {tabItem.label}
           </button>
         ))}
       </div>

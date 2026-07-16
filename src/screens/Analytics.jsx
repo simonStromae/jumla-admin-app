@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import I from '../components/Icons.jsx';
 import { Bi, RoutePill, Avatar, Progress, Skel } from '../components/Shell.jsx';
+import { useAdminT } from '../lib/useAdminT.js';
 
 export default function AnalyticsScreen({ onNav }) {
   const [year, setYear] = useState(2026);
@@ -18,6 +19,7 @@ export default function AnalyticsScreen({ onNav }) {
   const [unpaid, setUnpaid]                     = useState([]);
   const [paymentMethods, setPaymentMethods]     = useState([]);
   const [recentActivity, setRecentActivity]     = useState([]);
+  const t = useAdminT();
 
   useEffect(() => {
     const params = new URLSearchParams({ year: String(year) });
@@ -55,7 +57,7 @@ export default function AnalyticsScreen({ onNav }) {
       <div className="page">
         <div className="page__head">
           <div>
-            <div className="page__title"><Bi fr="Analyses" en="Analytics" /></div>
+            <div className="page__title">{t.analytics.title}</div>
             <div className="page__sub"><Skel w={240} h={13} /></div>
           </div>
         </div>
@@ -113,7 +115,8 @@ export default function AnalyticsScreen({ onNav }) {
     <div className="page">
       <div className="page__head">
         <div>
-          <div className="page__title"><Bi fr="Analyses" en="Analytics" /></div>
+          <div className="page__title">{t.analytics.title}</div>
+          {/* TODO: no i18n key for this subtitle */}
           <div className="page__sub">Performance commerciale, opérationnelle et financière · {year}</div>
         </div>
         <div className="page__actions">
@@ -126,25 +129,29 @@ export default function AnalyticsScreen({ onNav }) {
           <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '4px 6px 4px 10px', border: '1px solid var(--border)', borderRadius: 8, background: 'white', fontSize: 12.5 }}>
             <I.Route style={{ width: 14, height: 14, color: 'var(--ink-400)' }} />
             <select value={routeFilter} onChange={e => setRouteFilter(e.target.value)} style={{ border: 0, background: 'transparent', fontWeight: 600, paddingRight: 4 }}>
+              {/* TODO: no i18n key for "Toutes les routes" */}
               <option value="all">Toutes les routes</option>
               {routes.map(r => <option key={r.id} value={r.id}>{r.code}</option>)}
             </select>
           </div>
           <div className="tabs" style={{ padding: 2 }}>
-            {[['ytd','YTD'],['month','Mois'],['12m','12 mois']].map(([id, lbl]) => (
+            {[['ytd','YTD'],['month', t.analytics.period.month],['12m', '12 mois' /* TODO: no i18n key for "12 mois" */]].map(([id, lbl]) => (
               <button key={id} className={'tab '+(period===id?'is-active':'')} onClick={() => setPeriod(id)} style={{ padding: '4px 10px', fontSize: 11.5 }}>{lbl}</button>
             ))}
           </div>
-          <button className="btn btn--ghost"><I.Download />Export PDF</button>
+          <button className="btn btn--ghost"><I.Download />{t.common.export} PDF</button>
         </div>
       </div>
 
       {/* ── KPIs principaux ── */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 12, marginBottom: 18 }}>
-        <KpiCard label="CA encaissé" en="Revenue" value={(totalCollected/1000).toFixed(1)+'k'} unit="CAD" color="var(--ok-500)" big />
+        <KpiCard label={t.analytics.kpi.revenue} en="Revenue" value={(totalCollected/1000).toFixed(1)+'k'} unit="CAD" color="var(--ok-500)" big />
+        {/* TODO: no i18n key for "Taux recouvrement" */}
         <KpiCard label="Taux recouvrement" en="Recovery" value={recoveryRate} unit="%" progress={recoveryRate} color="var(--brand-500)" />
-        <KpiCard label="Colis livrés" en="Parcels" value={totalParcels.toLocaleString('fr')} unit="" color="var(--info-500)" />
+        <KpiCard label={t.analytics.kpi.parcels} en="Parcels" value={totalParcels.toLocaleString('fr')} unit="" color="var(--info-500)" />
+        {/* TODO: no i18n key for "Poids transporté" */}
         <KpiCard label="Poids transporté" en="Weight" value={(totalWeight/1000).toFixed(1)} unit="t" color="var(--brand-500)" />
+        {/* TODO: no i18n key for "Impayés" KPI label, "paiement(s) en attente", "Tout à jour" */}
         <KpiCard
           label="Impayés" en="Outstanding"
           value={unpaidTotal > 0 ? (unpaidTotal/1000).toFixed(1)+'k' : '0'}
@@ -156,6 +163,7 @@ export default function AnalyticsScreen({ onNav }) {
 
       {/* ── KPIs financiers ── */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 18 }}>
+        {/* TODO: no i18n key for "Coûts opérationnels", "Coût moyen / kg", "Marge brute", "Marge / colis", "par kilogramme expédié", "Taux X%" */}
         <KpiCard label="Coûts opérationnels" en="Op. Costs" value={(totalCosts/1000).toFixed(1)+'k'} unit="CAD" color="var(--bad-500)" />
         <KpiCard label="Coût moyen / kg" en="Cost / kg" value={avgCostPerKg.toFixed(2)} unit="CAD/kg" color="var(--brand-500)" sub="par kilogramme expédié" />
         <KpiCard label="Marge brute" en="Gross Margin" value={(grossMargin/1000).toFixed(1)+'k'} unit="CAD" color="var(--ok-500)" big />
@@ -164,7 +172,8 @@ export default function AnalyticsScreen({ onNav }) {
 
       {/* ── Revenus vs temps + Performance opérationnelle ── */}
       <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 14, marginBottom: 14 }}>
-        <ChartCard title="Évolution du chiffre d'affaires" sub="CA facturé vs encaissé · par mois">
+        {/* TODO: no i18n key for sub "CA facturé vs encaissé · par mois", "Facturé", "Encaissé" */}
+        <ChartCard title={t.analytics.charts.revenueByMonth} sub="CA facturé vs encaissé · par mois">
           <RevenueChart months={monthData.labels} revenue={monthData.invoiced} collected={monthData.revenue} />
           <div style={{ display: 'flex', alignItems: 'center', gap: 18, marginTop: 14, padding: '10px 0 0', borderTop: '1px solid var(--border-soft)' }}>
             <LegendItem color="var(--brand-100)" label="Facturé" v={(totalInvoiced/1000).toFixed(1)+'k CAD'} />
@@ -173,6 +182,7 @@ export default function AnalyticsScreen({ onNav }) {
           </div>
         </ChartCard>
 
+        {/* TODO: no i18n key for "Performance opérationnelle", "Indicateurs clés", "Taux recouvrement", "Délai moyen paiement", "Délai moyen transit", "Validation bordereaux" */}
         <ChartCard title="Performance opérationnelle" sub="Indicateurs clés">
           <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
             <GaugeRow label="Taux recouvrement" v={recoveryRate} target={95} unit="%" />
@@ -189,6 +199,7 @@ export default function AnalyticsScreen({ onNav }) {
 
       {/* ── Revenus vs Coûts ── */}
       <div style={{ marginBottom: 14 }}>
+        {/* TODO: no i18n key for "Revenus vs Coûts", "CA encaissé · coûts opérationnels · marge brute — par mois", "Marge brute", "Coûts opérationnels", "Taux de marge", "Marge / colis" */}
         <ChartCard title="Revenus vs Coûts" sub="CA encaissé · coûts opérationnels · marge brute — par mois">
           <RevsVsCostsChart months={monthData.labels} revenue={monthData.revenue} costs={monthData.costs} />
           <div style={{ display: 'flex', alignItems: 'center', gap: 18, marginTop: 14, padding: '10px 0 0', borderTop: '1px solid var(--border-soft)' }}>
@@ -205,10 +216,12 @@ export default function AnalyticsScreen({ onNav }) {
 
       {/* ── Routes + Impayés + Méthodes de paiement ── */}
       <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr 1fr', gap: 14, marginBottom: 14 }}>
-        <ChartCard title="Performance par route" sub="Volume et chiffre d'affaires encaissé">
+        {/* TODO: no i18n key for sub "Volume et chiffre d'affaires encaissé" */}
+        <ChartCard title={t.analytics.charts.topRoutes} sub="Volume et chiffre d'affaires encaissé">
           <RoutesBar routeStats={routeStats} />
         </ChartCard>
 
+        {/* TODO: no i18n key for "Impayés" chart title, "paiement(s) en attente", "CAD en attente", "Tout est à jour" */}
         <ChartCard title="Impayés" sub={`${unpaidCount} paiement${unpaidCount !== 1 ? 's' : ''} en attente`}>
           <div style={{ textAlign: 'center', padding: '12px 0 8px' }}>
             <div style={{ fontSize: 28, fontWeight: 800, color: unpaidTotal > 0 ? 'var(--bad-600)' : 'var(--ok-600)', fontFamily: 'var(--ff-mono)' }}>
@@ -228,10 +241,11 @@ export default function AnalyticsScreen({ onNav }) {
           {unpaid.length === 0 && <div style={{ textAlign: 'center', color: 'var(--ok-600)', fontSize: 13, fontWeight: 600, paddingTop: 8 }}>✓ Tout est à jour</div>}
         </ChartCard>
 
-        <ChartCard title="Méthodes de paiement" sub="Volume encaissé par canal">
+        {/* TODO: no i18n key for sub "Volume encaissé par canal", "Aucune transaction enregistrée" */}
+        <ChartCard title={t.analytics.charts.paymentMethods} sub="Volume encaissé par canal">
           {donutData.length === 0 ? (
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '32px 0', color: 'var(--ink-300)', fontSize: 13 }}>
-              Aucune transaction enregistrée
+              {t.analytics.noData}
             </div>
           ) : (
             <Donut
@@ -244,6 +258,7 @@ export default function AnalyticsScreen({ onNav }) {
 
       {/* ── Top classements ── */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 14, marginBottom: 14 }}>
+        {/* TODO: no i18n key for "Top clients", "Top destinations", "Top agents", "Par chiffre d'affaires", "Par volume expédié", "Par cargaisons gérées" */}
         <RankingCard title="Top clients" sub="Par chiffre d'affaires" icon={<I.Star style={{ color: 'var(--brand-500)' }} />} items={topClients} />
         <RankingCard title="Top destinations" sub="Par volume expédié" icon={<I.Pin style={{ color: 'var(--info-500)' }} />} items={topDestinations} />
         <RankingCard title="Top agents" sub="Par cargaisons gérées" icon={<I.Users style={{ color: 'var(--ok-500)' }} />} items={topAgents} />
@@ -251,16 +266,17 @@ export default function AnalyticsScreen({ onNav }) {
 
       {/* ── Compagnies aériennes ── */}
       <div style={{ marginBottom: 14 }}>
-        <ChartCard title="Compagnies aériennes" sub="Volume, coûts et tarif au kg par transporteur">
+        {/* TODO: no i18n key for sub "Volume, coûts et tarif au kg par transporteur", "Aucune compagnie assignée...", "Cargaisons", "Volume (kg)", "% du volume", "Frêt estimé", "Frêt / kg" */}
+        <ChartCard title={t.airlines.title} sub="Volume, coûts et tarif au kg par transporteur">
           {airlineStats.length === 0 ? (
             <div style={{ padding: '28px 0', textAlign: 'center', color: 'var(--ink-400)', fontSize: 13 }}>
-              Aucune compagnie assignée aux cargaisons de cette période
+              {t.analytics.noData}
             </div>
           ) : (
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead>
                 <tr style={{ borderBottom: '1px solid var(--border-soft)' }}>
-                  {['Compagnie', 'Cargaisons', 'Volume (kg)', '% du volume', 'Frêt estimé', 'Frêt / kg'].map(h => (
+                  {[t.airlines.table.name, 'Cargaisons', 'Volume (kg)', '% du volume', 'Frêt estimé', 'Frêt / kg'].map(h => (
                     <th key={h} style={{ textAlign: 'left', fontSize: 10.5, fontWeight: 700, color: 'var(--ink-400)', textTransform: 'uppercase', letterSpacing: '.04em', padding: '0 0 8px', paddingRight: 16 }}>{h}</th>
                   ))}
                 </tr>
@@ -311,6 +327,7 @@ export default function AnalyticsScreen({ onNav }) {
 
       {/* ── Impayés à relancer + Activité récente ── */}
       <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr', gap: 14 }}>
+        {/* TODO: no i18n key for "Impayés à relancer", "Voir tout", "Aucun impayé", "paiement(s) en attente", "Colis" column header, "Supplément", "Impayé" status */}
         <ChartCard title="Impayés à relancer" sub={unpaidCount + ' paiement' + (unpaidCount !== 1 ? 's' : '') + ' en attente'} actions={
           <a style={{ fontSize: 12, color: 'var(--brand-700)', fontWeight: 600, cursor: 'pointer' }} onClick={() => onNav('/payments')}>Voir tout →</a>
         }>
@@ -322,7 +339,7 @@ export default function AnalyticsScreen({ onNav }) {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead>
                 <tr style={{ borderBottom: '1px solid var(--border-soft)' }}>
-                  {['Client', 'Colis', 'Montant', 'Statut'].map(h => (
+                  {[t.parcels.table.client, 'Colis', t.common.amount, t.common.status].map(h => (
                     <th key={h} style={{ textAlign: 'left', fontSize: 10.5, fontWeight: 700, color: 'var(--ink-400)', textTransform: 'uppercase', letterSpacing: '.04em', padding: '0 0 8px' }}>{h}</th>
                   ))}
                 </tr>
@@ -338,7 +355,7 @@ export default function AnalyticsScreen({ onNav }) {
                         background: p.status === 'supplement_pending' ? 'var(--info-50)' : 'var(--bad-50)',
                         color:      p.status === 'supplement_pending' ? 'var(--info-700)' : 'var(--bad-700)',
                       }}>
-                        {p.status === 'supplement_pending' ? 'Supplément' : p.status === 'pending' ? 'En attente' : 'Impayé'}
+                        {p.status === 'supplement_pending' ? 'Supplément' /* TODO: no i18n key */ : p.status === 'pending' ? t.paymentStatus.pending : 'Impayé' /* TODO: no i18n key */}
                       </span>
                     </td>
                   </tr>
@@ -348,10 +365,11 @@ export default function AnalyticsScreen({ onNav }) {
           )}
         </ChartCard>
 
+        {/* TODO: no i18n key for "Activité récente", "Derniers événements de suivi et paiements", "Aucune activité récente" */}
         <ChartCard title="Activité récente" sub="Derniers événements de suivi et paiements">
           {recentActivity.length === 0 ? (
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '32px 0', color: 'var(--ink-300)', fontSize: 13 }}>
-              Aucune activité récente
+              {t.analytics.noData}
             </div>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column' }}>
@@ -442,7 +460,8 @@ function ChartCard({ title, sub, actions, children }) {
 }
 
 function RevenueChart({ months, revenue, collected }) {
-  if (!months || months.length === 0) return <div style={{ height: 200, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--ink-300)', fontSize: 13 }}>Aucune donnée</div>;
+  const t = useAdminT();
+  if (!months || months.length === 0) return <div style={{ height: 200, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--ink-300)', fontSize: 13 }}>{t.analytics.noData}</div>;
   const max = Math.max(...revenue, ...collected, 1);
   const w = 100, h = 180;
   const barW = w / months.length * 0.6;
@@ -474,6 +493,7 @@ function RevenueChart({ months, revenue, collected }) {
 }
 
 function GaugeRow({ label, v, target, unit, inverse }) {
+  const t = useAdminT();
   const fillPct = inverse
     ? Math.min(100, Math.round(target / Math.max(v, 0.1) * 100))
     : Math.min(100, Math.round(v / Math.max(target, 0.1) * 100));
@@ -486,6 +506,7 @@ function GaugeRow({ label, v, target, unit, inverse }) {
         <span style={{ fontSize: 12.5, color: 'var(--ink-700)', fontWeight: 500 }}>{label}</span>
         <span style={{ fontSize: 11.5, color: 'var(--ink-400)' }}>
           <span className="mono" style={{ fontSize: 14, fontWeight: 700, color: 'var(--ink-900)' }}>{v}</span>{unit}
+          {/* TODO: no i18n key for "cible" (target) */}
           <span style={{ color: 'var(--ink-400)', marginLeft: 6 }}>cible <span className="mono">{target}{unit}</span></span>
         </span>
       </div>
@@ -532,10 +553,11 @@ function Donut({ data, center }) {
 }
 
 function RoutesBar({ routeStats }) {
+  const t = useAdminT();
   if (!routeStats || routeStats.length === 0) {
     return (
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px 0', color: 'var(--ink-300)', fontSize: 13 }}>
-        Aucune donnée par route pour cette période
+        {t.analytics.noData}
       </div>
     );
   }
@@ -553,6 +575,7 @@ function RoutesBar({ routeStats }) {
           <div style={{ height: 8, background: 'var(--ink-100)', borderRadius: 999, overflow: 'hidden' }}>
             <div style={{ height: '100%', width: (r.meter || 0) + '%', background: 'linear-gradient(90deg, var(--brand-300), var(--brand-500))', borderRadius: 999 }} />
           </div>
+          {/* TODO: no i18n key for "colis" (parcel count label) and "Facturé" */}
           <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 3, fontSize: 10.5, color: 'var(--ink-400)' }}>
             <span>{r.parcels} colis · {r.weightKg.toLocaleString('fr')} kg</span>
             <span>Facturé {r.invoiced > 0 ? (r.invoiced / 1000).toFixed(1) + 'k CAD' : '—'}</span>
@@ -564,11 +587,12 @@ function RoutesBar({ routeStats }) {
 }
 
 function RankingCard({ title, sub, icon, items }) {
+  const t = useAdminT();
   return (
     <ChartCard title={<span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>{icon}{title}</span>} sub={sub}>
       {items.length === 0 ? (
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px 0', color: 'var(--ink-300)', fontSize: 13 }}>
-          Aucune donnée pour cette période
+          {t.analytics.noData}
         </div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
@@ -595,7 +619,8 @@ function RankingCard({ title, sub, icon, items }) {
 }
 
 function RevsVsCostsChart({ months, revenue, costs }) {
-  if (!months || months.length === 0) return <div style={{ height: 160, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--ink-300)', fontSize: 13 }}>Aucune donnée</div>;
+  const t = useAdminT();
+  if (!months || months.length === 0) return <div style={{ height: 160, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--ink-300)', fontSize: 13 }}>{t.analytics.noData}</div>;
   const max = Math.max(...revenue, ...costs, 1);
   const w = 100, h = 140;
   const barW = w / months.length * 0.58;

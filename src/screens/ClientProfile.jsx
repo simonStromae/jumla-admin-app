@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { signOut } from 'next-auth/react';
 import I from '../components/Icons.jsx';
 import { useT } from '../lib/i18n';
+import { useAdminT } from '../lib/useAdminT.js';
 
 const ADDR_KEY = 'jumla_addresses';
 
@@ -133,6 +134,7 @@ const alertBad = {
 
 export default function ClientProfile() {
   const t = useT();
+  const adminT = useAdminT();
 
   // --- Profile info ---
   const [profile, setProfile] = useState({ name: '', email: '', phone: '', city: '' });
@@ -249,13 +251,13 @@ export default function ClientProfile() {
       const res = await fetch('/api/client/account', { method: 'DELETE' });
       const d = await res.json();
       if (!res.ok) {
-        setDeleteErr(d.error || 'Erreur lors de la suppression');
+        setDeleteErr(d.error || adminT.common.error);
         setDeleting(false);
         return;
       }
       signOut({ callbackUrl: '/' });
     } catch {
-      setDeleteErr('Erreur réseau');
+      setDeleteErr(adminT.common.networkError);
       setDeleting(false);
     }
   };
@@ -637,9 +639,11 @@ export default function ClientProfile() {
 
         <div style={{ marginTop: 24, paddingTop: 20, borderTop: '1px solid var(--border-soft)' }}>
           <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--bad-700)', marginBottom: 6 }}>
+            {/* TODO: add profile.danger.deleteTitle key — no exact admin-i18n match */}
             Supprimer mon compte
           </div>
           <div style={{ fontSize: 13, color: 'var(--ink-500)', marginBottom: 14 }}>
+            {/* TODO: add profile.danger.deleteDesc key — no exact admin-i18n match */}
             Cette action est irréversible. Votre compte et vos données seront définitivement supprimés.
           </div>
           {deleteErr && (
@@ -648,11 +652,13 @@ export default function ClientProfile() {
           {!deleteConfirm ? (
             <button type="button" style={btnDanger} onClick={() => setDeleteConfirm(true)}>
               <I.Trash style={{ width: 14, height: 14 }} />
+              {/* TODO: add profile.danger.deleteBtn key — no exact admin-i18n match */}
               Supprimer mon compte
             </button>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
               <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--bad-700)' }}>
+                {/* TODO: add profile.danger.confirmMsg key — no exact admin-i18n match */}
                 Êtes-vous sûr ? Cette action ne peut pas être annulée.
               </div>
               <div style={{ display: 'flex', gap: 8 }}>
@@ -663,10 +669,11 @@ export default function ClientProfile() {
                   disabled={deleting}
                 >
                   <I.Trash style={{ width: 14, height: 14 }} />
-                  {deleting ? 'Suppression...' : 'Confirmer la suppression'}
+                  {/* TODO: add profile.danger.deleting key for "Suppression…" — no exact admin-i18n match */}
+                  {deleting ? 'Suppression...' : adminT.common.confirm}
                 </button>
                 <button type="button" style={btnGhost} onClick={() => { setDeleteConfirm(false); setDeleteErr(''); }}>
-                  Annuler
+                  {adminT.common.cancel}
                 </button>
               </div>
             </div>
