@@ -2,6 +2,23 @@ import { prisma } from './prisma';
 
 export const WA_DEFAULTS: Record<string, { label: string; body: string; vars: string[]; trigger?: string }> = {
   // ── Manuel ──────────────────────────────────────────────────────────────
+  payment_link: {
+    label: 'Lien de paiement Interac',
+    vars:  ['{first_name}', '{parcel_code}', '{amount}', '{payment_email}', '{payment_url}'],
+    body:
+`Bonjour {first_name} 👋
+
+Voici votre lien de paiement pour le colis *{parcel_code}* — montant dû : *{amount} CAD*
+
+💳 Effectuez un virement Interac à :
+*{payment_email}*
+(Inscrivez *{parcel_code}* dans le message)
+
+🔗 Instructions détaillées :
+{payment_url}
+
+Jumla Shipping`,
+  },
   arrival: {
     label: "Avis d'arrivée",
     vars:  ['{first_name}', '{parcel_code}', '{weight}', '{amount}', '{destination_city}', '{warehouse_address}', '{agent_phone}'],
@@ -145,6 +162,25 @@ export const TWILIO_TEMPLATES: Record<string, {
   varMap: Record<string, string>;       // {our_var} → "N"
   settingKey: string;                   // DB key where ContentSid is stored
 }> = {
+  payment_link: {
+    friendlyName: 'jumla_payment_link_fr',
+    settingKey:   'WA_TMPL_SID_payment_link',
+    varMap: { first_name: '1', parcel_code: '2', amount: '3', payment_email: '4', payment_url: '5' },
+    sampleVars: { '1': 'Client', '2': 'JMS-00000', '3': '150', '4': 'paiement@jumla.cargo', '5': 'https://jumla.cargo/payer/xxx' },
+    body:
+`Bonjour {{1}} 👋
+
+Voici votre lien de paiement pour le colis *{{2}}* — montant dû : *{{3}} CAD*
+
+💳 Effectuez un virement Interac à :
+*{{4}}*
+(Inscrivez *{{2}}* dans le message)
+
+🔗 Instructions détaillées :
+{{5}}
+
+Jumla Shipping`,
+  },
   arrival: {
     friendlyName: 'jumla_arrival_fr',
     settingKey:   'WA_TMPL_SID_arrival',

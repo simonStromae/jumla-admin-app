@@ -1197,19 +1197,72 @@ function WeightModal({ parcel, onClose, onSaved }) {
 
 function InteracModal({ parcel, onClose }) {
   const payUrl = (typeof window !== 'undefined' ? window.location.origin : '') + '/payer/' + parcel.id;
+  const [copied, setCopied]     = useState(false);
+  const [sending, setSending]   = useState(false);
+  const [sent, setSent]         = useState(false);
+  const [sendError, setSendError] = useState('');
+
+  const handleCopy = () => {
+    navigator.clipboard?.writeText(payUrl);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  const handleSendWA = async () => {
+    setSending(true);
+    setSendError('');
+    try {
+      const res  = await fetch('/api/parcels/' + parcel.id + '/send-payment-link', { method: 'POST' });
+      const json = await res.json();
+      if (!res.ok) setSendError(json.error || 'Erreur inconnue');
+      else setSent(true);
+    } catch { setSendError('Erreur réseau'); }
+    finally { setSending(false); }
+  };
+
+  const amountLabel = (parcel.payment?.amount ?? parcel.priceXaf)?.toLocaleString('fr') ?? '—';
+
   return (
-    <Modal width={680} onClose={onClose}
+    <Modal width={640} onClose={onClose}
       title="Lien de paiement Interac"
-      sub={parcel.trackingCode + ' · ' + ((parcel.payment?.amount ?? parcel.priceXaf)?.toLocaleString('fr') ?? '—') + ' CAD dû'}
-      footer={<><button className="btn btn--ghost" onClick={onClose}>Fermer</button></>}>
-      <div style={{ display: 'grid', gap: 14 }}>
-        <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.06em', color: 'var(--ink-400)', marginBottom: 4 }}>Lien de paiement</div>
-        <div style={{ display: 'flex', gap: 8 }}>
-          <div className="mono" style={{ flex: 1, padding: '8px 12px', background: 'var(--bg-soft)', border: '1px solid var(--border)', fontSize: 11.5, color: 'var(--ink-600)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', borderRadius: 6 }}>{payUrl}</div>
-          <button className="btn btn--ghost btn--sm" onClick={() => navigator.clipboard?.writeText(payUrl)}>Copier</button>
+      sub={parcel.trackingCode + ' · ' + amountLabel + ' CAD dû'}
+      footer={<button className="btn btn--ghost" onClick={onClose}>Fermer</button>}>
+      <div style={{ display: 'grid', gap: 16 }}>
+
+        {/* URL + copy */}
+        <div>
+          <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.06em', color: 'var(--ink-400)', marginBottom: 8 }}>Lien de paiement</div>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <div className="mono" style={{ flex: 1, padding: '8px 12px', background: 'var(--bg-soft)', border: '1px solid var(--border)', fontSize: 11.5, color: 'var(--ink-600)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', borderRadius: 6 }}>{payUrl}</div>
+            <button className="btn btn--ghost btn--sm" onClick={handleCopy} style={{ minWidth: 70 }}>{copied ? '✓ Copié' : 'Copier'}</button>
+          </div>
         </div>
-        <div style={{ padding: 12, background: 'var(--warn-50)', border: '1px solid var(--warn-100)', borderRadius: 6, fontSize: 12, color: 'var(--ink-700)', lineHeight: 1.6 }}>
-          Client : <strong>{parcel.client?.name}</strong> · {parcel.client?.phone || parcel.client?.email}
+
+        {/* Client info */}
+        <div style={{ padding: '10px 14px', background: 'var(--warn-50)', border: '1px solid var(--warn-100)', borderRadius: 8, fontSize: 12.5, color: 'var(--ink-700)', lineHeight: 1.7 }}>
+          <strong>{parcel.client?.name}</strong><br />
+          {parcel.client?.phone && <span>📱 {parcel.client.phone}</span>}
+          {parcel.client?.email && <><br /><span>✉️ {parcel.client.email}</span></>}
+        </div>
+
+        {/* WhatsApp send */}
+        <div style={{ borderTop: '1px solid var(--border-soft)', paddingTop: 14 }}>
+          <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.06em', color: 'var(--ink-400)', marginBottom: 10 }}>Envoyer au client</div>
+          {sent ? (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 14px', background: 'var(--ok-50)', border: '1px solid var(--ok-200)', borderRadius: 8, fontSize: 13, color: 'var(--ok-700)' }}>
+              ✓ Message envoyé via WhatsApp à {parcel.client?.phone || parcel.client?.email}
+            </div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              <button className="btn btn--brand" style={{ justifyContent: 'center' }} onClick={handleSendWA} disabled={sending}>
+                <I.Chat />{sending ? 'Envoi en cours…' : 'Envoyer le lien via WhatsApp'}
+              </button>
+              {sendError && <div style={{ fontSize: 12, color: 'var(--bad-600)', padding: '6px 10px', background: 'var(--bad-50)', borderRadius: 6, border: '1px solid var(--bad-200)' }}>{sendError}</div>}
+              <div style={{ fontSize: 11.5, color: 'var(--ink-400)', lineHeight: 1.5 }}>
+                Le client recevra les instructions de paiement Interac avec le lien sécurisé.
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </Modal>
