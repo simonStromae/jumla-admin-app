@@ -148,10 +148,10 @@ export default function SlipPrintScreen({ code, onNav }) {
                 addr: data.client.city ?? '—',
               },
               {
-                kind: 'DESTINATION',
-                name: 'Jumla Shipping — ' + data.campaign.to,
-                phone: paymentEmail,
-                addr: data.campaign.to + ', Canada',
+                kind: 'DESTINATION / DESTINATAIRE',
+                name: data.recipient?.name || data.client.name,
+                phone: data.recipient?.phone || data.client.phone || '—',
+                addr: data.recipient?.address || data.client.city || '—',
               },
             ].map((p, i) => (
               <div key={i} style={{ border: '1px solid #D1D5DB', borderRadius: 4 }}>
