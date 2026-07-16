@@ -174,6 +174,7 @@ export default function ParcelDetailScreen({ id, onNav }) {
         </div>
         <div className="page__actions">
           <button className="btn btn--ghost" onClick={() => onNav('/admin/parcels/' + id + '/labels')}><I.Tag />Étiquettes</button>
+          <button className="btn btn--ghost" onClick={() => window.open('/client/invoice/' + id, '_blank')}><I.FileText />Facture</button>
           <button className="btn btn--ghost" onClick={() => setShowWeightModal(true)}><I.Edit />Poids / Prix</button>
           <button className="btn btn--ghost" onClick={() => setShowPayModal(true)}><I.Send />Lien Interac</button>
           {['enr', 'rec'].includes(parcel.status) && (
@@ -1199,7 +1200,7 @@ function InteracModal({ parcel, onClose }) {
   return (
     <Modal width={680} onClose={onClose}
       title="Lien de paiement Interac"
-      sub={parcel.trackingCode + ' · ' + ((payment?.amount ?? parcel.priceXaf)?.toLocaleString('fr') ?? '—') + ' CAD dû'}
+      sub={parcel.trackingCode + ' · ' + ((parcel.payment?.amount ?? parcel.priceXaf)?.toLocaleString('fr') ?? '—') + ' CAD dû'}
       footer={<><button className="btn btn--ghost" onClick={onClose}>Fermer</button></>}>
       <div style={{ display: 'grid', gap: 14 }}>
         <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.06em', color: 'var(--ink-400)', marginBottom: 4 }}>Lien de paiement</div>

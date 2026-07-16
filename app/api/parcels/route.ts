@@ -106,6 +106,8 @@ export async function POST(req: NextRequest) {
 
   const finalWeightKg = weightKg ? Number(weightKg) : (Array.isArray(items) ? items.reduce((s: number, i: any) => s + (Number(i.weightKg) || 0), 0) : 0);
 
+  const finalPriceXaf = priceXaf ? Number(priceXaf) : null;
+
   const parcel = await prisma.parcel.create({
     data: {
       clientId,
@@ -113,7 +115,7 @@ export async function POST(req: NextRequest) {
       trackingCode:     genTrackingCode(),
       description,
       weightKg:         finalWeightKg,
-      priceXaf:         priceXaf ? Number(priceXaf) : null,
+      priceXaf:         finalPriceXaf,
       declaredValue:    declaredValue ? Number(declaredValue) : null,
       notes:            finalNotes,
       recipName:        recipName  || null,
@@ -136,6 +138,18 @@ export async function POST(req: NextRequest) {
     },
     include: { client: true, campaign: true },
   });
+
+  // Auto-create a pending payment record so invoices and Interac links work immediately
+  if (finalPriceXaf && finalPriceXaf > 0) {
+    await prisma.payment.create({
+      data: {
+        parcelId: parcel.id,
+        clientId: parcel.clientId,
+        amount:   finalPriceXaf,
+        status:   'pending',
+      },
+    });
+  }
 
   return NextResponse.json({ ok: true, parcel });
 }

@@ -8,6 +8,7 @@ export async function GET(_: NextRequest, { params }: { params: { parcelId: stri
   if (error) return error;
 
   const userId = (session!.user as any).id;
+  const isAdmin = ['admin', 'agent'].includes((session!.user as any).role ?? '');
 
   const parcel = await prisma.parcel.findUnique({
     where: { id: params.parcelId },
@@ -20,7 +21,7 @@ export async function GET(_: NextRequest, { params }: { params: { parcelId: stri
   });
 
   if (!parcel) return NextResponse.json({ error: 'Introuvable' }, { status: 404 });
-  if (parcel.clientId !== userId) return NextResponse.json({ error: 'Accès refusé' }, { status: 403 });
+  if (!isAdmin && parcel.clientId !== userId) return NextResponse.json({ error: 'Accès refusé' }, { status: 403 });
 
   const confirmedPriceXaf = (parcel as any).confirmedPriceXaf ?? null;
   const adjustmentStatus  = (parcel as any).adjustmentStatus  ?? 'none';
