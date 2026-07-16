@@ -42,7 +42,7 @@ export function CampaignCard({ c, onClick }) {
         <div className="mono" style={{ fontSize: 15, fontWeight: 700, letterSpacing: '-.01em', color: 'var(--ink-900)', marginBottom: 4 }}>{c.code}</div>
         <div style={{ fontSize: 12, color: 'var(--ink-400)', display: 'flex', alignItems: 'center', gap: 6 }}>
           <I.Calendar style={{ width: 11, height: 11 }} />
-          {t.campaigns.detail.info.departure} <span style={{ color: 'var(--ink-700)', fontWeight: 600 }}>{c.dep}</span>
+          {t.campaigns.fields.departure} <span style={{ color: 'var(--ink-700)', fontWeight: 600 }}>{c.dep}</span>
         </div>
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, margin: '14px 0 12px', paddingTop: 12, borderTop: '1px solid var(--border-soft)' }}>
@@ -144,7 +144,7 @@ export default function CampaignsScreen({ onNav, onNewCampaign }) {
             </select>
           </div>
           <button className="btn btn--ghost"><I.Download />{t.common.export}</button>
-          {can('campaigns', 'create') && <button className="btn btn--brand" onClick={onNewCampaign}><I.Plus />{t.campaigns.newCampaign}</button>}
+          {can('campaigns', 'create') && <button className="btn btn--brand" onClick={onNewCampaign}><I.Plus />{t.campaigns.new}</button>}
         </div>
       </div>
 
