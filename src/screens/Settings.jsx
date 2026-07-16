@@ -161,7 +161,7 @@ function ToggleRow({ label, sub, checked, onChange }) {
 function SectionCompany() {
   const [fields, setFields] = useState({
     company_name:      'Jumla Shipping',
-    company_legal:     'Jumla Shipping SARL',
+    company_legal:     'Jumla Shipping Inc.',
     phone_douala:      '',
     phone_montreal:    '',
     contact_whatsapp:  '',

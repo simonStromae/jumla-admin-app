@@ -62,7 +62,7 @@ export default function PaymentScreen({ token }) {
       </main>
 
       <footer className="pay-footer">
-        <span>© 2026 Jumla Shipping SARL</span>
+        <span>© 2026 Jumla Shipping Inc.</span>
         <span>Douala · Montréal · Lagos · Bruxelles</span>
       </footer>
     </div>
