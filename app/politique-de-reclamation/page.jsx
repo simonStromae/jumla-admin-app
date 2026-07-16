@@ -7,7 +7,7 @@ const ARTICLES = [
   {
     n: 1,
     title: 'Objet',
-    body: `La présente Politique de réclamation et d'indemnisation établit les conditions, les délais et la procédure applicables à toute réclamation relative aux services de transport, d'importation, d'exportation, d'entreposage, de préparation et de livraison fournis par Jumla Import Export Inc. (« Jumla »).
+    body: `La présente Politique de réclamation et d'indemnisation établit les conditions, les délais et la procédure applicables à toute réclamation relative aux services de transport, d'importation, d'exportation, d'entreposage, de préparation et de livraison fournis par Jumla Shipping Inc. (« Jumla »).
 
 Toute personne utilisant les services de Jumla reconnaît avoir pris connaissance de cette politique et l'accepter.`,
   },
@@ -262,7 +262,7 @@ export default function PolitiqueReclamationPage() {
           <div style={{ marginBottom: 40 }}>
             <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: '.1em', textTransform: 'uppercase', color: 'var(--brand-500)', marginBottom: 10 }}>Légal</div>
             <h1 style={{ fontSize: 32, fontWeight: 800, color: 'var(--ink-900)', margin: '0 0 8px', letterSpacing: '-.02em' }}>Politique de réclamation et d'indemnisation</h1>
-            <p style={{ fontSize: 14, color: 'var(--ink-400)', margin: '0 0 16px' }}>Dernière mise à jour : 9 juillet 2026 · Jumla Import Export Inc.</p>
+            <p style={{ fontSize: 14, color: 'var(--ink-400)', margin: '0 0 16px' }}>Dernière mise à jour : 9 juillet 2026 · Jumla Shipping Inc.</p>
           </div>
 
           {/* Délais clés */}
