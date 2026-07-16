@@ -1315,7 +1315,6 @@ function InteracModal({ parcel, onClose }) {
   const amountLabel = (parcel.payment?.amount ?? parcel.priceXaf)?.toLocaleString('fr') ?? '—';
 
   return (
-    {/* TODO: i18n — 'Lien de paiement Interac' modal title and 'CAD dû' suffix have no direct keys */}
     <Modal width={640} onClose={onClose}
       title="Lien de paiement Interac"
       sub={parcel.trackingCode + ' · ' + amountLabel + ' CAD dû'}
