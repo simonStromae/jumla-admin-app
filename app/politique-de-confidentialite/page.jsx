@@ -34,7 +34,7 @@ export default function PolitiqueConfidentialitePage() {
       <TopBar />
       <SiteNav onNav={p => router.push(p)} onBook={() => router.push('/login')} mode="public" />
       <main style={{ minHeight: '60vh', padding: '64px 0 80px' }}>
-        <div className="jc" style={{ maxWidth: 760 }}>
+        <div className="jc">
 
           {/* Header */}
           <div style={{ marginBottom: 48 }}>
