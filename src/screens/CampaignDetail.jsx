@@ -190,9 +190,9 @@ export default function CampaignDetailScreen({ id, onNav }) {
           </div>
           <div className="page__sub">
             <I.Calendar style={{ width: 12, height: 12, display: 'inline', verticalAlign: -2, marginRight: 4 }} />
-            {t.campaigns.detail.info.departure} <strong style={{ color: 'var(--ink-700)' }}>{depDate}</strong>
+            {t.campaigns.fields.departure} <strong style={{ color: 'var(--ink-700)' }}>{depDate}</strong>
             {' · '}
-            {t.campaigns.detail.info.arrival} <strong style={{ color: 'var(--ink-700)' }}>{arrDate}</strong>
+            {t.campaigns.fields.arrival} <strong style={{ color: 'var(--ink-700)' }}>{arrDate}</strong>
           </div>
         </div>
         <div className="page__actions">
@@ -229,7 +229,7 @@ export default function CampaignDetailScreen({ id, onNav }) {
               className="btn btn--brand"
               onClick={() => onNav('/parcels/new?campaign=' + id)}
             >
-              <I.Plus />{t.campaigns.detail.parcels.addParcel}
+              <I.Plus />{t.parcels.new}
             </button>
           )}
         </div>
@@ -256,7 +256,7 @@ export default function CampaignDetailScreen({ id, onNav }) {
 
       {/* Status controls */}
       <div className="card" style={{ marginBottom: 16, padding: '14px 20px', display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
-        <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--ink-500)', whiteSpace: 'nowrap' }}>{t.campaigns.detail.status.updateStatus}</span>
+        <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--ink-500)', whiteSpace: 'nowrap' }}>{t.campaigns.detail.changeStatus}</span>
         <select
           className="input"
           style={{ flex: 1, minWidth: 220, maxWidth: 360 }}
@@ -413,7 +413,7 @@ export default function CampaignDetailScreen({ id, onNav }) {
           <div style={{ fontSize: 13, color: 'var(--ink-400)', marginBottom: 20 }}>Ajoutez le premier colis pour commencer.</div>
           {campaign.status === 'enr' && (
             <button className="btn btn--brand" onClick={() => onNav('/parcels/new?campaign=' + id)}>
-              <I.Plus />{t.campaigns.detail.parcels.addParcel}
+              <I.Plus />{t.parcels.new}
             </button>
           )}
         </div>
@@ -421,7 +421,7 @@ export default function CampaignDetailScreen({ id, onNav }) {
         <table className="tbl">
           <thead>
             <tr>
-              <th>{t.campaigns.detail.parcels.columns.trackingId}</th>
+              <th>{t.campaigns.detail.tableHeaders.tracking}</th>
               <th>{t.parcels.table.client}</th>
               <th>{t.parcels.table.weight}</th>
               <th>{t.common.description}</th>
@@ -629,8 +629,8 @@ function CampaignLegsPanel({ campaignId }) {
               </div>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-                  <span style={{ fontSize: 14, fontWeight: 700 }}>{leg.airline.name}</span>
-                  {leg.airline.iata && (
+                  <span style={{ fontSize: 14, fontWeight: 700 }}>{leg.airline?.name ?? '—'}</span>
+                  {leg.airline?.iata && (
                     <span className="mono" style={{ fontSize: 11, fontWeight: 700, padding: '2px 6px', background: 'var(--brand-50)', color: 'var(--brand-700)', borderRadius: 5, border: '1px solid var(--brand-100)' }}>
                       {leg.airline.iata}
                     </span>
