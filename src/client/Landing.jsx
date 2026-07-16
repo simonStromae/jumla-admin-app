@@ -809,7 +809,10 @@ function JEstimator({ onBook, content }) {
                 <span className="jest__transit">· max 10 jrs</span>
               </div>
             </div>
-            <button className="jbtn-nav jbtn-nav--lg" style={{ marginLeft: 'auto' }} onClick={onBook}>
+            <button className="jbtn-nav jbtn-nav--lg" style={{ marginLeft: 'auto' }} onClick={() => {
+              try { sessionStorage.setItem('sim_data', JSON.stringify({ lines })); } catch {}
+              onBook();
+            }}>
               Réserver <I.ArrowRight style={{ width: 15, height: 15 }} />
             </button>
           </div>

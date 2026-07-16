@@ -775,9 +775,29 @@ export default function BookingScreen({ onNav, embedded = false }) {
     recipAddress: '', recipApt: '', recipProvince: 'QC', recipPostal: '',
     payMethod: 'card',
   });
-  const [items, setItems] = useState([
-    { id: 1, cat: 'standard', desc: '', pieces: 1, kg: '', beerFormat: '24x65', nbCasiers: '' },
-  ]);
+  const [simLines] = useState(() => {
+    if (typeof window === 'undefined') return null;
+    try {
+      const raw = sessionStorage.getItem('sim_data');
+      if (!raw) return null;
+      sessionStorage.removeItem('sim_data');
+      return JSON.parse(raw)?.lines ?? null;
+    } catch { return null; }
+  });
+
+  const [items, setItems] = useState(() =>
+    simLines?.length > 0
+      ? simLines.map((l, i) => ({
+          id: i + 1,
+          cat: l.cat ?? 'standard',
+          desc: '',
+          pieces: 1,
+          kg: l.weight ?? '',
+          beerFormat: '24x65',
+          nbCasiers: '',
+        }))
+      : [{ id: 1, cat: 'standard', desc: '', pieces: 1, kg: '', beerFormat: '24x65', nbCasiers: '' }]
+  );
   const [showBreakdown, setShowBreakdown] = useState(false);
   const [createAccount, setCreateAccount] = useState(false);
   const [savedAddresses, setSavedAddresses] = useState([]);
@@ -1210,6 +1230,13 @@ export default function BookingScreen({ onNav, embedded = false }) {
               {step === 1 && (
                 <div className="co-section">
                   <div className="co-section__title">{t('booking.parcel.title')}</div>
+
+                  {simLines?.length > 0 && (
+                    <div style={{ background: '#ECFDF5', border: '1px solid #A7F3D0', borderRadius: 'var(--radius)', padding: '9px 14px', fontSize: 12.5, color: '#065F46', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <span>✓</span>
+                      <span>Contenu pré-rempli depuis votre simulation — modifiez si nécessaire.</span>
+                    </div>
+                  )}
 
                   {/* Info hint */}
                   <div style={{ background: 'var(--brand-50)', border: '1px solid var(--brand-100)', borderRadius: 'var(--radius)', padding: '10px 14px', fontSize: 12.5, color: 'var(--brand-700)', marginBottom: 16, lineHeight: 1.6 }}>
