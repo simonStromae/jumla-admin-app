@@ -267,7 +267,7 @@ const fr = {
       logo: 'Logo complet', logoIcon: 'Icône / Logo carré', favicon: 'Favicon',
       logoDesc: 'Format paysage — affiché dans la nav et le footer · PNG/SVG transparent · max 2 Mo',
       iconDesc: 'Format carré — affiché dans la sidebar · PNG/SVG transparent · max 2 Mo',
-      faviconDesc: 'Icône affichée dans l'onglet du navigateur · PNG, ICO ou SVG · max 2 Mo',
+      faviconDesc: "Icône affichée dans l'onglet du navigateur · PNG, ICO ou SVG · max 2 Mo",
       sizes: "Tailles d'affichage", logoHeight: 'Hauteur du logo complet (px)', iconSize: "Taille de l'icône carrée (px)",
       applySizes: 'Appliquer les tailles',
     },
