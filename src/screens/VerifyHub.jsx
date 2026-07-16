@@ -106,7 +106,7 @@ export default function VerifyHubScreen({ onNav }) {
           borderRadius: 'var(--radius-xl)', color: 'var(--ink-400)', textAlign: 'center',
         }}>
           <I.Check style={{ width: 40, height: 40, color: 'var(--ok-400)' }} />
-          <div style={{ fontSize: 15, fontWeight: 600, color: 'var(--ok-700)' }}>{t.verify.noItems}</div>
+          <div style={{ fontSize: 15, fontWeight: 600, color: 'var(--ok-700)' }}>{t.verify.empty}</div>
           {/* TODO: no translation key for empty state description */}
           <div style={{ fontSize: 13 }}>Toutes les cargaisons sont clôturées ou non encore en transit.</div>
         </div>
@@ -153,10 +153,10 @@ export default function VerifyHubScreen({ onNav }) {
               >
                 <I.Check />
                 {c.verifiedBordereaux >= c.totalBordereaux && c.totalBordereaux > 0
-                  ? t.verify.verified
+                  ? t.verify.continue
                   : c.verifiedBordereaux > 0
-                  ? 'Continuer la vérification' // TODO: no translation key for 'Continuer la vérification'
-                  : t.verify.actions.verify}
+                  ? t.verify.continue
+                  : t.verify.start}
               </button>
             </div>
           ))}

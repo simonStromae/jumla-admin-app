@@ -209,6 +209,9 @@ const fr = {
     start: 'Démarrer la vérification',
     continue: 'Continuer la vérification',
     empty: 'Aucune cargaison en attente de vérification',
+    noItems: 'Aucune cargaison en attente de vérification',
+    pending: 'En attente',
+    verified: 'Vérifié',
     selectInfo: 'Sélectionnez une cargaison pour démarrer la vérification colis par colis',
   },
 
@@ -509,6 +512,9 @@ const en = {
     start: 'Start verification',
     continue: 'Continue verification',
     empty: 'No shipments pending verification',
+    noItems: 'No shipments pending verification',
+    pending: 'Pending',
+    verified: 'Verified',
     selectInfo: 'Select a shipment to start parcel-by-parcel verification',
   },
 
