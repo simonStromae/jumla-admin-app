@@ -5,6 +5,7 @@ import { useCompanyAssets } from '../lib/useCompanyAssets.js';
 import LanguageSwitcher from './LanguageSwitcher.jsx';
 import AdminOnboarding from './AdminOnboarding.jsx';
 import HelpCenter from './HelpCenter.jsx';
+import { useAdminT } from '../lib/useAdminT.js';
 
 const PERM_ALIAS = { campaigns: 'cargaisons' };
 
@@ -73,6 +74,7 @@ export function Bi({ fr, en, sep = '/' }) {
 export function Sidebar({ route, onNav }) {
   const { data: session } = useSession();
   const { logoIconUrl, logoIconSize } = useCompanyAssets();
+  const t = useAdminT();
   const [stats, setStats] = useState({ campaigns: 0, clients: 0, verifyPending: 0, unpaidPayments: 0 });
 
   useEffect(() => {
@@ -95,23 +97,23 @@ export function Sidebar({ route, onNav }) {
   const initials    = name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
 
   const allItems = [
-    { id: 'dashboard', label: 'Tableau de bord', icon: I.Home,   route: '/admin/dashboard',                                       perm: null },
-    { id: 'home',      label: 'Cargaisons',   icon: I.Plane,    route: '/admin/campaigns', count: stats.campaigns || null,      perm: 'campaigns' },
-    { id: 'analytics', label: 'Analyses',     icon: I.Activity, route: '/admin/analytics',                                      perm: 'analytics' },
-    { id: 'parcels',   label: 'Colis',        icon: I.Box,      route: '/admin/parcels',                                        perm: 'parcels' },
-    { id: 'verify',    label: 'Vérification', icon: I.Check,    route: '/admin/verify',    badge: stats.verifyPending || null,  perm: 'campaigns' },
-    { id: 'clients',   label: 'Clients',      icon: I.Users,    route: '/admin/clients',   count: stats.clients || null,        perm: null },
-    { id: 'payments',  label: 'Paiements',    icon: I.Wallet,   route: '/admin/payments',  badge: stats.unpaidPayments || null, perm: 'payments' },
-    { id: 'costs',     label: 'Coûts',        icon: I.Coins,    route: '/admin/costs',                                          perm: 'costs' },
-    { id: 'airlines',  label: 'Compagnies',   icon: I.Plane,    route: '/admin/airlines',                                       perm: 'campaigns' },
-    { id: 'messaging', label: 'Messagerie',   icon: I.Chat,     route: '/admin/messaging',                                      perm: 'whatsapp' },
+    { id: 'dashboard', label: t.nav.dashboard,  icon: I.Home,   route: '/admin/dashboard',                                       perm: null },
+    { id: 'home',      label: t.nav.campaigns,  icon: I.Plane,  route: '/admin/campaigns', count: stats.campaigns || null,      perm: 'campaigns' },
+    { id: 'analytics', label: t.nav.analytics,  icon: I.Activity, route: '/admin/analytics',                                    perm: 'analytics' },
+    { id: 'parcels',   label: t.nav.parcels,    icon: I.Box,    route: '/admin/parcels',                                        perm: 'parcels' },
+    { id: 'verify',    label: t.nav.verify,     icon: I.Check,  route: '/admin/verify',    badge: stats.verifyPending || null,  perm: 'campaigns' },
+    { id: 'clients',   label: t.nav.clients,    icon: I.Users,  route: '/admin/clients',   count: stats.clients || null,        perm: null },
+    { id: 'payments',  label: t.nav.payments,   icon: I.Wallet, route: '/admin/payments',  badge: stats.unpaidPayments || null, perm: 'payments' },
+    { id: 'costs',     label: t.nav.costs,      icon: I.Coins,  route: '/admin/costs',                                          perm: 'costs' },
+    { id: 'airlines',  label: t.nav.airlines,   icon: I.Plane,  route: '/admin/airlines',                                       perm: 'campaigns' },
+    { id: 'messaging', label: t.nav.messaging,  icon: I.Chat,   route: '/admin/messaging',                                      perm: 'whatsapp' },
   ];
   const items = allItems.filter(it => it.perm === null || can(it.perm));
 
   const admin = [
-    { id: 'agents',   label: 'Agents',      icon: I.Users,    route: '/admin/agents',   perm: 'agents' },
-    { id: 'logs',     label: 'Journal',     icon: I.Activity, route: '/admin/logs',     perm: 'analytics' },
-    { id: 'settings', label: 'Paramètres',  icon: I.Settings, route: '/admin/settings', perm: 'settings' },
+    { id: 'agents',   label: t.nav.agents,   icon: I.Users,    route: '/admin/agents',   perm: 'agents' },
+    { id: 'logs',     label: t.nav.logs,     icon: I.Activity, route: '/admin/logs',     perm: 'analytics' },
+    { id: 'settings', label: t.nav.settings, icon: I.Settings, route: '/admin/settings', perm: 'settings' },
   ];
   // An agent with any admin sub-permission should see the Administration section
   const hasAdminSubPerm = !isAdmin && Array.isArray(perms.admin) && perms.admin.length > 0;
@@ -131,13 +133,13 @@ export function Sidebar({ route, onNav }) {
   }, []);
 
   const settingsSubs = [
-    { id: 'company',   label: 'Entreprise',          icon: I.Building },
-    { id: 'landing',   label: "Page d'accueil",      icon: I.Globe },
-    { id: 'routes',    label: 'Routes & tarifs',     icon: I.Route },
-    { id: 'whatsapp',  label: 'WhatsApp',            icon: I.Chat },
-    { id: 'auto',      label: 'Auto-notifications',  icon: I.Bell },
-    { id: 'campaigns', label: 'Cargaisons',          icon: I.Plane },
-    { id: 'codes',     label: 'Codes',               icon: I.Tag },
+    { id: 'company',   label: t.settingsTabs.company,   icon: I.Building },
+    { id: 'landing',   label: t.settingsTabs.landing,   icon: I.Globe },
+    { id: 'routes',    label: t.settingsTabs.routes,    icon: I.Route },
+    { id: 'whatsapp',  label: t.settingsTabs.whatsapp,  icon: I.Chat },
+    { id: 'auto',      label: t.settingsTabs.auto,      icon: I.Bell },
+    { id: 'campaigns', label: t.settingsTabs.campaigns, icon: I.Plane },
+    { id: 'codes',     label: t.settingsTabs.codes,     icon: I.Tag },
   ];
 
   return (
@@ -158,7 +160,7 @@ export function Sidebar({ route, onNav }) {
         </div>
       </div>
       <nav className="sidebar__nav">
-        <div className="sidebar__section">Opérations</div>
+        <div className="sidebar__section">{t.nav.operations}</div>
         {items.map(it => {
           const Ic = it.icon;
           return (
@@ -174,7 +176,7 @@ export function Sidebar({ route, onNav }) {
           );
         })}
         {(isAdmin || hasAdminSubPerm) && <>
-          <div className="sidebar__section">Administration</div>
+          <div className="sidebar__section">{t.nav.administration}</div>
           {visibleAdmin.map(it => {
             const Ic = it.icon;
             if (it.id === 'settings') {
@@ -222,7 +224,7 @@ export function Sidebar({ route, onNav }) {
           <span className="sidebar__username">{name}</span>
           <span className="sidebar__userrole">{role === 'admin' ? 'Admin' : role === 'agent' ? 'Agent' : role}</span>
         </div>
-        <button className="icon-btn" title="Déconnexion" onClick={() => signOut({ callbackUrl: '/login' })}>
+        <button className="icon-btn" title={t.topbar.logout} onClick={() => signOut({ callbackUrl: '/login' })}>
           <I.Logout />
         </button>
       </div>
@@ -231,6 +233,7 @@ export function Sidebar({ route, onNav }) {
 }
 
 export function Topbar({ title, sub, actions, onNav, onToggleSidebar, sidebarOpen }) {
+  const t = useAdminT();
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQ, setSearchQ]     = useState('');
   const inputRef = useRef(null);
@@ -258,20 +261,20 @@ export function Topbar({ title, sub, actions, onNav, onToggleSidebar, sidebarOpe
   return (
     <>
       <header className="topbar">
-        <button className="icon-btn sidebar-toggle-btn" onClick={onToggleSidebar} title={sidebarOpen ? 'Fermer le menu' : 'Ouvrir le menu'}>
+        <button className="icon-btn sidebar-toggle-btn" onClick={onToggleSidebar} title={sidebarOpen ? t.topbar.closeSidebar : t.topbar.openSidebar}>
           <I.Menu />
         </button>
         {title && <div><span className="topbar__title">{title}</span>{sub && <span className="topbar__subtitle">· {sub}</span>}</div>}
         <div className="topbar__spacer" />
         <div className="topbar__search" onClick={() => setSearchOpen(true)} style={{ cursor: 'pointer' }}>
           <I.Search style={{ width: 14, height: 14 }} />
-          <span>Rechercher cargaisons, clients, colis…</span>
+          <span>{t.topbar.search}</span>
           <kbd>⌘K</kbd>
         </div>
         <LanguageSwitcher />
-        <button className="icon-btn" title="Voir le site public" onClick={() => onNav?.('/')}><I.Globe /></button>
-        <button className="icon-btn" title="Aide"><I.Help /></button>
-        <button className="icon-btn" title="Paiements en attente" onClick={() => onNav?.('/admin/payments')}><I.Bell /></button>
+        <button className="icon-btn" title={t.topbar.viewSite} onClick={() => onNav?.('/')}><I.Globe /></button>
+        <button className="icon-btn" title={t.topbar.help}><I.Help /></button>
+        <button className="icon-btn" title={t.topbar.pendingPayments} onClick={() => onNav?.('/admin/payments')}><I.Bell /></button>
         {actions}
       </header>
 
@@ -282,12 +285,12 @@ export function Topbar({ title, sub, actions, onNav, onToggleSidebar, sidebarOpe
             <div style={{ background: 'white', padding: '14px 18px', display: 'flex', gap: 12, alignItems: 'center' }}>
               <I.Search style={{ width: 18, height: 18, color: 'var(--ink-400)', flexShrink: 0 }} />
               <input ref={inputRef} value={searchQ} onChange={e => setSearchQ(e.target.value)} onKeyDown={handleKey}
-                placeholder="Colis, client, cargaison… (Entrée pour chercher)"
+                placeholder={t.topbar.searchPlaceholder}
                 style={{ flex: 1, border: 0, outline: 0, fontSize: 16, color: 'var(--ink-900)', background: 'transparent' }} />
               <kbd style={{ fontSize: 11, color: 'var(--ink-400)', border: '1px solid var(--border)', borderRadius: 4, padding: '2px 6px' }}>Esc</kbd>
             </div>
             <div style={{ background: 'var(--bg-soft)', padding: '10px 18px', borderTop: '1px solid var(--border-soft)', fontSize: 12, color: 'var(--ink-400)' }}>
-              Appuyez sur <strong>Entrée</strong> pour chercher dans les colis · <strong>Échap</strong> pour fermer
+              {t.topbar.searchHint}
             </div>
           </div>
         </div>
