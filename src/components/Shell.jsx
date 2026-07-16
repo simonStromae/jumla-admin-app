@@ -258,6 +258,9 @@ export function Topbar({ title, sub, actions, onNav }) {
   return (
     <>
       <header className="topbar">
+        <button className="icon-btn sidebar-toggle-btn" onClick={onToggleSidebar} title={sidebarOpen ? 'Fermer le menu' : 'Ouvrir le menu'}>
+          <I.Menu />
+        </button>
         {title && <div><span className="topbar__title">{title}</span>{sub && <span className="topbar__subtitle">· {sub}</span>}</div>}
         <div className="topbar__spacer" />
         <div className="topbar__search" onClick={() => setSearchOpen(true)} style={{ cursor: 'pointer' }}>
@@ -297,9 +300,9 @@ function AdminMobileBlock() {
   return (
     <>
       <style>{`
-        @media (max-width: 900px) { .admin-mobile-block { display: flex !important; } .app { display: none !important; } }
-        @media (min-width: 901px) { .admin-mobile-block { display: none !important; } }
-        @media print { .admin-mobile-block { display: none !important; } .app { display: flex !important; } }
+        @media (max-width: 599px) { .admin-mobile-block { display: flex !important; } .app { display: none !important; } }
+        @media (min-width: 600px) { .admin-mobile-block { display: none !important; } }
+        @media print { .admin-mobile-block { display: none !important; } .app { display: grid !important; } }
       `}</style>
       <div className="admin-mobile-block" style={{
         display: 'none', position: 'fixed', inset: 0, zIndex: 9999,
@@ -312,13 +315,13 @@ function AdminMobileBlock() {
           Interface non disponible sur mobile
         </div>
         <div style={{ fontSize: 14, color: 'rgba(255,255,255,.65)', lineHeight: 1.7, maxWidth: 340, marginBottom: 32 }}>
-          L'espace d'administration Jumla est optimisé pour les grands écrans. Veuillez l'ouvrir sur un appareil adapté.
+          L'espace d'administration Jumla est optimisé pour les tablettes et les grands écrans.
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10, width: '100%', maxWidth: 280 }}>
           {[
             { icon: '🖥️', label: 'Ordinateur de bureau' },
             { icon: '💻', label: 'Ordinateur portable' },
-            { icon: '📱', label: 'Tablette en mode paysage (≥ 900px)' },
+            { icon: '📱', label: 'Tablette (≥ 600px)' },
           ].map(({ icon, label }) => (
             <div key={label} style={{
               display: 'flex', alignItems: 'center', gap: 12,
@@ -342,16 +345,44 @@ function AdminMobileBlock() {
 }
 
 export function Shell({ route, onNav, title, sub, actions, children, hideChrome }) {
+  const [sidebarOpen, setSidebarOpen] = useState(() => {
+    if (typeof window === 'undefined') return true;
+    const saved = localStorage.getItem('jumla_sidebar');
+    if (saved !== null) return saved === 'open';
+    return window.innerWidth >= 900;
+  });
+
+  const toggleSidebar = () => {
+    setSidebarOpen(v => {
+      const next = !v;
+      localStorage.setItem('jumla_sidebar', next ? 'open' : 'closed');
+      return next;
+    });
+  };
+
+  // Auto-close sidebar on tablet after navigation
+  const handleNav = (path) => {
+    onNav(path);
+    if (typeof window !== 'undefined' && window.innerWidth < 900) {
+      setSidebarOpen(false);
+      localStorage.setItem('jumla_sidebar', 'closed');
+    }
+  };
+
   if (hideChrome) return children;
   return (
     <>
       <AdminMobileBlock />
       <AdminOnboarding />
       <HelpCenter variant="admin" />
-      <div className="app">
-        <Sidebar route={route} onNav={onNav} />
+      <div className={'app' + (sidebarOpen ? ' sidebar--open' : '')}>
+        {/* Backdrop — visible on tablet only via CSS */}
+        {sidebarOpen && (
+          <div className="sidebar-backdrop" onClick={() => { setSidebarOpen(false); localStorage.setItem('jumla_sidebar', 'closed'); }} />
+        )}
+        <Sidebar route={route} onNav={handleNav} />
         <main style={{ minWidth: 0 }}>
-          <Topbar title={title} sub={sub} actions={actions} onNav={onNav} />
+          <Topbar title={title} sub={sub} actions={actions} onNav={onNav} onToggleSidebar={toggleSidebar} sidebarOpen={sidebarOpen} />
           {children}
         </main>
       </div>
