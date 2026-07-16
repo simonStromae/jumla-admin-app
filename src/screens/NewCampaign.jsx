@@ -161,11 +161,11 @@ function StepRoute({ data, upd }) {
 
       <div className="field-row field-row--2">
         <div className="field">
-          <label className="label">{t.campaigns.detail.info.departure}</label>
+          <label className="label">{t.campaigns.fields.departure}</label>
           <input className="input" type="date" value={data.depDate} onChange={e => upd('depDate', e.target.value)} />
         </div>
         <div className="field">
-          <label className="label">{t.campaigns.detail.info.arrival}</label>
+          <label className="label">{t.campaigns.fields.arrival}</label>
           <input className="input" type="date" value={data.arrDate} onChange={e => upd('arrDate', e.target.value)} />
           {/* TODO: i18n - no key for this calculated hint */}
           <div className="hint">Calculé automatiquement : départ + {selectedRoute?.transitDays} jours.</div>
@@ -187,7 +187,7 @@ function StepCapacity({ data, upd }) {
 
       <div className="field-row field-row--2">
         <div className="field">
-          <label className="label">{t.campaigns.detail.info.maxWeight}</label>
+          <label className="label">{t.campaigns.detail.fields.maxCapacity}</label>
           <div style={{ position: 'relative' }}>
             <input className="input mono" type="number" value={data.capacityMax} onChange={e => upd('capacityMax', +e.target.value)} style={{ paddingRight: 36 }} />
             <span style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--ink-400)', fontSize: 12 }}>kg</span>
@@ -255,7 +255,7 @@ function StepPricing({ data, upd, route }) {
               {/* TODO: i18n - no keys for "De (kg)" / "À (kg)" / "Tarif / kg" table headers */}
               <th style={{ borderRadius: 0 }}>De (kg)</th>
               <th>À (kg)</th>
-              <th>{t.campaigns.detail.info.pricePerKg} ({data.currency})</th>
+              <th>Prix/kg ({data.currency})</th>
               <th style={{ borderRadius: 0, width: 30 }}></th>
             </tr>
           </thead>
@@ -435,9 +435,9 @@ function StepReview({ data, route }) {
           {[
             { label: t.campaigns.table.route,            value: `${route?.fromCity} → ${route?.toCity}` },
             { label: /* TODO: i18n */ 'Transit',         value: `${route?.transitDays} jours` },
-            { label: t.campaigns.detail.info.departure,  value: data.depDate },
-            { label: t.campaigns.detail.info.arrival,    value: data.arrDate },
-            { label: t.campaigns.detail.info.maxWeight,  value: `${data.capacityMax.toLocaleString('fr')} kg` },
+            { label: t.campaigns.fields.departure,             value: data.depDate },
+            { label: t.campaigns.fields.arrival,               value: data.arrDate },
+            { label: t.campaigns.detail.fields.maxCapacity,    value: `${data.capacityMax.toLocaleString('fr')} kg` },
             { label: /* TODO: i18n */ 'Capacité réservée', value: `${data.capacityReserved.toLocaleString('fr')} kg` },
           ].map(({ label, value }) => (
             <div key={label}>

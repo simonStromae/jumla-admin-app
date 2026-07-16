@@ -218,13 +218,13 @@ export default function CampaignFormPage({ mode = 'create', campaign, onNav }) {
             </div>
             <div className="field-row field-row--2">
               <div className="field" style={{ marginBottom: 0 }}>
-                <label className="label">{t.campaigns.detail.info.departure} <span className="opt">/ Departure</span><HelpTip text="Date prévue d'envoi depuis l'origine. Ne peut pas être dans le passé lors de la création." /></label>
+                <label className="label">{t.campaigns.fields.departure} <span className="opt">/ Departure</span><HelpTip text="Date prévue d'envoi depuis l'origine. Ne peut pas être dans le passé lors de la création." /></label>
                 <input className="input" type="date" value={data.depDate}
                   min={isEdit ? undefined : new Date().toISOString().slice(0, 10)}
                   onChange={e => upd('depDate', e.target.value)} />
               </div>
               <div className="field" style={{ marginBottom: 0 }}>
-                <label className="label">{t.campaigns.detail.info.arrival} <span className="opt">/ ETA</span></label>
+                <label className="label">{t.campaigns.fields.arrival} <span className="opt">/ ETA</span></label>
                 <input className="input" type="date" value={data.arrDate}
                   min={data.depDate || new Date().toISOString().slice(0, 10)}
                   onChange={e => upd('arrDate', e.target.value)} />
@@ -287,8 +287,8 @@ export default function CampaignFormPage({ mode = 'create', campaign, onNav }) {
               {[
                 { label: t.campaigns.table.route,                                                              value: route ? `${route.fromIATA} → ${route.toIATA}` : '—' },
                 { label: /* TODO: add i18n key for "Libellé" */ 'Libellé',                                     value: route?.label || '—' },
-                { label: t.campaigns.detail.info.departure,                                                    value: data.depDate || '—' },
-                { label: t.campaigns.detail.info.arrival,                                                      value: data.arrDate || '—' },
+                { label: t.campaigns.fields.departure,                                                         value: data.depDate || '—' },
+                { label: t.campaigns.fields.arrival,                                                           value: data.arrDate || '—' },
                 { label: t.campaigns.wizard.review.labels.max,                                                 value: data.capacityKg ? `${data.capacityKg} kg` : '—' },
               ].map(({ label, value }) => (
                 <div key={label} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12 }}>

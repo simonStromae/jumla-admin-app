@@ -488,7 +488,7 @@ export default function ParcelDetailScreen({ id, onNav }) {
           {/* ── Inline status update — always available, even when campaign is locked ── */}
           <div className="card" style={{ padding: 16 }}>
               <div className="section-title" style={{ marginBottom: 12 }}>
-                <I.Edit style={{ width: 14, height: 14, color: 'var(--brand-600)' }} /> {t.campaigns.detail.status.updateStatus}
+                <I.Edit style={{ width: 14, height: 14, color: 'var(--brand-600)' }} /> {t.campaigns.detail.changeStatus}
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                 <select
@@ -720,7 +720,7 @@ export default function ParcelDetailScreen({ id, onNav }) {
             )}
             {campaign.departureDate && (
               <div style={{ fontSize: 12, color: 'var(--ink-400)', marginTop: 4 }}>
-                {t.campaigns.detail.info.departure} : {new Date(campaign.departureDate).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}
+                {t.campaigns.fields.departure} : {new Date(campaign.departureDate).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}
               </div>
             )}
           </div>
