@@ -13,6 +13,18 @@ export async function requireAdmin() {
   return { session };
 }
 
+export async function requireDriver() {
+  const session = await auth();
+  if (!session?.user) {
+    return { error: NextResponse.json({ error: 'Non authentifié' }, { status: 401 }) };
+  }
+  const role = (session.user as any).role;
+  if (role !== 'driver' && role !== 'admin') {
+    return { error: NextResponse.json({ error: 'Accès réservé aux livreurs' }, { status: 403 }) };
+  }
+  return { session };
+}
+
 export async function requireAuth() {
   const session = await auth();
   if (!session?.user) {

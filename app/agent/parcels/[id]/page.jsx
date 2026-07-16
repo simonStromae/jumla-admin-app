@@ -54,14 +54,37 @@ export default function AgentParcelPage() {
   const [newStatus, setNewStatus] = useState('');
   const [note,      setNote]      = useState('');
   const [location,  setLocation]  = useState('');
-  const [showStatus, setShowStatus] = useState(false);
+  const [showStatus,  setShowStatus]  = useState(false);
+  const [drivers,     setDrivers]     = useState([]);
+  const [driverId,    setDriverId]    = useState('');
+  const [savingDriver, setSavingDriver] = useState(false);
 
   useEffect(() => {
     fetch(`/api/parcels/${id}`)
       .then(r => r.json())
-      .then(d => { setParcel(d); setLoading(false); })
+      .then(d => { setParcel(d); setDriverId(d.driverId ?? ''); setLoading(false); })
       .catch(() => setLoading(false));
+    fetch('/api/admin/drivers')
+      .then(r => r.json())
+      .then(d => Array.isArray(d) && setDrivers(d))
+      .catch(() => {});
   }, [id]);
+
+  const handleDriverAssign = async (newDriverId) => {
+    setSavingDriver(true); setError(''); setSuccess('');
+    try {
+      const res = await fetch(`/api/parcels/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ driverId: newDriverId || null }),
+      });
+      if (!res.ok) { const d = await res.json(); setError(d.error || 'Erreur'); setSavingDriver(false); return; }
+      setDriverId(newDriverId);
+      const driverName = drivers.find(d => d.id === newDriverId)?.name;
+      setSuccess(newDriverId ? `Livreur assigné : ${driverName}` : 'Livreur désassigné');
+    } catch { setError('Erreur réseau'); }
+    finally { setSavingDriver(false); }
+  };
 
   const handleStatusUpdate = async () => {
     if (!newStatus) return;
@@ -198,6 +221,35 @@ export default function AgentParcelPage() {
             {parcel.payment.interacRef && (
               <div style={{ fontSize: 11, color: '#6B7280', marginTop: 3 }}>Réf: {parcel.payment.interacRef}</div>
             )}
+          </div>
+        )}
+
+        {/* Driver assignment — only shown for home delivery or if a driver is already set */}
+        {(parcel.delivery === 'home' || driverId) && drivers.length > 0 && (
+          <div className="agent-card" style={{ padding: '14px', marginBottom: 12 }}>
+            <div style={{ fontSize: 11, fontWeight: 700, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '.05em', marginBottom: 8 }}>
+              🚚 Livreur assigné
+            </div>
+            <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+              <select
+                value={driverId}
+                onChange={e => handleDriverAssign(e.target.value)}
+                disabled={savingDriver}
+                style={{
+                  flex: 1, padding: '10px 12px', borderRadius: 9, border: '1.5px solid #E5E7EB',
+                  fontSize: 14, fontFamily: 'inherit', background: 'white', outline: 'none',
+                  color: driverId ? '#111827' : '#9CA3AF',
+                }}
+              >
+                <option value="">— Aucun livreur —</option>
+                {drivers.map(d => (
+                  <option key={d.id} value={d.id}>{d.name}</option>
+                ))}
+              </select>
+              {savingDriver && (
+                <span style={{ fontSize: 12, color: '#9CA3AF', flexShrink: 0 }}>…</span>
+              )}
+            </div>
           </div>
         )}
 
