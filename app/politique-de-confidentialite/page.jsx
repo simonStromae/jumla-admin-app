@@ -151,7 +151,7 @@ export default function PolitiqueConfidentialitePage() {
             <Section num="13" title="Vos droits">
               <p>Vous pouvez, sous réserve des lois applicables :</p>
               <Ul items={[
-                'demander l'accès à vos renseignements personnels ;',
+                "demander l'accès à vos renseignements personnels ;",
                 'demander leur correction ;',
                 'demander leur suppression lorsque permis ;',
                 'retirer votre consentement ;',
