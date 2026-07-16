@@ -104,7 +104,7 @@ function LoginForm() {
     const session = await fetch('/api/auth/session').then(r => r.json());
     const role = session?.user?.role;
     if (role === 'client') router.push('/client/dashboard');
-    else if (role === 'agent') router.push('/agent/dashboard');
+    else if (role === 'agent') router.push('/admin/dashboard');
     else router.push('/admin/campaigns');
   }
 

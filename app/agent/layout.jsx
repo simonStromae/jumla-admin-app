@@ -8,6 +8,7 @@ const NAV = [
   { label: 'Tableau', icon: HomeIcon,   href: '/agent/dashboard' },
   { label: 'Colis',   icon: BoxIcon,    href: '/agent/parcels'   },
   { label: 'Scan',    icon: ScanIcon,   href: '/agent/scan'      },
+  { label: 'Admin',   icon: AdminIcon,  href: '/admin/dashboard' },
 ];
 
 function HomeIcon({ style }) {
@@ -31,6 +32,14 @@ function ScanIcon({ style }) {
       <rect x="2" y="2" width="8" height="8" rx="1"/><rect x="14" y="2" width="8" height="8" rx="1"/>
       <rect x="2" y="14" width="8" height="8" rx="1"/>
       <path d="M14 14h2v2h-2zM18 14h2M14 18h2M18 18h2v2h-2zM14 22h2M20 14v2"/>
+    </svg>
+  );
+}
+function AdminIcon({ style }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={style}>
+      <rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/>
+      <rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>
     </svg>
   );
 }

@@ -234,6 +234,8 @@ export function Sidebar({ route, onNav }) {
 
 export function Topbar({ title, sub, actions, onNav, onToggleSidebar, sidebarOpen }) {
   const t = useAdminT();
+  const { data: session } = useSession();
+  const isAgentOnly = session?.user?.role === 'agent';
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQ, setSearchQ]     = useState('');
   const inputRef = useRef(null);
@@ -272,6 +274,11 @@ export function Topbar({ title, sub, actions, onNav, onToggleSidebar, sidebarOpe
           <kbd>⌘K</kbd>
         </div>
         <LanguageSwitcher />
+        {isAgentOnly && (
+          <button className="icon-btn" title={t.topbar.fieldView ?? 'Vue terrain'} onClick={() => onNav?.('/agent/dashboard')}>
+            <I.Scan />
+          </button>
+        )}
         <button className="icon-btn" title={t.topbar.viewSite} onClick={() => onNav?.('/')}><I.Globe /></button>
         <button className="icon-btn" title={t.topbar.help}><I.Help /></button>
         <button className="icon-btn" title={t.topbar.pendingPayments} onClick={() => onNav?.('/admin/payments')}><I.Bell /></button>

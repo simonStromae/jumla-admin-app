@@ -48,6 +48,7 @@ const fr = {
     pendingPayments: 'Paiements en attente',
     logout: 'Déconnexion',
     closeSidebar: 'Fermer le menu',
+    fieldView: 'Vue terrain (mobile)',
     openSidebar: 'Ouvrir le menu',
   },
 
@@ -348,6 +349,7 @@ const en = {
     logout: 'Sign out',
     closeSidebar: 'Close menu',
     openSidebar: 'Open menu',
+    fieldView: 'Field view (mobile)',
   },
 
   settingsTabs: {
