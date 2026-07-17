@@ -1,5 +1,8 @@
 'use client';
 import { useState, useEffect, useRef } from 'react';
+import dynamic from 'next/dynamic';
+
+const QrScanner = dynamic(() => import('@/src/components/QrScanner.jsx'), { ssr: false });
 
 const STATUS_META = {
   pdl: { label: 'Prêt pour livraison', color: '#10B981', bg: '#ECFDF5' },
@@ -21,8 +24,9 @@ export default function DriverScannerPage() {
   const [acting,  setActing]  = useState('');
   const [success, setSuccess] = useState('');
   const [failNote, setFailNote] = useState('');
-  const [showFail, setShowFail] = useState(false);
-  const [history, setHistory]  = useState([]);
+  const [showFail,    setShowFail]    = useState(false);
+  const [history,     setHistory]     = useState([]);
+  const [showScanner, setShowScanner] = useState(false);
   const inputRef = useRef(null);
 
   useEffect(() => {
@@ -84,10 +88,27 @@ export default function DriverScannerPage() {
 
   return (
     <div>
+      {/* Camera QR scanner overlay */}
+      {showScanner && (
+        <QrScanner
+          onScan={(code) => { setShowScanner(false); setQuery(code); search(code); }}
+          onClose={() => setShowScanner(false)}
+        />
+      )}
+
       {/* Sticky search bar */}
       <div style={{ background: 'white', borderBottom: '1px solid #E5E7EB', padding: '12px 14px', position: 'sticky', top: 0, zIndex: 10 }}>
         <div style={{ fontSize: 16, fontWeight: 800, color: '#111827', marginBottom: 10 }}>Scanner un colis</div>
         <div style={{ display: 'flex', gap: 8 }}>
+          {/* Camera scan button */}
+          <button
+            onClick={() => setShowScanner(true)}
+            className="drv-btn drv-btn--ghost"
+            style={{ flexShrink: 0, minWidth: 48, fontSize: 18, padding: '0 12px' }}
+            title="Scanner avec la caméra"
+          >
+            📷
+          </button>
           <input
             ref={inputRef}
             className="drv-input"

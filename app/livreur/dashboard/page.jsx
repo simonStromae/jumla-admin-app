@@ -20,10 +20,12 @@ function StatCard({ label, value, color }) {
 }
 
 export default function DriverDashboard() {
-  const [data,    setData]    = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [acting,  setActing]  = useState({});
-  const [msgs,    setMsgs]    = useState({});
+  const [data,       setData]       = useState(null);
+  const [loading,    setLoading]    = useState(true);
+  const [acting,     setActing]     = useState({});
+  const [msgs,       setMsgs]       = useState({});
+  const [photoFor,   setPhotoFor]   = useState(null); // parcelId awaiting photo confirm
+  const [uploading,  setUploading]  = useState(false);
   const router = useRouter();
   const { data: session } = useSession();
   const firstName = session?.user?.name?.split(' ')[0] ?? 'Livreur';
@@ -38,13 +40,13 @@ export default function DriverDashboard() {
 
   useEffect(() => { load(); }, [load]);
 
-  const updateStatus = async (parcelId, status, note) => {
+  const updateStatus = async (parcelId, status, note, photoUrl) => {
     setActing(a => ({ ...a, [parcelId]: status }));
     try {
       const res = await fetch(`/api/driver/parcels/${parcelId}/status`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status, note: note || null }),
+        body: JSON.stringify({ status, note: note || null, photoUrl: photoUrl || null }),
       });
       if (res.ok) {
         setMsgs(m => ({ ...m, [parcelId]: status === 'ok' ? '✓ Livré !' : status === 'liv' ? '🚚 En route' : '↩ Tentative notée' }));
@@ -61,6 +63,24 @@ export default function DriverDashboard() {
   };
 
   const fmtDate = (d) => d ? new Date(d).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : '';
+
+  const confirmDelivery = async (parcelId, file) => {
+    setUploading(true);
+    try {
+      let photoUrl = null;
+      if (file) {
+        const fd = new FormData();
+        fd.append('file', file);
+        fd.append('parcelId', parcelId);
+        const up = await fetch('/api/driver/upload-proof', { method: 'POST', body: fd });
+        if (up.ok) { const d = await up.json(); photoUrl = d.url; }
+      }
+      await updateStatus(parcelId, 'ok', null, photoUrl);
+    } finally {
+      setUploading(false);
+      setPhotoFor(null);
+    }
+  };
 
   const active  = data?.active ?? [];
   const recent  = data?.recentDeliveries ?? [];
@@ -160,10 +180,10 @@ export default function DriverDashboard() {
                         {act === 'liv' ? '…' : '🚚 Prendre en charge'}
                       </button>
                     )}
-                    {p.status === 'liv' && (
+                    {p.status === 'liv' && photoFor !== p.id && (
                       <>
                         <button
-                          onClick={() => updateStatus(p.id, 'ok')}
+                          onClick={() => setPhotoFor(p.id)}
                           disabled={!!act}
                           className="drv-btn drv-btn--green"
                           style={{ flex: 1, height: 40, fontSize: 13 }}
@@ -182,6 +202,49 @@ export default function DriverDashboard() {
                           {act === 'tdl' ? '…' : '↩ Échec'}
                         </button>
                       </>
+                    )}
+                    {p.status === 'liv' && photoFor === p.id && (
+                      <div style={{ width: '100%' }}>
+                        <div style={{ fontSize: 12, fontWeight: 700, color: '#374151', marginBottom: 8 }}>
+                          📷 Photo de livraison
+                        </div>
+                        <label style={{
+                          display: 'flex', alignItems: 'center', gap: 8, justifyContent: 'center',
+                          border: '2px dashed #D1D5DB', borderRadius: 10, padding: '12px', cursor: 'pointer',
+                          background: '#F9FAFB', marginBottom: 10, fontSize: 13, color: '#6B7280',
+                        }}>
+                          <span style={{ fontSize: 20 }}>📸</span>
+                          Prendre une photo
+                          <input
+                            type="file"
+                            accept="image/*"
+                            capture="environment"
+                            style={{ display: 'none' }}
+                            onChange={e => {
+                              const f = e.target.files?.[0];
+                              if (f) confirmDelivery(p.id, f);
+                            }}
+                          />
+                        </label>
+                        <div style={{ display: 'flex', gap: 8 }}>
+                          <button
+                            onClick={() => setPhotoFor(null)}
+                            disabled={uploading}
+                            className="drv-btn drv-btn--ghost"
+                            style={{ flex: 1, height: 36, fontSize: 12 }}
+                          >
+                            Annuler
+                          </button>
+                          <button
+                            onClick={() => confirmDelivery(p.id, null)}
+                            disabled={uploading}
+                            className="drv-btn drv-btn--green"
+                            style={{ flex: 2, height: 36, fontSize: 12 }}
+                          >
+                            {uploading ? '…' : '✓ Confirmer sans photo'}
+                          </button>
+                        </div>
+                      </div>
                     )}
                   </div>
                 </div>

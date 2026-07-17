@@ -1,5 +1,6 @@
 'use client';
 import { useState, useEffect } from 'react';
+import QRCode from 'react-qr-code';
 import I from '../components/Icons.jsx';
 import { Skel } from '../components/Shell.jsx';
 import { useAdminT } from '../lib/useAdminT.js';
@@ -72,7 +73,12 @@ export default function CampaignLabelsScreen({ id, onNav }) {
                 <span className="label-campaign">{campaign.code}</span>
               </div>
 
-              <div className="label-code">{p.trackingCode}</div>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 12px 4px', gap: 8 }}>
+                <div className="label-code" style={{ padding: 0, fontSize: 26, flex: 1 }}>{p.trackingCode}</div>
+                <div style={{ flexShrink: 0, background: 'white', padding: 4, borderRadius: 4 }}>
+                  <QRCode value={p.trackingCode} size={72} level="M" />
+                </div>
+              </div>
 
               <div className="label-route">
                 <span>{from}</span>

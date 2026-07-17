@@ -11,7 +11,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
   if (error) return error;
 
   const driverId = (session!.user as any).id as string;
-  const { status, note } = await req.json();
+  const { status, note, photoUrl } = await req.json();
 
   if (!ALLOWED.includes(status)) {
     return NextResponse.json({ error: `Statut invalide. Valeurs autorisées : ${ALLOWED.join(', ')}` }, { status: 400 });
@@ -33,7 +33,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
         status,
         ...(status === 'ok' ? {
           deliveredAt:   new Date(),
-          deliveryProof: { note: note || null, ts: new Date().toISOString(), by: driverId },
+          deliveryProof: { note: note || null, photoUrl: photoUrl || null, ts: new Date().toISOString(), by: driverId },
         } : {}),
       },
     }),

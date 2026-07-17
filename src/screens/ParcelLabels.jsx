@@ -1,5 +1,6 @@
 'use client';
 import { useState, useEffect } from 'react';
+import QRCode from 'react-qr-code';
 import I from '../components/Icons.jsx';
 import { Skel } from '../components/Shell.jsx';
 
@@ -105,7 +106,12 @@ export default function ParcelLabelsScreen({ id, onNav }) {
                   <span className="item-label-campaign">{campaignCode}</span>
                 </div>
 
-                <div className="item-label-code">{labelCode}</div>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 10px 0', gap: 6 }}>
+                  <div className="item-label-code" style={{ padding: 0, fontSize: 22, flex: 1, textAlign: 'left' }}>{labelCode}</div>
+                  <div style={{ flexShrink: 0, background: 'white', padding: 3, borderRadius: 3 }}>
+                    <QRCode value={labelCode} size={56} level="M" />
+                  </div>
+                </div>
 
                 <div className="item-label-desc">
                   {item.description || type.label}
