@@ -315,7 +315,7 @@ export default function MessagingScreen({ onNav, campaignId }) {
                       {isPaid ? `✓ ${t.paymentStatus.paid}` : '○ Impayé'}
                     </div>
                   </div>
-                  <button className="icon-btn" title={t.messaging.compose.send} onClick={e => { e.preventDefault(); handleSendOne(p.id); }}>
+                  <button className="icon-btn" title={t.messaging.actions.send} onClick={e => { e.preventDefault(); handleSendOne(p.id); }}>
                     <I.Send style={{ width: 14, height: 14, color: 'var(--ok-600)' }} />
                   </button>
                 </label>
@@ -349,7 +349,7 @@ export default function MessagingScreen({ onNav, campaignId }) {
                 disabled={selected.length === 0 || sending}
                 onClick={handleSend}
               >
-                <I.Chat />{sending ? t.common.sending : `${t.messaging.compose.send} (${selected.length})`}
+                <I.Chat />{sending ? t.common.sending : `${t.messaging.actions.send} (${selected.length})`}
               </button>
             )}
             </div>
@@ -419,7 +419,7 @@ export default function MessagingScreen({ onNav, campaignId }) {
                   disabled={selected.length === 0 || sending}
                   onClick={handleSend}
                 >
-                  <I.Send />{sending ? t.common.sending : `${t.messaging.compose.send} · ${selected.length}`}
+                  <I.Send />{sending ? t.common.sending : `${t.messaging.actions.send} · ${selected.length}`}
                 </button>
               )}
             </div>
@@ -460,7 +460,7 @@ export default function MessagingScreen({ onNav, campaignId }) {
             {logs.length === 0 ? (
               <div style={{ padding: 40, textAlign: 'center', color: 'var(--ink-400)' }}>
                 <I.Chat style={{ width: 32, height: 32, opacity: .25, marginBottom: 10 }} />
-                <div style={{ fontSize: 13 }}>{t.messaging.noMessages}</div>
+                <div style={{ fontSize: 13 }}>Aucun message envoyé</div>
               </div>
             ) : (
               <div style={{ overflowY: 'auto', maxHeight: 480 }}>
@@ -468,7 +468,7 @@ export default function MessagingScreen({ onNav, campaignId }) {
                 <thead>
                   <tr>
                     <th>{t.common.date}</th>
-                    <th>{t.messaging.table.recipient}</th>
+                    <th>{t.messaging.logHeaders.recipient}</th>
                     {/* TODO: no i18n key for "Colis" (parcel column) or "Réf. Twilio" */}
                     <th>Colis</th>
                     <th>{t.common.status}</th>

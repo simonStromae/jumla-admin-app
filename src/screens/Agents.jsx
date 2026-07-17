@@ -88,7 +88,7 @@ function AgentsGridView({ agents, setEditing, onToggleStatus, onDelete }) {
             </div>
 
             <div style={{ padding: 14 }}>
-              <div style={{ fontSize: 10.5, fontWeight: 700, letterSpacing: '.04em', color: 'var(--ink-400)', textTransform: 'uppercase', marginBottom: 8 }}>{t.agents.table.permissions}</div>
+              <div style={{ fontSize: 10.5, fontWeight: 700, letterSpacing: '.04em', color: 'var(--ink-400)', textTransform: 'uppercase', marginBottom: 8 }}>{'Permissions'}</div>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5 }}>
                 {Object.entries(perms).map(([k, v]) => {
                   const active = Array.isArray(v) ? v.length > 0 : Boolean(v);
@@ -133,7 +133,7 @@ function AgentsGridView({ agents, setEditing, onToggleStatus, onDelete }) {
         <div style={{ width: 44, height: 44, borderRadius: 999, background: 'var(--bg-soft)', display: 'grid', placeItems: 'center', marginBottom: 10 }}>
           <I.UserPlus />
         </div>
-        <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--ink-700)' }}>{t.agents.newAgent}</div>
+        <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--ink-700)' }}>{t.agents.invite}</div>
         {/* TODO: no translation key for temporary password WhatsApp message */}
         <div style={{ fontSize: 11.5, marginTop: 4, textAlign: 'center' }}>Un mot de passe temporaire sera envoyé par WhatsApp.</div>
       </div>
@@ -149,14 +149,14 @@ function AgentsListView({ agents, setEditing, onToggleStatus, onDelete, page, pa
       <thead>
         <tr>
           <th style={{ width: 32, borderRadius: 0 }}><input type="checkbox" style={{ accentColor: 'var(--brand-500)' }} /></th>
-          <th>{t.agents.table.name}</th>
-          <th>{t.agents.table.role}</th>
-          <th>{t.agents.table.status}</th>
+          <th>{t.agents.listHeaders.name}</th>
+          <th>{t.agents.listHeaders.role}</th>
+          <th>{t.agents.listHeaders.status}</th>
           {/* TODO: no translation key for 'Site' */}
           <th>Site</th>
           <th style={{ textAlign: 'center' }}>{t.nav.campaigns}</th>
           <th style={{ textAlign: 'center' }}>{t.nav.parcels}</th>
-          <th>{t.agents.table.permissions}</th>
+          <th>{'Permissions'}</th>
           {/* TODO: no translation key for 'Créé le' */}
           <th>Créé le</th>
           <th style={{ borderRadius: 0, width: 100 }}></th>
@@ -328,7 +328,7 @@ export default function AgentsScreen({ onNav }) {
         </div>
         <div className="page__actions">
           <button className="btn btn--ghost"><I.Download />{t.common.export}</button>
-          <button className="btn btn--brand" onClick={() => setEditing('new')}><I.UserPlus />{t.agents.newAgent}</button>
+          <button className="btn btn--brand" onClick={() => setEditing('new')}><I.UserPlus />{t.agents.invite}</button>
         </div>
       </div>
 
@@ -344,7 +344,7 @@ export default function AgentsScreen({ onNav }) {
         <div className="spacer" />
         <div style={{ position: 'relative' }}>
           <I.Search style={{ position: 'absolute', left: 10, top: 9, width: 14, height: 14, color: 'var(--ink-400)' }} />
-          <input className="input input--sm" placeholder={t.agents.searchPlaceholder} style={{ width: 220, paddingLeft: 32 }} />
+          <input className="input input--sm" placeholder="Rechercher un agent…" style={{ width: 220, paddingLeft: 32 }} />
         </div>
         <ViewToggle value={view} onChange={setView} />
       </div>

@@ -191,7 +191,7 @@ export default function AgentFormModal({ mode = 'create', agent, onClose, onSave
   return (
     <Modal width={920} onClose={onClose}
       title={
-        <span>{isEdit ? `${t.common.edit} ${t.nav.agents}` /* TODO: t.agents.editAgent */ : t.agents.newAgent}
+        <span>{isEdit ? `${t.common.edit} ${t.nav.agents}` /* TODO: t.agents.editAgent */ : t.agents.invite}
           <span style={{ color: 'var(--ink-400)', fontWeight: 400, fontSize: '.85em', marginLeft: 6 }}>
             / {isEdit ? 'Edit agent' : 'New agent'}
           </span>
@@ -214,7 +214,7 @@ export default function AgentFormModal({ mode = 'create', agent, onClose, onSave
           {saveErr && <span style={{ fontSize: 12, color: 'var(--bad-600)' }}>{saveErr}</span>}
           <button className="btn btn--ghost" onClick={onClose}>{t.common.cancel}</button>
           <button className="btn btn--brand" onClick={handleSave} disabled={saving}>
-            <I.Check />{saving ? t.common.saving : isEdit ? t.common.save : t.agents.form.submit}
+            <I.Check />{saving ? t.common.saving : t.common.save}
           </button>
         </>
       }>
@@ -243,7 +243,7 @@ export default function AgentFormModal({ mode = 'create', agent, onClose, onSave
 
           <div className="field-row field-row--2">
             <div className="field">
-              <label className="label">{t.agents.form.name}</label>
+              <label className="label">{t.agents.listHeaders.name}</label>
               <input className="input" value={data.name} onChange={e => upd('name', e.target.value)} onBlur={onNameBlur} placeholder="Aïcha Mbarga" />
             </div>
             <div className="field">
@@ -254,7 +254,7 @@ export default function AgentFormModal({ mode = 'create', agent, onClose, onSave
 
           <div className="field-row field-row--2">
             <div className="field">
-              <label className="label">{t.agents.form.email}</label>
+              <label className="label">{t.common.email}</label>
               <input className="input" type="email" value={data.email} onChange={e => upd('email', e.target.value)} placeholder="prenom.nom@jumla.cargo" />
             </div>
             <div className="field">
@@ -287,7 +287,7 @@ export default function AgentFormModal({ mode = 'create', agent, onClose, onSave
 
           <div className="divider" />
 
-          <div className="section-title">{t.agents.form.role} <span className="section-title__count">{totalPerms} {t.agents.form.permissions}</span></div>
+          <div className="section-title">{t.agents.listHeaders.role} <span className="section-title__count">{totalPerms} Permissions</span></div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8, marginBottom: 16 }}>
             {[
               { id: 'admin',    label: 'Administrateur' /* TODO: add translation key */,    desc: 'Accès complet' /* TODO: add translation key */,      icon: '👑', count: 27 },
@@ -306,13 +306,13 @@ export default function AgentFormModal({ mode = 'create', agent, onClose, onSave
                     <span style={{ fontSize: 13.5, fontWeight: 700, color: sel ? 'var(--brand-700)' : 'var(--ink-800)' }}>{r.label}</span>
                   </div>
                   <div style={{ fontSize: 11.5, color: 'var(--ink-500)', marginBottom: 6 }}>{r.desc}</div>
-                  <div className="mono" style={{ fontSize: 10.5, color: sel ? 'var(--brand-700)' : 'var(--ink-400)', fontWeight: 600 }}>{r.count} {t.agents.form.permissions}</div>
+                  <div className="mono" style={{ fontSize: 10.5, color: sel ? 'var(--brand-700)' : 'var(--ink-400)', fontWeight: 600 }}>{r.count} Permissions</div>
                 </button>
               );
             })}
           </div>
 
-          <div className="section-title">{t.agents.form.permissions} <span style={{ fontSize: 11, color: 'var(--ink-400)', fontWeight: 500, marginLeft: 6 }}>{'Ajustez si besoin' /* TODO: add translation key */}</span></div>
+          <div className="section-title">Permissions <span style={{ fontSize: 11, color: 'var(--ink-400)', fontWeight: 500, marginLeft: 6 }}>Ajustez si besoin</span></div>
           <div style={{ border: '1px solid var(--border)', borderRadius: 10, overflow: 'hidden' }}>
             {PERMISSION_MODULES.map((m, mi) => {
               const Ic = m.Icon;

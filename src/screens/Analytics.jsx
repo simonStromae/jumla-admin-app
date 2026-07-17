@@ -135,7 +135,7 @@ export default function AnalyticsScreen({ onNav }) {
             </select>
           </div>
           <div className="tabs" style={{ padding: 2 }}>
-            {[['ytd','YTD'],['month', t.analytics.period.month],['12m', '12 mois' /* TODO: no i18n key for "12 mois" */]].map(([id, lbl]) => (
+            {[['ytd','YTD'],['month', 'Mois'],['12m', '12 mois']].map(([id, lbl]) => (
               <button key={id} className={'tab '+(period===id?'is-active':'')} onClick={() => setPeriod(id)} style={{ padding: '4px 10px', fontSize: 11.5 }}>{lbl}</button>
             ))}
           </div>
@@ -173,7 +173,7 @@ export default function AnalyticsScreen({ onNav }) {
       {/* ── Revenus vs temps + Performance opérationnelle ── */}
       <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 14, marginBottom: 14 }}>
         {/* TODO: no i18n key for sub "CA facturé vs encaissé · par mois", "Facturé", "Encaissé" */}
-        <ChartCard title={t.analytics.charts.revenueByMonth} sub="CA facturé vs encaissé · par mois">
+        <ChartCard title={t.analytics.charts.monthly} sub="CA facturé vs encaissé · par mois">
           <RevenueChart months={monthData.labels} revenue={monthData.invoiced} collected={monthData.revenue} />
           <div style={{ display: 'flex', alignItems: 'center', gap: 18, marginTop: 14, padding: '10px 0 0', borderTop: '1px solid var(--border-soft)' }}>
             <LegendItem color="var(--brand-100)" label="Facturé" v={(totalInvoiced/1000).toFixed(1)+'k CAD'} />
@@ -217,7 +217,7 @@ export default function AnalyticsScreen({ onNav }) {
       {/* ── Routes + Impayés + Méthodes de paiement ── */}
       <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr 1fr', gap: 14, marginBottom: 14 }}>
         {/* TODO: no i18n key for sub "Volume et chiffre d'affaires encaissé" */}
-        <ChartCard title={t.analytics.charts.topRoutes} sub="Volume et chiffre d'affaires encaissé">
+        <ChartCard title={t.analytics.sections.routes} sub="Volume et chiffre d'affaires encaissé">
           <RoutesBar routeStats={routeStats} />
         </ChartCard>
 
@@ -242,10 +242,10 @@ export default function AnalyticsScreen({ onNav }) {
         </ChartCard>
 
         {/* TODO: no i18n key for sub "Volume encaissé par canal", "Aucune transaction enregistrée" */}
-        <ChartCard title={t.analytics.charts.paymentMethods} sub="Volume encaissé par canal">
+        <ChartCard title="Moyens de paiement" sub="Volume encaissé par canal">
           {donutData.length === 0 ? (
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '32px 0', color: 'var(--ink-300)', fontSize: 13 }}>
-              {t.analytics.noData}
+              {t.analytics.empty}
             </div>
           ) : (
             <Donut
@@ -270,13 +270,13 @@ export default function AnalyticsScreen({ onNav }) {
         <ChartCard title={t.airlines.title} sub="Volume, coûts et tarif au kg par transporteur">
           {airlineStats.length === 0 ? (
             <div style={{ padding: '28px 0', textAlign: 'center', color: 'var(--ink-400)', fontSize: 13 }}>
-              {t.analytics.noData}
+              {t.analytics.empty}
             </div>
           ) : (
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead>
                 <tr style={{ borderBottom: '1px solid var(--border-soft)' }}>
-                  {[t.airlines.table.name, 'Cargaisons', 'Volume (kg)', '% du volume', 'Frêt estimé', 'Frêt / kg'].map(h => (
+                  {[t.airlines.headers.name, 'Cargaisons', 'Volume (kg)', '% du volume', 'Frêt estimé', 'Frêt / kg'].map(h => (
                     <th key={h} style={{ textAlign: 'left', fontSize: 10.5, fontWeight: 700, color: 'var(--ink-400)', textTransform: 'uppercase', letterSpacing: '.04em', padding: '0 0 8px', paddingRight: 16 }}>{h}</th>
                   ))}
                 </tr>
@@ -369,7 +369,7 @@ export default function AnalyticsScreen({ onNav }) {
         <ChartCard title="Activité récente" sub="Derniers événements de suivi et paiements">
           {recentActivity.length === 0 ? (
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '32px 0', color: 'var(--ink-300)', fontSize: 13 }}>
-              {t.analytics.noData}
+              {t.analytics.empty}
             </div>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column' }}>
@@ -461,7 +461,7 @@ function ChartCard({ title, sub, actions, children }) {
 
 function RevenueChart({ months, revenue, collected }) {
   const t = useAdminT();
-  if (!months || months.length === 0) return <div style={{ height: 200, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--ink-300)', fontSize: 13 }}>{t.analytics.noData}</div>;
+  if (!months || months.length === 0) return <div style={{ height: 200, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--ink-300)', fontSize: 13 }}>{t.analytics.empty}</div>;
   const max = Math.max(...revenue, ...collected, 1);
   const w = 100, h = 180;
   const barW = w / months.length * 0.6;
@@ -557,7 +557,7 @@ function RoutesBar({ routeStats }) {
   if (!routeStats || routeStats.length === 0) {
     return (
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px 0', color: 'var(--ink-300)', fontSize: 13 }}>
-        {t.analytics.noData}
+        {t.analytics.empty}
       </div>
     );
   }
@@ -592,7 +592,7 @@ function RankingCard({ title, sub, icon, items }) {
     <ChartCard title={<span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>{icon}{title}</span>} sub={sub}>
       {items.length === 0 ? (
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px 0', color: 'var(--ink-300)', fontSize: 13 }}>
-          {t.analytics.noData}
+          {t.analytics.empty}
         </div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
@@ -620,7 +620,7 @@ function RankingCard({ title, sub, icon, items }) {
 
 function RevsVsCostsChart({ months, revenue, costs }) {
   const t = useAdminT();
-  if (!months || months.length === 0) return <div style={{ height: 160, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--ink-300)', fontSize: 13 }}>{t.analytics.noData}</div>;
+  if (!months || months.length === 0) return <div style={{ height: 160, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--ink-300)', fontSize: 13 }}>{t.analytics.empty}</div>;
   const max = Math.max(...revenue, ...costs, 1);
   const w = 100, h = 140;
   const barW = w / months.length * 0.58;
