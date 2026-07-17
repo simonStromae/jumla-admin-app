@@ -11,12 +11,15 @@ export async function GET() {
   const today = new Date(); today.setHours(0, 0, 0, 0);
   const tomorrow = new Date(today); tomorrow.setDate(tomorrow.getDate() + 1);
 
-  const [active, deliveredToday, recentDeliveries, failedToday] = await Promise.all([
+  const ACTIVE_STATUSES  = ['ard', 'lib', 'ver', 'pdl', 'liv', 'tdl'];
+  const PENDING_STATUSES = ['enr', 'rec', 'pre', 'exp', 'tra', 'apd', 'dou', 'ins', 'ret'];
+
+  const [allAssigned, deliveredToday, recentDeliveries, failedToday] = await Promise.all([
     prisma.parcel.findMany({
-      where: { driverId, status: { in: ['ard', 'lib', 'ver', 'pdl', 'liv', 'tdl'] }, deletedAt: null },
+      where: { driverId, status: { notIn: ['ok'] }, deletedAt: null },
       include: {
         client:   { select: { name: true, phone: true } },
-        campaign: { select: { code: true } },
+        campaign: { select: { code: true, status: true } },
         payment:  { select: { status: true, amount: true } },
       },
       orderBy: { createdAt: 'desc' },
@@ -38,6 +41,9 @@ export async function GET() {
     }),
   ]);
 
+  const active  = allAssigned.filter(p => ACTIVE_STATUSES.includes(p.status));
+  const pending = allAssigned.filter(p => PENDING_STATUSES.includes(p.status));
+
   return NextResponse.json({
     stats: {
       pending:        active.length,
@@ -45,6 +51,7 @@ export async function GET() {
       failedToday,
     },
     active,
+    pending,
     recentDeliveries,
   });
 }

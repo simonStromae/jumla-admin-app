@@ -4,8 +4,17 @@ import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 
 const STATUS_META = {
-  ard: { label: 'Entrepôt — à livrer', color: '#1B4FD8', bg: '#EFF6FF', pill: 'pill--blue'   },
-  lib: { label: 'Libéré — à livrer',   color: '#1B4FD8', bg: '#EFF6FF', pill: 'pill--blue'   },
+  enr: { label: 'Enregistré',          color: '#6B7280', bg: '#F4F5F7', pill: 'pill--gray'   },
+  rec: { label: 'Reçu entrepôt',       color: '#0087A8', bg: '#E0F9FF', pill: 'pill--blue'   },
+  pre: { label: 'Préparé',             color: '#059669', bg: '#ECFDF5', pill: 'pill--green'  },
+  exp: { label: 'Expédié',             color: '#7C3AED', bg: '#EDE9FE', pill: 'pill--blue'   },
+  tra: { label: 'En transit',          color: '#B45309', bg: '#FFFBEB', pill: 'pill--orange' },
+  apd: { label: 'Arrivé au pays',      color: '#0D9488', bg: '#F0FDFA', pill: 'pill--green'  },
+  dou: { label: 'En douane',           color: '#DC2626', bg: '#FEF2F2', pill: 'pill--red'    },
+  ins: { label: 'Inspection douane',   color: '#DC2626', bg: '#FEF2F2', pill: 'pill--red'    },
+  ret: { label: 'Retenu douane',       color: '#DC2626', bg: '#FEF2F2', pill: 'pill--red'    },
+  ard: { label: 'Entrepôt dest.',      color: '#1B4FD8', bg: '#EFF6FF', pill: 'pill--blue'   },
+  lib: { label: 'Libéré douane',       color: '#059669', bg: '#ECFDF5', pill: 'pill--green'  },
   ver: { label: 'Vérification',        color: '#1B4FD8', bg: '#EFF6FF', pill: 'pill--blue'   },
   pdl: { label: 'Prêt pour livraison', color: '#10B981', bg: '#ECFDF5', pill: 'pill--green'  },
   liv: { label: 'En livraison',        color: '#1B4FD8', bg: '#EFF6FF', pill: 'pill--blue'   },
@@ -85,7 +94,8 @@ export default function DriverDashboard() {
     }
   };
 
-  const active  = data?.active ?? [];
+  const active  = data?.active  ?? [];
+  const pending = data?.pending ?? [];
   const recent  = data?.recentDeliveries ?? [];
   const stats   = data?.stats ?? {};
 
@@ -255,11 +265,57 @@ export default function DriverDashboard() {
             })}
           </div>
         </div>
-      ) : !loading && (
+      ) : !loading && active.length === 0 && pending.length === 0 && (
         <div style={{ padding: '48px 20px', textAlign: 'center', color: '#9CA3AF' }}>
           <div style={{ fontSize: 40, marginBottom: 12 }}>🎉</div>
-          <div style={{ fontSize: 14, fontWeight: 600, color: '#374151', marginBottom: 6 }}>Aucune livraison en cours</div>
-          <div style={{ fontSize: 13 }}>Vos livraisons assignées apparaîtront ici.</div>
+          <div style={{ fontSize: 14, fontWeight: 600, color: '#374151', marginBottom: 6 }}>Aucune livraison assignée</div>
+          <div style={{ fontSize: 13 }}>Vos livraisons apparaîtront ici dès qu'un colis vous sera assigné.</div>
+        </div>
+      )}
+
+      {/* Pending assignments — cargo not yet ready */}
+      {pending.length > 0 && (
+        <div style={{ padding: '16px 14px 0' }}>
+          <div style={{ fontSize: 12, fontWeight: 700, color: '#374151', letterSpacing: '.04em', textTransform: 'uppercase', marginBottom: 10 }}>
+            Assignations en attente — {pending.length}
+          </div>
+          <div style={{ background: '#FFFBEB', border: '1px solid #FDE68A', borderRadius: 10, padding: '10px 14px', marginBottom: 10, fontSize: 12, color: '#B45309' }}>
+            ⏳ Ces colis vous sont pré-assignés mais ne sont pas encore prêts pour la livraison. Ils passeront en livraisons actives dès leur arrivée à l'entrepôt.
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {pending.map(p => {
+              const m   = STATUS_META[p.status] ?? STATUS_META.enr;
+              const tel = p.recipPhone || p.client?.phone;
+              return (
+                <div key={p.id} className="drv-card" style={{ padding: '12px 14px', opacity: .85 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+                    <span style={{ fontFamily: 'monospace', fontSize: 12.5, fontWeight: 700, color: '#111827' }}>{p.trackingCode}</span>
+                    <span className={`pill ${m.pill}`}>{m.label}</span>
+                  </div>
+                  <div style={{ fontSize: 13, fontWeight: 600, color: '#374151' }}>{p.recipName || p.client?.name}</div>
+                  {p.recipCity && <div style={{ fontSize: 11.5, color: '#6B7280', marginTop: 2 }}>📍 {p.recipCity}</div>}
+                  {p.campaign?.code && (
+                    <div style={{ fontSize: 11, color: '#9CA3AF', marginTop: 4 }}>
+                      Cargaison {p.campaign.code} · Statut : {STATUS_META[p.campaign.status]?.label ?? p.campaign.status}
+                    </div>
+                  )}
+                  {tel && (
+                    <div style={{ display: 'flex', gap: 6, marginTop: 8 }}>
+                      <a href={`https://wa.me/${tel.replace(/\D/g, '')}`} target="_blank" rel="noreferrer"
+                        style={{ display: 'inline-flex', alignItems: 'center', background: '#25D366', color: 'white', borderRadius: 6, padding: '3px 8px', fontSize: 11, fontWeight: 600, textDecoration: 'none' }}>
+                        WA
+                      </a>
+                      <a href={`tel:${tel}`}
+                        style={{ display: 'inline-flex', alignItems: 'center', background: '#F4F5F7', color: '#374151', borderRadius: 6, padding: '3px 10px', fontSize: 12, fontWeight: 600, textDecoration: 'none' }}>
+                        📞
+                      </a>
+                      <span style={{ fontSize: 11.5, color: '#6B7280', lineHeight: '26px' }}>{tel}</span>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
         </div>
       )}
 
