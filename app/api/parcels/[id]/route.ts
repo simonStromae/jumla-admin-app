@@ -32,7 +32,7 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
   if (error) return error;
 
   const body = await req.json();
-  const { status, confirmed, notes, weightKg, priceXaf, eventNote, eventLocation, items, confirmedPriceXaf, adjustmentStatus, marginPct, driverId } = body;
+  const { status, confirmed, notes, weightKg, priceXaf, eventNote, eventLocation, items, confirmedPriceXaf, adjustmentStatus, marginPct, driverId, delivery } = body;
 
   // Fetch parcel with campaign to check lock status
   const existing = await prisma.parcel.findUnique({
@@ -46,9 +46,9 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
     },
   });
   // Content edits (weight, items, price) are locked once the campaign is in transit.
-  // Status updates are ALWAYS allowed — individual parcels can have problems at any stage.
+  // Status updates and driver assignment are ALWAYS allowed.
   const LOCKED_STATUSES = ['exp', 'tra', 'apd', 'dou', 'lib', 'ard', 'pdl', 'ok'];
-  const contentChanged  = weightKg !== undefined || priceXaf !== undefined || items !== undefined || confirmed !== undefined || notes !== undefined || driverId !== undefined;
+  const contentChanged  = weightKg !== undefined || priceXaf !== undefined || items !== undefined || confirmed !== undefined || notes !== undefined;
   if (contentChanged && existing?.campaign && LOCKED_STATUSES.includes(existing.campaign.status as string)) {
     return NextResponse.json({ error: 'Colis verrouillé — le contenu ne peut plus être modifié (cargaison en transit).' }, { status: 403 });
   }
@@ -79,7 +79,8 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
       ...(confirmedPriceXaf !== undefined && { confirmedPriceXaf: Number(confirmedPriceXaf) }),
       ...(finalAdjustmentStatus !== undefined && { adjustmentStatus: finalAdjustmentStatus }),
       ...(marginPct !== undefined && { marginPct: Number(marginPct) }),
-      ...(driverId  !== undefined && { driverId: driverId || null }),
+      ...(driverId  !== undefined && { driverId:  driverId  || null }),
+      ...(delivery  !== undefined && { delivery:  delivery  || null }),
     },
   });
 
