@@ -1,14 +1,18 @@
 'use client';
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
+import dynamic from 'next/dynamic';
+
+const QrScanner = dynamic(() => import('@/src/components/QrScanner.jsx'), { ssr: false });
 
 export default function AgentScanPage() {
   const router = useRouter();
-  const [query,   setQuery]   = useState('');
-  const [result,  setResult]  = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [error,   setError]   = useState('');
-  const [history, setHistory] = useState([]);
+  const [query,       setQuery]       = useState('');
+  const [result,      setResult]      = useState(null);
+  const [loading,     setLoading]     = useState(false);
+  const [error,       setError]       = useState('');
+  const [history,     setHistory]     = useState([]);
+  const [showScanner, setShowScanner] = useState(false);
   const inputRef = useRef(null);
 
   useEffect(() => {
@@ -73,10 +77,26 @@ export default function AgentScanPage() {
 
   return (
     <div>
+      {/* Camera scanner overlay */}
+      {showScanner && (
+        <QrScanner
+          onScan={(code) => { setShowScanner(false); setQuery(code); search(code); }}
+          onClose={() => setShowScanner(false)}
+        />
+      )}
+
       {/* Topbar */}
       <div style={{ background: 'white', borderBottom: '1px solid #E5E7EB', padding: '12px 14px', position: 'sticky', top: 0, zIndex: 10 }}>
         <div style={{ fontSize: 16, fontWeight: 800, color: '#111827', marginBottom: 10 }}>Scan / Recherche</div>
         <div style={{ display: 'flex', gap: 8 }}>
+          <button
+            onClick={() => setShowScanner(true)}
+            className="agent-btn agent-btn--ghost"
+            style={{ flexShrink: 0, minWidth: 48, fontSize: 18, padding: '0 12px' }}
+            title="Scanner avec la caméra"
+          >
+            📷
+          </button>
           <input
             ref={inputRef}
             className="agent-input"

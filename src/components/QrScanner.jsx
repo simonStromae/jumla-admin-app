@@ -1,38 +1,76 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
 
-// Unique ID to avoid collisions when mounted multiple times
 let idCounter = 0;
 
 export default function QrScanner({ onScan, onClose }) {
-  const [err,   setErr]   = useState('');
-  const [ready, setReady] = useState(false);
+  const [status, setStatus] = useState('loading'); // loading | ready | error
+  const [err,    setErr]    = useState('');
   const instanceRef = useRef(null);
-  const idRef = useRef(`qr-scan-${++idCounter}`);
+  const mountedRef  = useRef(true);
+  const scannerIdRef = useRef(`qr-scanner-${++idCounter}`);
 
   useEffect(() => {
-    const id = idRef.current;
-    let instance;
+    mountedRef.current = true;
+    const id = scannerIdRef.current;
 
-    import('html5-qrcode').then(({ Html5Qrcode }) => {
-      instance = new Html5Qrcode(id);
-      instanceRef.current = instance;
+    let cleanedUp = false;
 
-      instance.start(
-        { facingMode: 'environment' },
-        { fps: 10, qrbox: { width: 260, height: 260 }, aspectRatio: 1.0 },
-        (text) => {
-          // Extract just the tracking code if a URL was encoded
-          const code = text.split('/').pop().toUpperCase();
-          instance.stop().catch(() => {});
-          onScan(code);
-        },
-        () => { /* ignore per-frame errors */ },
-      ).then(() => setReady(true))
-       .catch(() => setErr('Impossible d\'accéder à la caméra. Vérifiez les permissions.'));
-    });
+    const doInit = async () => {
+      try {
+        const { Html5Qrcode } = await import('html5-qrcode');
 
-    return () => { instance?.stop().catch(() => {}); };
+        // Guard: component might have unmounted during async import
+        if (cleanedUp || !mountedRef.current) return;
+
+        // Guard: element must exist in DOM
+        const el = document.getElementById(id);
+        if (!el) {
+          setStatus('error');
+          setErr('Élément scanner introuvable.');
+          return;
+        }
+
+        const instance = new Html5Qrcode(id, { verbose: false });
+        instanceRef.current = instance;
+
+        await instance.start(
+          { facingMode: 'environment' },
+          { fps: 10, qrbox: { width: 240, height: 240 } },
+          (text) => {
+            // Extract tracking code — strip URL prefix if QR encodes a URL
+            const code = text.split('/').pop().replace(/[^A-Z0-9-]/gi, '').toUpperCase();
+            instance.stop().catch(() => {});
+            onScan(code);
+          },
+          () => { /* ignore per-frame decode errors */ },
+        );
+
+        if (mountedRef.current) setStatus('ready');
+      } catch (e) {
+        if (!mountedRef.current) return;
+        const msg = e?.message ?? String(e);
+        if (msg.toLowerCase().includes('permission') || msg.toLowerCase().includes('denied') || msg.toLowerCase().includes('notallowed')) {
+          setErr('Accès caméra refusé. Autorisez la caméra dans les paramètres de votre navigateur.');
+        } else if (msg.toLowerCase().includes('notfound') || msg.toLowerCase().includes('no camera')) {
+          setErr('Aucune caméra détectée sur cet appareil.');
+        } else {
+          setErr('Impossible de démarrer le scanner. ' + msg);
+        }
+        setStatus('error');
+      }
+    };
+
+    doInit();
+
+    return () => {
+      cleanedUp = true;
+      mountedRef.current = false;
+      if (instanceRef.current) {
+        instanceRef.current.stop().catch(() => {});
+        instanceRef.current = null;
+      }
+    };
   }, []);
 
   return (
@@ -41,7 +79,7 @@ export default function QrScanner({ onScan, onClose }) {
       background: 'rgba(0,0,0,.95)', display: 'flex', flexDirection: 'column',
     }}>
       {/* Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 18px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 18px', flexShrink: 0 }}>
         <div>
           <div style={{ fontSize: 17, fontWeight: 800, color: 'white' }}>Scanner un colis</div>
           <div style={{ fontSize: 12, color: 'rgba(255,255,255,.5)', marginTop: 2 }}>
@@ -50,33 +88,51 @@ export default function QrScanner({ onScan, onClose }) {
         </div>
         <button
           onClick={onClose}
-          style={{ background: 'rgba(255,255,255,.15)', border: 'none', borderRadius: '50%', width: 36, height: 36, cursor: 'pointer', fontSize: 18, color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          style={{
+            background: 'rgba(255,255,255,.15)', border: 'none', borderRadius: '50%',
+            width: 36, height: 36, cursor: 'pointer', fontSize: 18, color: 'white',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+          }}>
           ✕
         </button>
       </div>
 
-      {/* Scanner viewport */}
-      <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 24px' }}>
-        {!ready && !err && (
-          <div style={{ position: 'absolute', color: 'rgba(255,255,255,.5)', fontSize: 14 }}>
+      {/* Scanner area */}
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '0 24px', position: 'relative' }}>
+        {status === 'loading' && (
+          <div style={{ position: 'absolute', color: 'rgba(255,255,255,.5)', fontSize: 13, textAlign: 'center' }}>
+            <div style={{ fontSize: 28, marginBottom: 10 }}>📷</div>
             Initialisation caméra…
           </div>
         )}
+        {/* Html5Qrcode mounts its video element inside this div */}
         <div
-          id={idRef.current}
-          style={{ width: '100%', maxWidth: 400, borderRadius: 16, overflow: 'hidden' }}
+          id={scannerIdRef.current}
+          style={{
+            width: '100%', maxWidth: 380,
+            borderRadius: 16, overflow: 'hidden',
+            opacity: status === 'ready' ? 1 : 0,
+            transition: 'opacity .3s',
+          }}
         />
       </div>
 
-      {err && (
-        <div style={{ margin: '0 20px 16px', padding: '12px 14px', background: '#FEF2F2', borderRadius: 12, color: '#DC2626', fontSize: 13, fontWeight: 600, textAlign: 'center' }}>
-          {err}
+      {/* Error state */}
+      {status === 'error' && (
+        <div style={{ margin: '0 20px 16px', padding: '14px 16px', background: '#FEF2F2', borderRadius: 12, textAlign: 'center' }}>
+          <div style={{ fontSize: 22, marginBottom: 8 }}>📵</div>
+          <div style={{ fontSize: 13, fontWeight: 600, color: '#DC2626', marginBottom: 12 }}>{err}</div>
+          <button onClick={onClose} style={{ background: '#DC2626', color: 'white', border: 'none', borderRadius: 8, padding: '8px 20px', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
+            Fermer
+          </button>
         </div>
       )}
 
-      <div style={{ padding: '12px 20px 32px', textAlign: 'center', color: 'rgba(255,255,255,.4)', fontSize: 12 }}>
-        Compatible QR code · Code-barres 1D · Code 128 · EAN
-      </div>
+      {status !== 'error' && (
+        <div style={{ padding: '12px 20px 32px', textAlign: 'center', color: 'rgba(255,255,255,.35)', fontSize: 11 }}>
+          QR Code · Code 128 · EAN-13 · Code 39
+        </div>
+      )}
     </div>
   );
 }
