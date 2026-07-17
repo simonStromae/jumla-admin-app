@@ -309,6 +309,38 @@ function DriverFormModal({ onClose, onSave }) {
   );
 }
 
+function DriverResetBtn({ driver }) {
+  const [resetting, setResetting] = useState(false);
+  const [pwd, setPwd]             = useState('');
+
+  const handleReset = async () => {
+    if (!confirm(`Réinitialiser le mot de passe de ${driver.name} ?`)) return;
+    setResetting(true); setPwd('');
+    const res = await fetch(`/api/users/${driver.id}/reset-password`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ sendWhatsapp: Boolean(driver.phone) }),
+    });
+    const d = await res.json();
+    if (res.ok) setPwd(d.tempPassword);
+    setResetting(false);
+  };
+
+  return (
+    <div style={{ display: 'inline-flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4 }}>
+      <button className="icon-btn" onClick={handleReset} disabled={resetting} title="Réinitialiser le mot de passe">
+        {resetting ? <span style={{ fontSize: 10 }}>…</span> : <I.Lock />}
+      </button>
+      {pwd && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '4px 8px', background: 'var(--warn-50)', border: '1px solid var(--warn-200)', borderRadius: 6 }}>
+          <span className="mono" style={{ fontSize: 12, fontWeight: 700, letterSpacing: 1 }}>{pwd}</span>
+          <button className="btn btn--ghost btn--xs" onClick={() => navigator.clipboard?.writeText(pwd)}>Copier</button>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function DriversView({ drivers, onDelete, onNew, loading }) {
   if (loading) {
     return (
@@ -368,7 +400,8 @@ function DriversView({ drivers, onDelete, onNew, loading }) {
             <td style={{ fontSize: 12.5 }}>{d.phone || '—'}</td>
             <td style={{ fontSize: 12.5 }}>{d.city || '—'}</td>
             <td>
-              <div style={{ display: 'flex', gap: 4, justifyContent: 'flex-end' }}>
+              <div style={{ display: 'flex', gap: 4, justifyContent: 'flex-end', alignItems: 'flex-start' }}>
+                <DriverResetBtn driver={d} />
                 <button className="icon-btn" style={{ color: 'var(--bad-500)' }} onClick={() => onDelete(d)} title="Supprimer"><I.Trash /></button>
               </div>
             </td>

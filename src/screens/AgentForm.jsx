@@ -112,10 +112,12 @@ export default function AgentFormModal({ mode = 'create', agent, onClose, onSave
   const t = useAdminT();
   const PERMISSION_MODULES = getPermissionModules(t);
   const isEdit = mode === 'edit';
-  const [saving, setSaving] = useState(false);
-  const [saveErr, setSaveErr] = useState('');
+  const [saving, setSaving]             = useState(false);
+  const [saveErr, setSaveErr]           = useState('');
   const [tempPassword, setTempPassword] = useState('');
   const [whatsappSent, setWhatsappSent] = useState(false);
+  const [resetting, setResetting]       = useState(false);
+  const [resetPwd, setResetPwd]         = useState('');
   const [data, setData] = useState(() => ({
     name: agent?.name || '',
     initials: agent?.initials || '',
@@ -152,6 +154,22 @@ export default function AgentFormModal({ mode = 'create', agent, onClose, onSave
   };
 
   const totalPerms = Object.values(data.perms).reduce((a, p) => a + p.length, 0);
+
+  const handleResetPassword = async () => {
+    if (!confirm(`Réinitialiser le mot de passe de ${data.name} ? Un nouveau mot de passe temporaire sera généré.`)) return;
+    setResetting(true); setResetPwd('');
+    try {
+      const res = await fetch(`/api/users/${agent.id}/reset-password`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sendWhatsapp: Boolean(data.phone) }),
+      });
+      const d = await res.json();
+      if (res.ok) setResetPwd(d.tempPassword);
+      else setSaveErr(d.error || t.common.error);
+    } catch { setSaveErr(t.common.networkError); }
+    finally { setResetting(false); }
+  };
 
   const handleSave = async () => {
     if (!data.name.trim() || !data.email.trim()) { setSaveErr('Nom et email requis' /* TODO: add translation key */); return; }
@@ -204,11 +222,17 @@ export default function AgentFormModal({ mode = 'create', agent, onClose, onSave
           {isEdit && (
             <button className="btn btn--ghost" style={{ color: 'var(--bad-600)' }}
               onClick={async () => {
-                if (!confirm(`${t.common.delete} ?` /* TODO: add translation key for full confirm message */)) return;
+                if (!confirm(`${t.common.delete} ?`)) return;
                 await fetch(`/api/users/${agent.id}`, { method: 'DELETE' });
                 onSave();
               }}>
               <I.Trash />{t.common.delete}
+            </button>
+          )}
+          {isEdit && (
+            <button className="btn btn--ghost" onClick={handleResetPassword} disabled={resetting}
+              title="Générer un nouveau mot de passe temporaire">
+              <I.Lock />{resetting ? 'Génération…' : 'Réinitialiser MDP'}
             </button>
           )}
           <div style={{ flex: 1 }} />
@@ -397,6 +421,24 @@ export default function AgentFormModal({ mode = 'create', agent, onClose, onSave
                   <button className="btn btn--brand" style={{ width: '100%', justifyContent: 'center', marginTop: 12 }} onClick={onSave}>
                     {'Terminer' /* TODO: add translation key */}
                   </button>
+                </div>
+              </div>
+            )}
+
+            {resetPwd && (
+              <div className="card" style={{ overflow: 'hidden', marginBottom: 14, border: '1.5px solid var(--warn-200)' }}>
+                <div style={{ padding: '12px 14px', borderBottom: '1px solid var(--warn-100)', background: 'var(--warn-50)' }}>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--warn-800)' }}>Mot de passe réinitialisé ✓</div>
+                  <div style={{ fontSize: 11.5, color: 'var(--warn-700)', marginTop: 2 }}>
+                    {data.phone ? 'Envoyé par WhatsApp — copiez aussi' : 'Copiez et communiquez manuellement'}
+                  </div>
+                </div>
+                <div style={{ padding: 12 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 12px', background: 'var(--bg-soft)', borderRadius: 7, border: '1px solid var(--border)', fontFamily: 'var(--ff-mono)', fontSize: 17, fontWeight: 700, letterSpacing: 2 }}>
+                    <span style={{ flex: 1 }}>{resetPwd}</span>
+                    <button className="btn btn--ghost btn--xs" onClick={() => navigator.clipboard?.writeText(resetPwd)}>Copier</button>
+                  </div>
+                  <div style={{ fontSize: 11, color: 'var(--ink-400)', marginTop: 6 }}>L'agent devra le changer à la connexion suivante.</div>
                 </div>
               </div>
             )}
