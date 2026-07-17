@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import I from '../components/Icons.jsx';
-import { Bi, Avatar, Skel } from '../components/Shell.jsx';
+import { Bi, Avatar, Skel, Modal } from '../components/Shell.jsx';
 import { Pagination, ViewToggle } from '../components/Pagination.jsx';
 import AgentFormModal from './AgentForm.jsx';
 import { useAdminT } from '../lib/useAdminT.js';
@@ -229,15 +229,167 @@ function AgentsListView({ agents, setEditing, onToggleStatus, onDelete, page, pa
   );
 }
 
+function DriverFormModal({ onClose, onSave }) {
+  const [name, setName]       = useState('');
+  const [email, setEmail]     = useState('');
+  const [phone, setPhone]     = useState('');
+  const [city, setCity]       = useState('');
+  const [invite, setInvite]   = useState(true);
+  const [saving, setSaving]   = useState(false);
+  const [error, setError]     = useState('');
+  const [tempPwd, setTempPwd] = useState('');
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!name.trim() || !email.trim()) { setError('Nom et email requis'); return; }
+    setSaving(true); setError('');
+    try {
+      const res = await fetch('/api/users', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, email, phone, city, role: 'driver', permissions: {}, sendInvite: invite }),
+      });
+      const d = await res.json();
+      if (!res.ok) { setError(d.error || 'Erreur'); setSaving(false); return; }
+      if (d.tempPassword) { setTempPwd(d.tempPassword); return; }
+      onSave();
+    } catch { setError('Erreur réseau'); }
+    finally { setSaving(false); }
+  };
+
+  if (tempPwd) {
+    return (
+      <Modal onClose={onSave} title="Livreur créé" width={420}>
+        <div style={{ padding: '24px 0', textAlign: 'center' }}>
+          <div style={{ fontSize: 13, marginBottom: 12, color: 'var(--ink-600)' }}>Mot de passe temporaire (à communiquer au livreur) :</div>
+          <div className="mono" style={{ fontSize: 22, fontWeight: 700, letterSpacing: 2, color: 'var(--brand-700)', background: 'var(--brand-50)', border: '1px solid var(--brand-100)', borderRadius: 8, padding: '10px 20px', display: 'inline-block' }}>{tempPwd}</div>
+          <div style={{ marginTop: 12, fontSize: 12, color: 'var(--ink-400)' }}>Le livreur devra changer ce mot de passe à la première connexion.</div>
+        </div>
+      </Modal>
+    );
+  }
+
+  return (
+    <Modal onClose={onClose} title="Nouveau livreur" sub="Crée un compte livreur avec accès à l'application mobile" width={480}>
+      <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 14, padding: '4px 0' }}>
+        {error && <div style={{ padding: '8px 12px', background: 'var(--bad-50)', border: '1px solid var(--bad-200)', borderRadius: 7, fontSize: 12.5, color: 'var(--bad-700)' }}>{error}</div>}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+          <div>
+            <label className="label">Nom complet *</label>
+            <input className="input" value={name} onChange={e => setName(e.target.value)} placeholder="Jean Dupont" required />
+          </div>
+          <div>
+            <label className="label">Email *</label>
+            <input className="input" type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="jean@exemple.com" required />
+          </div>
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+          <div>
+            <label className="label">Téléphone</label>
+            <input className="input" value={phone} onChange={e => setPhone(e.target.value)} placeholder="+1 514 000 0000" />
+          </div>
+          <div>
+            <label className="label">Ville</label>
+            <input className="input" value={city} onChange={e => setCity(e.target.value)} placeholder="Montréal" />
+          </div>
+        </div>
+        <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, cursor: 'pointer', padding: '8px 12px', background: 'var(--bg-soft)', borderRadius: 7 }}>
+          <input type="checkbox" checked={invite} onChange={e => setInvite(e.target.checked)} style={{ accentColor: 'var(--brand-500)' }} />
+          Envoyer le mot de passe temporaire par WhatsApp
+        </label>
+        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, paddingTop: 4 }}>
+          <button type="button" className="btn btn--ghost" onClick={onClose}>Annuler</button>
+          <button type="submit" className="btn btn--brand" disabled={saving}>
+            {saving ? 'Création…' : 'Créer le livreur'}
+          </button>
+        </div>
+      </form>
+    </Modal>
+  );
+}
+
+function DriversView({ drivers, onDelete, onNew, loading }) {
+  if (loading) {
+    return (
+      <table className="tbl" style={{ borderTopLeftRadius: 0, borderTopRightRadius: 0 }}>
+        <thead><tr>
+          <th style={{ borderRadius: 0 }}>Nom</th>
+          <th>Email</th>
+          <th>Téléphone</th>
+          <th>Ville</th>
+          <th style={{ borderRadius: 0, width: 80 }}></th>
+        </tr></thead>
+        <tbody>{[1,2,3].map(i => (
+          <tr key={i}>
+            <td><Skel w={130} h={13} /></td>
+            <td><Skel w={160} h={13} /></td>
+            <td><Skel w={110} h={13} /></td>
+            <td><Skel w={80} h={13} /></td>
+            <td></td>
+          </tr>
+        ))}</tbody>
+      </table>
+    );
+  }
+  if (drivers.length === 0) {
+    return (
+      <div style={{ background: 'white', border: '1px solid var(--border)', borderTopLeftRadius: 0, borderTopRightRadius: 0, borderRadius: 12, padding: 48, textAlign: 'center' }}>
+        <div style={{ fontSize: 32, marginBottom: 10 }}>🚚</div>
+        <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--ink-700)', marginBottom: 6 }}>Aucun livreur</div>
+        <div style={{ fontSize: 13, color: 'var(--ink-400)', marginBottom: 16 }}>Ajoutez un premier livreur pour commencer les livraisons à domicile.</div>
+        <button className="btn btn--brand" onClick={onNew}><I.UserPlus />Nouveau livreur</button>
+      </div>
+    );
+  }
+  return (
+    <table className="tbl" style={{ borderTopLeftRadius: 0, borderTopRightRadius: 0 }}>
+      <thead>
+        <tr>
+          <th style={{ borderRadius: 0 }}>Nom</th>
+          <th>Email</th>
+          <th>Téléphone</th>
+          <th>Ville</th>
+          <th style={{ borderRadius: 0, width: 80 }}></th>
+        </tr>
+      </thead>
+      <tbody>
+        {drivers.map(d => (
+          <tr key={d.id}>
+            <td>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <div style={{ width: 30, height: 30, borderRadius: 999, background: 'var(--brand-100)', display: 'grid', placeItems: 'center', fontSize: 12, fontWeight: 700, color: 'var(--brand-700)', flexShrink: 0 }}>
+                  {d.name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()}
+                </div>
+                <span style={{ fontSize: 13, fontWeight: 600 }}>{d.name}</span>
+              </div>
+            </td>
+            <td className="mono" style={{ fontSize: 12.5, color: 'var(--ink-600)' }}>{d.email}</td>
+            <td style={{ fontSize: 12.5 }}>{d.phone || '—'}</td>
+            <td style={{ fontSize: 12.5 }}>{d.city || '—'}</td>
+            <td>
+              <div style={{ display: 'flex', gap: 4, justifyContent: 'flex-end' }}>
+                <button className="icon-btn" style={{ color: 'var(--bad-500)' }} onClick={() => onDelete(d)} title="Supprimer"><I.Trash /></button>
+              </div>
+            </td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  );
+}
+
 export default function AgentsScreen({ onNav }) {
   const t = useAdminT();
-  const [agents, setAgents] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [tab, setTab] = useState('all');
-  const [editing, setEditing] = useState(null);
-  const [view, setView] = useState('list');
-  const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(10);
+  const [agents, setAgents]         = useState([]);
+  const [drivers, setDrivers]       = useState([]);
+  const [loading, setLoading]       = useState(true);
+  const [driverLoading, setDriverLoading] = useState(false);
+  const [tab, setTab]               = useState('all');
+  const [editing, setEditing]       = useState(null);
+  const [driverEditing, setDriverEditing] = useState(false);
+  const [view, setView]             = useState('list');
+  const [page, setPage]             = useState(1);
+  const [pageSize, setPageSize]     = useState(10);
 
   const loadAgents = () => {
     fetch('/api/users')
@@ -246,7 +398,16 @@ export default function AgentsScreen({ onNav }) {
       .catch(() => setLoading(false));
   };
 
+  const loadDrivers = () => {
+    setDriverLoading(true);
+    fetch('/api/admin/drivers')
+      .then(r => r.json())
+      .then(data => { setDrivers(Array.isArray(data) ? data : []); setDriverLoading(false); })
+      .catch(() => setDriverLoading(false));
+  };
+
   useEffect(() => { loadAgents(); }, []);
+  useEffect(() => { if (tab === 'livreur') loadDrivers(); }, [tab]);
 
   const handleToggleStatus = async (agent) => {
     const newStatus = agent.status === 'suspended' ? 'active' : 'suspended';
@@ -273,11 +434,19 @@ export default function AgentsScreen({ onNav }) {
     loadAgents();
   };
 
+  const handleDeleteDriver = async (driver) => {
+    if (!confirm(`Supprimer définitivement ${driver.name} ? Cette action est irréversible.`)) return;
+    const res = await fetch(`/api/users/${driver.id}`, { method: 'DELETE' });
+    const d = await res.json();
+    if (!res.ok) { alert(d.error || t.common.error); return; }
+    loadDrivers();
+  };
+
   const filtered = tab === 'all' ? agents : agents.filter(a => a.role === tab);
 
-  const adminCount    = agents.filter(a => a.role === 'admin').length;
-  const agentCount    = agents.filter(a => a.role === 'agent').length;
-  const readonlyCount = agents.filter(a => a.role === 'readonly').length;
+  const adminCount     = agents.filter(a => a.role === 'admin').length;
+  const agentCount     = agents.filter(a => a.role === 'agent').length;
+  const readonlyCount  = agents.filter(a => a.role === 'readonly').length;
   const suspendedCount = agents.filter(a => a.status === 'suspended').length;
 
   if (loading) {
@@ -328,32 +497,41 @@ export default function AgentsScreen({ onNav }) {
         </div>
         <div className="page__actions">
           <button className="btn btn--ghost"><I.Download />{t.common.export}</button>
-          <button className="btn btn--brand" onClick={() => setEditing('new')}><I.UserPlus />{t.agents.invite}</button>
+          {tab === 'livreur'
+            ? <button className="btn btn--brand" onClick={() => setDriverEditing(true)}><I.UserPlus />Nouveau livreur</button>
+            : <button className="btn btn--brand" onClick={() => setEditing('new')}><I.UserPlus />{t.agents.invite}</button>
+          }
         </div>
       </div>
 
       <div className="toolbar">
         <div className="tabs">
           {/* TODO: no translation key for 'Tous' tab */}
-          <button className={'tab ' + (tab === 'all'      ? 'is-active' : '')} onClick={() => setTab('all')}>Tous <span className="count">{agents.length}</span></button>
-          <button className={'tab ' + (tab === 'admin'    ? 'is-active' : '')} onClick={() => setTab('admin')}>Admins <span className="count">{adminCount}</span></button>
-          <button className={'tab ' + (tab === 'agent'    ? 'is-active' : '')} onClick={() => setTab('agent')}>{t.nav.agents} <span className="count">{agentCount}</span></button>
+          <button className={'tab ' + (tab === 'all'      ? 'is-active' : '')} onClick={() => { setTab('all'); setPage(1); }}>Tous <span className="count">{agents.length}</span></button>
+          <button className={'tab ' + (tab === 'admin'    ? 'is-active' : '')} onClick={() => { setTab('admin'); setPage(1); }}>Admins <span className="count">{adminCount}</span></button>
+          <button className={'tab ' + (tab === 'agent'    ? 'is-active' : '')} onClick={() => { setTab('agent'); setPage(1); }}>{t.nav.agents} <span className="count">{agentCount}</span></button>
           {/* TODO: no translation key for 'Lecture seule' role tab */}
-          <button className={'tab ' + (tab === 'readonly' ? 'is-active' : '')} onClick={() => setTab('readonly')}>Lecture seule <span className="count">{readonlyCount}</span></button>
+          <button className={'tab ' + (tab === 'readonly' ? 'is-active' : '')} onClick={() => { setTab('readonly'); setPage(1); }}>Lecture seule <span className="count">{readonlyCount}</span></button>
+          <button className={'tab ' + (tab === 'livreur'  ? 'is-active' : '')} onClick={() => { setTab('livreur'); setPage(1); }}>Livreurs <span className="count">{drivers.length}</span></button>
         </div>
         <div className="spacer" />
-        <div style={{ position: 'relative' }}>
-          <I.Search style={{ position: 'absolute', left: 10, top: 9, width: 14, height: 14, color: 'var(--ink-400)' }} />
-          <input className="input input--sm" placeholder="Rechercher un agent…" style={{ width: 220, paddingLeft: 32 }} />
-        </div>
-        <ViewToggle value={view} onChange={setView} />
+        {tab !== 'livreur' && <>
+          <div style={{ position: 'relative' }}>
+            <I.Search style={{ position: 'absolute', left: 10, top: 9, width: 14, height: 14, color: 'var(--ink-400)' }} />
+            <input className="input input--sm" placeholder="Rechercher un agent…" style={{ width: 220, paddingLeft: 32 }} />
+          </div>
+          <ViewToggle value={view} onChange={setView} />
+        </>}
       </div>
 
-      {view === 'grid'
-        ? <AgentsGridView agents={filtered} setEditing={setEditing} onToggleStatus={handleToggleStatus} onDelete={handleDeleteAgent} />
-        : <AgentsListView agents={filtered} setEditing={setEditing} onToggleStatus={handleToggleStatus} onDelete={handleDeleteAgent} page={page} pageSize={pageSize} />}
+      {tab === 'livreur'
+        ? <DriversView drivers={drivers} loading={driverLoading} onDelete={handleDeleteDriver} onNew={() => setDriverEditing(true)} />
+        : view === 'grid'
+          ? <AgentsGridView agents={filtered} setEditing={setEditing} onToggleStatus={handleToggleStatus} onDelete={handleDeleteAgent} />
+          : <AgentsListView agents={filtered} setEditing={setEditing} onToggleStatus={handleToggleStatus} onDelete={handleDeleteAgent} page={page} pageSize={pageSize} />
+      }
 
-      {view === 'list' && (
+      {tab !== 'livreur' && view === 'list' && (
         <Pagination total={filtered.length} page={page} pageSize={pageSize}
           onPageChange={setPage}
           onPageSizeChange={(s) => { setPageSize(s); setPage(1); }} />
@@ -365,6 +543,13 @@ export default function AgentsScreen({ onNav }) {
           agent={editing === 'new' ? null : editing}
           onClose={() => setEditing(null)}
           onSave={() => { setEditing(null); loadAgents(); }}
+        />
+      )}
+
+      {driverEditing && (
+        <DriverFormModal
+          onClose={() => setDriverEditing(false)}
+          onSave={() => { setDriverEditing(false); loadDrivers(); }}
         />
       )}
     </div>
