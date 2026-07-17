@@ -44,10 +44,24 @@ export default function SlipDetailScreen({ id, onNav }) {
       .then(data => {
         if (data.error) { setLoading(false); return; }
         setSlip(data);
-        const rawItems = Array.isArray(data.items) ? data.items : [];
+        const blItems     = Array.isArray(data.items)         ? data.items         : [];
+        const parcelItems = Array.isArray(data.parcel?.items) ? data.parcel.items : [];
+        const rawItems = blItems.length > 0
+          ? blItems
+          : parcelItems.map(it => ({
+              designation: it.description ?? it.name ?? '',
+              description: it.description ?? '',
+              type:        'carton',
+              count:       1,
+              nbPieces:    it.nbPieces ?? null,
+              status:      'pending',
+              discrepancy: 0,
+              note:        '',
+            }));
         setItems(rawItems.map((it, i) => ({
           id:          it.id ?? i + 1,
-          designation: it.designation ?? it.name ?? '',
+          designation: it.designation ?? it.name ?? it.description ?? '',
+          description: it.description ?? '',
           type:        it.type ?? 'carton',
           count:       it.count ?? it.packs ?? 1,
           nbPieces:    it.nbPieces ?? it.pieces ?? null,

@@ -60,7 +60,7 @@ export default function ParcelLabelsScreen({ id, onNav }) {
     if (fromBL) {
       return {
         designation: (item.designation ?? item.name ?? 'Article').toUpperCase(),
-        type:        item.note?.trim() || PACK_TYPE[item.type] || item.type || '',
+        type:        item.description?.trim() || PACK_TYPE[item.type] || item.type || '',
         quantite:    item.nbPieces ? item.nbPieces + ' pièces' : item.count ? item.count + ' colis' : '',
       };
     }

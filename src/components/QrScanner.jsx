@@ -4,11 +4,21 @@ import { useEffect, useRef, useState } from 'react';
 let idCounter = 0;
 
 export default function QrScanner({ onScan, onClose }) {
-  const [status, setStatus] = useState('loading'); // loading | ready | error
-  const [err,    setErr]    = useState('');
-  const instanceRef = useRef(null);
-  const mountedRef  = useRef(true);
+  const [status,    setStatus]    = useState('loading'); // loading | ready | error
+  const [err,       setErr]       = useState('');
+  const [scanMsg,   setScanMsg]   = useState('');       // brief feedback message
+  const [scanOk,    setScanOk]    = useState(null);     // true=success false=bad-code null=idle
+  const instanceRef  = useRef(null);
+  const mountedRef   = useRef(true);
   const scannerIdRef = useRef(`qr-scanner-${++idCounter}`);
+  const msgTimerRef  = useRef(null);
+
+  const flashMsg = (msg, ok) => {
+    setScanMsg(msg);
+    setScanOk(ok);
+    clearTimeout(msgTimerRef.current);
+    msgTimerRef.current = setTimeout(() => { setScanMsg(''); setScanOk(null); }, 2500);
+  };
 
   useEffect(() => {
     mountedRef.current = true;
@@ -40,8 +50,15 @@ export default function QrScanner({ onScan, onClose }) {
           (text) => {
             // Extract tracking code — strip URL prefix if QR encodes a URL
             const code = text.split('/').pop().replace(/[^A-Z0-9-]/gi, '').toUpperCase();
-            instance.stop().catch(() => {});
-            onScan(code);
+            if (!code) {
+              flashMsg('QR code illisible — réessayez', false);
+              return;
+            }
+            flashMsg('Code détecté : ' + code, true);
+            setTimeout(() => {
+              instance.stop().catch(() => {});
+              onScan(code);
+            }, 600);
           },
           () => { /* ignore per-frame decode errors */ },
         );
@@ -66,6 +83,7 @@ export default function QrScanner({ onScan, onClose }) {
     return () => {
       cleanedUp = true;
       mountedRef.current = false;
+      clearTimeout(msgTimerRef.current);
       if (instanceRef.current) {
         instanceRef.current.stop().catch(() => {});
         instanceRef.current = null;
@@ -129,8 +147,22 @@ export default function QrScanner({ onScan, onClose }) {
       )}
 
       {status !== 'error' && (
-        <div style={{ padding: '12px 20px 32px', textAlign: 'center', color: 'rgba(255,255,255,.35)', fontSize: 11 }}>
-          QR Code · Code 128 · EAN-13 · Code 39
+        <div style={{ padding: '12px 20px 32px', textAlign: 'center' }}>
+          {scanMsg ? (
+            <div style={{
+              display: 'inline-block', padding: '8px 18px', borderRadius: 20,
+              background: scanOk ? 'rgba(16,185,129,.25)' : 'rgba(220,38,38,.25)',
+              border: `1px solid ${scanOk ? 'rgba(16,185,129,.5)' : 'rgba(220,38,38,.5)'}`,
+              color: scanOk ? '#6EE7B7' : '#FCA5A5',
+              fontSize: 13, fontWeight: 600,
+            }}>
+              {scanMsg}
+            </div>
+          ) : (
+            <span style={{ color: 'rgba(255,255,255,.35)', fontSize: 11 }}>
+              QR Code · Code 128 · EAN-13 · Code 39
+            </span>
+          )}
         </div>
       )}
     </div>
