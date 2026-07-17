@@ -13,7 +13,7 @@ export async function GET() {
 
   const [active, deliveredToday, recentDeliveries, failedToday] = await Promise.all([
     prisma.parcel.findMany({
-      where: { driverId, status: { in: ['pdl', 'liv', 'tdl'] }, deletedAt: null },
+      where: { driverId, status: { in: ['ard', 'lib', 'ver', 'pdl', 'liv', 'tdl'] }, deletedAt: null },
       include: {
         client:   { select: { name: true, phone: true } },
         campaign: { select: { code: true } },

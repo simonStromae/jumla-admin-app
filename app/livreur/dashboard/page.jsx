@@ -4,10 +4,13 @@ import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 
 const STATUS_META = {
-  pdl: { label: 'Prêt pour retrait', color: '#10B981', bg: '#ECFDF5', pill: 'pill--green'  },
-  liv: { label: 'En livraison',       color: '#1B4FD8', bg: '#EFF6FF', pill: 'pill--blue'   },
-  ok:  { label: 'Livré',             color: '#6B7280', bg: '#F4F5F7', pill: 'pill--gray'   },
-  tdl: { label: 'Tentative échouée', color: '#DC2626', bg: '#FEF2F2', pill: 'pill--red'    },
+  ard: { label: 'Entrepôt — à livrer', color: '#1B4FD8', bg: '#EFF6FF', pill: 'pill--blue'   },
+  lib: { label: 'Libéré — à livrer',   color: '#1B4FD8', bg: '#EFF6FF', pill: 'pill--blue'   },
+  ver: { label: 'Vérification',        color: '#1B4FD8', bg: '#EFF6FF', pill: 'pill--blue'   },
+  pdl: { label: 'Prêt pour livraison', color: '#10B981', bg: '#ECFDF5', pill: 'pill--green'  },
+  liv: { label: 'En livraison',        color: '#1B4FD8', bg: '#EFF6FF', pill: 'pill--blue'   },
+  ok:  { label: 'Livré',              color: '#6B7280', bg: '#F4F5F7', pill: 'pill--gray'   },
+  tdl: { label: 'Tentative échouée',  color: '#DC2626', bg: '#FEF2F2', pill: 'pill--red'    },
 };
 
 function StatCard({ label, value, color }) {
@@ -170,7 +173,7 @@ export default function DriverDashboard() {
 
                   {/* Action buttons */}
                   <div style={{ display: 'flex', gap: 8 }}>
-                    {p.status === 'pdl' && (
+                    {['ard', 'lib', 'ver', 'pdl'].includes(p.status) && (
                       <button
                         onClick={() => updateStatus(p.id, 'liv')}
                         disabled={!!act}
