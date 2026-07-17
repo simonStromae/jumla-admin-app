@@ -86,7 +86,14 @@ export default function ParcelDetailScreen({ id, onNav }) {
   const handleDriverAssign = async (newDriverId) => {
     setSavingDriver(true);
     const body = { driverId: newDriverId || null };
-    if (newDriverId) body.delivery = 'home';
+    if (newDriverId) {
+      body.delivery = 'home';
+      // Auto-promote to 'pdl' so driver sees it immediately in their dashboard
+      if (['ard', 'lib', 'ver', 'tdl'].includes(parcel?.status)) {
+        body.status = 'pdl';
+        body.eventNote = 'Prêt pour livraison — livreur assigné';
+      }
+    }
     const res = await fetch('/api/parcels/' + id, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
@@ -94,7 +101,12 @@ export default function ParcelDetailScreen({ id, onNav }) {
     });
     if (res.ok) {
       setDriverId(newDriverId);
-      if (newDriverId) setParcel(p => ({ ...p, delivery: 'home' }));
+      setParcel(p => ({
+        ...p,
+        driverId: newDriverId || null,
+        delivery: newDriverId ? 'home' : null,
+        ...(body.status ? { status: body.status } : {}),
+      }));
     }
     setSavingDriver(false);
   };

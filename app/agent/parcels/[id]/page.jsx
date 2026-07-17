@@ -84,7 +84,14 @@ export default function AgentParcelPage() {
     setSavingDriver(true); setError(''); setSuccess('');
     try {
       const body = { driverId: newDriverId || null };
-      if (newDriverId) body.delivery = 'home';
+      if (newDriverId) {
+        body.delivery = 'home';
+        // Auto-promote to 'pdl' so driver sees it immediately in their dashboard
+        if (['ard', 'lib', 'ver', 'tdl'].includes(parcel?.status)) {
+          body.status = 'pdl';
+          body.eventNote = 'Prêt pour livraison — livreur assigné';
+        }
+      }
       const res = await fetch(`/api/parcels/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
@@ -92,7 +99,12 @@ export default function AgentParcelPage() {
       });
       if (!res.ok) { const d = await res.json(); setError(d.error || 'Erreur'); setSavingDriver(false); return; }
       setDriverId(newDriverId);
-      if (newDriverId) setParcel(p => ({ ...p, delivery: 'home' }));
+      setParcel(p => ({
+        ...p,
+        driverId: newDriverId || null,
+        delivery: newDriverId ? 'home' : null,
+        ...(body.status ? { status: body.status } : {}),
+      }));
       const driverName = drivers.find(d => d.id === newDriverId)?.name;
       setSuccess(newDriverId ? `Livreur assigné : ${driverName}` : 'Livreur désassigné');
     } catch { setError('Erreur réseau'); }
