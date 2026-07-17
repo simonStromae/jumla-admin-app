@@ -19,8 +19,8 @@ const TYPE_LABELS = {
 };
 
 const PAY_STATUS = {
-  completed: { label: 'Payé',       cls: 'ok'      }, // → t.paymentStatus.paid
-  paid:      { label: 'Payé',       cls: 'ok'      }, // → t.paymentStatus.paid
+  completed: { label: 'Payé',       cls: 'ok'      }, // → t.paymentStatus.completed
+  paid:      { label: 'Payé',       cls: 'ok'      }, // → t.paymentStatus.completed
   pending:   { label: 'En attente', cls: 'warn'    }, // → t.paymentStatus.pending
   partial:   { label: 'Partiel',    cls: 'warn'    }, // TODO: i18n — no translation key
   unpaid:    { label: 'Impayé',     cls: 'bad'     }, // TODO: i18n — no translation key
@@ -173,7 +173,7 @@ function RecordPaymentModal({ preselectedClient, preselectedPaymentId, onClose, 
               <div style={{ position: 'relative' }}>
                 <input ref={searchRef} className="input" value={clientQuery}
                   onChange={e => setClientQuery(e.target.value)}
-                  placeholder={t.payments.searchPlaceholder} />
+                  placeholder={'Rechercher un client, colis…'} />
                 {clients.length > 0 && (
                   <div style={{
                     position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 200,
@@ -240,7 +240,7 @@ function RecordPaymentModal({ preselectedClient, preselectedPaymentId, onClose, 
               <option value="cash">{t.payments.methods.cash}</option>
               <option value="mobilemoney">{/* TODO: i18n — no translation key */}Mobile Money</option>
               <option value="cheque">{/* TODO: i18n — no translation key */}Chèque</option>
-              <option value="virement">{t.payments.methods.virement}</option>
+              <option value="virement">{t.payments.methods.transfer}</option>
             </select>
           </div>
 
@@ -405,7 +405,7 @@ function TransactionsTab({ onRecord }) {
       <div className="toolbar">
         <div style={{ position: 'relative' }}>
           <I.Search style={{ position: 'absolute', left: 10, top: 9, width: 14, height: 14, color: 'var(--ink-400)' }} />
-          <input className="input input--sm" placeholder={t.payments.searchPlaceholder} style={{ width: 260, paddingLeft: 32 }}
+          <input className="input input--sm" placeholder={'Rechercher un client, colis…'} style={{ width: 260, paddingLeft: 32 }}
             value={search} onChange={e => setSearch(e.target.value)} />
         </div>
       </div>
@@ -945,9 +945,9 @@ function InvoicesTab({ onReload }) {
   useEffect(() => { loadPayments(); }, []);
 
   const tabs = [
-    { id: 'all',     l: t.payments.filterAll,     n: payments.length },
-    { id: 'paid',    l: t.payments.filterPaid,    n: payments.filter(p => p.status === 'paid').length,    cls: 'ok'  },
-    { id: 'pending', l: t.payments.filterPending, n: payments.filter(p => p.status === 'pending').length, cls: 'warn' },
+    { id: 'all',     l: 'Tous',         n: payments.length },
+    { id: 'paid',    l: 'Payés',        n: payments.filter(p => p.status === 'paid').length,    cls: 'ok'  },
+    { id: 'pending', l: 'En attente',   n: payments.filter(p => p.status === 'pending').length, cls: 'warn' },
     { id: 'unpaid',  l: /* TODO: i18n — no filterUnpaid key in t.payments */ 'Impayées', n: payments.filter(p => p.status === 'unpaid').length, cls: 'bad'  },
   ];
 
@@ -972,7 +972,7 @@ function InvoicesTab({ onReload }) {
         <div className="spacer" />
         <div style={{ position: 'relative' }}>
           <I.Search style={{ position: 'absolute', left: 10, top: 9, width: 14, height: 14, color: 'var(--ink-400)' }} />
-          <input className="input input--sm" placeholder={t.payments.searchPlaceholder} style={{ width: 240, paddingLeft: 32 }}
+          <input className="input input--sm" placeholder={'Rechercher un client, colis…'} style={{ width: 240, paddingLeft: 32 }}
             value={search} onChange={e => setSearch(e.target.value)} />
         </div>
       </div>
@@ -1015,7 +1015,7 @@ function InvoicesTab({ onReload }) {
             </tr>
           ))}
           {!loading && filtered.length === 0 && (
-            <tr><td colSpan={8} style={{ textAlign: 'center', padding: 40, color: 'var(--ink-400)', fontSize: 13 }}>{/* TODO: i18n — t.payments.noPayments is closest match */}{t.payments.noPayments}</td></tr>
+            <tr><td colSpan={8} style={{ textAlign: 'center', padding: 40, color: 'var(--ink-400)', fontSize: 13 }}>Aucun paiement</td></tr>
           )}
           {!loading && filtered.flatMap(p => {
             const s = PAY_STATUS[p.status] ?? { label: p.status, cls: 'neutral' };
@@ -1049,10 +1049,10 @@ function InvoicesTab({ onReload }) {
                       <I.FileText style={{ width: 13, height: 13 }} />
                     </button>
                     {p.status === 'paid'
-                      ? <span style={{ fontSize: 12, color: 'var(--ok-600)' }}>✓ {t.paymentStatus.paid}</span>
+                      ? <span style={{ fontSize: 12, color: 'var(--ok-600)' }}>✓ {t.paymentStatus.completed}</span>
                       : can('payments', 'validate')
                         ? <button className="btn btn--brand btn--xs" onClick={() => setSettleInvoice(p)}>
-                            <I.Wallet />{t.payments.markPaid}
+                            <I.Wallet />{t.payments.settle}
                           </button>
                         : <span style={{ fontSize: 12, color: 'var(--ink-400)' }}>{t.paymentStatus.pending}</span>}
                   </div>
@@ -1113,7 +1113,7 @@ function InvoicesTab({ onReload }) {
                   <span className="mono" style={{ fontWeight: 700, color: 'var(--ok-700)' }}>{suppAmtPaid.toLocaleString('fr')}</span>
                   <span style={{ fontSize: 11, color: 'var(--ink-400)', marginLeft: 3 }}>CAD</span>
                 </td>
-                <td><span className="badge badge--dot badge--ok">{t.paymentStatus.paid}</span></td>
+                <td><span className="badge badge--dot badge--ok">{t.paymentStatus.completed}</span></td>
                 <td style={{ color: 'var(--ink-300)', fontSize: 12 }}>—</td>
                 <td>
                   <div style={{ display: 'flex', gap: 6, justifyContent: 'flex-end', alignItems: 'center' }}>
@@ -1121,7 +1121,7 @@ function InvoicesTab({ onReload }) {
                       onClick={() => setInvoiceParcelId(p.parcelId)} style={{ padding: '4px 8px' }}>
                       <I.FileText style={{ width: 13, height: 13 }} />
                     </button>
-                    <span style={{ fontSize: 12, color: 'var(--ok-600)' }}>✓ {t.paymentStatus.paid}</span>
+                    <span style={{ fontSize: 12, color: 'var(--ok-600)' }}>✓ {t.paymentStatus.completed}</span>
                   </div>
                 </td>
               </tr>
@@ -1171,10 +1171,10 @@ export default function PaymentsScreen({ onNav }) {
           <div className="page__sub">{/* TODO: i18n — no translation key */}Transactions reçues et suivi des factures</div>
         </div>
         <div className="page__actions">
-          <button className="btn btn--ghost"><I.Download />{t.payments.exportCsv}</button>
+          <button className="btn btn--ghost"><I.Download />{t.parcels.exportCsv}</button>
           {can('payments', 'validate') && (
             <button className="btn btn--brand" onClick={() => setModal({})}>
-              <I.Plus />{/* TODO: i18n — no "Record payment" key; t.payments.markPaid is closest */}Enregistrer paiement
+              <I.Plus />{/* TODO: i18n — no "Record payment" key; t.payments.settle is closest */}Enregistrer paiement
             </button>
           )}
         </div>

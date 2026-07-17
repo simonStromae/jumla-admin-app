@@ -118,7 +118,7 @@ export default function CampaignDetailScreen({ id, onNav }) {
   const unpaidCount = parcels.filter(p => p.payment?.status !== 'completed').length;
 
   const getPaymentLabel = (status) => {
-    if (status === 'completed') return t.paymentStatus.paid;
+    if (status === 'completed') return t.paymentStatus.completed;
     if (status === 'pending') return t.paymentStatus.pending;
     if (status === 'failed') return t.paymentStatus.cancelled; // TODO: no exact match for 'failed' status
     return PAYMENT_STATUS[status]?.label || status || '—';

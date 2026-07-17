@@ -177,15 +177,15 @@ export default function ParcelDetailScreen({ id, onNav }) {
           <div className="page__sub">
             {/* TODO: i18n — 'Cargaison' (singular campaign) has no direct key */}
             {campaign.code && <>Cargaison <a style={{ color: 'var(--brand-700)', fontWeight: 600, cursor: 'pointer' }} onClick={() => onNav('/campaign/' + campaign.id)}>{campaign.code}</a> · </>}
-            {t.parcels.detail.info.client} <strong style={{ color: 'var(--ink-700)' }}>{client.name}</strong>
+            {t.parcels.detail.sender} <strong style={{ color: 'var(--ink-700)' }}>{client.name}</strong>
           </div>
         </div>
         <div className="page__actions">
-          <button className="btn btn--ghost" onClick={() => onNav('/admin/parcels/' + id + '/labels')}><I.Tag />{t.parcels.detail.documents.label}</button>
-          <button className="btn btn--ghost" onClick={() => window.open('/client/invoice/' + id, '_blank')}><I.FileText />{t.parcels.detail.documents.invoice}</button>
+          <button className="btn btn--ghost" onClick={() => onNav('/admin/parcels/' + id + '/labels')}><I.Tag />{t.parcels.detail.bordereaux}</button>
+          <button className="btn btn--ghost" onClick={() => window.open('/client/invoice/' + id, '_blank')}><I.FileText />{t.parcels.detail.billing}</button>
           {/* TODO: i18n — 'Poids / Prix' has no direct key (composite weight+price) */}
           <button className="btn btn--ghost" onClick={() => setShowWeightModal(true)}><I.Edit />Poids / Prix</button>
-          <button className="btn btn--ghost" onClick={() => setShowPayModal(true)}><I.Send />{t.payments.sendInterac}</button>
+          <button className="btn btn--ghost" onClick={() => setShowPayModal(true)}><I.Send />{'Payer par Interac'}</button>
           {['enr', 'rec'].includes(parcel.status) && (
             <button
               className="btn btn--ghost"
@@ -578,7 +578,7 @@ export default function ParcelDetailScreen({ id, onNav }) {
 
             {(!payment || payment.status !== 'completed') ? (
               <button className="btn btn--brand" style={{ justifyContent: 'center', width: '100%' }} onClick={() => setShowPayModal(true)}>
-                <I.Send />{t.payments.sendInterac}
+                <I.Send />{'Payer par Interac'}
               </button>
             ) : (
               <div style={{ padding: 10, background: 'var(--ok-50)', border: '1px solid var(--ok-100)', fontSize: 11.5, color: 'var(--ok-700)', borderRadius: 6 }}>
@@ -732,7 +732,7 @@ export default function ParcelDetailScreen({ id, onNav }) {
               <I.History style={{ width: 14, height: 14, color: 'var(--brand-600)' }} /> Timeline
             </div>
             {events.length === 0 ? (
-              <div style={{ fontSize: 12.5, color: 'var(--ink-400)', fontStyle: 'italic' }}>{t.parcels.detail.history.noHistory}</div>
+              <div style={{ fontSize: 12.5, color: 'var(--ink-400)', fontStyle: 'italic' }}>{t.parcels.detail.activity}</div>
             ) : (
               <div>
                 {[...events].reverse().map((ev, i, arr) => {
@@ -1351,7 +1351,7 @@ function InteracModal({ parcel, onClose }) {
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
               <button className="btn btn--brand" style={{ justifyContent: 'center' }} onClick={handleSendWA} disabled={sending}>
-                <I.Chat />{sending ? t.payments.sending : t.payments.sendWhatsapp}
+                <I.Chat />{sending ? t.common.sending : 'Envoyer par WhatsApp'}
               </button>
               {sendError && <div style={{ fontSize: 12, color: 'var(--bad-600)', padding: '6px 10px', background: 'var(--bad-50)', borderRadius: 6, border: '1px solid var(--bad-200)' }}>{sendError}</div>}
               <div style={{ fontSize: 11.5, color: 'var(--ink-400)', lineHeight: 1.5 }}>

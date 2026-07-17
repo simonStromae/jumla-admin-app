@@ -59,7 +59,7 @@ export default function CampaignLabelsScreen({ id, onNav }) {
       {!loading && !error && parcels.length === 0 && (
         <div style={{ textAlign: 'center', padding: '60px 24px', color: 'var(--ink-400)' }}>
           <I.Box style={{ width: 40, height: 40, margin: '0 auto 12px', display: 'block' }} />
-          <div style={{ fontSize: 14, fontWeight: 600 }}>{t.parcels.noParcels}</div>
+          <div style={{ fontSize: 14, fontWeight: 600 }}>{t.parcels.empty}</div>
         </div>
       )}
 

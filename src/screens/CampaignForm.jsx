@@ -111,7 +111,7 @@ export default function CampaignFormPage({ mode = 'create', campaign, onNav }) {
     return (
       <div className="page">
         <div className="page__head" style={{ marginBottom: 28 }}>
-          <div className="page__title">{isEdit ? t.common.edit : t.campaigns.newCampaign}</div>
+          <div className="page__title">{isEdit ? t.common.edit : t.campaigns.new}</div>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '60px 0', color: 'var(--ink-400)', fontSize: 14 }}>
           {t.common.loading}
@@ -127,7 +127,7 @@ export default function CampaignFormPage({ mode = 'create', campaign, onNav }) {
         <a style={{ cursor: 'pointer' }} onClick={() => onNav('/')}>{t.nav.campaigns}</a>
         <I.ChevronRight style={{ width: 12, height: 12 }} />
         <span style={{ color: 'var(--ink-600)', fontWeight: 600 }}>
-          {isEdit ? campaign?.code : t.campaigns.newCampaign}
+          {isEdit ? campaign?.code : t.campaigns.new}
         </span>
       </div>
 
@@ -135,7 +135,7 @@ export default function CampaignFormPage({ mode = 'create', campaign, onNav }) {
       <div className="page__head" style={{ marginBottom: 28 }}>
         <div>
           <div className="page__title">
-            {isEdit ? t.common.edit : t.campaigns.newCampaign}
+            {isEdit ? t.common.edit : t.campaigns.new}
             <span style={{ color: 'var(--ink-400)', fontWeight: 400, fontSize: '.7em', marginLeft: 8 }}>
               / {isEdit ? 'Edit shipment' : 'New shipment'}
             </span>
@@ -204,7 +204,7 @@ export default function CampaignFormPage({ mode = 'create', campaign, onNav }) {
                 <input className="input mono" value={data.code} onChange={e => upd('code', e.target.value)} />
               </div>
               <div className="field" style={{ marginBottom: 0 }}>
-                <label className="label">{t.campaigns.wizard.fields.maxWeight} <span className="opt">/ {t.common.optional}</span><HelpTip text="Poids maximum accepté pour cette cargaison. Permet de visualiser le taux de remplissage." /></label>
+                <label className="label">{t.campaigns.wizard.fields.maxCapacity} <span className="opt">/ {t.common.optional}</span><HelpTip text="Poids maximum accepté pour cette cargaison. Permet de visualiser le taux de remplissage." /></label>
                 <input className="input mono" type="number" value={data.capacityKg}
                   onChange={e => upd('capacityKg', e.target.value)} placeholder="ex: 500" />
               </div>
@@ -289,7 +289,7 @@ export default function CampaignFormPage({ mode = 'create', campaign, onNav }) {
                 { label: /* TODO: add i18n key for "Libellé" */ 'Libellé',                                     value: route?.label || '—' },
                 { label: t.campaigns.fields.departure,                                                         value: data.depDate || '—' },
                 { label: t.campaigns.fields.arrival,                                                           value: data.arrDate || '—' },
-                { label: t.campaigns.wizard.review.labels.max,                                                 value: data.capacityKg ? `${data.capacityKg} kg` : '—' },
+                { label: t.campaigns.wizard.fields.maxCapacity,                                                value: data.capacityKg ? `${data.capacityKg} kg` : '—' },
               ].map(({ label, value }) => (
                 <div key={label} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12 }}>
                   <span style={{ color: 'var(--ink-400)' }}>{label}</span>

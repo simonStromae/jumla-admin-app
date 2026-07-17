@@ -19,7 +19,7 @@ function AirlineModal({ airline, onSave, onClose }) {
   const upd = (k, v) => setForm(f => ({ ...f, [k]: v }));
 
   async function handleSave() {
-    if (!form.name.trim()) { setErr(t.airlines.form.name + ' *'); return; /* TODO: no exact validation message key */ }
+    if (!form.name.trim()) { setErr(t.airlines.headers.name + ' *'); return; }
     setSaving(true);
     setErr('');
     const url    = airline ? `/api/airlines/${airline.id}` : '/api/airlines';
@@ -39,7 +39,7 @@ function AirlineModal({ airline, onSave, onClose }) {
             <I.Plane style={{ width: 16, height: 16, color: 'var(--brand-600)' }} />
           </div>
           <div style={{ flex: 1, fontSize: 15, fontWeight: 700 }}>
-            {airline ? t.common.edit : t.airlines.newAirline}
+            {airline ? t.common.edit : t.airlines.new}
           </div>
           <button onClick={onClose} style={{ width: 28, height: 28, borderRadius: 999, border: '1px solid var(--border)', background: 'white', cursor: 'pointer', fontSize: 16, color: 'var(--ink-400)', display: 'grid', placeItems: 'center' }}>×</button>
         </div>
@@ -48,13 +48,13 @@ function AirlineModal({ airline, onSave, onClose }) {
           {err && <div style={{ padding: '10px 14px', background: 'var(--bad-50)', border: '1px solid var(--bad-200)', borderRadius: 8, fontSize: 13, color: 'var(--bad-700)' }}>{err}</div>}
 
           <div className="field">
-            <label className="label">{t.airlines.form.name} *</label>
+            <label className="label">{t.airlines.headers.name} *</label>
             <input className="input" value={form.name} onChange={e => upd('name', e.target.value)} placeholder="Ex: Lufthansa Cargo" />
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
             <div className="field">
-              <label className="label">{t.airlines.form.code}</label>
+              <label className="label">{t.airlines.headers.iata}</label>
               <input className="input" value={form.iata} onChange={e => upd('iata', e.target.value.toUpperCase())} placeholder="Ex: LH" maxLength={3} />
             </div>
             <div className="field">
@@ -138,7 +138,7 @@ export default function AirlinesScreen() {
           <p className="page-sub">Gérez les transporteurs utilisés dans vos cargaisons</p>
         </div>
         <button className="btn btn--brand" onClick={() => setModal({})}>
-          <I.Plus style={{ width: 14, height: 14 }} /> {t.airlines.newAirline}
+          <I.Plus style={{ width: 14, height: 14 }} /> {t.airlines.new}
         </button>
       </div>
 
@@ -153,11 +153,11 @@ export default function AirlinesScreen() {
       ) : airlines.length === 0 ? (
         <div className="card" style={{ padding: 40, textAlign: 'center' }}>
           <div style={{ fontSize: 32, marginBottom: 12 }}>✈️</div>
-          <div style={{ fontSize: 15, fontWeight: 600, color: 'var(--ink-700)', marginBottom: 6 }}>{t.airlines.noAirlines}</div>
+          <div style={{ fontSize: 15, fontWeight: 600, color: 'var(--ink-700)', marginBottom: 6 }}>{t.airlines.empty}</div>
           {/* TODO: no exact key for empty-state description */}
           <div style={{ fontSize: 13, color: 'var(--ink-400)', marginBottom: 20 }}>Commencez par ajouter les compagnies qui transportent vos cargaisons.</div>
           <button className="btn btn--brand" onClick={() => setModal({})}>
-            <I.Plus style={{ width: 14, height: 14 }} /> {t.airlines.newAirline}
+            <I.Plus style={{ width: 14, height: 14 }} /> {t.airlines.new}
           </button>
         </div>
       ) : (

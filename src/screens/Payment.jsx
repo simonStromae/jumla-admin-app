@@ -206,7 +206,7 @@ function PaymentView({ data, onConfirm }) {
           disabled={!acknowledged}
           onClick={onConfirm}
         >
-          {t.payments.sendInterac}
+          {'Payer par Interac'}
         </button>
 
         {/* TODO: no translation key for support/help text */}

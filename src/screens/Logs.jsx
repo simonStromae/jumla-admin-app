@@ -7,7 +7,7 @@ export default function LogsScreen({ onNav }) {
   const t = useAdminT();
 
   const CATEGORIES = [
-    { id: '',         label: t.logs.filterAll },
+    { id: '',         label: t.logs.categories.all },
     { id: 'payment',  label: t.nav.payments },
     { id: 'parcel',   label: t.nav.parcels },
     { id: 'campaign', label: t.nav.campaigns },
@@ -123,10 +123,10 @@ export default function LogsScreen({ onNav }) {
         <table className="tbl">
           <thead>
             <tr>
-              <th style={{ width: 150 }}>{t.logs.table.timestamp}</th>
-              <th style={{ width: 120 }}>{t.logs.table.user}</th>
-              <th style={{ width: 160 }}>{t.logs.table.action}</th>
-              <th>{t.logs.table.details}</th>
+              <th style={{ width: 150 }}>{t.logs.headers.timestamp}</th>
+              <th style={{ width: 120 }}>{t.logs.headers.user}</th>
+              <th style={{ width: 160 }}>{t.logs.headers.action}</th>
+              <th>{t.logs.headers.details}</th>
               <th style={{ width: 110 }}>{t.common.category}</th>
             </tr>
           </thead>
@@ -134,7 +134,7 @@ export default function LogsScreen({ onNav }) {
             {visible.length === 0 && (
               <tr>
                 <td colSpan={5} style={{ textAlign: 'center', padding: '32px 0', color: 'var(--ink-400)', fontSize: 13 }}>
-                  {t.logs.noLogs}
+                  {t.logs.empty}
                 </td>
               </tr>
             )}

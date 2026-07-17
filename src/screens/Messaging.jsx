@@ -279,7 +279,7 @@ export default function MessagingScreen({ onNav, campaignId }) {
             </div>
             <div style={{ display: 'flex', gap: 6 }}>
               <button className={'btn btn--sm ' + (filter === 'all' ? 'btn--soft' : 'btn--ghost')} style={{ flex: 1, justifyContent: 'center' }} onClick={() => setFilter('all')}>{t.parcels.filterAll}</button>
-              <button className={'btn btn--sm ' + (filter === 'unpaid' ? 'btn--soft' : 'btn--ghost')} style={{ flex: 1, justifyContent: 'center' }} onClick={() => setFilter('unpaid')}>{t.parcels.filterUnpaid}</button>
+              <button className={'btn btn--sm ' + (filter === 'unpaid' ? 'btn--soft' : 'btn--ghost')} style={{ flex: 1, justifyContent: 'center' }} onClick={() => setFilter('unpaid')}>{'Impayés'}</button>
             </div>
           </div>
 
@@ -288,7 +288,7 @@ export default function MessagingScreen({ onNav, campaignId }) {
             {!loading && filtered.length === 0 && (
               <div style={{ padding: 40, textAlign: 'center', color: 'var(--ink-400)' }}>
                 <I.Box style={{ width: 32, height: 32, opacity: .3, marginBottom: 8 }} />
-                <div style={{ fontSize: 13 }}>{t.parcels.noParcels}</div>
+                <div style={{ fontSize: 13 }}>{t.parcels.empty}</div>
               </div>
             )}
             {filtered.map(p => {

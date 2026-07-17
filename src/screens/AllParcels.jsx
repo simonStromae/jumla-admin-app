@@ -101,11 +101,11 @@ export default function AllParcelsScreen({ onNav, initialSearch = '' }) {
           <div className="kpi__value">{allParcels.reduce((a, p) => a + p.actualKg, 0).toFixed(0)} <span style={{ fontSize: 14, color: 'var(--ink-400)' }}>kg</span></div>
         </div>
         <div className="kpi" style={{ background: 'var(--ok-50)', borderColor: 'var(--ok-100)' }}>
-          <div className="kpi__label" style={{ color: 'var(--ok-700)' }}>{t.campaigns.kpi.paid}</div>
+          <div className="kpi__label" style={{ color: 'var(--ok-700)' }}>{t.paymentStatus.completed}</div>
           <div className="kpi__value" style={{ color: 'var(--ok-700)' }}>{allParcels.filter(p => p.paid === 'paid').length}</div>
         </div>
         <div className="kpi" style={{ background: 'var(--bad-50)', borderColor: 'var(--bad-100)' }}>
-          <div className="kpi__label" style={{ color: 'var(--bad-700)' }}>{t.parcels.filterUnpaid}</div>
+          <div className="kpi__label" style={{ color: 'var(--bad-700)' }}>{'Impayés'}</div>
           <div className="kpi__value" style={{ color: 'var(--bad-700)' }}>{allParcels.filter(p => p.paid === 'unpaid').length}</div>
         </div>
         <div className="kpi" style={{ background: 'var(--warn-50)', borderColor: 'var(--warn-100)' }}>
@@ -118,7 +118,7 @@ export default function AllParcelsScreen({ onNav, initialSearch = '' }) {
       <div className="toolbar">
         <div className="tabs">
           <button className={'tab ' + (tab === 'all' ? 'is-active' : '')} onClick={() => setTab('all')}>{t.parcels.filterAll} <span className="count">{allParcels.length}</span></button>
-          <button className={'tab ' + (tab === 'unpaid' ? 'is-active' : '')} onClick={() => setTab('unpaid')}>{t.parcels.filterUnpaid} <span className="count">{allParcels.filter(p => p.paid === 'unpaid').length}</span></button>
+          <button className={'tab ' + (tab === 'unpaid' ? 'is-active' : '')} onClick={() => setTab('unpaid')}>{'Impayés'} <span className="count">{allParcels.filter(p => p.paid === 'unpaid').length}</span></button>
           {/* TODO: no translation key for "En cours" tab */}
           <button className={'tab ' + (tab === 'pending' ? 'is-active' : '')} onClick={() => setTab('pending')}>En cours</button>
           {/* TODO: no translation key for "À livrer" tab */}

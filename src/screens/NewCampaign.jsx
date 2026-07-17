@@ -35,7 +35,7 @@ export default function NewCampaignWizard({ onClose, onCreated, mode = 'create',
   }));
 
   const steps = [
-    { id: 'route',    label: t.campaigns.wizard.steps.routes,  sub: /* TODO: i18n */ 'Trajet & dates' },
+    { id: 'route',    label: t.campaigns.wizard.steps.route,   sub: /* TODO: i18n */ 'Trajet & dates' },
     { id: 'capacity', label: /* TODO: i18n */ 'Capacité',       sub: /* TODO: i18n */ 'Volumes' },
     { id: 'pricing',  label: t.campaigns.wizard.steps.pricing, sub: /* TODO: i18n */ 'Grille & frais' },
     { id: 'costs',    label: /* TODO: i18n */ 'Coûts',          sub: /* TODO: i18n */ 'Internes' },
@@ -49,7 +49,7 @@ export default function NewCampaignWizard({ onClose, onCreated, mode = 'create',
   return (
     <Modal width={920} onClose={onClose} ariaLabel={/* TODO: i18n */ 'Wizard nouvelle cargaison'}
       title={
-        <span>{mode === 'edit' ? /* TODO: i18n */ 'Modifier la cargaison' : t.campaigns.newCampaign}
+        <span>{mode === 'edit' ? /* TODO: i18n */ 'Modifier la cargaison' : t.campaigns.new}
         </span>
       }
       sub={mode === 'edit' ? data.code : /* TODO: i18n */ 'Configurez votre cargaison étape par étape'}
@@ -61,7 +61,7 @@ export default function NewCampaignWizard({ onClose, onCreated, mode = 'create',
           <span style={{ fontSize: 12, color: 'var(--ink-400)' }}>Étape {step + 1} / {steps.length}</span>
           {step < steps.length - 1
             ? <button className="btn btn--brand" onClick={() => setStep(step + 1)}>{t.common.next}<I.ArrowRight /></button>
-            : <button className="btn btn--brand" onClick={onCreated}><I.Check />{mode === 'edit' ? t.common.save : t.campaigns.wizard.submit}</button>}
+            : <button className="btn btn--brand" onClick={onCreated}><I.Check />{mode === 'edit' ? t.common.save : t.campaigns.wizard.actions.create}</button>}
         </>
       }>
 
@@ -187,7 +187,7 @@ function StepCapacity({ data, upd }) {
 
       <div className="field-row field-row--2">
         <div className="field">
-          <label className="label">{t.campaigns.detail.fields.maxCapacity}</label>
+          <label className="label">{t.campaigns.wizard.fields.maxCapacity}</label>
           <div style={{ position: 'relative' }}>
             <input className="input mono" type="number" value={data.capacityMax} onChange={e => upd('capacityMax', +e.target.value)} style={{ paddingRight: 36 }} />
             <span style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--ink-400)', fontSize: 12 }}>kg</span>
@@ -308,7 +308,7 @@ function StepCosts({ data, upd }) {
 
       <div className="field-row field-row--3">
         {[
-          { label: t.costs.categories.transport, key: 'internalTransport' },
+          { label: 'Transport', key: 'internalTransport' },
           { label: t.costs.categories.customs, key: 'internalCustoms' },
           { label: /* TODO: i18n - no key for warehouse/entrepôt */ 'Entrepôt & logistique', key: 'internalWarehouse' },
         ].map(({ label, key }) => (
@@ -420,7 +420,7 @@ function StepReview({ data, route }) {
   const total = data.internalTransport + data.internalCustoms + data.internalWarehouse;
   return (
     <div>
-      <h4 style={{ margin: '0 0 6px', fontSize: 15, fontWeight: 700, letterSpacing: '-.01em' }}>{t.campaigns.wizard.review.title}</h4>
+      <h4 style={{ margin: '0 0 6px', fontSize: 15, fontWeight: 700, letterSpacing: '-.01em' }}>{t.campaigns.wizard.steps.review}</h4>
       {/* TODO: i18n - no key for this description */}
       <p style={{ margin: '0 0 18px', color: 'var(--ink-400)', fontSize: 13 }}>Vérifiez les informations avant de créer la cargaison.</p>
 
@@ -437,7 +437,7 @@ function StepReview({ data, route }) {
             { label: /* TODO: i18n */ 'Transit',         value: `${route?.transitDays} jours` },
             { label: t.campaigns.fields.departure,             value: data.depDate },
             { label: t.campaigns.fields.arrival,               value: data.arrDate },
-            { label: t.campaigns.detail.fields.maxCapacity,    value: `${data.capacityMax.toLocaleString('fr')} kg` },
+            { label: t.campaigns.wizard.fields.maxCapacity,    value: `${data.capacityMax.toLocaleString('fr')} kg` },
             { label: /* TODO: i18n */ 'Capacité réservée', value: `${data.capacityReserved.toLocaleString('fr')} kg` },
           ].map(({ label, value }) => (
             <div key={label}>
@@ -460,7 +460,7 @@ function StepReview({ data, route }) {
           {/* TODO: i18n - no key for "Coûts internes (admin)" */}
           <div className="section-title" style={{ marginBottom: 8 }}>Coûts internes (admin)</div>
           <div className="mono" style={{ fontSize: 13, color: 'var(--ink-700)' }}>
-            {t.costs.categories.transport} <strong>{data.internalTransport.toLocaleString('fr')}</strong> + {t.costs.categories.customs} <strong>{data.internalCustoms.toLocaleString('fr')}</strong> + {/* TODO: i18n - no key for Entrepôt */}Entrepôt <strong>{data.internalWarehouse.toLocaleString('fr')}</strong> = <strong style={{ color: 'var(--ink-900)' }}>{total.toLocaleString('fr')} {data.currency}</strong>
+            {'Transport'} <strong>{data.internalTransport.toLocaleString('fr')}</strong> + {t.costs.categories.customs} <strong>{data.internalCustoms.toLocaleString('fr')}</strong> + {/* TODO: i18n - no key for Entrepôt */}Entrepôt <strong>{data.internalWarehouse.toLocaleString('fr')}</strong> = <strong style={{ color: 'var(--ink-900)' }}>{total.toLocaleString('fr')} {data.currency}</strong>
           </div>
         </div>
       </div>

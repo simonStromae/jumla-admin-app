@@ -297,12 +297,12 @@ export default function ParcelFormPage({ mode = 'create', parcel, campaign, onNa
               <I.Users style={{ width: 14, height: 14, color: 'var(--brand-600)' }} /> {t.clients.title} / Expéditeur
             </div>
             <div className="field" style={{ marginBottom: 8 }}>
-              <label className="label">{t.clients.searchPlaceholder}</label>
+              <label className="label">{'Rechercher un client…'}</label>
               <div style={{ position: 'relative' }}>
                 <I.Search style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', width: 13, height: 13, color: 'var(--ink-400)' }} />
                 <input
                   className="input"
-                  placeholder={t.clients.searchPlaceholder}
+                  placeholder={'Rechercher un client…'}
                   value={clientSearch}
                   onChange={e => setClientSearch(e.target.value)}
                   style={{ paddingLeft: 32 }}
@@ -311,7 +311,7 @@ export default function ParcelFormPage({ mode = 'create', parcel, campaign, onNa
             </div>
             <div style={{ display: 'grid', gap: 6, maxHeight: 180, overflowY: 'auto' }}>
               {filteredClients.length === 0 && (
-                <div style={{ fontSize: 12, color: 'var(--ink-400)', padding: '8px 0', textAlign: 'center' }}>{t.clients.noClients}</div>
+                <div style={{ fontSize: 12, color: 'var(--ink-400)', padding: '8px 0', textAlign: 'center' }}>{t.clients.empty}</div>
               )}
               {filteredClients.map(c => (
                 <label key={c.id} style={{
@@ -331,7 +331,7 @@ export default function ParcelFormPage({ mode = 'create', parcel, campaign, onNa
             </div>
             {clients.length === 0 && (
               <div style={{ marginTop: 8, fontSize: 12, color: 'var(--ink-400)', textAlign: 'center' }}>
-                {t.clients.noClients}. <a style={{ color: 'var(--brand-600)', cursor: 'pointer', fontWeight: 600 }} onClick={() => onNav('/admin/clients')}>{t.clients.newClient} →</a>
+                {t.clients.empty}. <a style={{ color: 'var(--brand-600)', cursor: 'pointer', fontWeight: 600 }} onClick={() => onNav('/admin/clients')}>{t.clients.new} →</a>
               </div>
             )}
           </div>

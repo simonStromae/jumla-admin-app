@@ -15,7 +15,7 @@ export default function AllSlipsScreen({ onNav }) {
   };
 
   const PAY_STATUS = {
-    paid:    { l: t.paymentStatus.paid,                          cls: 'ok' },
+    paid:    { l: t.paymentStatus.completed,                     cls: 'ok' },
     pending: { l: t.paymentStatus.pending,                       cls: 'warn' },
     unpaid:  { l: /* TODO: no exact i18n key for "Impayé" */ 'Impayé', cls: 'bad' },
   };

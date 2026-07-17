@@ -63,7 +63,7 @@ export default function ClientsScreen({ onNav }) {
         </div>
         <div className="page__actions">
           <button className="btn btn--ghost"><I.Download />{t.parcels.exportCsv}</button>
-          {can('clients', 'create') && <button className="btn btn--brand" onClick={() => setEditing('new')}><I.UserPlus />{t.clients.newClient}</button>}
+          {can('clients', 'create') && <button className="btn btn--brand" onClick={() => setEditing('new')}><I.UserPlus />{t.clients.new}</button>}
         </div>
       </div>
 
@@ -71,7 +71,7 @@ export default function ClientsScreen({ onNav }) {
         <div className="spacer" />
         <div style={{ position: 'relative' }}>
           <I.Search style={{ position: 'absolute', left: 10, top: 9, width: 14, height: 14, color: 'var(--ink-400)' }} />
-          <input className="input input--sm" placeholder={t.clients.searchPlaceholder} style={{ width: 260, paddingLeft: 32 }} />
+          <input className="input input--sm" placeholder={'Rechercher un client…'} style={{ width: 260, paddingLeft: 32 }} />
         </div>
         {/* TODO: no i18n key for 'Filtres' */}
         <button className="btn btn--ghost btn--sm"><I.Filter />Filtres</button>
@@ -103,7 +103,7 @@ export default function ClientsScreen({ onNav }) {
       ) : clients.length === 0 ? (
         <div style={{ padding: 48, textAlign: 'center', color: 'var(--ink-400)', fontSize: 14 }}>
           <I.Users style={{ width: 32, height: 32, marginBottom: 12, opacity: 0.3 }} />
-          <div style={{ fontWeight: 600, marginBottom: 4 }}>{t.clients.noClients}</div>
+          <div style={{ fontWeight: 600, marginBottom: 4 }}>{t.clients.empty}</div>
           {/* TODO: no i18n key for empty-state description */}
           <div style={{ fontSize: 12 }}>Les clients qui se créent un compte apparaissent ici.</div>
         </div>
@@ -206,11 +206,11 @@ function ClientsListView({ clients, setOpen, onToggleStatus, page, pageSize }) {
       <thead>
         <tr>
           <th style={{ width: 32, borderRadius: 0 }}><input type="checkbox" style={{ accentColor: 'var(--brand-500)' }} /></th>
-          <th>{t.clients.table.name}</th>
+          <th>{t.common.name}</th>
           <th>{t.common.status}</th>
           <th>{t.common.city}</th>
           <th>{t.common.phone}</th>
-          <th style={{ textAlign: 'center' }}>{t.clients.table.parcels}</th>
+          <th style={{ textAlign: 'center' }}>{t.nav.parcels}</th>
           <th style={{ textAlign: 'right' }}>{t.common.weight}</th>
           {/* TODO: no i18n key for 'CA total' */}
           <th style={{ textAlign: 'right' }}>CA total</th>
@@ -405,7 +405,7 @@ function ClientDrawer({ cl, onClose, onEdit, onNav, onStatusChange, onDeleted })
               )}
             </div>
             <div style={{ fontSize: 12, color: 'var(--ink-400)', marginTop: 2 }}>
-              {t.clients.profile.info.memberSince} {since}
+              {'Membre depuis'} {since}
             </div>
             {cl.city && cl.city !== '—' && (
               <div style={{ marginTop: 6, fontSize: 12.5, color: 'var(--ink-600)', fontWeight: 500 }}>{cl.city}</div>
@@ -417,7 +417,7 @@ function ClientDrawer({ cl, onClose, onEdit, onNav, onStatusChange, onDeleted })
           {loading ? [1,2,3].map(i => (
             <div key={i}><Skel w="50%" h={10} style={{ marginBottom: 6 }} /><Skel w="70%" h={20} /></div>
           )) : [
-            { label: t.clients.profile.info.totalParcels, value: parcels.length },
+            { label: 'Total colis', value: parcels.length },
             // TODO: no i18n key for 'CA total'; using analytics.kpi.revenue as closest match
             { label: t.analytics.kpi.revenue,             value: totalAmt.toLocaleString('fr') + ' CAD', color: 'var(--ok-600)' },
             // TODO: no i18n key for 'Impayés'
@@ -502,7 +502,7 @@ function ClientDrawer({ cl, onClose, onEdit, onNav, onStatusChange, onDeleted })
 
         <div style={{ padding: '16px 22px' }}>
           <div className="section-title">
-            {t.clients.profile.parcels.title} <span className="section-title__count">{parcels.length}</span>
+            {t.clients.tabs.history} <span className="section-title__count">{parcels.length}</span>
           </div>
           {loading ? (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
@@ -510,7 +510,7 @@ function ClientDrawer({ cl, onClose, onEdit, onNav, onStatusChange, onDeleted })
             </div>
           ) : parcels.length === 0 ? (
             <div style={{ fontSize: 13, color: 'var(--ink-400)', padding: '12px 0' }}>
-              {t.clients.profile.parcels.noParcel}
+              {t.clients.emptyHistory}
             </div>
           ) : (
             <table className="tbl tbl--compact">
@@ -545,7 +545,7 @@ function ClientDrawer({ cl, onClose, onEdit, onNav, onStatusChange, onDeleted })
                     </td>
                     <td>
                       {p.displayStatus === 'paid' && (
-                        <span className="badge badge--dot badge--ok">{t.paymentStatus.paid}</span>
+                        <span className="badge badge--dot badge--ok">{t.paymentStatus.completed}</span>
                       )}
                       {/* TODO: no i18n key for 'Payé · Suppl.' */}
                       {p.displayStatus === 'paid_supp_pending' && (
@@ -743,7 +743,7 @@ function WhatsappModal({ client, parcels, onClose }) {
       <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
         {parcels.length === 0 ? (
           <div style={{ padding: 16, background: 'var(--bg-soft)', borderRadius: 8, fontSize: 13, color: 'var(--ink-500)', textAlign: 'center' }}>
-            {t.clients.profile.parcels.noParcel}
+            {t.clients.emptyHistory}
           </div>
         ) : (
           <div>
@@ -761,7 +761,7 @@ function WhatsappModal({ client, parcels, onClose }) {
                   <span className="mono" style={{ fontSize: 12, fontWeight: 700, color: 'var(--brand-700)' }}>{p.trackingCode}</span>
                   <span style={{ fontSize: 12, color: 'var(--ink-500)', flex: 1 }}>{p.campaign.code}</span>
                   <span className={'badge badge--dot badge--' + (p.paid ? 'ok' : 'warn')} style={{ fontSize: 10.5 }}>
-                    {p.paid ? t.paymentStatus.paid : t.paymentStatus.pending}
+                    {p.paid ? t.paymentStatus.completed : t.paymentStatus.pending}
                   </span>
                 </label>
               ))}

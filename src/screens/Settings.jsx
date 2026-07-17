@@ -244,25 +244,25 @@ function SectionCompany() {
 
   return (
     <>
-      <SettingsCard title={t.settings.company.title} sub={/* TODO i18n */ "Ces informations apparaissent sur vos bordereaux et messages clients."}>
+      <SettingsCard title={t.settingsTabs.company} sub="Ces informations apparaissent sur vos bordereaux et messages clients.">
         <div className="field-row field-row--2">
-          <div className="field"><label className="label">{t.settings.company.name}</label><input className="input" value={fields.company_name} onChange={set('company_name')} /></div>
+          <div className="field"><label className="label">{t.settings.company.companyName}</label><input className="input" value={fields.company_name} onChange={set('company_name')} /></div>
           <div className="field"><label className="label">{/* TODO i18n: Raison sociale */}Raison sociale</label><input className="input" value={fields.company_legal} onChange={set('company_legal')} /></div>
         </div>
         <div className="field-row field-row--2">
-          <div className="field"><label className="label">{t.settings.company.phone} Douala</label><input className="input mono" value={fields.phone_douala} onChange={set('phone_douala')} placeholder="+237 6** ** ** **" /></div>
-          <div className="field"><label className="label">{t.settings.company.phone} Montréal</label><input className="input mono" value={fields.phone_montreal} onChange={set('phone_montreal')} placeholder="+1 514 *** ****" /></div>
+          <div className="field"><label className="label">{t.common.phone} Douala</label><input className="input mono" value={fields.phone_douala} onChange={set('phone_douala')} placeholder="+237 6** ** ** **" /></div>
+          <div className="field"><label className="label">{t.common.phone} Montréal</label><input className="input mono" value={fields.phone_montreal} onChange={set('phone_montreal')} placeholder="+1 514 *** ****" /></div>
         </div>
         <div className="field">
           <label className="label">{/* TODO i18n: WhatsApp contact client */}WhatsApp contact client <span className="opt">/ numéro affiché aux clients pour support</span></label>
           <input className="input mono" value={fields.contact_whatsapp} onChange={set('contact_whatsapp')} placeholder="+1 514 *** ****" />
         </div>
         <div className="field">
-          <label className="label">{t.settings.company.address}</label>
+          <label className="label">{t.common.address}</label>
           <input className="input" value={fields.warehouse_addr} onChange={set('warehouse_addr')} />
         </div>
         <div className="field">
-          <label className="label">{t.settings.company.email} <span className="opt">/ {/* TODO i18n */}affiché sur toutes les factures et instructions de paiement</span></label>
+          <label className="label">{t.common.email} <span className="opt">/ {/* TODO i18n */}affiché sur toutes les factures et instructions de paiement</span></label>
           <input className="input mono" value={fields.payment_email} onChange={set('payment_email')} placeholder="incjumla@gmail.com" />
         </div>
         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, alignItems: 'center', marginTop: 4 }}>
@@ -422,9 +422,9 @@ function SectionRoutes({ routes, onEdit, onDetail }) {
   const t = useAdminT();
   return (
     <SettingsCard
-      title={t.settings.routes.title}
-      sub={/* TODO i18n: "Définissez les trajets que vous opérez. Chaque cargaison est rattachée à une route." */ "Définissez les trajets que vous opérez. Chaque cargaison est rattachée à une route."}
-      actions={<button className="btn btn--brand btn--sm" onClick={() => onEdit('new')}><I.Plus />{t.settings.routes.newRoute}</button>}>
+      title={t.settingsTabs.routes}
+      sub="Définissez les trajets que vous opérez. Chaque cargaison est rattachée à une route."
+      actions={<button className="btn btn--brand btn--sm" onClick={() => onEdit('new')}><I.Plus />{t.settings.routes.new}</button>}>
       <div style={{ display: 'grid', gap: 10 }}>
         {routes.length === 0 && (
           <div style={{ padding: '32px 0', textAlign: 'center', color: 'var(--ink-400)', fontSize: 13 }}>
@@ -937,7 +937,7 @@ function SectionCampaigns() {
   }
 
   return (
-    <SettingsCard title={t.settings.campaigns.title} sub={/* TODO i18n: "Valeurs par défaut appliquées à la création d'une cargaison." */ "Valeurs par défaut appliquées à la création d'une cargaison."}>
+    <SettingsCard title={t.settingsTabs.campaigns} sub="Valeurs par défaut appliquées à la création d'une cargaison.">
       <div className="field-row field-row--2">
         <div className="field">
           <label className="label">{/* TODO i18n: Durée de transit par défaut */}Durée de transit par défaut</label>
@@ -1202,7 +1202,7 @@ function RouteEditModal({ editRoute, onClose, onSaved }) {
       {/* Header sticky */}
       <div style={{ position: 'sticky', top: 0, zIndex: 10, background: 'white', borderBottom: '1px solid var(--border)', padding: '0 24px', height: 56, display: 'flex', alignItems: 'center', gap: 16, flexShrink: 0 }}>
         <button className="btn btn--ghost btn--sm" onClick={onClose}><I.ArrowLeft />{t.common.back}</button>
-        <div style={{ flex: 1, fontSize: 15, fontWeight: 700 }}>{isNew ? t.settings.routes.newRoute : `${t.common.edit} — ${r?.label ?? r?.code ?? ''}`}</div>
+        <div style={{ flex: 1, fontSize: 15, fontWeight: 700 }}>{isNew ? t.settings.routes.new : `${t.common.edit} — ${r?.label ?? r?.code ?? ''}`}</div>
         {err && <span style={{ fontSize: 12, color: 'var(--bad-700)' }}>{err}</span>}
         <button className="btn btn--brand" onClick={handleSave} disabled={saving}><I.Check />{saving ? t.common.saving : t.common.save}</button>
       </div>
@@ -1214,8 +1214,8 @@ function RouteEditModal({ editRoute, onClose, onSaved }) {
         <SectionTitle>{/* TODO i18n: Informations de base */}Informations de base</SectionTitle>
         <div className="card" style={{ padding: 20, marginBottom: 20 }}>
           <div className="field-row field-row--2">
-            <div className="field"><label className="label">{t.settings.routes.from}</label><input className="input mono" value={origin} onChange={e => setOrigin(e.target.value.toUpperCase())} placeholder="DLA" maxLength={3} /></div>
-            <div className="field"><label className="label">{t.settings.routes.to}</label><input className="input mono" value={destination} onChange={e => setDestination(e.target.value.toUpperCase())} placeholder="YUL" maxLength={3} /></div>
+            <div className="field"><label className="label">{t.settings.routes.modal.iataOrigin}</label><input className="input mono" value={origin} onChange={e => setOrigin(e.target.value.toUpperCase())} placeholder="DLA" maxLength={3} /></div>
+            <div className="field"><label className="label">{t.settings.routes.modal.iataDest}</label><input className="input mono" value={destination} onChange={e => setDestination(e.target.value.toUpperCase())} placeholder="YUL" maxLength={3} /></div>
           </div>
           <div className="field">
             <label className="label">{/* TODO i18n: Libellé */}Libellé <span className="opt">/ {t.common.optional}</span></label>

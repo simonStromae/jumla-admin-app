@@ -321,7 +321,7 @@ export default function SlipDetailScreen({ id, onNav }) {
               </div>
               {slip.payment && (
                 <span className={'badge badge--dot badge--' + (slip.payment.status === 'completed' ? 'ok' : 'warn')}>
-                  {slip.payment.status === 'completed' ? t.paymentStatus.paid : t.paymentStatus.pending}
+                  {slip.payment.status === 'completed' ? t.paymentStatus.completed : t.paymentStatus.pending}
                 </span>
               )}
             </div>
@@ -336,9 +336,9 @@ export default function SlipDetailScreen({ id, onNav }) {
                   </span>
                 </div>
                 {slip.payment.status === 'completed' && (
-                  // TODO: no translation key for 'Réglé' — using t.paymentStatus.paid as close match
+                  // TODO: no translation key for 'Réglé' — using t.paymentStatus.completed as close match
                   <div style={{ padding: 10, background: 'var(--ok-50)', border: '1px solid var(--ok-100)', borderRadius: 6, fontSize: 11.5, color: 'var(--ok-700)' }}>
-                    <strong>{t.paymentStatus.paid}</strong>
+                    <strong>{t.paymentStatus.completed}</strong>
                     {slip.payment.paidAt && ` le ${new Date(slip.payment.paidAt).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}`}
                     {slip.payment.interacRef && ` · Réf. ${slip.payment.interacRef}`}
                   </div>

@@ -171,11 +171,11 @@ function CostModal({ campaign, currentCosts, onSave, onClose }) {
           {addingItem && (
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr auto', gap: 8, marginBottom: 10, alignItems: 'end' }}>
               <div className="field" style={{ marginBottom: 0 }}>
-                <label className="label">{t.costs.form.label}</label>
+                <label className="label">{t.costs.modal.description}</label>
                 <input className="input" value={newItemLabel} onChange={e => setNewItemLabel(e.target.value)} placeholder="Ex: Assurance, Emballage..." />
               </div>
               <div className="field" style={{ marginBottom: 0 }}>
-                <label className="label">{t.costs.form.amount} ({currency})</label>
+                <label className="label">{t.costs.modal.amount} ({currency})</label>
                 <input className="input" type="number" min="0" value={newItemAmt} onChange={e => setNewItemAmt(e.target.value)} placeholder="0" />
               </div>
               <button className="btn btn--brand btn--sm" onClick={addItem}>
@@ -209,7 +209,7 @@ function CostModal({ campaign, currentCosts, onSave, onClose }) {
         {/* Live calculation */}
         <div style={{ margin: '0 20px 16px', background: 'var(--bg-soft)', border: '1.5px solid var(--border)', borderRadius: 8, padding: '13px 16px' }}>
           {[
-            { l: t.costs.total,        v: total, color: 'var(--ink-900)' },
+            { l: t.common.total,        v: total, color: 'var(--ink-900)' },
             { l: /* TODO: i18n - no translation key for 'Marge brute' */ 'Marge brute', v: mg, color: mg >= 0 ? 'var(--ok-600)' : 'var(--bad-500)' },
           ].map(row => (
             <div key={row.l} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
@@ -238,7 +238,7 @@ function CostModal({ campaign, currentCosts, onSave, onClose }) {
           <button className="btn btn--ghost" onClick={onClose}>{t.common.cancel}</button>
           <button className="btn btn--primary" onClick={save}>
             <I.Check style={{ width: 14, height: 14 }} />
-            {t.costs.form.submit}
+            {t.common.save}
           </button>
         </div>
       </div>
@@ -325,7 +325,7 @@ export default function CostsScreen({ onNav }) {
       {/* KPIs */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 12, marginBottom: 18 }}>
         {/* TODO: i18n - KPI labels below (Marge brute, Taux de marge, Coût moyen / kg, Meilleure marge) have no matching translation keys */}
-        <CostKpi icon="📉" label={t.costs.total}              value={(allCosts / 1000).toFixed(1) + 'k'}  unit="CAD" color="var(--bad-500)" />
+        <CostKpi icon="📉" label={t.common.total}              value={(allCosts / 1000).toFixed(1) + 'k'}  unit="CAD" color="var(--bad-500)" />
         <CostKpi icon="📈" label="Marge brute"                value={(allMargin / 1000).toFixed(1) + 'k'} unit="CAD" color="var(--ok-500)" />
         <CostKpi icon="%" label="Taux de marge"               value={allPct}  unit="%" color={allPct >= 55 ? 'var(--ok-500)' : 'var(--warn-500)'} progress={allPct} />
         <CostKpi icon="⚖️" label="Coût moyen / kg"           value={costPerKg} unit="CAD/kg" color="var(--brand-500)" />
@@ -340,7 +340,7 @@ export default function CostsScreen({ onNav }) {
               {/* TODO: i18n - 'Cargaison' and 'CA encaissé' have no translation keys; 'Taux' has no key */}
               <th>Cargaison</th>
               <th style={{ textAlign: 'right' }}>CA encaissé</th>
-              <th style={{ textAlign: 'right' }}>{t.costs.total}</th>
+              <th style={{ textAlign: 'right' }}>{t.common.total}</th>
               <th style={{ textAlign: 'right' }}>Marge brute</th>
               <th style={{ textAlign: 'center' }}>Taux</th>
               <th style={{ textAlign: 'center', borderRadius: 0 }}>{t.costs.title}</th>
@@ -472,7 +472,7 @@ export default function CostsScreen({ onNav }) {
               </div>
               {[
                 { l: /* TODO: i18n - no key for 'CA encaissé' */ 'CA encaissé', v: rColl,  color: 'var(--brand-600)' },
-                { l: t.costs.total,                                              v: rCosts, color: 'var(--bad-500)'   },
+                { l: t.common.total,                                              v: rCosts, color: 'var(--bad-500)'   },
                 { l: /* TODO: i18n - no key for 'Marge brute' */ 'Marge brute', v: rMg,    color: 'var(--ok-600)'    },
               ].map(row => (
                 <div key={row.l} style={{ display: 'flex', justifyContent: 'space-between', padding: '5px 0', borderBottom: '1px solid var(--border-soft)', fontSize: 12.5 }}>
