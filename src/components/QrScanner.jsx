@@ -3,11 +3,12 @@ import { useEffect, useRef, useState } from 'react';
 
 let idCounter = 0;
 
-export default function QrScanner({ onScan, onClose }) {
+export default function QrScanner({ onScan, onClose, debug = false }) {
   const [status,    setStatus]    = useState('loading'); // loading | ready | error
   const [err,       setErr]       = useState('');
   const [scanMsg,   setScanMsg]   = useState('');       // brief feedback message
   const [scanOk,    setScanOk]    = useState(null);     // true=success false=bad-code null=idle
+  const [rawText,   setRawText]   = useState('');       // debug: last raw decoded value
   const instanceRef  = useRef(null);
   const mountedRef   = useRef(true);
   const scannerIdRef = useRef(`qr-scanner-${++idCounter}`);
@@ -41,13 +42,22 @@ export default function QrScanner({ onScan, onClose }) {
           return;
         }
 
-        const instance = new Html5Qrcode(id, { verbose: false });
+        const { Html5QrcodeSupportedFormats } = await import('html5-qrcode');
+        const instance = new Html5Qrcode(id, {
+          verbose: false,
+          // Focus only on QR codes — faster detection, avoids false positives
+          formatsToSupport: [Html5QrcodeSupportedFormats.QR_CODE],
+        });
         instanceRef.current = instance;
+
+        // Make qrbox responsive: 75% of the smaller viewport dimension, max 300
+        const side = Math.min(Math.round(Math.min(window.innerWidth, window.innerHeight) * 0.75), 300);
 
         await instance.start(
           { facingMode: 'environment' },
-          { fps: 10, qrbox: { width: 240, height: 240 } },
+          { fps: 15, qrbox: { width: side, height: side } },
           (text) => {
+            if (debug) setRawText(text);
             // Extract tracking code — strip URL prefix if QR encodes a URL
             const code = text.split('/').pop().replace(/[^A-Z0-9-]/gi, '').toUpperCase();
             if (!code) {
@@ -160,8 +170,16 @@ export default function QrScanner({ onScan, onClose }) {
             </div>
           ) : (
             <span style={{ color: 'rgba(255,255,255,.35)', fontSize: 11 }}>
-              QR Code · Code 128 · EAN-13 · Code 39
+              Centrez le QR code dans le cadre
             </span>
+          )}
+
+          {/* Debug panel — activated via debug prop */}
+          {debug && rawText && (
+            <div style={{ marginTop: 12, padding: '8px 12px', background: 'rgba(255,255,0,.1)', border: '1px solid rgba(255,255,0,.3)', borderRadius: 8, textAlign: 'left' }}>
+              <div style={{ color: 'rgba(255,255,0,.7)', fontSize: 10, fontWeight: 700, marginBottom: 4 }}>DEBUG — texte brut lu :</div>
+              <div style={{ color: '#FFF', fontSize: 11, fontFamily: 'monospace', wordBreak: 'break-all' }}>{rawText}</div>
+            </div>
           )}
         </div>
       )}

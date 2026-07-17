@@ -140,7 +140,7 @@ export default function ParcelLabelsScreen({ id, onNav }) {
                     <div className="lp-code">{code}</div>
                   </div>
                   <div className="lp-qr">
-                    <QRCode value={code} size={80} level="M" />
+                    <QRCode value={code} size={110} level="L" />
                   </div>
                 </div>
               </div>

@@ -80,6 +80,7 @@ export default function AgentScanPage() {
       {/* Camera scanner overlay */}
       {showScanner && (
         <QrScanner
+          debug
           onScan={(code) => { setShowScanner(false); setQuery(code); search(code); }}
           onClose={() => setShowScanner(false)}
         />
