@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
 import { prisma } from '@/src/lib/prisma';
 import { requirePermission } from '@/src/lib/api-auth';
-import { getTwilioSettings, twilioSendWhatsapp, formatWhatsappNumber } from '@/src/lib/twilio';
+import { getTwilioSettings, twilioSendWhatsapp, twilioSendWhatsappTemplate, formatWhatsappNumber } from '@/src/lib/twilio';
 
 export const dynamic = 'force-dynamic';
 
@@ -84,9 +84,27 @@ export async function POST(req: NextRequest) {
     try {
       const { accountSid, authToken, fromNumber } = await getTwilioSettings();
       if (accountSid && authToken && fromNumber) {
-        const firstName = name.split(' ')[0];
-        const msgBody = `Bonjour ${firstName} 👋\n\nVous êtes invité(e) à rejoindre *Jumla Shipping* en tant qu'${role === 'admin' ? 'Administrateur' : 'Agent'}.\n\n🔑 Mot de passe temporaire : *${tempPassword}*\n\n🌐 Connectez-vous sur : jumla.app\n\nVous devrez changer ce mot de passe à la première connexion.`;
-        await twilioSendWhatsapp(accountSid, authToken, fromNumber, formatWhatsappNumber(phone), msgBody);
+        const firstName  = name.split(' ')[0];
+        const roleLabel  = role === 'admin' ? 'Administrateur' : role === 'driver' ? 'Livreur' : 'Agent';
+        const to         = formatWhatsappNumber(phone);
+
+        // Use approved template if ContentSid is configured; fall back to free-form
+        const { TWILIO_TEMPLATES, buildContentVariables } = await import('@/src/lib/wa-template');
+        const tmpl      = TWILIO_TEMPLATES['invite_staff'];
+        const sidRow    = tmpl ? await prisma.setting.findUnique({ where: { key: tmpl.settingKey } }) : null;
+        const contentSid = sidRow?.value ?? null;
+
+        if (contentSid && tmpl) {
+          const contentVariables = buildContentVariables('invite_staff', {
+            first_name:    firstName,
+            role_label:    roleLabel,
+            temp_password: tempPassword,
+          }) ?? {};
+          await twilioSendWhatsappTemplate(accountSid, authToken, fromNumber, to, contentSid, contentVariables);
+        } else {
+          const msgBody = `Bonjour ${firstName} 👋\n\nVous êtes invité(e) à rejoindre *Jumla Shipping* en tant que *${roleLabel}*.\n\n🔑 Mot de passe temporaire : *${tempPassword}*\n\n🌐 Connectez-vous sur : jumla.app\n\nVous devrez changer ce mot de passe à la première connexion.`;
+          await twilioSendWhatsapp(accountSid, authToken, fromNumber, to, msgBody);
+        }
         whatsappSent = true;
       }
     } catch (e: any) {

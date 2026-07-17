@@ -83,6 +83,21 @@ Réservez votre place dès maintenant.
 Jumla Shipping`,
   },
 
+  invite_staff: {
+    label: 'Invitation compte (agent / livreur)',
+    vars:  ['{first_name}', '{role_label}', '{temp_password}'],
+    body:
+`Bonjour {first_name} 👋
+
+Vous êtes invité(e) à rejoindre *Jumla Shipping* en tant que *{role_label}*.
+
+🔑 Mot de passe temporaire : *{temp_password}*
+
+🌐 Connectez-vous sur : jumla.app
+
+Vous devrez changer ce mot de passe à la première connexion.`,
+  },
+
   // ── Automatiques ────────────────────────────────────────────────────────
   auto_status_parcel: {
     label:   'Statut colis',
@@ -239,6 +254,22 @@ Voici le récapitulatif de votre colis {{2}} :
 • Montant : {{4}} CAD
 
 Jumla Shipping`,
+  },
+  invite_staff: {
+    friendlyName: 'jumla_invite_staff_fr',
+    settingKey:   'WA_TMPL_SID_invite_staff',
+    varMap: { first_name: '1', role_label: '2', temp_password: '3' },
+    sampleVars: { '1': 'Jean', '2': 'Agent', '3': 'Jumla#1234' },
+    body:
+`Bonjour {{1}} 👋
+
+Vous êtes invité(e) à rejoindre *Jumla Shipping* en tant que *{{2}}*.
+
+🔑 Mot de passe temporaire : *{{3}}*
+
+🌐 Connectez-vous sur : jumla.app
+
+Vous devrez changer ce mot de passe à la première connexion.`,
   },
   auto_status_parcel: {
     friendlyName: 'jumla_status_colis_fr',
