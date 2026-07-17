@@ -58,13 +58,36 @@ export default function ParcelDetailScreen({ id, onNav }) {
   const [addingBl, setAddingBl] = useState(false);
   const [editingBlId,    setEditingBlId]    = useState(null);
   const [editingBlItems, setEditingBlItems] = useState([]);
+  const [drivers,      setDrivers]      = useState([]);
+  const [driverId,     setDriverId]     = useState('');
+  const [savingDriver, setSavingDriver] = useState(false);
 
   useEffect(() => {
     fetch('/api/parcels/' + id)
       .then(r => r.json())
-      .then(data => { setParcel(data); setLoading(false); })
+      .then(data => { setParcel(data); setDriverId(data.driverId ?? ''); setLoading(false); })
       .catch(() => setLoading(false));
+    fetch('/api/admin/drivers')
+      .then(r => r.json())
+      .then(d => Array.isArray(d) && setDrivers(d))
+      .catch(() => {});
   }, [id]);
+
+  const handleDriverAssign = async (newDriverId) => {
+    setSavingDriver(true);
+    const body = { driverId: newDriverId || null };
+    if (newDriverId) body.delivery = 'home';
+    const res = await fetch('/api/parcels/' + id, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+    if (res.ok) {
+      setDriverId(newDriverId);
+      if (newDriverId) setParcel(p => ({ ...p, delivery: 'home' }));
+    }
+    setSavingDriver(false);
+  };
 
   useEffect(() => {
     if (!id) return;
@@ -234,6 +257,35 @@ export default function ParcelDetailScreen({ id, onNav }) {
                   {parcel.recipPhone && <div className="mono" style={{ fontSize: 12, color: 'var(--ink-400)', marginTop: 2 }}>{parcel.recipPhone}</div>}
                 </div>
               </div>
+            </div>
+          )}
+
+          {/* Driver assignment */}
+          {drivers.length > 0 && (
+            <div className="card" style={{ padding: 14 }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <I.Truck style={{ width: 14, height: 14, color: 'var(--brand-500)' }} />
+                  <span style={{ fontSize: 10.5, textTransform: 'uppercase', letterSpacing: '.06em', fontWeight: 700, color: 'var(--ink-400)' }}>Livreur assigné</span>
+                </div>
+                <span className={'badge badge--dot badge--' + (parcel.delivery === 'home' ? 'info' : 'neutral')}>
+                  {parcel.delivery === 'home' ? 'Domicile' : 'Retrait entrepôt'}
+                </span>
+              </div>
+              <select
+                className="select"
+                value={driverId}
+                onChange={e => handleDriverAssign(e.target.value)}
+                disabled={savingDriver}
+              >
+                <option value="">— Aucun livreur —</option>
+                {drivers.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
+              </select>
+              {!driverId && (
+                <div style={{ fontSize: 11, color: 'var(--ink-400)', marginTop: 6 }}>
+                  Assigner un livreur bascule automatiquement la livraison en mode domicile.
+                </div>
+              )}
             </div>
           )}
 

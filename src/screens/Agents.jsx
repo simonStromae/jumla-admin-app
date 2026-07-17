@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import I from '../components/Icons.jsx';
 import { Bi, Avatar, Skel, Modal } from '../components/Shell.jsx';
+import PhoneInput from '../components/PhoneInput.jsx';
 import { Pagination, ViewToggle } from '../components/Pagination.jsx';
 import AgentFormModal from './AgentForm.jsx';
 import { useAdminT } from '../lib/useAdminT.js';
@@ -286,7 +287,7 @@ function DriverFormModal({ onClose, onSave }) {
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
           <div>
             <label className="label">Téléphone</label>
-            <input className="input" value={phone} onChange={e => setPhone(e.target.value)} placeholder="+1 514 000 0000" />
+            <PhoneInput value={phone} onChange={setPhone} />
           </div>
           <div>
             <label className="label">Ville</label>

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import I from '../components/Icons.jsx';
 import { Avatar, Modal } from '../components/Shell.jsx';
+import PhoneInput from '../components/PhoneInput.jsx';
 import { useAdminT } from '../lib/useAdminT.js';
 
 function getPermissionModules(t) {
@@ -259,7 +260,7 @@ export default function AgentFormModal({ mode = 'create', agent, onClose, onSave
             </div>
             <div className="field">
               <label className="label">{t.common.phone}</label>
-              <input className="input mono" value={data.phone} onChange={e => upd('phone', e.target.value)} placeholder="+237 6** ** ** **" />
+              <PhoneInput value={data.phone || ''} onChange={v => upd('phone', v)} />
             </div>
           </div>
 
