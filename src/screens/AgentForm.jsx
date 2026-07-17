@@ -383,20 +383,16 @@ export default function AgentFormModal({ mode = 'create', agent, onClose, onSave
                 <div style={{ padding: '14px 16px', borderBottom: '1px solid var(--ok-100)', background: 'var(--ok-50)' }}>
                   <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--ok-800)' }}>{'Agent créé avec succès ✓' /* TODO: add translation key */}</div>
                   <div style={{ fontSize: 11.5, color: 'var(--ok-700)', marginTop: 2 }}>
-                    {whatsappSent ? 'Mot de passe envoyé par WhatsApp' /* TODO: add translation key */ : 'WhatsApp indisponible — copiez le mot de passe ci-dessous' /* TODO: add translation key */}
+                    {whatsappSent ? 'Message WhatsApp envoyé — copiez aussi le mot de passe' /* TODO: add translation key */ : 'WhatsApp indisponible — copiez le mot de passe ci-dessous' /* TODO: add translation key */}
                   </div>
                 </div>
                 <div style={{ padding: 14 }}>
-                  {!whatsappSent && (
-                    <>
-                      <div style={{ fontSize: 12, color: 'var(--ink-600)', marginBottom: 8 }}>{"Communiquez ce mot de passe temporaire à l'agent :" /* TODO: add translation key */}</div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', background: 'var(--bg-soft)', borderRadius: 8, border: '1px solid var(--border)', fontFamily: 'var(--ff-mono)', fontSize: 18, fontWeight: 700, letterSpacing: 2 }}>
-                        <span style={{ flex: 1 }}>{tempPassword}</span>
-                        <button className="btn btn--ghost btn--xs" onClick={() => navigator.clipboard?.writeText(tempPassword)}>{'Copier' /* TODO: add translation key */}</button>
-                      </div>
-                      <div style={{ fontSize: 11, color: 'var(--ink-400)', marginTop: 8 }}>{"L'agent devra le changer à la première connexion." /* TODO: add translation key */}</div>
-                    </>
-                  )}
+                  <div style={{ fontSize: 12, color: 'var(--ink-600)', marginBottom: 8 }}>{"Mot de passe temporaire à communiquer à l'agent :" /* TODO: add translation key */}</div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', background: 'var(--bg-soft)', borderRadius: 8, border: '1px solid var(--border)', fontFamily: 'var(--ff-mono)', fontSize: 18, fontWeight: 700, letterSpacing: 2 }}>
+                    <span style={{ flex: 1 }}>{tempPassword}</span>
+                    <button className="btn btn--ghost btn--xs" onClick={() => navigator.clipboard?.writeText(tempPassword)}>{'Copier' /* TODO: add translation key */}</button>
+                  </div>
+                  <div style={{ fontSize: 11, color: 'var(--ink-400)', marginTop: 8 }}>{"L'agent devra le changer à la première connexion." /* TODO: add translation key */}</div>
                   <button className="btn btn--brand" style={{ width: '100%', justifyContent: 'center', marginTop: 12 }} onClick={onSave}>
                     {'Terminer' /* TODO: add translation key */}
                   </button>

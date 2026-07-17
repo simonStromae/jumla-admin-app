@@ -97,7 +97,7 @@ export async function POST(req: NextRequest) {
   return NextResponse.json({
     ok: true,
     id: user.id,
-    tempPassword: whatsappSent ? undefined : tempPassword,
+    tempPassword,
     whatsappSent,
     whatsappError: whatsappError || undefined,
   });
