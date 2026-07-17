@@ -168,6 +168,11 @@ export default function SlipDetailScreen({ id, onNav }) {
           <button className="btn btn--ghost" onClick={() => window.open('/admin/slips/' + slip.code + '/print', '_blank')}>
             <I.Print />{t.common.print}
           </button>
+          {slip.parcel?.id && (
+            <button className="btn btn--ghost" onClick={() => onNav('/admin/parcels/' + slip.parcel.id + '/labels')}>
+              <I.Tag />Étiquettes
+            </button>
+          )}
           {!['valide', 'libere', 'verifie', 'ecart'].includes(slip.status) && (
             <button className="btn btn--brand" onClick={validate} disabled={saving}>
               <I.Check />{saving ? '…' : t.blStatus.valide}
