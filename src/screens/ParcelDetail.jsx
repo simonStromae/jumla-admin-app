@@ -42,6 +42,16 @@ const BORDEREAU_STATUS = {
   libere:     { label: 'Libéré',     cls: 'ok' },
 };
 
+const DRIVER_WARNINGS = {
+  enr: { cls: 'neutral', icon: '📝', msg: 'La cargaison n\'a pas encore été expédiée — le colis est toujours à l\'entrepôt d\'origine.' },
+  exp: { cls: 'warn',    icon: '🚀', msg: 'La cargaison vient d\'être expédiée — le colis n\'est pas encore arrivé à destination.' },
+  tra: { cls: 'warn',    icon: '✈️', msg: 'La cargaison est en transit (en vol / en route) — le colis n\'a pas encore atterri.' },
+  apd: { cls: 'warn',    icon: '🛬', msg: 'La cargaison est arrivée au pays mais n\'a pas encore été dédouanée ni livrée à l\'entrepôt.' },
+  dou: { cls: 'warn',    icon: '🛃', msg: 'La cargaison est en dédouanement — la livraison ne pourra commencer qu\'après la libération.' },
+  ins: { cls: 'warn',    icon: '🔎', msg: 'La cargaison est en inspection douanière — date de libération incertaine.' },
+  ret: { cls: 'bad',     icon: '⚠️', msg: 'La cargaison est retenue par les douanes — livraison bloquée jusqu\'à résolution.' },
+};
+
 export default function ParcelDetailScreen({ id, onNav }) {
   const t = useAdminT();
   const [parcel,        setParcel]        = useState(null);
@@ -272,6 +282,30 @@ export default function ParcelDetailScreen({ id, onNav }) {
                   {parcel.delivery === 'home' ? 'Domicile' : 'Retrait entrepôt'}
                 </span>
               </div>
+
+              {/* Campaign status warning */}
+              {(() => {
+                const w = DRIVER_WARNINGS[campaign.status];
+                if (!w) return null;
+                const bg  = w.cls === 'bad'  ? 'var(--bad-50)'  : w.cls === 'warn' ? 'var(--warn-50)'  : 'var(--bg-soft)';
+                const bdr = w.cls === 'bad'  ? 'var(--bad-200)' : w.cls === 'warn' ? 'var(--warn-200)' : 'var(--border)';
+                const txt = w.cls === 'bad'  ? 'var(--bad-700)' : w.cls === 'warn' ? 'var(--warn-700)' : 'var(--ink-500)';
+                return (
+                  <div style={{ display: 'flex', gap: 8, alignItems: 'flex-start', padding: '8px 10px', borderRadius: 7, background: bg, border: '1px solid ' + bdr, marginBottom: 10 }}>
+                    <span style={{ fontSize: 14, flexShrink: 0, marginTop: 1 }}>{w.icon}</span>
+                    <div>
+                      <div style={{ fontSize: 11.5, fontWeight: 700, color: txt, marginBottom: 2 }}>
+                        Cargaison : {campaign.code ?? ''} — {campaign.status?.toUpperCase()}
+                      </div>
+                      <div style={{ fontSize: 11.5, color: txt, lineHeight: 1.4 }}>{w.msg}</div>
+                      <div style={{ fontSize: 11, color: txt, opacity: .8, marginTop: 3 }}>
+                        Vous pouvez pré-assigner un livreur, mais la livraison ne pourra être effectuée que lorsque la cargaison sera disponible.
+                      </div>
+                    </div>
+                  </div>
+                );
+              })()}
+
               <select
                 className="select"
                 value={driverId}
@@ -281,7 +315,8 @@ export default function ParcelDetailScreen({ id, onNav }) {
                 <option value="">— Aucun livreur —</option>
                 {drivers.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
               </select>
-              {!driverId && (
+              {savingDriver && <div style={{ fontSize: 11, color: 'var(--ink-400)', marginTop: 4 }}>Enregistrement…</div>}
+              {!driverId && !savingDriver && (
                 <div style={{ fontSize: 11, color: 'var(--ink-400)', marginTop: 6 }}>
                   Assigner un livreur bascule automatiquement la livraison en mode domicile.
                 </div>

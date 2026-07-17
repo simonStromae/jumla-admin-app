@@ -32,6 +32,16 @@ const STATUSES = [
 const STATUS_LABELS = {};
 STATUSES.forEach(g => g.items.forEach(s => { STATUS_LABELS[s.id] = s.label; }));
 
+const DRIVER_WARNINGS = {
+  enr: { color: '#6B7280', bg: '#F9FAFB', border: '#E5E7EB', icon: '📝', msg: 'La cargaison n\'a pas encore été expédiée.' },
+  exp: { color: '#92400E', bg: '#FFFBEB', border: '#FCD34D', icon: '🚀', msg: 'La cargaison est en cours d\'expédition — le colis n\'est pas encore arrivé.' },
+  tra: { color: '#92400E', bg: '#FFFBEB', border: '#FCD34D', icon: '✈️', msg: 'La cargaison est en transit — en vol ou en route.' },
+  apd: { color: '#92400E', bg: '#FFFBEB', border: '#FCD34D', icon: '🛬', msg: 'Arrivée au pays — dédouanement pas encore effectué.' },
+  dou: { color: '#92400E', bg: '#FFFBEB', border: '#FCD34D', icon: '🛃', msg: 'En dédouanement — livraison possible après libération uniquement.' },
+  ins: { color: '#92400E', bg: '#FFFBEB', border: '#FCD34D', icon: '🔎', msg: 'En inspection douanière — date de libération incertaine.' },
+  ret: { color: '#B91C1C', bg: '#FEF2F2', border: '#FECACA', icon: '⚠️', msg: 'Retenu aux douanes — livraison bloquée.' },
+};
+
 const STATUS_COLOR = {
   enr: '#1B4FD8', rec: '#0087A8', pre: '#059669', exp: '#7C3AED',
   tra: '#B45309', apd: '#0D9488', dou: '#DC2626', lib: '#059669',
@@ -73,13 +83,16 @@ export default function AgentParcelPage() {
   const handleDriverAssign = async (newDriverId) => {
     setSavingDriver(true); setError(''); setSuccess('');
     try {
+      const body = { driverId: newDriverId || null };
+      if (newDriverId) body.delivery = 'home';
       const res = await fetch(`/api/parcels/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ driverId: newDriverId || null }),
+        body: JSON.stringify(body),
       });
       if (!res.ok) { const d = await res.json(); setError(d.error || 'Erreur'); setSavingDriver(false); return; }
       setDriverId(newDriverId);
+      if (newDriverId) setParcel(p => ({ ...p, delivery: 'home' }));
       const driverName = drivers.find(d => d.id === newDriverId)?.name;
       setSuccess(newDriverId ? `Livreur assigné : ${driverName}` : 'Livreur désassigné');
     } catch { setError('Erreur réseau'); }
@@ -224,12 +237,42 @@ export default function AgentParcelPage() {
           </div>
         )}
 
-        {/* Driver assignment — only shown for home delivery or if a driver is already set */}
-        {(parcel.delivery === 'home' || driverId) && drivers.length > 0 && (
+        {/* Driver assignment — always shown when drivers exist */}
+        {drivers.length > 0 && (
           <div className="agent-card" style={{ padding: '14px', marginBottom: 12 }}>
-            <div style={{ fontSize: 11, fontWeight: 700, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '.05em', marginBottom: 8 }}>
-              🚚 Livreur assigné
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+              <div style={{ fontSize: 11, fontWeight: 700, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '.05em' }}>
+                🚚 Livreur
+              </div>
+              {parcel.delivery === 'home'
+                ? <span style={{ fontSize: 10.5, padding: '2px 7px', borderRadius: 999, background: '#EFF6FF', color: '#1B4FD8', fontWeight: 700 }}>Domicile</span>
+                : <span style={{ fontSize: 10.5, padding: '2px 7px', borderRadius: 999, background: '#F4F5F7', color: '#6B7280', fontWeight: 700 }}>Retrait entrepôt</span>
+              }
             </div>
+
+            {/* Campaign status warning */}
+            {DRIVER_WARNINGS[parcel.campaign?.status] && (() => {
+              const w = DRIVER_WARNINGS[parcel.campaign.status];
+              return (
+                <div style={{
+                  display: 'flex', gap: 8, alignItems: 'flex-start',
+                  padding: '8px 10px', borderRadius: 8, marginBottom: 10,
+                  background: w.bg, border: `1px solid ${w.border}`,
+                }}>
+                  <span style={{ fontSize: 14, flexShrink: 0 }}>{w.icon}</span>
+                  <div>
+                    <div style={{ fontSize: 11.5, fontWeight: 700, color: w.color, marginBottom: 2 }}>
+                      Cargaison {parcel.campaign?.code} en cours
+                    </div>
+                    <div style={{ fontSize: 11, color: w.color, lineHeight: 1.4 }}>{w.msg}</div>
+                    <div style={{ fontSize: 10.5, color: w.color, opacity: .75, marginTop: 3 }}>
+                      Vous pouvez pré-assigner, la livraison démarrera à la libération.
+                    </div>
+                  </div>
+                </div>
+              );
+            })()}
+
             <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
               <select
                 value={driverId}
@@ -246,10 +289,13 @@ export default function AgentParcelPage() {
                   <option key={d.id} value={d.id}>{d.name}</option>
                 ))}
               </select>
-              {savingDriver && (
-                <span style={{ fontSize: 12, color: '#9CA3AF', flexShrink: 0 }}>…</span>
-              )}
+              {savingDriver && <span style={{ fontSize: 12, color: '#9CA3AF', flexShrink: 0 }}>…</span>}
             </div>
+            {!driverId && !savingDriver && (
+              <div style={{ marginTop: 6, fontSize: 11, color: '#9CA3AF' }}>
+                Assigner un livreur bascule automatiquement en livraison à domicile.
+              </div>
+            )}
           </div>
         )}
 
