@@ -4,15 +4,17 @@ import { useEffect, useRef, useState } from 'react';
 let idCounter = 0;
 
 export default function QrScanner({ onScan, onClose, debug = false }) {
-  const [status,    setStatus]    = useState('loading'); // loading | ready | error
-  const [err,       setErr]       = useState('');
-  const [scanMsg,   setScanMsg]   = useState('');       // brief feedback message
-  const [scanOk,    setScanOk]    = useState(null);     // true=success false=bad-code null=idle
-  const [rawText,   setRawText]   = useState('');       // debug: last raw decoded value
+  const [status,  setStatus]  = useState('loading'); // loading | ready | error
+  const [err,     setErr]     = useState('');
+  const [scanMsg, setScanMsg] = useState('');
+  const [scanOk,  setScanOk]  = useState(null);
+  const [rawText, setRawText] = useState('');
+
   const instanceRef  = useRef(null);
   const mountedRef   = useRef(true);
-  const scannerIdRef = useRef(`qr-scanner-${++idCounter}`);
+  const handledRef   = useRef(false);   // prevents multi-fire at high fps
   const msgTimerRef  = useRef(null);
+  const scannerIdRef = useRef(`qr-scanner-${++idCounter}`);
 
   const flashMsg = (msg, ok) => {
     setScanMsg(msg);
@@ -23,18 +25,16 @@ export default function QrScanner({ onScan, onClose, debug = false }) {
 
   useEffect(() => {
     mountedRef.current = true;
+    handledRef.current = false;
     const id = scannerIdRef.current;
-
     let cleanedUp = false;
 
     const doInit = async () => {
       try {
-        const { Html5Qrcode } = await import('html5-qrcode');
+        const { Html5Qrcode, Html5QrcodeSupportedFormats } = await import('html5-qrcode');
 
-        // Guard: component might have unmounted during async import
         if (cleanedUp || !mountedRef.current) return;
 
-        // Guard: element must exist in DOM
         const el = document.getElementById(id);
         if (!el) {
           setStatus('error');
@@ -42,44 +42,50 @@ export default function QrScanner({ onScan, onClose, debug = false }) {
           return;
         }
 
-        const { Html5QrcodeSupportedFormats } = await import('html5-qrcode');
         const instance = new Html5Qrcode(id, {
           verbose: false,
-          // Focus only on QR codes — faster detection, avoids false positives
           formatsToSupport: [Html5QrcodeSupportedFormats.QR_CODE],
         });
         instanceRef.current = instance;
 
-        // Make qrbox responsive: 75% of the smaller viewport dimension, max 300
         const side = Math.min(Math.round(Math.min(window.innerWidth, window.innerHeight) * 0.75), 300);
 
         await instance.start(
           { facingMode: 'environment' },
-          { fps: 15, qrbox: { width: side, height: side } },
+          { fps: 10, qrbox: { width: side, height: side } },
           (text) => {
+            // Ignore duplicate fires while we are already handling a scan
+            if (handledRef.current) return;
+
             if (debug) setRawText(text);
-            // Extract tracking code — strip URL prefix if QR encodes a URL
+
             const code = text.split('/').pop().replace(/[^A-Z0-9-]/gi, '').toUpperCase();
             if (!code) {
               flashMsg('QR code illisible — réessayez', false);
               return;
             }
+
+            // Lock immediately so subsequent frames are dropped
+            handledRef.current = true;
             flashMsg('Code détecté : ' + code, true);
-            setTimeout(() => {
-              instance.stop().catch(() => {});
-              onScan(code);
-            }, 600);
+
+            // Stop the camera then hand off — await-in-callback safe via then()
+            instance.stop()
+              .catch(() => {})
+              .finally(() => {
+                if (mountedRef.current) onScan(code);
+              });
           },
-          () => { /* ignore per-frame decode errors */ },
+          () => { /* per-frame decode failures are normal — ignore */ },
         );
 
         if (mountedRef.current) setStatus('ready');
       } catch (e) {
         if (!mountedRef.current) return;
         const msg = e?.message ?? String(e);
-        if (msg.toLowerCase().includes('permission') || msg.toLowerCase().includes('denied') || msg.toLowerCase().includes('notallowed')) {
+        if (/permission|denied|notallowed/i.test(msg)) {
           setErr('Accès caméra refusé. Autorisez la caméra dans les paramètres de votre navigateur.');
-        } else if (msg.toLowerCase().includes('notfound') || msg.toLowerCase().includes('no camera')) {
+        } else if (/notfound|no camera/i.test(msg)) {
           setErr('Aucune caméra détectée sur cet appareil.');
         } else {
           setErr('Impossible de démarrer le scanner. ' + msg);
@@ -133,7 +139,6 @@ export default function QrScanner({ onScan, onClose, debug = false }) {
             Initialisation caméra…
           </div>
         )}
-        {/* Html5Qrcode mounts its video element inside this div */}
         <div
           id={scannerIdRef.current}
           style={{
@@ -174,7 +179,6 @@ export default function QrScanner({ onScan, onClose, debug = false }) {
             </span>
           )}
 
-          {/* Debug panel — activated via debug prop */}
           {debug && rawText && (
             <div style={{ marginTop: 12, padding: '8px 12px', background: 'rgba(255,255,0,.1)', border: '1px solid rgba(255,255,0,.3)', borderRadius: 8, textAlign: 'left' }}>
               <div style={{ color: 'rgba(255,255,0,.7)', fontSize: 10, fontWeight: 700, marginBottom: 4 }}>DEBUG — texte brut lu :</div>
