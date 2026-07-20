@@ -76,7 +76,7 @@ export async function GET() {
     CREATE TABLE IF NOT EXISTS transactions (
       id TEXT PRIMARY KEY,
       "clientId" TEXT NOT NULL REFERENCES users(id),
-      amount INTEGER NOT NULL,
+      amount NUMERIC(12,2) NOT NULL,
       type TEXT NOT NULL DEFAULT 'payment',
       method TEXT NOT NULL DEFAULT 'interac',
       reference TEXT,
@@ -90,9 +90,12 @@ export async function GET() {
       id TEXT PRIMARY KEY,
       "transactionId" TEXT NOT NULL REFERENCES transactions(id) ON DELETE CASCADE,
       "paymentId" TEXT NOT NULL REFERENCES payments(id),
-      amount INTEGER NOT NULL
+      amount NUMERIC(12,2) NOT NULL
     )
   `);
+  // Migrate existing INTEGER columns to NUMERIC for decimal amounts
+  await run('transactions.amount_numeric',             `ALTER TABLE transactions ALTER COLUMN amount TYPE NUMERIC(12,2) USING amount::numeric`);
+  await run('transaction_allocations.amount_numeric',  `ALTER TABLE transaction_allocations ALTER COLUMN amount TYPE NUMERIC(12,2) USING amount::numeric`);
 
   // ── Push subscriptions ─────────────────────────────────────────────────────
   await run('push_subscriptions', `

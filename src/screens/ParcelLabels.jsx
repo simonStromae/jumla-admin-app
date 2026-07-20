@@ -92,7 +92,7 @@ export default function ParcelLabelsScreen({ id, onNav }) {
           </div>
         )}
         <button className="btn btn--brand btn--sm" onClick={() => window.print()}>
-          <I.Print />Imprimer
+          <I.Print />Exporter PDF
         </button>
       </div>
 

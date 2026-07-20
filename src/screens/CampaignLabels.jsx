@@ -43,7 +43,7 @@ export default function CampaignLabelsScreen({ id, onNav }) {
           </div>
         </div>
         <button className="btn btn--ghost btn--sm" onClick={() => window.print()}>
-          <I.Print />{t.common.print}
+          <I.Print />Exporter PDF
         </button>
       </div>
 

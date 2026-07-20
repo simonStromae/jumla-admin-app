@@ -77,7 +77,7 @@ function InvoiceContent({ params }) {
             ← Facture principale
           </a>
           <button onClick={() => window.print()} style={{ padding: '8px 16px', borderRadius: 8, border: 'none', background: '#92400e', color: 'white', cursor: 'pointer', fontSize: 14, fontWeight: 600 }}>
-            🖨 Imprimer / PDF
+            ⬇ Télécharger PDF
           </button>
         </div>
 
@@ -223,7 +223,7 @@ function InvoiceContent({ params }) {
             </a>
           )}
           <button onClick={() => window.print()} style={{ padding: '8px 16px', borderRadius: 8, border: 'none', background: '#1e3a5f', color: 'white', cursor: 'pointer', fontSize: 14, fontWeight: 600 }}>
-            🖨 Imprimer / PDF
+            ⬇ Télécharger PDF
           </button>
         </div>
       </div>
@@ -332,38 +332,45 @@ function InvoiceContent({ params }) {
             </tbody>
           </table>
 
-          {/* Total + partial breakdown */}
+          {/* Total + payment breakdown */}
           {(() => {
             const partial   = data.payment?.status === 'partial';
             const allocated = data.payment?.allocated ?? 0;
             const remaining = data.payment?.remaining ?? totalAmt;
             const txs       = data.payment?.transactions ?? [];
+            const showBreakdown = txs.length > 0 && (partial || paid);
             return (
-              <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: partial ? 16 : 32 }}>
+              <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: showBreakdown ? 16 : 32 }}>
                 <div style={{ minWidth: 280 }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', padding: '12px 16px', background: '#1e3a5f', borderRadius: 8, color: 'white' }}>
                     <span style={{ fontWeight: 700 }}>Total{hasAdj ? ' ajusté' : ''}</span>
                     <span style={{ fontFamily: 'monospace', fontWeight: 800, fontSize: 18 }}>{totalAmt.toLocaleString('fr')} CAD</span>
                   </div>
-                  {paid && data.payment?.paidAt && (
+                  {showBreakdown && (
+                    <>
+                      {txs.map((tx, i) => (
+                        <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', fontSize: 12, color: '#6b7280', borderTop: i === 0 ? '1px solid #e5e7eb' : 'none', marginTop: i === 0 ? 8 : 0 }}>
+                          <span>✓ Versement reçu · {new Date(tx.date).toLocaleDateString('fr-FR')}{tx.ref ? ` · ${tx.ref}` : ''}</span>
+                          <span style={{ fontFamily: 'monospace', fontWeight: 600, color: '#374151' }}>−{Number(tx.amount).toLocaleString('fr')} CAD</span>
+                        </div>
+                      ))}
+                      {partial ? (
+                        <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 12px', background: '#fef3c7', borderRadius: 6, marginTop: 8, fontSize: 13, fontWeight: 700 }}>
+                          <span style={{ color: '#92400e' }}>Reste à régler</span>
+                          <span style={{ fontFamily: 'monospace', color: '#92400e' }}>{remaining.toLocaleString('fr')} CAD</span>
+                        </div>
+                      ) : (
+                        <div style={{ textAlign: 'right', fontSize: 12, color: '#16a34a', marginTop: 6, fontWeight: 600 }}>
+                          ✓ Solde réglé intégralement
+                        </div>
+                      )}
+                    </>
+                  )}
+                  {!showBreakdown && paid && data.payment?.paidAt && (
                     <div style={{ textAlign: 'right', fontSize: 12, color: '#16a34a', marginTop: 6, fontWeight: 600 }}>
                       Payé le {fmt(data.payment.paidAt)}
                       {data.payment.interacRef && <span> · Réf. {data.payment.interacRef}</span>}
                     </div>
-                  )}
-                  {partial && (
-                    <>
-                      {txs.length > 0 && txs.map((tx, i) => (
-                        <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', fontSize: 12, color: '#6b7280', borderTop: i === 0 ? '1px solid #e5e7eb' : 'none', marginTop: i === 0 ? 8 : 0 }}>
-                          <span>✓ Versement reçu · {new Date(tx.date).toLocaleDateString('fr-FR')}{tx.ref ? ` · ${tx.ref}` : ''}</span>
-                          <span style={{ fontFamily: 'monospace', fontWeight: 600, color: '#374151' }}>−{tx.amount.toLocaleString('fr')} CAD</span>
-                        </div>
-                      ))}
-                      <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 12px', background: '#fef3c7', borderRadius: 6, marginTop: 8, fontSize: 13, fontWeight: 700 }}>
-                        <span style={{ color: '#92400e' }}>Reste à régler</span>
-                        <span style={{ fontFamily: 'monospace', color: '#92400e' }}>{remaining.toLocaleString('fr')} CAD</span>
-                      </div>
-                    </>
                   )}
                 </div>
               </div>

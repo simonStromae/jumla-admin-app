@@ -29,17 +29,17 @@ export async function GET(_: NextRequest, { params }: { params: { parcelId: stri
 
   // Fetch allocated amount + individual transactions
   let allocated = 0;
-  let transactions: { amount: number; date: string; ref: string | null }[] = [];
+  let transactions: { amount: number; date: string; ref: string | null; method?: string | null }[] = [];
   if (parcel.payment) {
     const rows = await prisma.$queryRawUnsafe<any[]>(
-      `SELECT COALESCE(SUM(ta.amount),0)::int AS allocated
+      `SELECT COALESCE(SUM(ta.amount),0)::numeric AS allocated
        FROM transaction_allocations ta WHERE ta."paymentId" = $1`,
       parcel.payment.id
     ).catch(() => [{ allocated: 0 }]);
     allocated = Number(rows[0]?.allocated ?? 0);
 
     const txRows = await prisma.$queryRawUnsafe<any[]>(
-      `SELECT t.amount, t."createdAt", t.reference
+      `SELECT t.amount, t."createdAt", t.reference, t.method
        FROM transactions t
        JOIN transaction_allocations ta ON ta."transactionId" = t.id
        WHERE ta."paymentId" = $1
@@ -50,7 +50,20 @@ export async function GET(_: NextRequest, { params }: { params: { parcelId: stri
       amount: Number(r.amount),
       date:   r.createdAt,
       ref:    r.reference ?? null,
+      method: r.method ?? null,
     }));
+
+    // Fallback: if payment is completed but has no transaction allocations
+    // (e.g. directly marked via old booking flow), synthesise one entry from the payment itself
+    if (transactions.length === 0 && parcel.payment.status === 'completed') {
+      allocated = parcel.payment.amount;
+      transactions = [{
+        amount: parcel.payment.amount,
+        date:   (parcel.payment.paidAt ?? parcel.payment.createdAt) as any,
+        ref:    parcel.payment.interacRef ?? null,
+        method: 'interac',
+      }];
+    }
   }
 
   return NextResponse.json({

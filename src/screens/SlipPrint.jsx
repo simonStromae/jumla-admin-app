@@ -63,7 +63,7 @@ export default function SlipPrintScreen({ code, onNav }) {
         <span style={{ fontSize: 13, fontWeight: 600 }}>Aperçu avant impression</span>
         <span style={{ fontSize: 12, color: 'var(--ink-400)' }}>— A4 portrait, marges 12 mm</span>
         <div style={{ flex: 1 }} />
-        <button className="btn btn--brand btn--sm" onClick={() => window.print()}><I.Print />Imprimer</button>
+        <button className="btn btn--brand btn--sm" onClick={() => window.print()}><I.Print />Exporter PDF</button>
       </div>
 
       {/* Loading */}

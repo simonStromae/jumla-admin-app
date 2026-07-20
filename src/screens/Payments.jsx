@@ -116,7 +116,7 @@ function RecordPaymentModal({ preselectedClient, preselectedPaymentId, onClose, 
       let json = {};
       try { json = await res.json(); } catch { /* non-JSON body */ }
       if (res.ok && json.ok) {
-        onSave();
+        onSave(json.transactionId);
       } else {
         setErr(json.error || /* TODO: i18n — no translation key */ `Erreur ${res.status} — vérifiez que /api/db-migrate a été lancé.`);
         setSaving(false);
@@ -377,7 +377,7 @@ function RecordPaymentModal({ preselectedClient, preselectedPaymentId, onClose, 
 
 /* ─── Transactions list tab ──────────────────────────────── */
 
-function TransactionsTab({ onRecord }) {
+function TransactionsTab({ onRecord, onNav }) {
   const t = useAdminT();
   const [rows, setRows]     = useState([]);
   const [loading, setLoading] = useState(true);
@@ -423,6 +423,7 @@ function TransactionsTab({ onRecord }) {
             <th>{/* TODO: i18n — no translation key */}Crédit généré</th>
             <th>{/* TODO: i18n — no translation key */}Agent</th>
             <th style={{ borderRadius: 0 }}>{t.common.note}</th>
+            <th style={{ borderRadius: 0 }}></th>
           </tr>
         </thead>
         <tbody>
@@ -438,11 +439,12 @@ function TransactionsTab({ onRecord }) {
               <td><Skel w={60} h={12} /></td>
               <td><Skel w={28} h={28} r={999} /></td>
               <td><Skel w={80} h={12} /></td>
+              <td></td>
             </tr>
           ))}
           {!loading && filtered.length === 0 && (
             <tr>
-              <td colSpan={10} style={{ textAlign: 'center', padding: 40, color: 'var(--ink-400)', fontSize: 13 }}>
+              <td colSpan={11} style={{ textAlign: 'center', padding: 40, color: 'var(--ink-400)', fontSize: 13 }}>
                 {search ? t.common.noData : /* TODO: i18n — no translation key */ 'Aucune transaction enregistrée'}
               </td>
             </tr>
@@ -499,6 +501,17 @@ function TransactionsTab({ onRecord }) {
                 </td>
                 <td style={{ fontSize: 12, color: 'var(--ink-500)', maxWidth: 140, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                   {r.note ?? '—'}
+                </td>
+                <td>
+                  {!r.isLegacy && onNav && (
+                    <button
+                      className="btn btn--ghost btn--xs"
+                      onClick={() => onNav('/admin/receipts/' + r.id)}
+                      title="Voir le reçu"
+                    >
+                      📄
+                    </button>
+                  )}
                 </td>
               </tr>
             );
@@ -785,7 +798,7 @@ function InvoiceSettleModal({ invoice, onClose, onSave }) {
       }),
     });
     const json = await res.json().catch(() => ({}));
-    if (res.ok && json.ok) onSave();
+    if (res.ok && json.ok) onSave(json.transactionId);
     else {
       const msg = json.error || /* TODO: i18n — no translation key */ 'Erreur serveur';
       setErr(msg.includes('non initialisées') || msg.includes('does not exist')
@@ -924,7 +937,7 @@ function InvoiceSettleModal({ invoice, onClose, onSave }) {
 
 /* ─── Invoices list tab (existing payments) ──────────────── */
 
-function InvoicesTab({ onReload }) {
+function InvoicesTab({ onReload, onNav }) {
   const t = useAdminT();
   const can = useCan();
   const [payments, setPayments]         = useState([]);
@@ -984,7 +997,7 @@ function InvoicesTab({ onReload }) {
         <InvoiceSettleModal
           invoice={settleInvoice}
           onClose={() => setSettleInvoice(null)}
-          onSave={() => { setSettleInvoice(null); loadPayments(); onReload?.(); }}
+          onSave={(txId) => { setSettleInvoice(null); loadPayments(); onReload?.(); if (txId && onNav) onNav('/admin/receipts/' + txId); }}
         />
       )}
 
@@ -1229,10 +1242,10 @@ export default function PaymentsScreen({ onNav }) {
       </div>
 
       {mainTab === 'transactions' && (
-        <TransactionsTab key="tx" onRecord={() => setModal({})} />
+        <TransactionsTab key="tx" onRecord={() => setModal({})} onNav={onNav} />
       )}
       {mainTab === 'invoices' && (
-        <InvoicesTab key="inv" onReload={reloadKpi} />
+        <InvoicesTab key="inv" onReload={reloadKpi} onNav={onNav} />
       )}
 
       {modal !== null && (
@@ -1240,7 +1253,7 @@ export default function PaymentsScreen({ onNav }) {
           preselectedClient={modal.preselectedClient || null}
           preselectedPaymentId={modal.preselectedPaymentId || null}
           onClose={() => setModal(null)}
-          onSave={() => { setModal(null); reloadKpi(); }}
+          onSave={(txId) => { setModal(null); reloadKpi(); if (txId && onNav) onNav('/admin/receipts/' + txId); }}
         />
       )}
     </div>

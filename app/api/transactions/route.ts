@@ -15,7 +15,7 @@ export async function GET() {
       SELECT
         t.id,
         t."clientId",
-        t.amount::int                  AS amount,
+        t.amount::numeric              AS amount,
         t.type,
         t.method,
         t.reference,
@@ -28,14 +28,14 @@ export async function GET() {
           json_agg(
             json_build_object(
               'paymentId',    ta."paymentId",
-              'amount',       ta.amount::int,
+              'amount',       ta.amount::numeric,
               'trackingCode', par."trackingCode",
               'campaignCode', c.code
             ) ORDER BY ta.id
           ) FILTER (WHERE ta.id IS NOT NULL),
           '[]'::json
         ) AS allocations,
-        COALESCE(SUM(ta.amount), 0)::int AS "totalAllocated"
+        COALESCE(SUM(ta.amount), 0)::numeric AS "totalAllocated"
       FROM transactions t
       JOIN users u ON u.id = t."clientId"
       LEFT JOIN users rb ON rb.id = t."recordedById"
@@ -62,7 +62,7 @@ export async function GET() {
       SELECT
         py.id                                    AS id,
         py."clientId",
-        py.amount::int                           AS amount,
+        py.amount::numeric                       AS amount,
         'payment'                                AS type,
         'interac'                                AS method,
         py."interacRef"                          AS reference,
@@ -73,11 +73,11 @@ export async function GET() {
         NULL::text                               AS "recordedByName",
         json_build_array(json_build_object(
           'paymentId',    py.id,
-          'amount',       py.amount::int,
+          'amount',       py.amount::numeric,
           'trackingCode', par."trackingCode",
           'campaignCode', c.code
         ))                                       AS allocations,
-        py.amount::int                           AS "totalAllocated",
+        py.amount::numeric                       AS "totalAllocated",
         true                                     AS "isLegacy"
       FROM payments py
       JOIN users u   ON u.id   = py."clientId"
@@ -158,7 +158,7 @@ export async function POST(req: NextRequest) {
       if (!payment) continue;
 
       const [existingRow] = await prisma.$queryRawUnsafe<any[]>(
-        `SELECT COALESCE(SUM(amount), 0)::int AS total FROM transaction_allocations WHERE "paymentId" = $1`,
+        `SELECT COALESCE(SUM(amount), 0)::numeric AS total FROM transaction_allocations WHERE "paymentId" = $1`,
         alloc.paymentId
       );
       const alreadyAllocated = Number(existingRow.total);
@@ -174,7 +174,7 @@ export async function POST(req: NextRequest) {
 
       // Mark payment completed if fully covered
       const [row] = await prisma.$queryRawUnsafe<any[]>(
-        `SELECT COALESCE(SUM(amount), 0)::int AS total FROM transaction_allocations WHERE "paymentId" = $1`,
+        `SELECT COALESCE(SUM(amount), 0)::numeric AS total FROM transaction_allocations WHERE "paymentId" = $1`,
         alloc.paymentId
       );
       const totalAllocated = Number(row.total);
