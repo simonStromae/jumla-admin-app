@@ -53,6 +53,7 @@ export async function GET() {
   await run('parcels.adjustmentStatus',   `ALTER TABLE parcels ADD COLUMN IF NOT EXISTS "adjustmentStatus" TEXT NOT NULL DEFAULT 'none'`);
   await run('parcels.delivery',           `ALTER TABLE parcels ADD COLUMN IF NOT EXISTS delivery TEXT NOT NULL DEFAULT 'pickup'`);
   await run('parcels.deletedAt',          `ALTER TABLE parcels ADD COLUMN IF NOT EXISTS "deletedAt" TIMESTAMPTZ`);
+  await run('parcels.declaredValue',         `ALTER TABLE parcels ADD COLUMN IF NOT EXISTS "declaredValue" FLOAT`);
   await run('parcels.hasValuable',           `ALTER TABLE parcels ADD COLUMN IF NOT EXISTS "hasValuable" BOOLEAN NOT NULL DEFAULT false`);
   await run('parcels.coverageFee',           `ALTER TABLE parcels ADD COLUMN IF NOT EXISTS "coverageFee" INTEGER`);
   await run('parcels.waiverAccepted',        `ALTER TABLE parcels ADD COLUMN IF NOT EXISTS "waiverAccepted" BOOLEAN NOT NULL DEFAULT false`);
