@@ -16,13 +16,14 @@ export default function AdminLayout({ children }) {
     }
   }, [session, status, pathname, router]);
 
-  // Change-password page renders standalone, no sidebar
-  if (pathname === '/admin/change-password') {
-    return (
-      <div style={{ minHeight: '100vh', background: 'var(--bg-soft)' }}>
-        {children}
-      </div>
-    );
+  // Standalone pages — no sidebar/topbar (print, labels, receipts)
+  if (
+    pathname === '/admin/change-password' ||
+    pathname.includes('/labels') ||
+    pathname.endsWith('/print') ||
+    pathname.startsWith('/admin/receipts/')
+  ) {
+    return <>{children}</>;
   }
 
   return (
