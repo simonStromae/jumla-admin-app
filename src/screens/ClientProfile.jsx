@@ -4,6 +4,7 @@ import { signOut } from 'next-auth/react';
 import I from '../components/Icons.jsx';
 import { useT } from '../lib/i18n';
 import { useAdminT } from '../lib/useAdminT.js';
+import PhoneInput from '../components/PhoneInput.jsx';
 
 const ADDR_KEY = 'jumla_addresses';
 
@@ -330,13 +331,9 @@ export default function ClientProfile() {
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginBottom: 14 }}>
               <div>
                 <label style={label}>{t('profile.info.phone')}</label>
-                <input
-                  style={inputStyle}
-                  type="tel"
+                <PhoneInput
                   value={profile.phone}
-                  onChange={e => setProfile(p => ({ ...p, phone: e.target.value }))}
-                  placeholder="+1 514 000 0000"
-                  autoComplete="tel"
+                  onChange={v => setProfile(p => ({ ...p, phone: v }))}
                 />
               </div>
               <div>
@@ -543,8 +540,10 @@ export default function ClientProfile() {
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 14 }}>
               <div>
                 <label style={label}>{t('profile.recipients.phone')}</label>
-                <input style={inputStyle} type="tel" placeholder="+237 6XX XXX XXX"
-                  value={newRecip.phone} onChange={e => setNewRecip(r => ({ ...r, phone: e.target.value }))} />
+                <PhoneInput
+                  value={newRecip.phone}
+                  onChange={v => setNewRecip(r => ({ ...r, phone: v }))}
+                />
               </div>
               <div>
                 <label style={label}>{t('profile.recipients.city')}</label>

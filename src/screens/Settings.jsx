@@ -4,6 +4,7 @@ import { invalidateCompanyAssets } from '../lib/useCompanyAssets.js';
 import { RoutePill, Drawer } from '../components/Shell.jsx';
 import LandingEditor from './LandingEditor.jsx';
 import { useAdminT } from '../lib/useAdminT.js';
+import PhoneInput from '../components/PhoneInput.jsx';
 
 // Grille tarifaire par défaut (miroir de DEFAULT_ROUTE_FEES dans pricing.ts)
 const DEFAULT_TIERS = [
@@ -1442,11 +1443,11 @@ function RouteEditModal({ editRoute, onClose, onSaved }) {
           <div className="field-row field-row--2">
             <div className="field">
               <label className="label">{/* TODO i18n: Téléphone contact dépôt */}Téléphone contact dépôt</label>
-              <input className="input" type="tel" value={dropoffPhone} onChange={e => setDropoffPhone(e.target.value)} placeholder="+237 6 XX XX XX XX" />
+              <PhoneInput value={dropoffPhone} onChange={setDropoffPhone} />
             </div>
             <div className="field">
               <label className="label">WhatsApp</label>
-              <input className="input" type="tel" value={dropoffWhatsapp} onChange={e => setDropoffWhatsapp(e.target.value)} placeholder="+237 6 XX XX XX XX" />
+              <PhoneInput value={dropoffWhatsapp} onChange={setDropoffWhatsapp} />
             </div>
           </div>
           <div className="field">
@@ -1483,8 +1484,7 @@ function RouteEditModal({ editRoute, onClose, onSaved }) {
             </div>
             <div className="field">
               <label className="label">{/* TODO i18n: Téléphone contact retrait */}Téléphone contact retrait</label>
-              <input className="input" type="tel" value={arrivalPhone} onChange={e => setArrivalPhone(e.target.value)}
-                placeholder="ex: +1 514 998 0709" />
+              <PhoneInput value={arrivalPhone} onChange={setArrivalPhone} />
             </div>
           </div>
           <div className="field" style={{ marginBottom: 0 }}>

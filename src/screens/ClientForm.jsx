@@ -2,6 +2,7 @@ import { useState } from 'react';
 import I from '../components/Icons.jsx';
 import { Modal, Avatar } from '../components/Shell.jsx';
 import { useAdminT } from '../lib/useAdminT.js';
+import PhoneInput from '../components/PhoneInput.jsx';
 
 export default function ClientFormModal({ mode = 'create', client, onClose, onSave }) {
   const t = useAdminT();
@@ -155,12 +156,12 @@ export default function ClientFormModal({ mode = 'create', client, onClose, onSa
               <div className="field">
                 {/* TODO: no exact translation key for "Téléphone Douala" */}
                 <label className="label">Téléphone Douala <span className="opt">/ Sender phone</span></label>
-                <input className="input mono" value={data.phone} onChange={e => upd('phone', e.target.value)} placeholder="+237 6** ** ** **" />
+                <PhoneInput value={data.phone} onChange={v => upd('phone', v)} />
               </div>
               <div className="field">
                 {/* TODO: no exact translation key for "Si différent" */}
                 <label className="label">WhatsApp <span className="opt">/ Si différent</span></label>
-                <input className="input mono" value={data.whatsapp} onChange={e => upd('whatsapp', e.target.value)} placeholder="+237 6** ** ** **" />
+                <PhoneInput value={data.whatsapp} onChange={v => upd('whatsapp', v)} />
               </div>
             </div>
             <div className="field" style={{ marginBottom: 0 }}>
@@ -203,7 +204,7 @@ export default function ClientFormModal({ mode = 'create', client, onClose, onSa
             <div className="field" style={{ marginBottom: 0 }}>
               {/* TODO: no exact translation key for "Téléphone de livraison" */}
               <label className="label">Téléphone de livraison <span className="opt">/ À Montréal</span></label>
-              <input className="input mono" value={data.deliveryPhone} onChange={e => upd('deliveryPhone', e.target.value)} placeholder="+1 514 *** ****" />
+              <PhoneInput value={data.deliveryPhone} onChange={v => upd('deliveryPhone', v)} />
             </div>
           </div>
 

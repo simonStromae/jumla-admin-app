@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import I from '../components/Icons.jsx';
 import { RoutePill } from '../components/Shell.jsx';
 import { useAdminT } from '../lib/useAdminT.js';
+import PhoneInput from '../components/PhoneInput.jsx';
 
 // TODO: PRODUCT_TYPES labels/descs have no matching i18n keys — move inside component and translate if keys are added
 const PRODUCT_TYPES = [
@@ -500,7 +501,7 @@ export default function ParcelFormPage({ mode = 'create', parcel, campaign, onNa
                   <div className="field" style={{ marginBottom: 0 }}>
                     {/* TODO: "destinataire" qualifier has no i18n key; using t.common.phone as close match */}
                     <label className="label">{t.common.phone}</label>
-                    <input className="input input--sm" value={data.recipPhone} onChange={e => upd('recipPhone', e.target.value)} placeholder="+237 6XX XXX XXX" />
+                    <PhoneInput value={data.recipPhone} onChange={v => upd('recipPhone', v)} />
                   </div>
                 </div>
                 <div className="field" style={{ marginBottom: 8 }}>

@@ -5,6 +5,7 @@ import { TopBar, SiteNav, SiteFooter } from './SiteLayout.jsx';
 import { useT, useLocale } from '@/src/lib/i18n';
 import '@/src/styles/client-omega.css';
 import '@/src/styles/booking.css';
+import PhoneInput from '@/src/components/PhoneInput.jsx';
 
 // ── Catégories d'articles (alignées avec l'admin) ──
 const ITEM_CATEGORIES = [
@@ -1455,7 +1456,7 @@ export default function BookingScreen({ onNav, embedded = false }) {
                         <input className="co-input" value={form.senderName} onChange={e => upd('senderName', e.target.value)} placeholder="Awa Nkemdirim" />
                       </Field>
                       <Field label={t('booking.coords.phone')}>
-                        <input className="co-input" value={form.senderPhone} onChange={e => upd('senderPhone', e.target.value)} placeholder="+237 6** ** ** **" />
+                        <PhoneInput value={form.senderPhone} onChange={v => upd('senderPhone', v)} />
                       </Field>
                       <Field label={t('booking.coords.email')}>
                         <input className="co-input" type="email" value={form.senderEmail} onChange={e => upd('senderEmail', e.target.value)} placeholder="vous@email.com" />
@@ -1487,7 +1488,7 @@ export default function BookingScreen({ onNav, embedded = false }) {
                         <input className="co-input" value={form.recipName} onChange={e => upd('recipName', e.target.value)} placeholder="Jean Mbarga" />
                       </Field>
                       <Field label={t('booking.coords.phone')}>
-                        <input className="co-input" value={form.recipPhone} onChange={e => upd('recipPhone', e.target.value)} placeholder="+1 514 *** ****" />
+<PhoneInput value={form.recipPhone} onChange={v => upd('recipPhone', v)} />
                       </Field>
                       <Field label={t('booking.coords.city')}>
                         <select className="co-select" value={form.recipCity} onChange={e => upd('recipCity', e.target.value)}>
