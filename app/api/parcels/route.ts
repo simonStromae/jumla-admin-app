@@ -132,7 +132,7 @@ export async function POST(req: NextRequest) {
       nbCasiers24x65:   nbCasiers24x65   ? Number(nbCasiers24x65)   : 0,
       nbCasiers24x33:   nbCasiers24x33   ? Number(nbCasiers24x33)   : 0,
       nbCasiers12x50:   nbCasiers12x50   ? Number(nbCasiers12x50)   : 0,
-      marginPct:        marginPct        ? Number(marginPct)        : 30,
+      marginPct:        marginPct !== undefined ? Number(marginPct) : 0,
       pricingDetails:   pricingDetails   ?? undefined,
       items:            items            ?? undefined,
     },

@@ -1130,7 +1130,7 @@ function RouteEditModal({ editRoute, onClose, onSaved }) {
   const [suppDocuments,    setSuppDocuments]    = useState(String(r?.fees?.supplements?.documents    ?? -2));
 
   // Marge & livraison
-  const [marginPct,      setMarginPct]      = useState(String(r?.fees?.marginPct  ?? 30));
+  const [marginPct,      setMarginPct]      = useState(String(r?.fees?.marginPct  ?? 0));
   const [deliveryFeeIle, setDeliveryFeeIle] = useState(String(r?.fees?.deliveryFee ?? 25));
 
   // Contact & dépôt (côté départ)
@@ -1167,7 +1167,7 @@ function RouteEditModal({ editRoute, onClose, onSaved }) {
         plastic:     parseFloat(plastic) || 0.6,
         saq:         { casier24x65: parseFloat(saq24x65)||24.5, casier24x33: parseFloat(saq24x33)||35.83, casier12x50: parseFloat(saq12x50)||21.34 },
         supplements: { vetements: parseFloat(suppVetements)||2, cosmetique: parseFloat(suppCosmetique)||3, biere: parseFloat(suppBiere)||6, electronique: parseFloat(suppElectronique)||5, documents: parseFloat(suppDocuments)||-2 },
-        marginPct:   parseFloat(marginPct) || 30,
+        marginPct:   parseFloat(marginPct) || 0,
         deliveryFee: parseFloat(deliveryFeeIle) || 25,
         dropoff: {
           address:      dropoffAddress.trim()      || null,

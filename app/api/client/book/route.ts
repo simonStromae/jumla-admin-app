@@ -127,7 +127,7 @@ export async function POST(req: NextRequest) {
       nbPetitsSacs: addons?.smallBag   || 0,
       nbSacsMoyens: addons?.mediumBag  || 0,
       nbGrandsSacs: addons?.largeBag   || 0,
-      marginPct:    30,
+      marginPct:    0,
       items:        mappedItems.length > 0 ? mappedItems : undefined,
       notes:        finalNotes,
       recipName:    recipName  || null,

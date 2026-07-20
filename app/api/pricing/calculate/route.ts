@@ -180,7 +180,7 @@ export async function POST(req: NextRequest) {
     nbCasiers24x65:    Number(data.nbCasiers24x65    ?? 0),
     nbCasiers24x33:    Number(data.nbCasiers24x33    ?? 0),
     nbCasiers12x50:    Number(data.nbCasiers12x50    ?? 0),
-    marginPct:         marginPctInput ?? 30,
+    marginPct:         marginPctInput ?? 0,
   };
 
   return NextResponse.json(calculatePrice(input));

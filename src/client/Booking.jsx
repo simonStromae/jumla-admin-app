@@ -37,7 +37,7 @@ const DEFAULT_FEES = {
   plastic: 0.6,
   saq: { casier24x65: 24.50, casier24x33: 35.83, casier12x50: 21.34 },
   supplements: { vetements: 2, cosmetique: 3, biere: 6, electronique: 5, documents: -2 },
-  marginPct: 30,
+  marginPct: 0,
   montrealIleDelivery: 25,
   montrealGrandDelivery: 30,
   // legacy compat

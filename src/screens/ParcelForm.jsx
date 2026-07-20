@@ -81,7 +81,7 @@ export default function ParcelFormPage({ mode = 'create', parcel, campaign, onNa
     nbCasiers24x65:   parcel?.nbCasiers24x65  || 0,
     nbCasiers24x33:   parcel?.nbCasiers24x33  || 0,
     nbCasiers12x50:   parcel?.nbCasiers12x50  || 0,
-    marginPct:        parcel?.marginPct   || 30,
+    marginPct:        parcel?.marginPct   ?? 0,
     delivery:         'pickup',
     notes:            parcel?.notes       || '',
     recipName:        parcel?.recipName   || '',
