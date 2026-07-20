@@ -193,12 +193,15 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
 
       const statusLabel = CAMPAIGN_STATUS_LABELS[prismaStatus] ?? prismaStatus;
       for (const { firstName, phone, codes, parcelId } of byPhone.values()) {
-        renderWaTemplate('auto_campaign_status', {
+        const campVars = {
           first_name:    firstName,
           campaign_code: updated.code,
           status_label:  statusLabel,
           parcel_codes:  codes.join(', '),
-        }).then(msg => sendWhatsappNotification(phone, msg, parcelId)).catch(() => {});
+        };
+        renderWaTemplate('auto_campaign_status', campVars)
+          .then(msg => sendWhatsappNotification(phone, msg, parcelId, 'auto_campaign_status', campVars))
+          .catch(() => {});
       }
     }
 

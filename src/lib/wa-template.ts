@@ -343,6 +343,20 @@ Colis : {{4}}
 
 Connectez-vous à votre espace client pour suivre l'avancement de votre envoi.`,
   },
+  auto_bordereau_discordance: {
+    friendlyName: 'jumla_discordance_fr',
+    settingKey:   'WA_TMPL_SID_auto_bordereau_discordance',
+    varMap: { first_name: '1', bordereau_code: '2', parcel_code: '3' },
+    sampleVars: { '1': 'Client', '2': 'BL-JMS-00000-01', '3': 'JMS-00000' },
+    body:
+`Bonjour {{1}} 👋
+
+Une discordance a été détectée sur votre bordereau {{2}} (colis {{3}}).
+
+Merci de vous connecter à votre espace client pour consulter les détails et confirmer votre contenu.
+
+Jumla Shipping`,
+  },
 };
 
 // Build ContentVariables from named vars using varMap

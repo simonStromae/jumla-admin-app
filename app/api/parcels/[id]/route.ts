@@ -120,7 +120,11 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
         first_name:   firstName,
         parcel_code:  existing.trackingCode,
         status_label: statusLabel,
-      }).then(msg => sendWhatsappNotification(existing!.client!.phone!, msg, params.id)).catch(() => {});
+      }).then(msg => sendWhatsappNotification(
+        existing!.client!.phone!, msg, params.id,
+        'auto_status_parcel',
+        { first_name: firstName, parcel_code: existing.trackingCode, status_label: statusLabel },
+      )).catch(() => {});
     }
     // Push notification on status change
     if (existing?.clientId) {
@@ -142,13 +146,18 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
     if (diff > 0) {
       const firstName  = (existing.client.name ?? 'Client').split(' ')[0];
       const trackCode  = existing.trackingCode ?? params.id;
-      renderWaTemplate('auto_supplement', {
+      const supplementVars = {
         first_name:      firstName,
         parcel_code:     trackCode,
         estimated_price: estimatedPrice.toLocaleString('fr'),
         confirmed_price: Number(confirmedPriceXaf).toLocaleString('fr'),
         diff:            diff.toLocaleString('fr'),
-      }).then(msg => sendWhatsappNotification(existing!.client!.phone!, msg, params.id)).catch(() => {});
+      };
+      renderWaTemplate('auto_supplement', supplementVars)
+        .then(msg => sendWhatsappNotification(
+          existing!.client!.phone!, msg, params.id,
+          'auto_supplement', supplementVars,
+        )).catch(() => {});
     }
   }
 

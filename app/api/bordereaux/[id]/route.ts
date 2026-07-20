@@ -158,11 +158,10 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
       ).catch(() => {});
 
       if (clientPhone) {
-        renderWaTemplate('auto_bordereau_confirmed', {
-          first_name:     clientName,
-          bordereau_code: blCode,
-          parcel_code:    trackingCode,
-        }).then(msg => sendWhatsappNotification(clientPhone!, msg, bl.parcelId)).catch(() => {});
+        const blConfirmedVars = { first_name: clientName, bordereau_code: blCode, parcel_code: trackingCode };
+        renderWaTemplate('auto_bordereau_confirmed', blConfirmedVars)
+          .then(msg => sendWhatsappNotification(clientPhone!, msg, bl.parcelId, 'auto_bordereau_confirmed', blConfirmedVars))
+          .catch(() => {});
       }
     }
   }
@@ -178,11 +177,10 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
     });
     if (bl?.parcel?.client?.phone) {
       const firstName = (bl.parcel.client.name ?? 'Client').split(' ')[0];
-      renderWaTemplate('auto_bordereau_discordance', {
-        first_name:     firstName,
-        bordereau_code: bl.code,
-        parcel_code:    bl.parcel.trackingCode,
-      }).then(msg => sendWhatsappNotification(bl!.parcel!.client!.phone!, msg, bl!.parcelId)).catch(() => {});
+      const blDiscVars = { first_name: firstName, bordereau_code: bl.code, parcel_code: bl.parcel.trackingCode };
+      renderWaTemplate('auto_bordereau_discordance', blDiscVars)
+        .then(msg => sendWhatsappNotification(bl!.parcel!.client!.phone!, msg, bl!.parcelId, 'auto_bordereau_discordance', blDiscVars))
+        .catch(() => {});
     }
   }
 
