@@ -171,13 +171,47 @@ export default function ClientParcelLabelsPage({ params }) {
         }
         .item-label-idx { color: #D1D5DB; }
         @media print {
+          @page { size: 57mm 32mm; margin: 0; }
           body { margin: 0; background: white; }
           .labels-toolbar { display: none !important; }
+
           .item-labels-grid {
-            grid-template-columns: repeat(4, 1fr);
-            padding: 6mm; gap: 5mm; max-width: none;
+            display: block !important;
+            padding: 0 !important; margin: 0 !important;
+            max-width: none !important; width: 57mm !important;
           }
-          .item-label-card { border: 1px solid #ccc; }
+
+          /* One label = one Dymo page */
+          .item-label-card {
+            width: 57mm !important; height: 32mm !important;
+            page-break-after: always !important; break-after: page !important;
+            border: none !important; border-radius: 0 !important;
+            overflow: hidden !important; margin: 0 !important;
+            display: flex !important; flex-direction: column !important;
+          }
+
+          /* Header */
+          .item-label-head { padding: 1mm 2.5mm !important; }
+          .item-label-brand { font-size: 5pt !important; letter-spacing: .08em !important; }
+          .item-label-campaign { font-size: 5pt !important; }
+
+          /* Code */
+          .item-label-code {
+            font-size: 18pt !important; padding: 1.5mm 2.5mm 0 !important;
+            letter-spacing: .02em !important;
+          }
+
+          /* Description */
+          .item-label-desc { font-size: 7pt !important; padding: 0.5mm 2.5mm 0 !important; flex: 1 !important; }
+
+          /* Category row */
+          .item-label-cat { padding: 1mm 2.5mm !important; }
+          .item-label-cat-icon { font-size: 9px !important; }
+          .item-label-cat-label { font-size: 5.5pt !important; }
+
+          /* Footer */
+          .item-label-foot { padding: 1mm 2.5mm !important; font-size: 5pt !important; }
+          .item-label-idx { font-size: 5pt !important; }
         }
       `}</style>
     </div>

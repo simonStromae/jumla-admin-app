@@ -196,22 +196,49 @@ export default function ParcelLabelsScreen({ id, onNav }) {
         }
 
         @media print {
+          @page { size: 57mm 32mm; margin: 0; }
           .no-print { display: none !important; }
           body, html { margin: 0; padding: 0; background: white; }
-          .app { display: block !important; }
-          .sidebar, .topbar, .admin-mobile-block { display: none !important; }
-          .lp-page { min-height: unset; background: white; }
+          .lp-page { min-height: unset !important; background: white !important; }
+
           .lp-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            padding: 8mm; gap: 6mm;
-            max-width: none; margin: 0;
-            width: 100%; box-sizing: border-box;
+            display: block !important;
+            padding: 0 !important; margin: 0 !important;
+            max-width: none !important; width: 57mm !important;
           }
-          .lp-card { border: 1px solid #bbb; border-radius: 4px; }
-          .lp-designation { font-size: 15px; }
-          .lp-key, .lp-val, .lp-sep { font-size: 11px; }
-          .lp-code { font-size: 16px; }
+
+          /* One label = one Dymo page */
+          .lp-card {
+            width: 57mm !important; height: 32mm !important;
+            page-break-after: always !important; break-after: page !important;
+            border: none !important; border-radius: 0 !important;
+            overflow: hidden !important; margin: 0 !important;
+            display: flex !important; flex-direction: column !important;
+          }
+
+          /* Header */
+          .lp-head { padding: 1mm 2.5mm !important; flex-shrink: 0 !important; }
+          .lp-brand { font-size: 5pt !important; }
+          .lp-camp  { font-size: 5pt !important; }
+          .lp-idx   { font-size: 5pt !important; }
+
+          /* Body */
+          .lp-body { padding: 1.5mm 2.5mm !important; gap: 2mm !important; flex: 1 !important; align-items: flex-start !important; }
+
+          /* Left column */
+          .lp-left { display: flex !important; flex-direction: column !important; justify-content: space-between !important; min-width: 0 !important; }
+          .lp-designation { font-size: 9pt !important; margin-bottom: 1mm !important; line-height: 1.15 !important; }
+          .lp-lines { gap: 0.5mm !important; margin-bottom: 1mm !important; }
+          .lp-key { font-size: 5.5pt !important; min-width: 40px !important; }
+          .lp-sep { font-size: 5.5pt !important; }
+          .lp-val { font-size: 5.5pt !important; }
+          /* Hide "Emballé par" and "Made in" — keep only Type + Quantité */
+          .lp-lines > div:nth-child(n+3) { display: none !important; }
+          .lp-code { font-size: 8pt !important; padding-top: 0.8mm !important; letter-spacing: .03em !important; }
+
+          /* QR */
+          .lp-qr { padding: 1px !important; align-self: center !important; }
+          .lp-qr svg { width: 11mm !important; height: 11mm !important; }
         }
       `}</style>
     </div>

@@ -39,7 +39,7 @@ export default function CampaignLabelsScreen({ id, onNav }) {
           </div>
           <div style={{ fontSize: 12, color: 'var(--ink-400)' }}>
             {/* TODO: translate "étiquette(s)" (label count unit) */}
-            {loading ? '…' : parcels.length + ' étiquette' + (parcels.length > 1 ? 's' : '') + ' · Format A6 · 2 par ligne A4'}
+            {loading ? '…' : parcels.length + ' étiquette' + (parcels.length > 1 ? 's' : '') + ' · Format Dymo 57×32 mm'}
           </div>
         </div>
         <button className="btn btn--ghost btn--sm" onClick={() => window.print()}>
@@ -172,10 +172,64 @@ export default function CampaignLabelsScreen({ id, onNav }) {
           font-size: 9px; color: #D1D5DB; font-family: monospace;
         }
         @media print {
+          @page { size: 57mm 32mm; margin: 0; }
           body { margin: 0; background: white; }
           .labels-toolbar { display: none !important; }
-          .labels-grid { padding: 8mm; gap: 6mm; max-width: none; }
-          .label-card { border: 1px solid #ccc; }
+
+          .labels-grid {
+            display: block !important;
+            padding: 0 !important; margin: 0 !important;
+            max-width: none !important; width: 57mm !important;
+          }
+
+          /* One label = one Dymo page */
+          .label-card {
+            width: 57mm !important; height: 32mm !important;
+            page-break-after: always !important; break-after: page !important;
+            border: none !important; border-radius: 0 !important;
+            box-shadow: none !important; overflow: hidden !important;
+            margin: 0 !important; padding: 0 !important;
+            display: flex !important; flex-direction: column !important;
+          }
+
+          /* Header band */
+          .label-head { padding: 1mm 2.5mm !important; flex-shrink: 0 !important; }
+          .label-brand { font-size: 5pt !important; letter-spacing: .05em !important; }
+          .label-campaign { font-size: 5pt !important; }
+
+          /* Tracking code + QR row */
+          .label-card > div:nth-child(2) {
+            padding: 1mm 2.5mm 0 !important;
+            gap: 1.5mm !important;
+            flex: 0 0 auto !important;
+          }
+          .label-code { font-size: 14pt !important; padding: 0 !important; letter-spacing: .03em !important; }
+
+          /* Scale QR down to ~12mm */
+          .label-card svg { width: 12mm !important; height: 12mm !important; }
+
+          /* Route line */
+          .label-route {
+            font-size: 5.5pt !important; letter-spacing: .04em !important;
+            padding: 0 2.5mm 0.5mm !important;
+          }
+          .label-route-plane { font-size: 7pt !important; }
+
+          /* Client name only — hide tag, phone, destination side */
+          .label-parties {
+            border: none !important; padding: 0 2.5mm !important;
+            flex: 1 !important;
+          }
+          .label-party { padding: 0 !important; }
+          .label-party-tag { display: none !important; }
+          .label-party-name { font-size: 7pt !important; margin: 0 !important; font-weight: 700 !important; }
+          .label-party-detail { display: none !important; }
+          .label-party--right { display: none !important; }
+          .label-arrow { display: none !important; }
+
+          /* Hide footer and counter */
+          .label-foot { display: none !important; }
+          .label-idx  { display: none !important; }
         }
       `}</style>
     </div>
