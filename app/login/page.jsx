@@ -86,7 +86,14 @@ function LoginForm() {
     });
     setLoading(false);
     if (res?.error) {
-      if (res.error.includes('suspended') || res.code === 'suspended') {
+      // Check remaining attempts
+      const status = await fetch('/api/auth/login-status', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: fields.email }),
+      }).then(r => r.json()).catch(() => ({ remaining: null, suspended: false }));
+
+      if (status.suspended) {
         setError('Compte suspendu suite à trop de tentatives. Contactez un administrateur.');
         return;
       }
@@ -103,7 +110,11 @@ function LoginForm() {
         setTab('verify');
         return;
       }
-      setError(t('error.credentials'));
+      if (status.remaining !== null && status.remaining <= 4) {
+        setError(`Email ou mot de passe incorrect. ${status.remaining} tentative${status.remaining > 1 ? 's' : ''} restante${status.remaining > 1 ? 's' : ''} avant suspension.`);
+      } else {
+        setError(t('error.credentials'));
+      }
       return;
     }
     const session = await fetch('/api/auth/session').then(r => r.json());
