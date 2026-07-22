@@ -156,18 +156,34 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       // permission/role/status changes made by an admin take effect immediately,
       // without requiring the target user to log out and back in.
       if (!user && token.id) {
-        const fresh = await (prisma.user as any).findUnique({
-          where:  { id: token.id as string },
-          select: { role: true, permissions: true, status: true, mustChangePassword: true, sessionVersion: true },
-        });
-        if (!fresh) return null; // user deleted
-        // Session exclusivity check: invalidate if a newer session exists
-        if ((fresh.sessionVersion ?? 0) !== (token.sessionVersion ?? 0)) return null;
-        if (fresh.status === 'suspended') return null;
-        token.role               = fresh.role;
-        token.permissions        = fresh.permissions;
-        token.status             = fresh.status ?? 'active';
-        token.mustChangePassword = fresh.mustChangePassword ?? false;
+        try {
+          const fresh = await (prisma.user as any).findUnique({
+            where:  { id: token.id as string },
+            select: { role: true, permissions: true, status: true, mustChangePassword: true, sessionVersion: true },
+          });
+          if (!fresh) return null;
+          // Session exclusivity: only enforce if DB has the column (sessionVersion is a number)
+          if (typeof fresh.sessionVersion === 'number' && typeof token.sessionVersion === 'number') {
+            if (fresh.sessionVersion !== token.sessionVersion) return null;
+          }
+          if (fresh.status === 'suspended') return null;
+          token.role               = fresh.role;
+          token.permissions        = fresh.permissions;
+          token.status             = fresh.status ?? 'active';
+          token.mustChangePassword = fresh.mustChangePassword ?? false;
+        } catch {
+          // Column may not exist yet — fall back to query without sessionVersion
+          const fresh = await prisma.user.findUnique({
+            where:  { id: token.id as string },
+            select: { role: true, permissions: true, status: true, mustChangePassword: true },
+          });
+          if (!fresh) return null;
+          if ((fresh as any).status === 'suspended') return null;
+          token.role               = fresh.role;
+          token.permissions        = fresh.permissions;
+          token.status             = (fresh as any).status ?? 'active';
+          token.mustChangePassword = (fresh as any).mustChangePassword ?? false;
+        }
       }
 
       if (trigger === 'update' && session) {
