@@ -217,26 +217,26 @@ export default function ParcelLabelsScreen({ id, onNav }) {
           }
 
           /* Header */
-          .lp-head { padding: 1mm 2.5mm !important; flex-shrink: 0 !important; }
-          .lp-brand { font-size: 5pt !important; }
-          .lp-camp  { font-size: 5pt !important; }
-          .lp-idx   { font-size: 5pt !important; }
+          .lp-head { padding: 0.5mm 2mm !important; flex-shrink: 0 !important; }
+          .lp-brand { font-size: 4.5pt !important; }
+          .lp-camp  { font-size: 4.5pt !important; }
+          .lp-idx   { font-size: 4.5pt !important; }
 
           /* Body */
-          .lp-body { padding: 1.5mm 2.5mm !important; gap: 2mm !important; flex: 1 !important; align-items: flex-start !important; }
+          .lp-body { padding: 0.8mm 2mm !important; gap: 1.5mm !important; flex: 1 !important; align-items: flex-start !important; }
 
           /* Left column */
           .lp-left { display: flex !important; flex-direction: column !important; justify-content: space-between !important; min-width: 0 !important; }
-          .lp-designation { font-size: 9pt !important; margin-bottom: 1mm !important; line-height: 1.15 !important; }
-          .lp-lines { gap: 0.5mm !important; margin-bottom: 1mm !important; }
-          .lp-key { font-size: 5.5pt !important; min-width: 40px !important; }
-          .lp-sep { font-size: 5.5pt !important; }
-          .lp-val { font-size: 5.5pt !important; }
-          .lp-code { font-size: 8pt !important; padding-top: 0.8mm !important; letter-spacing: .03em !important; }
+          .lp-designation { font-size: 7.5pt !important; margin-bottom: 0.5mm !important; line-height: 1.1 !important; }
+          .lp-lines { gap: 0.2mm !important; margin-bottom: 0.5mm !important; }
+          .lp-key { font-size: 4.8pt !important; min-width: 36px !important; }
+          .lp-sep { font-size: 4.8pt !important; }
+          .lp-val { font-size: 4.8pt !important; }
+          .lp-code { font-size: 7pt !important; padding-top: 0.5mm !important; letter-spacing: .02em !important; }
 
           /* QR */
           .lp-qr { padding: 1px !important; align-self: center !important; }
-          .lp-qr svg { width: 11mm !important; height: 11mm !important; }
+          .lp-qr svg { width: 10mm !important; height: 10mm !important; }
         }
       `}</style>
     </div>
