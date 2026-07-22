@@ -33,6 +33,8 @@ model User {
   mustChangePassword Boolean   @default(false)
   resetToken         String?
   resetExpiry        DateTime?
+  loginAttempts      Int       @default(0)
+  lockedAt           DateTime?
   permissions        Json      @default("{}")
   city               String?
   country            String    @default("CM")

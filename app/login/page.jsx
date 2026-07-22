@@ -35,7 +35,8 @@ function LoginForm() {
   const [demoCode, setDemoCode] = useState('');
   const [error, setError]   = useState('');
   const [loading, setLoading] = useState(false);
-  const [show, setShow]     = useState(false);
+  const [show, setShow]         = useState(false);
+  const [remember, setRemember] = useState(false);
   const [verifyFromLogin, setVerifyFromLogin] = useState(false);
 
   const lang = locale === 'en' ? 'en' : 'fr';
@@ -81,10 +82,14 @@ function LoginForm() {
     e.preventDefault();
     setError(''); setLoading(true);
     const res = await signIn('credentials', {
-      email: fields.email, password: fields.password, redirect: false,
+      email: fields.email, password: fields.password, remember: String(remember), redirect: false,
     });
     setLoading(false);
     if (res?.error) {
+      if (res.error.includes('suspended') || res.code === 'suspended') {
+        setError('Compte suspendu suite à trop de tentatives. Contactez un administrateur.');
+        return;
+      }
       // Check if the account exists but email is not verified yet
       const check = await fetch('/api/auth/resend-verification', {
         method: 'POST',
@@ -348,6 +353,11 @@ function LoginForm() {
                   </button>
                 </div>
               </div>
+              <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: 'var(--ink-600)', cursor: 'pointer', marginTop: 4 }}>
+                <input type="checkbox" checked={remember} onChange={e => setRemember(e.target.checked)}
+                  style={{ width: 15, height: 15, accentColor: 'var(--brand-500)', cursor: 'pointer' }} />
+                Rester connecté pendant 30 jours
+              </label>
               <button type="submit" disabled={loading}
                 className="btn btn--brand btn--lg"
                 style={{ width: '100%', justifyContent: 'center', fontSize: 14, fontWeight: 600, marginTop: 8, opacity: loading ? 0.7 : 1 }}>

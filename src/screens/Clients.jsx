@@ -309,6 +309,8 @@ function ClientDrawer({ cl, onClose, onEdit, onNav, onStatusChange, onDeleted })
   const [resending, setResending] = useState(false);
   const [resendOk, setResendOk] = useState(false);
   const [resendErr, setResendErr] = useState('');
+  const [resettingPwd, setResettingPwd] = useState(false);
+  const [resetPwdResult, setResetPwdResult] = useState('');
 
   const handleDelete = async () => {
     setDeleting(true);
@@ -327,6 +329,22 @@ function ClientDrawer({ cl, onClose, onEdit, onNav, onStatusChange, onDeleted })
       setDeleteErr(t.common.networkError);
       setDeleting(false);
     }
+  };
+
+  const handleResetPassword = async () => {
+    if (!confirm('Débloquer ce compte et générer un nouveau mot de passe temporaire ?')) return;
+    setResettingPwd(true);
+    setResetPwdResult('');
+    try {
+      const res = await fetch(`/api/admin/users/${cl.id}/reset-password`, { method: 'POST' });
+      const d = await res.json();
+      if (!res.ok) { setResetPwdResult('Erreur : ' + (d.error || 'inconnue')); }
+      else {
+        setResetPwdResult(`MDP temporaire : ${d.tempPassword}`);
+        onStatusChange?.(cl.id, 'active');
+      }
+    } catch { setResetPwdResult('Erreur réseau'); }
+    setResettingPwd(false);
   };
 
   const handleResendVerification = async () => {
@@ -586,6 +604,26 @@ function ClientDrawer({ cl, onClose, onEdit, onNav, onStatusChange, onDeleted })
             {cl.status === 'suspended' ? 'Réactiver' : 'Suspendre'}
           </button>
         </div>
+        {cl.status === 'suspended' && (
+          <div>
+            <button
+              className="btn btn--ghost"
+              style={{ width: '100%', justifyContent: 'center', fontSize: 12, color: 'var(--bad-700)', borderColor: 'var(--bad-200)' }}
+              onClick={handleResetPassword}
+              disabled={resettingPwd}>
+              🔑 {resettingPwd ? 'Réinitialisation…' : 'Débloquer + Réinitialiser le mot de passe'}
+            </button>
+            {resetPwdResult && (
+              <div style={{
+                fontSize: 13, fontWeight: 600, background: 'var(--ok-50)', border: '1px solid var(--ok-200)',
+                color: 'var(--ok-700)', borderRadius: 6, padding: '8px 12px', marginTop: 6,
+                fontFamily: 'monospace', wordBreak: 'break-all',
+              }}>
+                {resetPwdResult}
+              </div>
+            )}
+          </div>
+        )}
         {!cl.emailVerified && (
           <div>
             <button

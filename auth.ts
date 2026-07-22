@@ -21,16 +21,23 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       credentials: {
         email:    { label: 'Email',    type: 'email' },
         password: { label: 'Password', type: 'password' },
+        remember: { label: 'Remember', type: 'text' },
       },
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) return null;
+
+        const MAX_ATTEMPTS = 5;
 
         const user = await prisma.user.findUnique({
           where: { email: credentials.email as string },
         });
 
         if (!user) return null;
-        if ((user as any).status === 'suspended' && user.role !== 'client') return null;
+
+        if ((user as any).status === 'suspended') {
+          throw new Error('suspended');
+        }
+
         const skipVerify = process.env.DISABLE_EMAIL_VERIFICATION === 'true';
         if (!skipVerify && !user.emailVerified) return null;
 
@@ -38,7 +45,27 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           credentials.password as string,
           user.passwordHash,
         );
-        if (!valid) return null;
+
+        if (!valid) {
+          const attempts = ((user as any).loginAttempts ?? 0) + 1;
+          if (attempts >= MAX_ATTEMPTS) {
+            await (prisma.user as any).update({
+              where: { id: user.id },
+              data: { loginAttempts: attempts, status: 'suspended', lockedAt: new Date() },
+            });
+            throw new Error('suspended');
+          }
+          await (prisma.user as any).update({
+            where: { id: user.id },
+            data: { loginAttempts: attempts },
+          });
+          return null;
+        }
+
+        await (prisma.user as any).update({
+          where: { id: user.id },
+          data: { loginAttempts: 0, lockedAt: null },
+        });
 
         return {
           id:                user.id,
@@ -48,6 +75,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           permissions:       user.permissions,
           mustChangePassword: (user as any).mustChangePassword ?? false,
           status:            (user as any).status ?? 'active',
+          remember:          credentials.remember === 'true',
         };
       },
     }),

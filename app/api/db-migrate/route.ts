@@ -123,5 +123,9 @@ export async function GET() {
     )
   `);
 
+  // ── Security: login attempts tracking ─────────────────────────────────────
+  await run('users.loginAttempts', `ALTER TABLE users ADD COLUMN IF NOT EXISTS "loginAttempts" INTEGER NOT NULL DEFAULT 0`);
+  await run('users.lockedAt',      `ALTER TABLE users ADD COLUMN IF NOT EXISTS "lockedAt" TIMESTAMPTZ`);
+
   return NextResponse.json({ ok: true, results });
 }
