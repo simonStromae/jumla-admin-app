@@ -11,8 +11,8 @@ function generateTempPassword() {
 }
 
 export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
-  const authErr = await requireAdmin(req);
-  if (authErr) return authErr;
+  const { error } = await requireAdmin();
+  if (error) return error;
 
   const { id } = params;
   const tempPassword = generateTempPassword();
