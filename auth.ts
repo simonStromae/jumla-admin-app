@@ -6,6 +6,24 @@ import bcrypt from 'bcryptjs';
 import { prisma } from '@/src/lib/prisma';
 import { authConfig } from './auth.config';
 
+async function logLogin(userId: string | null, email: string, ip: string, ua: string, success: boolean) {
+  try {
+    let country = '', city = '';
+    const cleanIp = ip.replace('::ffff:', '');
+    if (cleanIp && cleanIp !== '127.0.0.1' && cleanIp !== '::1') {
+      const geo = await fetch(`https://ip-api.com/json/${cleanIp}?fields=country,city`, { signal: AbortSignal.timeout(2000) })
+        .then(r => r.json()).catch(() => ({}));
+      country = geo.country ?? '';
+      city    = geo.city    ?? '';
+    }
+    const id = crypto.randomUUID();
+    await (prisma as any).$executeRawUnsafe(
+      `INSERT INTO login_logs (id, "userId", email, ip, "userAgent", country, city, success) VALUES ($1,$2,$3,$4,$5,$6,$7,$8)`,
+      id, userId, email, cleanIp, ua.slice(0, 512), country, city, success,
+    );
+  } catch { /* non-blocking */ }
+}
+
 export const { handlers, signIn, signOut, auth } = NextAuth({
   ...authConfig,
   providers: [
@@ -23,28 +41,32 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         password: { label: 'Password', type: 'password' },
         remember: { label: 'Remember', type: 'text' },
       },
-      async authorize(credentials) {
+      async authorize(credentials, request) {
         if (!credentials?.email || !credentials?.password) return null;
 
         const MAX_ATTEMPTS = 5;
+        const ip = (request?.headers?.get('x-forwarded-for') ?? request?.headers?.get('x-real-ip') ?? '').split(',')[0].trim();
+        const ua = request?.headers?.get('user-agent') ?? '';
+        const email = credentials.email as string;
 
         const user = await prisma.user.findUnique({
-          where: { email: credentials.email as string },
+          where: { email },
         });
 
-        if (!user) return null;
+        if (!user) {
+          logLogin(null, email, ip, ua, false);
+          return null;
+        }
 
         if ((user as any).status === 'suspended') {
+          logLogin(user.id, email, ip, ua, false);
           throw new Error('suspended');
         }
 
         const skipVerify = process.env.DISABLE_EMAIL_VERIFICATION === 'true';
         if (!skipVerify && !user.emailVerified) return null;
 
-        const valid = await bcrypt.compare(
-          credentials.password as string,
-          user.passwordHash,
-        );
+        const valid = await bcrypt.compare(credentials.password as string, user.passwordHash);
 
         if (!valid) {
           const attempts = ((user as any).loginAttempts ?? 0) + 1;
@@ -53,29 +75,33 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
               where: { id: user.id },
               data: { loginAttempts: attempts, status: 'suspended', lockedAt: new Date() },
             });
+            logLogin(user.id, email, ip, ua, false);
             throw new Error('suspended');
           }
-          await (prisma.user as any).update({
-            where: { id: user.id },
-            data: { loginAttempts: attempts },
-          });
+          await (prisma.user as any).update({ where: { id: user.id }, data: { loginAttempts: attempts } });
+          logLogin(user.id, email, ip, ua, false);
           return null;
         }
 
-        await (prisma.user as any).update({
+        // Increment sessionVersion to invalidate all previous sessions
+        const updated = await (prisma.user as any).update({
           where: { id: user.id },
-          data: { loginAttempts: 0, lockedAt: null },
+          data: { loginAttempts: 0, lockedAt: null, sessionVersion: { increment: 1 } },
+          select: { sessionVersion: true },
         });
 
+        logLogin(user.id, email, ip, ua, true);
+
         return {
-          id:                user.id,
-          email:             user.email,
-          name:              user.name,
-          role:              user.role,
-          permissions:       user.permissions,
+          id:                 user.id,
+          email:              user.email,
+          name:               user.name,
+          role:               user.role,
+          permissions:        user.permissions,
           mustChangePassword: (user as any).mustChangePassword ?? false,
-          status:            (user as any).status ?? 'active',
-          remember:          credentials.remember === 'true',
+          status:             (user as any).status ?? 'active',
+          remember:           credentials.remember === 'true',
+          sessionVersion:     updated.sessionVersion,
         };
       },
     }),
@@ -130,16 +156,18 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       // permission/role/status changes made by an admin take effect immediately,
       // without requiring the target user to log out and back in.
       if (!user && token.id) {
-        const fresh = await prisma.user.findUnique({
+        const fresh = await (prisma.user as any).findUnique({
           where:  { id: token.id as string },
-          select: { role: true, permissions: true, status: true, mustChangePassword: true },
+          select: { role: true, permissions: true, status: true, mustChangePassword: true, sessionVersion: true },
         });
-        if (fresh) {
-          token.role               = fresh.role;
-          token.permissions        = fresh.permissions;
-          token.status             = (fresh as any).status ?? 'active';
-          token.mustChangePassword = (fresh as any).mustChangePassword ?? false;
-        }
+        if (!fresh) return null; // user deleted
+        // Session exclusivity check: invalidate if a newer session exists
+        if ((fresh.sessionVersion ?? 0) !== (token.sessionVersion ?? 0)) return null;
+        if (fresh.status === 'suspended') return null;
+        token.role               = fresh.role;
+        token.permissions        = fresh.permissions;
+        token.status             = fresh.status ?? 'active';
+        token.mustChangePassword = fresh.mustChangePassword ?? false;
       }
 
       if (trigger === 'update' && session) {

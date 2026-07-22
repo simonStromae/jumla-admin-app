@@ -311,6 +311,8 @@ function ClientDrawer({ cl, onClose, onEdit, onNav, onStatusChange, onDeleted })
   const [resendErr, setResendErr] = useState('');
   const [resettingPwd, setResettingPwd] = useState(false);
   const [resetPwdResult, setResetPwdResult] = useState('');
+  const [loginLogs, setLoginLogs] = useState(null);
+  const [logsLoading, setLogsLoading] = useState(false);
 
   const handleDelete = async () => {
     setDeleting(true);
@@ -329,6 +331,14 @@ function ClientDrawer({ cl, onClose, onEdit, onNav, onStatusChange, onDeleted })
       setDeleteErr(t.common.networkError);
       setDeleting(false);
     }
+  };
+
+  const loadLoginLogs = async () => {
+    if (loginLogs) return;
+    setLogsLoading(true);
+    const rows = await fetch(`/api/admin/login-logs?userId=${cl.id}&limit=20`).then(r => r.json()).catch(() => []);
+    setLoginLogs(rows);
+    setLogsLoading(false);
   };
 
   const handleResetPassword = async () => {
@@ -517,6 +527,47 @@ function ClientDrawer({ cl, onClose, onEdit, onNav, onStatusChange, onDeleted })
             )}
           </div>
         )}
+
+        <div style={{ padding: '16px 22px', borderBottom: '1px solid var(--border-soft)' }}>
+          <div className="section-title" style={{ marginBottom: 10, cursor: 'pointer' }} onClick={loadLoginLogs}>
+            🔐 Connexions récentes
+            {!loginLogs && <span style={{ fontSize: 11, color: 'var(--brand-500)', marginLeft: 8, fontWeight: 500 }}>Voir ▾</span>}
+          </div>
+          {logsLoading && <div style={{ fontSize: 12, color: 'var(--ink-400)' }}>Chargement…</div>}
+          {loginLogs && loginLogs.length === 0 && (
+            <div style={{ fontSize: 12, color: 'var(--ink-400)' }}>Aucun log disponible</div>
+          )}
+          {loginLogs && loginLogs.length > 0 && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+              {loginLogs.map(log => (
+                <div key={log.id} style={{
+                  padding: '8px 10px', borderRadius: 7,
+                  background: log.success ? 'var(--ok-50)' : 'var(--bad-50)',
+                  border: `1px solid ${log.success ? 'var(--ok-200)' : 'var(--bad-200)'}`,
+                  fontSize: 12,
+                }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 2 }}>
+                    <span style={{ fontWeight: 700, color: log.success ? 'var(--ok-700)' : 'var(--bad-700)' }}>
+                      {log.success ? '✓ Connexion réussie' : '✗ Tentative échouée'}
+                    </span>
+                    <span style={{ color: 'var(--ink-400)', fontFamily: 'monospace', fontSize: 11 }}>
+                      {new Date(log.createdAt).toLocaleString('fr-FR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
+                    </span>
+                  </div>
+                  <div style={{ color: 'var(--ink-600)', display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+                    {(log.city || log.country) && <span>📍 {[log.city, log.country].filter(Boolean).join(', ')}</span>}
+                    {log.ip && <span style={{ fontFamily: 'monospace', fontSize: 11 }}>IP: {log.ip}</span>}
+                  </div>
+                  {log.userAgent && (
+                    <div style={{ color: 'var(--ink-400)', fontSize: 11, marginTop: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      {log.userAgent}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
 
         <div style={{ padding: '16px 22px' }}>
           <div className="section-title">

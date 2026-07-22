@@ -12,6 +12,7 @@ export const authConfig = {
         token.permissions        = (user as any).permissions;
         token.mustChangePassword = (user as any).mustChangePassword ?? false;
         token.status             = (user as any).status ?? 'active';
+        token.sessionVersion     = (user as any).sessionVersion ?? 0;
         // Set token expiry: 2h without remember me, 30 days with
         const remember = (user as any).remember === true;
         token.exp = Math.floor(Date.now() / 1000) + (remember ? 30 * 24 * 3600 : 2 * 3600);

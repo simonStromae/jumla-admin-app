@@ -9,11 +9,16 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
 
   const { name, email, phone, city, role, permissions, status, mustChangePassword } = await req.json();
 
+  // Protect email: reject empty/blank email updates
+  if (email !== undefined && (!email || !email.trim())) {
+    return NextResponse.json({ error: 'L\'adresse email ne peut pas être supprimée.' }, { status: 400 });
+  }
+
   const user = await prisma.user.update({
     where: { id: params.id },
     data: {
       ...(name               !== undefined && { name }),
-      ...(email              !== undefined && { email }),
+      ...(email              !== undefined && { email: email.trim() }),
       ...(phone              !== undefined && { phone: phone || null }),
       ...(city               !== undefined && { city: city || null }),
       ...(role               !== undefined && { role: role as any }),

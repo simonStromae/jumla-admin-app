@@ -35,6 +35,7 @@ model User {
   resetExpiry        DateTime?
   loginAttempts      Int       @default(0)
   lockedAt           DateTime?
+  sessionVersion     Int       @default(0)
   permissions        Json      @default("{}")
   city               String?
   country            String    @default("CM")

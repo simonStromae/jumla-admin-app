@@ -123,9 +123,25 @@ export async function GET() {
     )
   `);
 
-  // ── Security: login attempts tracking ─────────────────────────────────────
-  await run('users.loginAttempts', `ALTER TABLE users ADD COLUMN IF NOT EXISTS "loginAttempts" INTEGER NOT NULL DEFAULT 0`);
-  await run('users.lockedAt',      `ALTER TABLE users ADD COLUMN IF NOT EXISTS "lockedAt" TIMESTAMPTZ`);
+  // ── Security: login attempts + session exclusivity ────────────────────────
+  await run('users.loginAttempts',  `ALTER TABLE users ADD COLUMN IF NOT EXISTS "loginAttempts" INTEGER NOT NULL DEFAULT 0`);
+  await run('users.lockedAt',       `ALTER TABLE users ADD COLUMN IF NOT EXISTS "lockedAt" TIMESTAMPTZ`);
+  await run('users.sessionVersion', `ALTER TABLE users ADD COLUMN IF NOT EXISTS "sessionVersion" INTEGER NOT NULL DEFAULT 0`);
+
+  // ── Login logs ─────────────────────────────────────────────────────────────
+  await run('login_logs', `
+    CREATE TABLE IF NOT EXISTS login_logs (
+      id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
+      "userId" TEXT,
+      email TEXT NOT NULL,
+      ip TEXT,
+      "userAgent" TEXT,
+      country TEXT,
+      city TEXT,
+      success BOOLEAN NOT NULL DEFAULT false,
+      "createdAt" TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )
+  `);
 
   return NextResponse.json({ ok: true, results });
 }
