@@ -232,8 +232,6 @@ export default function ParcelLabelsScreen({ id, onNav }) {
           .lp-key { font-size: 5.5pt !important; min-width: 40px !important; }
           .lp-sep { font-size: 5.5pt !important; }
           .lp-val { font-size: 5.5pt !important; }
-          /* Hide "Emballé par" and "Made in" — keep only Type + Quantité */
-          .lp-lines > div:nth-child(n+3) { display: none !important; }
           .lp-code { font-size: 8pt !important; padding-top: 0.8mm !important; letter-spacing: .03em !important; }
 
           /* QR */
