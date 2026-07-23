@@ -9,6 +9,10 @@ export async function POST(req: NextRequest) {
   const { error } = await requirePermission('whatsapp');
   if (error) return error;
 
+  const host = req.headers.get('x-forwarded-host') ?? req.headers.get('host') ?? '';
+  const proto = req.headers.get('x-forwarded-proto') ?? 'https';
+  const statusCallback = host ? `${proto}://${host}/api/messaging/webhook` : undefined;
+
   const { parcelIds, body, templateId } = await req.json() as {
     parcelIds:  string[];
     body:       string;
@@ -120,14 +124,14 @@ export async function POST(req: NextRequest) {
       let mode: string;
 
       if (channel === 'sms') {
-        msg  = await twilioSendSms(accountSid, authToken, fromNumber, toPhone, finalBody);
+        msg  = await twilioSendSms(accountSid, authToken, fromNumber, toPhone, finalBody, statusCallback);
         mode = 'sms';
       } else if (contentSid && templateId) {
         const contentVariables = buildContentVariables(templateId, namedVars) ?? {};
-        msg  = await twilioSendWhatsappTemplate(accountSid, authToken, fromNumber, toPhone, contentSid, contentVariables);
+        msg  = await twilioSendWhatsappTemplate(accountSid, authToken, fromNumber, toPhone, contentSid, contentVariables, statusCallback);
         mode = 'template';
       } else {
-        msg  = await twilioSendWhatsapp(accountSid, authToken, fromNumber, toPhone, finalBody);
+        msg  = await twilioSendWhatsapp(accountSid, authToken, fromNumber, toPhone, finalBody, statusCallback);
         mode = 'freeform';
       }
 

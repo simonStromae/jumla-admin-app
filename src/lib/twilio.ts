@@ -39,12 +39,14 @@ export async function twilioSendWhatsapp(
   from: string,
   to: string,
   body: string,
+  statusCallback?: string,
 ) {
   const url    = `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Messages.json`;
   const params = new URLSearchParams({
     From: from.startsWith('whatsapp:') ? from : 'whatsapp:' + from,
     To:   to.startsWith('whatsapp:')   ? to   : 'whatsapp:' + to,
     Body: body,
+    ...(statusCallback ? { StatusCallback: statusCallback } : {}),
   });
 
   const res  = await fetch(url, {
@@ -71,10 +73,14 @@ export async function twilioSendSms(
   from: string,
   to: string,
   body: string,
+  statusCallback?: string,
 ) {
   const url    = `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Messages.json`;
   const clean  = (n: string) => n.replace(/^whatsapp:/i, '').replace(/\s/g, '');
-  const params = new URLSearchParams({ From: clean(from), To: clean(to), Body: body });
+  const params = new URLSearchParams({
+    From: clean(from), To: clean(to), Body: body,
+    ...(statusCallback ? { StatusCallback: statusCallback } : {}),
+  });
 
   const res  = await fetch(url, {
     method:  'POST',
@@ -94,6 +100,7 @@ export async function twilioSendWhatsappTemplate(
   to: string,
   contentSid: string,
   contentVariables: Record<string, string>,
+  statusCallback?: string,
 ) {
   const url    = `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Messages.json`;
   const params = new URLSearchParams({
@@ -101,6 +108,7 @@ export async function twilioSendWhatsappTemplate(
     To:               to.startsWith('whatsapp:')   ? to   : 'whatsapp:' + to,
     ContentSid:       contentSid,
     ContentVariables: JSON.stringify(contentVariables),
+    ...(statusCallback ? { StatusCallback: statusCallback } : {}),
   });
 
   const res  = await fetch(url, {
@@ -178,15 +186,17 @@ export const PARCEL_STATUS_LABELS: Record<string, string> = {
 // ─── Shared notification helper ────────────────────────────────────────────
 
 export async function sendWhatsappNotification(
-  phone:      string,
-  message:    string,
-  parcelId?:  string | null,
-  templateId?: string,
+  phone:         string,
+  message:       string,
+  parcelId?:     string | null,
+  templateId?:   string,
   templateVars?: Record<string, string>,
+  appUrl?:       string,
 ): Promise<void> {
   const { accountSid, authToken, fromNumber } = await getTwilioSettings();
   if (!accountSid || !authToken || !fromNumber) return;
   const to = formatWhatsappNumber(phone);
+  const statusCallback = appUrl ? `${appUrl}/api/messaging/webhook` : undefined;
 
   // Try template first if templateId provided
   let contentSid: string | null = null;
@@ -207,9 +217,9 @@ export async function sendWhatsappNotification(
     if (contentSid && templateId && templateVars) {
       const { buildContentVariables } = await import('./wa-template');
       const contentVariables = buildContentVariables(templateId, templateVars) ?? {};
-      result = await twilioSendWhatsappTemplate(accountSid, authToken, fromNumber, to, contentSid, contentVariables);
+      result = await twilioSendWhatsappTemplate(accountSid, authToken, fromNumber, to, contentSid, contentVariables, statusCallback);
     } else {
-      result = await twilioSendWhatsapp(accountSid, authToken, fromNumber, to, message);
+      result = await twilioSendWhatsapp(accountSid, authToken, fromNumber, to, message, statusCallback);
     }
 
     await prisma.whatsappLog.create({
