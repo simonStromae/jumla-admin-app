@@ -12,12 +12,14 @@ export default function ClientsScreen({ onNav }) {
   const t = useAdminT();
   const [open, setOpen] = useState(null);
   const [editing, setEditing] = useState(null);
-  const [view, setView] = useState('grid');
+  const [view, setView] = useState('list');
   const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(12);
+  const [pageSize, setPageSize] = useState(25);
   const [clients, setClients] = useState([]);
   const [loading, setLoading] = useState(true);
   const [fetchError, setFetchError] = useState('');
+  const [search, setSearch] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
 
   const loadClients = () => {
     setLoading(true);
@@ -39,6 +41,21 @@ export default function ClientsScreen({ onNav }) {
   };
 
   useEffect(() => { loadClients(); }, []);
+
+  const filteredClients = clients.filter(cl => {
+    if (statusFilter === 'active'    && cl.status === 'suspended') return false;
+    if (statusFilter === 'suspended' && cl.status !== 'suspended') return false;
+    if (statusFilter === 'unverified' && cl.emailVerified) return false;
+    if (search) {
+      const q = search.toLowerCase();
+      return cl.name.toLowerCase().includes(q)
+          || (cl.phone ?? '').includes(q)
+          || (cl.email ?? '').toLowerCase().includes(q)
+          || (cl.city  ?? '').toLowerCase().includes(q)
+          || (cl.code  ?? '').toLowerCase().includes(q);
+    }
+    return true;
+  });
 
   const handleToggleStatus = async (cl) => {
     const newStatus = cl.status === 'suspended' ? 'active' : 'suspended';
@@ -68,13 +85,39 @@ export default function ClientsScreen({ onNav }) {
       </div>
 
       <div className="toolbar">
+        <div className="tabs" style={{ marginBottom: 0 }}>
+          {[
+            { id: 'all',        l: 'Tous',           n: clients.length },
+            { id: 'active',     l: 'Actifs',         n: clients.filter(c => c.status !== 'suspended').length },
+            { id: 'suspended',  l: 'Suspendus',      n: clients.filter(c => c.status === 'suspended').length },
+            { id: 'unverified', l: 'Non vérifiés',   n: clients.filter(c => !c.emailVerified).length },
+          ].map(tab => (
+            <button
+              key={tab.id}
+              className={'tab ' + (statusFilter === tab.id ? 'is-active' : '')}
+              onClick={() => { setStatusFilter(tab.id); setPage(1); }}
+            >
+              {tab.l} {tab.n > 0 && <span className="count">{tab.n}</span>}
+            </button>
+          ))}
+        </div>
         <div className="spacer" />
         <div style={{ position: 'relative' }}>
           <I.Search style={{ position: 'absolute', left: 10, top: 9, width: 14, height: 14, color: 'var(--ink-400)' }} />
-          <input className="input input--sm" placeholder={'Rechercher un client…'} style={{ width: 260, paddingLeft: 32 }} />
+          <input
+            className="input input--sm"
+            placeholder="Rechercher un client…"
+            style={{ width: 240, paddingLeft: 32 }}
+            value={search}
+            onChange={e => { setSearch(e.target.value); setPage(1); }}
+          />
+          {search && (
+            <button
+              onClick={() => { setSearch(''); setPage(1); }}
+              style={{ position: 'absolute', right: 8, top: 8, background: 'none', border: 'none', cursor: 'pointer', color: 'var(--ink-400)', fontSize: 14, lineHeight: 1 }}
+            >✕</button>
+          )}
         </div>
-        {/* TODO: no i18n key for 'Filtres' */}
-        <button className="btn btn--ghost btn--sm"><I.Filter />Filtres</button>
         <ViewToggle value={view} onChange={setView} />
       </div>
 
@@ -100,19 +143,20 @@ export default function ClientsScreen({ onNav }) {
         <div style={{ padding: 40, textAlign: 'center', color: 'var(--err-600)', fontSize: 14 }}>
           {t.common.error} : {fetchError}
         </div>
-      ) : clients.length === 0 ? (
+      ) : filteredClients.length === 0 ? (
         <div style={{ padding: 48, textAlign: 'center', color: 'var(--ink-400)', fontSize: 14 }}>
           <I.Users style={{ width: 32, height: 32, marginBottom: 12, opacity: 0.3 }} />
-          <div style={{ fontWeight: 600, marginBottom: 4 }}>{t.clients.empty}</div>
-          {/* TODO: no i18n key for empty-state description */}
-          <div style={{ fontSize: 12 }}>Les clients qui se créent un compte apparaissent ici.</div>
+          <div style={{ fontWeight: 600, marginBottom: 4 }}>
+            {search || statusFilter !== 'all' ? 'Aucun client ne correspond à ce filtre.' : t.clients.empty}
+          </div>
+          {!search && statusFilter === 'all' && <div style={{ fontSize: 12 }}>Les clients qui se créent un compte apparaissent ici.</div>}
         </div>
       ) : view === 'grid'
-        ? <ClientsGridView clients={clients} setOpen={setOpen} />
-        : <ClientsListView clients={clients} setOpen={setOpen} onToggleStatus={handleToggleStatus} page={page} pageSize={pageSize} />
+        ? <ClientsGridView clients={filteredClients} setOpen={setOpen} />
+        : <ClientsListView clients={filteredClients} setOpen={setOpen} onToggleStatus={handleToggleStatus} page={page} pageSize={pageSize} />
       }
 
-      <Pagination total={clients.length} page={page} pageSize={pageSize}
+      <Pagination total={filteredClients.length} page={page} pageSize={pageSize}
         onPageChange={setPage}
         onPageSizeChange={(s) => { setPageSize(s); setPage(1); }}
         sizes={view === 'grid' ? [12, 24, 48] : [10, 25, 50, 100]} />
