@@ -25,6 +25,7 @@ export default function MessagingScreen({ onNav, campaignId }) {
   const [loading,         setLoading]         = useState(true);
   const [filter,          setFilter]          = useState('all');
   const [campaignFilter,  setCampaignFilter]  = useState(campaignId ?? '');
+  const [search,          setSearch]          = useState('');
   const [apiStatus,       setApiStatus]       = useState(null); // {configured, fromNumber}
   const [logs,            setLogs]            = useState([]);
   const [sending,         setSending]         = useState(false);
@@ -83,6 +84,12 @@ export default function MessagingScreen({ onNav, campaignId }) {
   const filtered = parcels.filter(p => {
     if (campaignFilter && p.campaignId !== campaignFilter) return false;
     if (filter === 'unpaid') return p.paid !== 'paid';
+    if (search) {
+      const q = search.toLowerCase();
+      return (p.senderName ?? '').toLowerCase().includes(q)
+          || (p.trackingCode ?? '').toLowerCase().includes(q)
+          || (p.senderPhone ?? '').includes(q);
+    }
     return true;
   });
 
@@ -241,45 +248,67 @@ export default function MessagingScreen({ onNav, campaignId }) {
         </div>
       )}
 
-      {/* Sandbox / Production notice */}
-      {apiStatus?.configured && (() => {
-        const from = apiStatus.fromNumber ?? '';
-        if (!from) return null;
-        const isSandbox = from.includes('14155238886');
-        return (
-          <div style={{
-            marginBottom: 14, padding: '12px 16px', borderRadius: 10,
-            background: isSandbox ? '#fffbeb' : 'var(--bad-50)',
-            border: `1.5px solid ${isSandbox ? '#fde68a' : 'var(--bad-200)'}`,
-          }}>
-            {isSandbox ? (
-              <div style={{ fontSize: 13, color: '#92400e', lineHeight: 1.6 }}>
-                <strong>⚠️ Mode sandbox actif</strong> — Pour recevoir les messages, chaque destinataire doit d'abord envoyer <code style={{ background: '#fef3c7', padding: '2px 6px', borderRadius: 4, fontFamily: 'monospace', fontWeight: 700 }}>join pride-upon</code> au <strong>+1 415 523 8886</strong> sur WhatsApp (une seule fois par numéro).
-              </div>
-            ) : (
-              <div style={{ fontSize: 13, color: 'var(--bad-700)', lineHeight: 1.6 }}>
-                <strong>❌ Numéro de production ({from})</strong> — Ce numéro génère l'erreur 63016 (messages libres hors session 24h refusés par WhatsApp). Pour envoyer des messages libres, changez le numéro d'envoi pour <strong>+14155238886</strong> dans{' '}
-                <button onClick={() => onNav('/admin/settings?tab=whatsapp')} style={{ background: 'none', border: 'none', color: 'var(--brand-600)', fontWeight: 700, cursor: 'pointer', padding: 0, fontSize: 13 }}>Paramètres → WhatsApp</button>.
-              </div>
-            )}
+      {/* Sandbox notice only */}
+      {apiStatus?.configured && (apiStatus.fromNumber ?? '').includes('14155238886') && (
+        <div style={{ marginBottom: 14, padding: '12px 16px', borderRadius: 10, background: '#fffbeb', border: '1.5px solid #fde68a' }}>
+          <div style={{ fontSize: 13, color: '#92400e', lineHeight: 1.6 }}>
+            <strong>⚠️ Mode sandbox actif</strong> — Pour recevoir les messages, chaque destinataire doit d'abord envoyer <code style={{ background: '#fef3c7', padding: '2px 6px', borderRadius: 4, fontFamily: 'monospace', fontWeight: 700 }}>join pride-upon</code> au <strong>+1 415 523 8886</strong> sur WhatsApp (une seule fois par numéro).
           </div>
-        );
-      })()}
+        </div>
+      )}
 
       <div style={{ display: 'grid', gridTemplateColumns: '420px 1fr', gap: 14 }}>
         {/* Recipient list */}
         <div className="card" style={{ display: 'flex', flexDirection: 'column', maxHeight: 'calc(100vh - 200px)' }}>
           <div style={{ padding: 14, borderBottom: '1px solid var(--border)' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
-              {/* TODO: no i18n key for "Destinataires" or "sélectionnés" */}
               <div className="section-title" style={{ margin: 0 }}>
                 Destinataires <span className="section-title__count">{filtered.length}</span>
               </div>
               <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--brand-700)' }}>{selected.length} sélectionnés</span>
             </div>
+
+            {/* Campaign filter dropdown */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
+              <I.Route style={{ width: 12, height: 12, color: 'var(--ink-400)', flexShrink: 0 }} />
+              <select
+                className="select input--sm"
+                style={{ flex: 1 }}
+                value={campaignFilter}
+                onChange={e => { setCampaignFilter(e.target.value); setSearch(''); }}
+              >
+                <option value="">Toutes les cargaisons</option>
+                {campaigns.map(c => (
+                  <option key={c.id} value={c.id}>{c.code} — {c.from} → {c.to}</option>
+                ))}
+              </select>
+              {campaignFilter && (
+                <button
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--ink-400)', padding: '2px 4px', fontSize: 14, lineHeight: 1 }}
+                  onClick={() => setCampaignFilter('')}
+                  title="Effacer le filtre"
+                >✕</button>
+              )}
+            </div>
+
+            {/* Search bar */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8, padding: '5px 8px', border: '1px solid var(--border)', borderRadius: 7, background: 'white' }}>
+              <I.Search style={{ width: 12, height: 12, color: 'var(--ink-400)', flexShrink: 0 }} />
+              <input
+                type="text"
+                placeholder="Rechercher un client, code colis…"
+                value={search}
+                onChange={e => setSearch(e.target.value)}
+                style={{ border: 'none', outline: 'none', flex: 1, fontSize: 12.5, background: 'transparent' }}
+              />
+              {search && (
+                <button style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--ink-400)', padding: 0, fontSize: 14, lineHeight: 1 }} onClick={() => setSearch('')}>✕</button>
+              )}
+            </div>
+
             <div style={{ display: 'flex', gap: 6 }}>
               <button className={'btn btn--sm ' + (filter === 'all' ? 'btn--soft' : 'btn--ghost')} style={{ flex: 1, justifyContent: 'center' }} onClick={() => setFilter('all')}>{t.parcels.filterAll}</button>
-              <button className={'btn btn--sm ' + (filter === 'unpaid' ? 'btn--soft' : 'btn--ghost')} style={{ flex: 1, justifyContent: 'center' }} onClick={() => setFilter('unpaid')}>{'Impayés'}</button>
+              <button className={'btn btn--sm ' + (filter === 'unpaid' ? 'btn--soft' : 'btn--ghost')} style={{ flex: 1, justifyContent: 'center' }} onClick={() => setFilter('unpaid')}>Impayés</button>
             </div>
           </div>
 
@@ -311,8 +340,7 @@ export default function MessagingScreen({ onNav, campaignId }) {
                   <div style={{ textAlign: 'right' }}>
                     <div className="mono" style={{ fontSize: 12.5, fontWeight: 700 }}>{(p.amount ?? 0).toLocaleString('fr')} CAD</div>
                     <div style={{ fontSize: 10.5, color: isPaid ? 'var(--ok-600)' : 'var(--bad-600)', fontWeight: 600 }}>
-                      {/* TODO: no i18n key for "Impayé" — using t.paymentStatus.paid / t.payments.filterUnpaid */}
-                      {isPaid ? `✓ ${t.paymentStatus.paid}` : '○ Impayé'}
+                      {isPaid ? `✓ ${t.paymentStatus.completed}` : '○ Impayé'}
                     </div>
                   </div>
                   <button className="icon-btn" title={t.messaging.actions.send} onClick={e => { e.preventDefault(); handleSendOne(p.id); }}>
