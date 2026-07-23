@@ -16,6 +16,7 @@ export default function AllParcelsScreen({ onNav, initialSearch = '' }) {
   const [allParcels, setAllParcels]       = useState([]);
   const [campaigns, setCampaigns]         = useState([]);
   const [loading, setLoading]             = useState(true);
+  const [selected, setSelected]           = useState([]);
 
   useEffect(() => {
     Promise.all([
@@ -27,6 +28,13 @@ export default function AllParcelsScreen({ onNav, initialSearch = '' }) {
       setLoading(false);
     });
   }, []);
+  useEffect(() => { setSelected([]); }, [tab, campaignFilter, search]);
+
+  const handleSelectOne = (id) => setSelected(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
+  const handleSelectAll = (ids, checked) => {
+    if (checked) setSelected(prev => [...new Set([...prev, ...ids])]);
+    else setSelected(prev => prev.filter(x => !ids.includes(x)));
+  };
 
   const filtered = allParcels.filter(p => {
     if (campaignFilter !== 'all' && p.campaignId !== campaignFilter) return false;
@@ -44,12 +52,16 @@ export default function AllParcelsScreen({ onNav, initialSearch = '' }) {
     return true;
   });
   const paged = filtered.slice((page - 1) * pageSize, page * pageSize);
+  const pagedIds = paged.map(p => p.id);
+  const allParcelsChecked = pagedIds.length > 0 && pagedIds.every(id => selected.includes(id));
+  const someParcelsChecked = pagedIds.some(id => selected.includes(id));
 
-  function exportCSV() {
+  function exportCSV(onlySelected = false) {
     const PAYMENT_LABEL = { paid: 'Payé', pending: 'En cours', unpaid: 'Impayé' };
     const STATUS_LABEL  = { enr: 'Enregistré', rec: 'Reçu entrepôt', pre: 'Vérifié/Préparé', exp: 'Expédié', tra: 'En transit', apd: 'Arrivé pays dest.', dou: 'Aux douanes', ins: 'Inspection', ret: 'Retenu', lib: 'Libéré', ard: 'Entrepôt dest.', ver: 'Vérification', pdl: 'Prêt livraison', liv: 'En livraison', ok: 'Livré', adr: 'Adresse incompl.', tdl: 'Tentative livr.', rte: 'Retour entrepôt', dom: 'Endommagé', cla: 'Réclamation' };
     const headers = ['Code', 'Cargaison', 'Expéditeur', 'Tél expéditeur', 'Destinataire', 'Ville', 'Poids (kg)', 'Montant (CAD)', 'Paiement', 'Statut', 'Date'];
-    const rows = filtered.map(p => [
+    const data = onlySelected && selected.length > 0 ? filtered.filter(p => selected.includes(p.id)) : filtered;
+    const rows = data.map(p => [
       p.code,
       p.campaign,
       p.senderName,
@@ -69,7 +81,7 @@ export default function AllParcelsScreen({ onNav, initialSearch = '' }) {
     const url  = URL.createObjectURL(blob);
     const a    = document.createElement('a');
     a.href = url;
-    a.download = `colis-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.download = `colis${onlySelected && selected.length > 0 ? '-selection' : ''}-${new Date().toISOString().slice(0, 10)}.csv`;
     a.click();
     URL.revokeObjectURL(url);
   }
@@ -142,10 +154,27 @@ export default function AllParcelsScreen({ onNav, initialSearch = '' }) {
         </div>
       </div>
 
+      {selected.length > 0 && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 14px', background: 'var(--brand-50)', border: '1px solid var(--brand-200)', borderBottom: 0, borderRadius: '8px 8px 0 0', fontSize: 13 }}>
+          <span style={{ fontWeight: 600, color: 'var(--brand-700)' }}>{selected.length} sélectionné(s)</span>
+          <div style={{ flex: 1 }} />
+          <button className="btn btn--ghost btn--sm" onClick={() => exportCSV(true)} style={{ fontSize: 12 }}>
+            <I.Download style={{ width: 12, height: 12 }} /> Exporter sélection
+          </button>
+          <button className="btn btn--ghost btn--sm" onClick={() => setSelected([])} style={{ fontSize: 12 }}>✕ Désélectionner</button>
+        </div>
+      )}
+
       <table className="tbl" style={{ borderTopLeftRadius: 0, borderTopRightRadius: 0 }}>
         <thead>
           <tr>
-            <th style={{ width: 32, borderRadius: 0 }}><input type="checkbox" style={{ accentColor: 'var(--brand-500)' }} /></th>
+            <th style={{ width: 32, borderRadius: 0 }}>
+              <input type="checkbox"
+                checked={allParcelsChecked}
+                ref={el => { if (el) el.indeterminate = someParcelsChecked && !allParcelsChecked; }}
+                onChange={e => handleSelectAll(pagedIds, e.target.checked)}
+                style={{ accentColor: 'var(--brand-500)' }} />
+            </th>
             <th>{t.parcels.table.campaign}</th>
             <th>{t.parcels.table.trackingId}</th>
             {/* TODO: no translation key for "Expéditeur" (sender) */}
@@ -164,7 +193,12 @@ export default function AllParcelsScreen({ onNav, initialSearch = '' }) {
         <tbody>
           {paged.map(p => (
             <tr key={p.id}>
-              <td><input type="checkbox" style={{ accentColor: 'var(--brand-500)' }} /></td>
+              <td onClick={e => e.stopPropagation()}>
+                <input type="checkbox"
+                  checked={selected.includes(p.id)}
+                  onChange={() => handleSelectOne(p.id)}
+                  style={{ accentColor: 'var(--brand-500)' }} />
+              </td>
               <td>
                 <a className="mono" onClick={() => onNav('/campaign/' + p.campaignId)} style={{ fontSize: 12, fontWeight: 600, color: 'var(--brand-700)', cursor: 'pointer' }}>{p.campaign}</a>
               </td>

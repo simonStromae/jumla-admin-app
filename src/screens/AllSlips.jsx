@@ -28,6 +28,7 @@ export default function AllSlipsScreen({ onNav }) {
   const [search, setSearch]             = useState('');
   const [page, setPage]                 = useState(1);
   const [pageSize, setPageSize]         = useState(25);
+  const [selected, setSelected]         = useState([]);
 
   useEffect(() => {
     Promise.all([
@@ -39,6 +40,22 @@ export default function AllSlipsScreen({ onNav }) {
       setLoading(false);
     }).catch(() => setLoading(false));
   }, []);
+  useEffect(() => { setSelected([]); }, [tab, campaignFilter, search]);
+
+  const handleSelectOne = (id) => setSelected(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
+  const handleSelectAll = (ids, checked) => {
+    if (checked) setSelected(prev => [...new Set([...prev, ...ids])]);
+    else setSelected(prev => prev.filter(x => !ids.includes(x)));
+  };
+  const handleBatchStatus = async (status) => {
+    const label = status === 'valide' ? 'Valider' : 'Libérer';
+    if (!confirm(`${label} ${selected.length} bordereau(x) ?`)) return;
+    await Promise.all(selected.map(id =>
+      fetch(`/api/bordereaux/${id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status }) })
+    ));
+    setSlips(ss => ss.map(s => selected.includes(s.id) ? { ...s, status } : s));
+    setSelected([]);
+  };
 
   const filtered = slips.filter(s => {
     if (campaignFilter !== 'all' && s.campaignId !== campaignFilter) return false;
@@ -52,6 +69,9 @@ export default function AllSlipsScreen({ onNav }) {
   });
 
   const paged = filtered.slice((page - 1) * pageSize, page * pageSize);
+  const pagedIds = paged.map(s => s.id);
+  const allSlipsChecked = pagedIds.length > 0 && pagedIds.every(id => selected.includes(id));
+  const someSlipsChecked = pagedIds.some(id => selected.includes(id));
 
   const counts = {
     all:       slips.length,
@@ -133,10 +153,26 @@ export default function AllSlipsScreen({ onNav }) {
         </div>
       </div>
 
+      {selected.length > 0 && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 14px', background: 'var(--brand-50)', border: '1px solid var(--brand-200)', borderBottom: 0, borderRadius: '8px 8px 0 0', fontSize: 13 }}>
+          <span style={{ fontWeight: 600, color: 'var(--brand-700)' }}>{selected.length} sélectionné(s)</span>
+          <div style={{ flex: 1 }} />
+          <button className="btn btn--ghost btn--sm" onClick={() => handleBatchStatus('valide')} style={{ fontSize: 12, color: 'var(--ok-700)' }}>Valider</button>
+          <button className="btn btn--ghost btn--sm" onClick={() => handleBatchStatus('libere')} style={{ fontSize: 12, color: 'var(--ok-600)' }}>Libérer</button>
+          <button className="btn btn--ghost btn--sm" onClick={() => setSelected([])} style={{ fontSize: 12 }}>✕ Désélectionner</button>
+        </div>
+      )}
+
       <table className="tbl" style={{ borderTopLeftRadius: 0, borderTopRightRadius: 0 }}>
         <thead>
           <tr>
-            <th style={{ width: 32, borderRadius: 0 }}><input type="checkbox" style={{ accentColor: 'var(--brand-500)' }} /></th>
+            <th style={{ width: 32, borderRadius: 0 }}>
+              <input type="checkbox"
+                checked={allSlipsChecked}
+                ref={el => { if (el) el.indeterminate = someSlipsChecked && !allSlipsChecked; }}
+                onChange={e => handleSelectAll(pagedIds, e.target.checked)}
+                style={{ accentColor: 'var(--brand-500)' }} />
+            </th>
             {/* TODO: no exact i18n key for "Bordereau" (BL slip reference) */}
             <th>Bordereau</th>
             <th>{t.nav.campaigns}</th>
@@ -169,7 +205,12 @@ export default function AllSlipsScreen({ onNav }) {
             const pay = PAY_STATUS[s.paid]    ?? { l: s.paid,   cls: 'neutral' };
             return (
               <tr key={s.id}>
-                <td><input type="checkbox" style={{ accentColor: 'var(--brand-500)' }} /></td>
+                <td onClick={e => e.stopPropagation()}>
+                  <input type="checkbox"
+                    checked={selected.includes(s.id)}
+                    onChange={() => handleSelectOne(s.id)}
+                    style={{ accentColor: 'var(--brand-500)' }} />
+                </td>
                 <td>
                   <span className="mono" style={{ fontSize: 12.5, fontWeight: 700, color: 'var(--brand-700)', cursor: 'pointer' }}
                     onClick={() => onNav('/slip/' + s.code)}>{s.code}</span>

@@ -142,14 +142,23 @@ function AgentsGridView({ agents, setEditing, onToggleStatus, onDelete }) {
   );
 }
 
-function AgentsListView({ agents, setEditing, onToggleStatus, onDelete, page, pageSize }) {
+function AgentsListView({ agents, setEditing, onToggleStatus, onDelete, page, pageSize, selected = [], onSelect, onSelectAll }) {
   const t = useAdminT();
   const paged = agents.slice((page - 1) * pageSize, page * pageSize);
+  const pagedIds = paged.map(a => a.id);
+  const allAgentsChecked = pagedIds.length > 0 && pagedIds.every(id => selected.includes(id));
+  const someAgentsChecked = pagedIds.some(id => selected.includes(id));
   return (
     <table className="tbl" style={{ borderTopLeftRadius: 0, borderTopRightRadius: 0 }}>
       <thead>
         <tr>
-          <th style={{ width: 32, borderRadius: 0 }}><input type="checkbox" style={{ accentColor: 'var(--brand-500)' }} /></th>
+          <th style={{ width: 32, borderRadius: 0 }}>
+            <input type="checkbox"
+              checked={allAgentsChecked}
+              ref={el => { if (el) el.indeterminate = someAgentsChecked && !allAgentsChecked; }}
+              onChange={e => onSelectAll?.(pagedIds, e.target.checked)}
+              style={{ accentColor: 'var(--brand-500)' }} />
+          </th>
           <th>{t.agents.listHeaders.name}</th>
           <th>{t.agents.listHeaders.role}</th>
           <th>{t.agents.listHeaders.status}</th>
@@ -171,7 +180,12 @@ function AgentsListView({ agents, setEditing, onToggleStatus, onDelete, page, pa
           const suspended = a.status === 'suspended';
           return (
             <tr key={a.id} style={{ opacity: suspended ? .7 : 1 }}>
-              <td><input type="checkbox" style={{ accentColor: 'var(--brand-500)' }} /></td>
+              <td onClick={e => e.stopPropagation()}>
+                <input type="checkbox"
+                  checked={selected.includes(a.id)}
+                  onChange={() => onSelect?.(a.id)}
+                  style={{ accentColor: 'var(--brand-500)' }} />
+              </td>
               <td>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                   <Avatar initials={a.initials} color={a.color} size="sm" />
@@ -424,6 +438,7 @@ export default function AgentsScreen({ onNav }) {
   const [view, setView]             = useState('list');
   const [page, setPage]             = useState(1);
   const [pageSize, setPageSize]     = useState(10);
+  const [selected, setSelected]     = useState([]);
 
   const loadAgents = () => {
     fetch('/api/users')
@@ -442,6 +457,28 @@ export default function AgentsScreen({ onNav }) {
 
   useEffect(() => { loadAgents(); }, []);
   useEffect(() => { if (tab === 'livreur') loadDrivers(); }, [tab]);
+  useEffect(() => { setSelected([]); }, [tab]);
+
+  const handleSelectOne = (id) => setSelected(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
+  const handleSelectAll = (ids, checked) => {
+    if (checked) setSelected(prev => [...new Set([...prev, ...ids])]);
+    else setSelected(prev => prev.filter(x => !ids.includes(x)));
+  };
+  const handleBatchToggleStatus = async (newStatus) => {
+    const label = newStatus === 'suspended' ? 'Suspendre' : 'Réactiver';
+    if (!confirm(`${label} ${selected.length} agent(s) ?`)) return;
+    await Promise.all(selected.map(id =>
+      fetch(`/api/users/${id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status: newStatus }) })
+    ));
+    loadAgents();
+    setSelected([]);
+  };
+  const handleBatchDelete = async () => {
+    if (!confirm(`Supprimer définitivement ${selected.length} agent(s) ? Action irréversible.`)) return;
+    await Promise.all(selected.map(id => fetch(`/api/users/${id}`, { method: 'DELETE' })));
+    loadAgents();
+    setSelected([]);
+  };
 
   const handleToggleStatus = async (agent) => {
     const newStatus = agent.status === 'suspended' ? 'active' : 'suspended';
@@ -558,11 +595,22 @@ export default function AgentsScreen({ onNav }) {
         </>}
       </div>
 
+      {tab !== 'livreur' && view === 'list' && selected.length > 0 && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 14px', background: 'var(--brand-50)', border: '1px solid var(--brand-200)', borderBottom: 0, borderRadius: '8px 8px 0 0', fontSize: 13 }}>
+          <span style={{ fontWeight: 600, color: 'var(--brand-700)' }}>{selected.length} sélectionné(s)</span>
+          <div style={{ flex: 1 }} />
+          <button className="btn btn--ghost btn--sm" onClick={() => handleBatchToggleStatus('suspended')} style={{ fontSize: 12, color: 'var(--bad-600)' }}>Suspendre</button>
+          <button className="btn btn--ghost btn--sm" onClick={() => handleBatchToggleStatus('active')} style={{ fontSize: 12, color: 'var(--ok-700)' }}>Réactiver</button>
+          <button className="btn btn--ghost btn--sm" onClick={handleBatchDelete} style={{ fontSize: 12, color: 'var(--bad-700)' }}><I.Trash style={{ width: 12, height: 12 }} /> Supprimer</button>
+          <button className="btn btn--ghost btn--sm" onClick={() => setSelected([])} style={{ fontSize: 12 }}>✕ Désélectionner</button>
+        </div>
+      )}
+
       {tab === 'livreur'
         ? <DriversView drivers={drivers} loading={driverLoading} onDelete={handleDeleteDriver} onNew={() => setDriverEditing(true)} />
         : view === 'grid'
           ? <AgentsGridView agents={filtered} setEditing={setEditing} onToggleStatus={handleToggleStatus} onDelete={handleDeleteAgent} />
-          : <AgentsListView agents={filtered} setEditing={setEditing} onToggleStatus={handleToggleStatus} onDelete={handleDeleteAgent} page={page} pageSize={pageSize} />
+          : <AgentsListView agents={filtered} setEditing={setEditing} onToggleStatus={handleToggleStatus} onDelete={handleDeleteAgent} page={page} pageSize={pageSize} selected={selected} onSelect={handleSelectOne} onSelectAll={handleSelectAll} />
       }
 
       {tab !== 'livreur' && view === 'list' && (
