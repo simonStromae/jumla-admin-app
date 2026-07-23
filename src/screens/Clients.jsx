@@ -20,6 +20,7 @@ export default function ClientsScreen({ onNav }) {
   const [fetchError, setFetchError] = useState('');
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [selected, setSelected] = useState([]);
 
   const loadClients = () => {
     setLoading(true);
@@ -41,6 +42,7 @@ export default function ClientsScreen({ onNav }) {
   };
 
   useEffect(() => { loadClients(); }, []);
+  useEffect(() => { setSelected([]); }, [statusFilter, search]);
 
   const filteredClients = clients.filter(cl => {
     if (statusFilter === 'active'    && cl.status === 'suspended') return false;
@@ -56,6 +58,27 @@ export default function ClientsScreen({ onNav }) {
     }
     return true;
   });
+
+  const handleSelectOne = (id) => {
+    setSelected(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
+  };
+  const handleSelectAll = (ids, checked) => {
+    if (checked) setSelected(prev => [...new Set([...prev, ...ids])]);
+    else setSelected(prev => prev.filter(x => !ids.includes(x)));
+  };
+  const handleBatchToggleStatus = async (newStatus) => {
+    const label = newStatus === 'suspended' ? 'Suspendre' : 'Réactiver';
+    if (!confirm(`${label} ${selected.length} client(s) ?`)) return;
+    await Promise.all(selected.map(id =>
+      fetch(`/api/users/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: newStatus }),
+      })
+    ));
+    setClients(cs => cs.map(c => selected.includes(c.id) ? { ...c, status: newStatus } : c));
+    setSelected([]);
+  };
 
   const handleToggleStatus = async (cl) => {
     const newStatus = cl.status === 'suspended' ? 'active' : 'suspended';
@@ -121,6 +144,23 @@ export default function ClientsScreen({ onNav }) {
         <ViewToggle value={view} onChange={setView} />
       </div>
 
+      {selected.length > 0 && (
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: 8, padding: '8px 14px',
+          background: 'var(--brand-50)', border: '1px solid var(--brand-200)',
+          borderBottom: 0, borderRadius: '8px 8px 0 0', fontSize: 13,
+        }}>
+          <span style={{ fontWeight: 600, color: 'var(--brand-700)' }}>{selected.length} sélectionné(s)</span>
+          <div style={{ flex: 1 }} />
+          <button className="btn btn--ghost btn--sm" onClick={() => handleBatchToggleStatus('suspended')}
+            style={{ fontSize: 12, color: 'var(--bad-600)' }}>Suspendre</button>
+          <button className="btn btn--ghost btn--sm" onClick={() => handleBatchToggleStatus('active')}
+            style={{ fontSize: 12, color: 'var(--ok-700)' }}>Réactiver</button>
+          <button className="btn btn--ghost btn--sm" onClick={() => setSelected([])}
+            style={{ fontSize: 12 }}>✕ Désélectionner</button>
+        </div>
+      )}
+
       {loading ? (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 12, padding: 14, background: 'white', border: '1px solid var(--border)', borderRadius: 12 }}>
           {[1,2,3,4,5,6].map(i => (
@@ -153,7 +193,7 @@ export default function ClientsScreen({ onNav }) {
         </div>
       ) : view === 'grid'
         ? <ClientsGridView clients={filteredClients} setOpen={setOpen} />
-        : <ClientsListView clients={filteredClients} setOpen={setOpen} onToggleStatus={handleToggleStatus} page={page} pageSize={pageSize} />
+        : <ClientsListView clients={filteredClients} setOpen={setOpen} onToggleStatus={handleToggleStatus} page={page} pageSize={pageSize} selected={selected} onSelect={handleSelectOne} onSelectAll={handleSelectAll} />
       }
 
       <Pagination total={filteredClients.length} page={page} pageSize={pageSize}
@@ -242,14 +282,23 @@ function ClientsGridView({ clients, setOpen }) {
   );
 }
 
-function ClientsListView({ clients, setOpen, onToggleStatus, page, pageSize }) {
+function ClientsListView({ clients, setOpen, onToggleStatus, page, pageSize, selected = [], onSelect, onSelectAll }) {
   const t = useAdminT();
   const paged = clients.slice((page - 1) * pageSize, page * pageSize);
+  const pagedIds = paged.map(cl => cl.id);
+  const allChecked = pagedIds.length > 0 && pagedIds.every(id => selected.includes(id));
+  const someChecked = pagedIds.some(id => selected.includes(id));
   return (
     <table className="tbl" style={{ borderTopLeftRadius: 0, borderTopRightRadius: 0 }}>
       <thead>
         <tr>
-          <th style={{ width: 32, borderRadius: 0 }}><input type="checkbox" style={{ accentColor: 'var(--brand-500)' }} /></th>
+          <th style={{ width: 32, borderRadius: 0 }}>
+            <input type="checkbox"
+              checked={allChecked}
+              ref={el => { if (el) el.indeterminate = someChecked && !allChecked; }}
+              onChange={e => onSelectAll?.(pagedIds, e.target.checked)}
+              style={{ accentColor: 'var(--brand-500)' }} />
+          </th>
           <th>{t.common.name}</th>
           <th>{t.common.status}</th>
           <th>{t.common.city}</th>
@@ -268,7 +317,12 @@ function ClientsListView({ clients, setOpen, onToggleStatus, page, pageSize }) {
           const suspended = cl.status === 'suspended';
           return (
             <tr key={cl.id} style={{ cursor: 'pointer', opacity: suspended ? .7 : 1 }} onClick={() => setOpen(cl)}>
-              <td onClick={e => e.stopPropagation()}><input type="checkbox" style={{ accentColor: 'var(--brand-500)' }} /></td>
+              <td onClick={e => e.stopPropagation()}>
+                <input type="checkbox"
+                  checked={selected.includes(cl.id)}
+                  onChange={() => onSelect?.(cl.id)}
+                  style={{ accentColor: 'var(--brand-500)' }} />
+              </td>
               <td>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                   <Avatar initials={cl.name.split(' ').map(x => x[0]).join('').slice(0, 2)} color={cl.color} size="sm" />

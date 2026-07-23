@@ -9,20 +9,38 @@ export async function GET(req: NextRequest) {
 
   const archived = req.nextUrl.searchParams.get('archived') === 'true';
 
-  const campaigns = await (prisma.campaign.findMany as any)({
-    where: archived ? { deletedAt: { not: null } } : { deletedAt: null },
-    orderBy: { createdAt: 'desc' },
-    include: {
-      route: true,
-      costs: true,
-      parcels: {
-        include: {
-          payment: true,
-          bordereaux: { select: { status: true } },
+  let campaigns: any[];
+  try {
+    campaigns = await (prisma.campaign.findMany as any)({
+      where: archived ? { deletedAt: { not: null } } : { deletedAt: null },
+      orderBy: { createdAt: 'desc' },
+      include: {
+        route: true,
+        costs: true,
+        parcels: {
+          include: {
+            payment: true,
+            bordereaux: { select: { status: true } },
+          },
         },
       },
-    },
-  });
+    });
+  } catch {
+    // Fallback when deletedAt column hasn't been migrated yet
+    campaigns = await prisma.campaign.findMany({
+      orderBy: { createdAt: 'desc' },
+      include: {
+        route: true,
+        costs: true,
+        parcels: {
+          include: {
+            payment: true,
+            bordereaux: { select: { status: true } },
+          },
+        },
+      },
+    });
+  }
 
   const result = campaigns.map(c => {
     const invoiced  = c.parcels.reduce((s, p) => s + (p.payment?.amount ?? p.priceXaf ?? 0), 0);
