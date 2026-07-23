@@ -522,7 +522,6 @@ export default function MessagingScreen({ onNav, campaignId }) {
         </div>
 
       </div>
-    </div>
 
     {/* Messaging config info bar */}
     {apiStatus && (
@@ -600,6 +599,7 @@ export default function MessagingScreen({ onNav, campaignId }) {
           </button>
         </div>
       )}
+    </div>
     </div>
   );
 }
