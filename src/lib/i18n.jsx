@@ -41,7 +41,15 @@ export function LocaleProvider({ children }) {
     document.cookie = `locale=${loc}; max-age=${365 * 24 * 3600}; path=/; samesite=lax`;
   }, []);
 
-  const t = useCallback((key) => get(MESSAGES[locale] ?? fr, key), [locale]);
+  const t = useCallback((key, vars) => {
+    let val = get(MESSAGES[locale] ?? fr, key);
+    if (vars && typeof val === 'string') {
+      Object.entries(vars).forEach(([k, v]) => {
+        val = val.replace(new RegExp(`\\{${k}\\}`, 'g'), v ?? '');
+      });
+    }
+    return val;
+  }, [locale]);
 
   return <Ctx.Provider value={{ locale, t, setLocale }}>{children}</Ctx.Provider>;
 }
