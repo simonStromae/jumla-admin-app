@@ -112,7 +112,7 @@ export default function MessagingScreen({ onNav, campaignId }) {
     .replace(/\{agent_phone\}/g,       '+1 514 000 0000');
 
   async function handleSend() {
-    if (!selected.length || !apiStatus?.configured) return;
+    if (!selected.length || !apiStatus?.configured || apiStatus?.messagingEnabled === false) return;
     setSending(true);
     setSendResult(null);
     try {
@@ -346,8 +346,9 @@ export default function MessagingScreen({ onNav, campaignId }) {
               <button
                 className="btn btn--brand btn--sm"
                 style={{ flex: 1, justifyContent: 'center' }}
-                disabled={selected.length === 0 || sending}
+                disabled={selected.length === 0 || sending || apiStatus?.messagingEnabled === false}
                 onClick={handleSend}
+                title={apiStatus?.messagingEnabled === false ? 'Envoi désactivé dans les paramètres' : ''}
               >
                 <I.Chat />{sending ? t.common.sending : `${t.messaging.actions.send} (${selected.length})`}
               </button>
@@ -416,8 +417,9 @@ export default function MessagingScreen({ onNav, campaignId }) {
               ) : (
                 <button
                   className="btn btn--brand"
-                  disabled={selected.length === 0 || sending}
+                  disabled={selected.length === 0 || sending || apiStatus?.messagingEnabled === false}
                   onClick={handleSend}
+                  title={apiStatus?.messagingEnabled === false ? 'Envoi désactivé dans les paramètres' : ''}
                 >
                   <I.Send />{sending ? t.common.sending : `${t.messaging.actions.send} · ${selected.length}`}
                 </button>
@@ -519,65 +521,85 @@ export default function MessagingScreen({ onNav, campaignId }) {
           </div>
         </div>
 
-        {/* WhatsApp Templates panel */}
-        <div className="card" style={{ marginTop: 14 }}>
-          <div style={{ padding: '12px 16px', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: 10 }}>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--brand-600)" strokeWidth="1.7"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-            {/* TODO: no i18n key for "Templates WhatsApp approuvés", "Masquer ▲", or "Afficher ▼" */}
-            <div style={{ flex: 1, fontSize: 13, fontWeight: 700 }}>Templates WhatsApp approuvés</div>
-            <button className="btn btn--ghost btn--sm" onClick={() => setShowTemplates(v => !v)}>
-              {showTemplates ? 'Masquer ▲' : 'Afficher ▼'}
-            </button>
-          </div>
+      </div>
+    </div>
 
-          {showTemplates && (
-            <div style={{ padding: '14px 16px' }}>
-              {/* TODO: no i18n key for the Meta templates explanation paragraph */}
-              <p style={{ fontSize: 12.5, color: 'var(--ink-500)', marginBottom: 14, lineHeight: 1.5 }}>
-                Les templates approuvés par Meta permettent d'envoyer des messages <strong>sans fenêtre 24h</strong>. Créez-les une fois, soumettez pour approbation (24–48h), ensuite tous les envois les utilisent automatiquement.
-              </p>
+    {/* Messaging config info bar */}
+    {apiStatus && (
+      <div style={{ marginTop: 14, padding: '10px 16px', background: 'var(--bg-soft)', border: '1px solid var(--border)', borderRadius: 10, display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+        <span style={{ fontSize: 12, color: 'var(--ink-500)', fontWeight: 600 }}>Configuration active :</span>
+        <span style={{
+          padding: '3px 10px', borderRadius: 20, fontSize: 12, fontWeight: 600,
+          background: apiStatus.messagingEnabled !== false ? 'var(--ok-50)' : 'var(--bad-50)',
+          color: apiStatus.messagingEnabled !== false ? 'var(--ok-700)' : 'var(--bad-700)',
+          border: '1px solid ' + (apiStatus.messagingEnabled !== false ? 'var(--ok-200)' : 'var(--bad-200)'),
+        }}>
+          {apiStatus.messagingEnabled !== false ? '● Envoi activé' : '○ Envoi désactivé'}
+        </span>
+        <span style={{ padding: '3px 10px', borderRadius: 20, fontSize: 12, fontWeight: 600, background: 'var(--info-50)', color: 'var(--info-700)', border: '1px solid var(--info-100)' }}>
+          {apiStatus.channel === 'sms' ? '📱 SMS' : '💬 WhatsApp'}
+        </span>
+        <span style={{ padding: '3px 10px', borderRadius: 20, fontSize: 12, fontWeight: 600, background: 'var(--bg-soft)', color: 'var(--ink-600)', border: '1px solid var(--border)' }}>
+          {apiStatus.sendTo === 'recip' ? '📦 → Destinataire (départ)' : '👤 → Client (expéditeur principal)'}
+        </span>
+        <button className="btn btn--ghost btn--sm" style={{ marginLeft: 'auto' }} onClick={() => onNav('/admin/settings?tab=whatsapp')}>
+          <I.Settings style={{ width: 13, height: 13 }} /> Modifier
+        </button>
+      </div>
+    )}
 
-              {createResult && (
-                <div style={{ marginBottom: 12, padding: '8px 14px', borderRadius: 8, background: createResult.error ? 'var(--bad-50)' : 'var(--ok-50)', border: '1px solid ' + (createResult.error ? 'var(--bad-200)' : 'var(--ok-200)'), fontSize: 12.5, color: createResult.error ? 'var(--bad-700)' : 'var(--ok-700)', display: 'flex', justifyContent: 'space-between' }}>
-                  {/* TODO: no i18n key for "Templates créés et soumis…" */}
-                  <span>{createResult.error ? `${t.common.error} : ${createResult.error}` : '✓ Templates créés et soumis pour approbation Meta (24–48h)'}</span>
-                  <button onClick={() => setCreateResult(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 16, opacity: .6 }}>×</button>
-                </div>
-              )}
+    {/* WhatsApp Templates panel — full width */}
+    <div className="card" style={{ marginTop: 14 }}>
+      <div style={{ padding: '12px 16px', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: 10 }}>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--brand-600)" strokeWidth="1.7"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        <div style={{ flex: 1, fontSize: 13, fontWeight: 700 }}>Templates WhatsApp approuvés</div>
+        <button className="btn btn--ghost btn--sm" onClick={() => setShowTemplates(v => !v)}>
+          {showTemplates ? 'Masquer ▲' : 'Afficher ▼'}
+        </button>
+      </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 8, marginBottom: 14 }}>
-                {waTemplates.map(tmpl => {
-                  const approved  = tmpl.approvalStatus === 'approved';
-                  const pending   = tmpl.approvalStatus === 'pending' || tmpl.approvalStatus === 'submitted';
-                  const rejected  = tmpl.approvalStatus === 'rejected';
-                  const notYet    = tmpl.approvalStatus === 'not_created';
-                  const color = approved ? 'var(--ok-700)' : pending ? 'var(--info-700)' : rejected ? 'var(--bad-700)' : 'var(--ink-400)';
-                  const bg    = approved ? 'var(--ok-50)'  : pending ? 'var(--info-50)' : rejected ? 'var(--bad-50)'  : 'var(--bg-soft)';
-                  /* TODO: no i18n keys for template approval status labels "Approuvé", "En attente", "Rejeté", "Non créé" */
-                  const label = approved ? '✓ Approuvé' : pending ? '⏳ En attente' : rejected ? '✕ Rejeté' : notYet ? 'Non créé' : tmpl.approvalStatus;
-                  return (
-                    <div key={tmpl.id} style={{ padding: '10px 12px', borderRadius: 8, border: '1px solid var(--border)', background: bg }}>
-                      <div style={{ fontWeight: 600, fontSize: 12.5, color: 'var(--ink-800)', marginBottom: 3 }}>{tmpl.label || tmpl.id}</div>
-                      <div style={{ fontSize: 11, color, fontWeight: 600 }}>{label}</div>
-                      {tmpl.contentSid && <div className="mono" style={{ fontSize: 10, color: 'var(--ink-400)', marginTop: 2 }}>{tmpl.contentSid.slice(0, 20)}…</div>}
-                    </div>
-                  );
-                })}
-              </div>
+      {showTemplates && (
+        <div style={{ padding: '14px 16px' }}>
+          <p style={{ fontSize: 12.5, color: 'var(--ink-500)', marginBottom: 14, lineHeight: 1.5 }}>
+            Les templates approuvés par Meta permettent d'envoyer des messages <strong>sans fenêtre 24h</strong>. Créez-les une fois, soumettez pour approbation (24–48h), ensuite tous les envois les utilisent automatiquement.
+          </p>
 
-              <button
-                className="btn btn--brand"
-                disabled={creatingTmpls}
-                onClick={handleCreateTemplates}
-                style={{ width: '100%', justifyContent: 'center' }}
-              >
-                {/* TODO: no i18n keys for "Création en cours…", "Soumettre les templates manquants", "Créer et soumettre tous les templates à Meta" */}
-                {creatingTmpls ? 'Création en cours…' : waTemplates.some(tmpl => tmpl.approvalStatus !== 'not_created') ? '↻ Soumettre les templates manquants' : '📤 Créer et soumettre tous les templates à Meta'}
-              </button>
+          {createResult && (
+            <div style={{ marginBottom: 12, padding: '8px 14px', borderRadius: 8, background: createResult.error ? 'var(--bad-50)' : 'var(--ok-50)', border: '1px solid ' + (createResult.error ? 'var(--bad-200)' : 'var(--ok-200)'), fontSize: 12.5, color: createResult.error ? 'var(--bad-700)' : 'var(--ok-700)', display: 'flex', justifyContent: 'space-between' }}>
+              <span>{createResult.error ? `${t.common.error} : ${createResult.error}` : '✓ Templates créés et soumis pour approbation Meta (24–48h)'}</span>
+              <button onClick={() => setCreateResult(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 16, opacity: .6 }}>×</button>
             </div>
           )}
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 8, marginBottom: 14 }}>
+            {waTemplates.map(tmpl => {
+              const approved = tmpl.approvalStatus === 'approved';
+              const pending  = tmpl.approvalStatus === 'pending' || tmpl.approvalStatus === 'submitted';
+              const rejected = tmpl.approvalStatus === 'rejected';
+              const notYet   = tmpl.approvalStatus === 'not_created';
+              const color = approved ? 'var(--ok-700)' : pending ? 'var(--info-700)' : rejected ? 'var(--bad-700)' : 'var(--ink-400)';
+              const bg    = approved ? 'var(--ok-50)'  : pending ? 'var(--info-50)' : rejected ? 'var(--bad-50)'  : 'var(--bg-soft)';
+              const label = approved ? '✓ Approuvé' : pending ? '⏳ En attente' : rejected ? '✕ Rejeté' : notYet ? 'Non créé' : tmpl.approvalStatus;
+              return (
+                <div key={tmpl.id} style={{ padding: '10px 12px', borderRadius: 8, border: '1px solid var(--border)', background: bg }}>
+                  <div style={{ fontWeight: 600, fontSize: 12.5, color: 'var(--ink-800)', marginBottom: 3 }}>{tmpl.label || tmpl.id}</div>
+                  <div style={{ fontSize: 11, color, fontWeight: 600 }}>{label}</div>
+                  {tmpl.contentSid && <div className="mono" style={{ fontSize: 10, color: 'var(--ink-400)', marginTop: 2 }}>{tmpl.contentSid.slice(0, 20)}…</div>}
+                </div>
+              );
+            })}
+          </div>
+
+          <button
+            className="btn btn--brand"
+            disabled={creatingTmpls}
+            onClick={handleCreateTemplates}
+            style={{ width: '100%', justifyContent: 'center' }}
+          >
+            {creatingTmpls ? 'Création en cours…' : waTemplates.some(tmpl => tmpl.approvalStatus !== 'not_created') ? '↻ Soumettre les templates manquants' : '📤 Créer et soumettre tous les templates à Meta'}
+          </button>
         </div>
-      </div>
+      )}
     </div>
   );
 }

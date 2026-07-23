@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
 import { prisma } from '@/src/lib/prisma';
 import { requirePermission } from '@/src/lib/api-auth';
-import { getTwilioSettings, twilioSendWhatsapp, twilioSendWhatsappTemplate, formatWhatsappNumber } from '@/src/lib/twilio';
 
 export const dynamic = 'force-dynamic';
 
@@ -55,7 +54,7 @@ export async function POST(req: NextRequest) {
   const { error } = await requirePermission('agents');
   if (error) return error;
 
-  const { name, email, phone, city, role, permissions, sendInvite } = await req.json();
+  const { name, email, phone, city, role, permissions } = await req.json();
   if (!name || !email) return NextResponse.json({ error: 'Nom et email requis' }, { status: 400 });
 
   const existing = await prisma.user.findUnique({ where: { email } });
@@ -77,46 +76,5 @@ export async function POST(req: NextRequest) {
     } as any,
   });
 
-  // Try to send temp password via WhatsApp if phone provided and sendInvite checked
-  let whatsappSent = false;
-  let whatsappError = '';
-  if (sendInvite && phone) {
-    try {
-      const { accountSid, authToken, fromNumber } = await getTwilioSettings();
-      if (accountSid && authToken && fromNumber) {
-        const firstName  = name.split(' ')[0];
-        const roleLabel  = role === 'admin' ? 'Administrateur' : role === 'driver' ? 'Livreur' : 'Agent';
-        const to         = formatWhatsappNumber(phone);
-
-        // Use approved template if ContentSid is configured; fall back to free-form
-        const { TWILIO_TEMPLATES, buildContentVariables } = await import('@/src/lib/wa-template');
-        const tmpl      = TWILIO_TEMPLATES['invite_staff'];
-        const sidRow    = tmpl ? await prisma.setting.findUnique({ where: { key: tmpl.settingKey } }) : null;
-        const contentSid = sidRow?.value ?? null;
-
-        if (contentSid && tmpl) {
-          const contentVariables = buildContentVariables('invite_staff', {
-            first_name:    firstName,
-            role_label:    roleLabel,
-            temp_password: tempPassword,
-          }) ?? {};
-          await twilioSendWhatsappTemplate(accountSid, authToken, fromNumber, to, contentSid, contentVariables);
-        } else {
-          const msgBody = `Bonjour ${firstName} 👋\n\nVous êtes invité(e) à rejoindre *Jumla Shipping* en tant que *${roleLabel}*.\n\n🔑 Mot de passe temporaire : *${tempPassword}*\n\n🌐 Connectez-vous sur : jumla.app\n\nVous devrez changer ce mot de passe à la première connexion.`;
-          await twilioSendWhatsapp(accountSid, authToken, fromNumber, to, msgBody);
-        }
-        whatsappSent = true;
-      }
-    } catch (e: any) {
-      whatsappError = e?.message ?? 'Erreur WhatsApp';
-    }
-  }
-
-  return NextResponse.json({
-    ok: true,
-    id: user.id,
-    tempPassword,
-    whatsappSent,
-    whatsappError: whatsappError || undefined,
-  });
+  return NextResponse.json({ ok: true, id: user.id, tempPassword });
 }

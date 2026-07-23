@@ -519,16 +519,19 @@ function SectionPricing({ routes, onEdit }) {
 /* ── WhatsApp ─────────────────────────────────────────────── */
 function SectionWhatsapp() {
   const t = useAdminT();
-  const [status,     setStatus]     = useState(null);
-  const [accountSid, setAccountSid] = useState('');
-  const [authToken,  setAuthToken]  = useState('');
-  const [fromNumber, setFromNumber] = useState('');
-  const [showSid,    setShowSid]    = useState(false);
-  const [showToken,  setShowToken]  = useState(false);
-  const [saving,     setSaving]     = useState(false);
-  const [saved,      setSaved]      = useState(false);
-  const [testing,    setTesting]    = useState(false);
-  const [testResult, setTestResult] = useState(null);
+  const [status,           setStatus]           = useState(null);
+  const [accountSid,       setAccountSid]       = useState('');
+  const [authToken,        setAuthToken]         = useState('');
+  const [fromNumber,       setFromNumber]       = useState('');
+  const [showSid,          setShowSid]          = useState(false);
+  const [showToken,        setShowToken]        = useState(false);
+  const [saving,           setSaving]           = useState(false);
+  const [saved,            setSaved]            = useState(false);
+  const [testing,          setTesting]          = useState(false);
+  const [testResult,       setTestResult]       = useState(null);
+  const [messagingEnabled, setMessagingEnabled] = useState(true);
+  const [channel,          setChannel]          = useState('whatsapp');
+  const [sendTo,           setSendTo]           = useState('client');
 
   useEffect(() => {
     fetch('/api/settings/whatsapp').then(r => r.json()).then(d => {
@@ -536,6 +539,9 @@ function SectionWhatsapp() {
       setAccountSid(d.accountSid ?? '');
       setAuthToken(d.authToken ?? '');
       setFromNumber(d.fromNumber ?? '');
+      setMessagingEnabled(d.messagingEnabled !== false);
+      setChannel(d.channel ?? 'whatsapp');
+      setSendTo(d.sendTo ?? 'client');
     }).catch(() => {});
   }, []);
 
@@ -554,10 +560,18 @@ function SectionWhatsapp() {
     setSaving(true); setSaved(false); setTestResult(null);
     await fetch('/api/settings/whatsapp', {
       method: 'PUT', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ accountSid, authToken, fromNumber }),
+      body: JSON.stringify({ accountSid, authToken, fromNumber, messagingEnabled, channel, sendTo }),
     });
     const updated = await fetch('/api/settings/whatsapp').then(r => r.json()).catch(() => null);
-    if (updated) { setStatus(updated); setAccountSid(updated.accountSid); setAuthToken(updated.authToken); setFromNumber(updated.fromNumber); }
+    if (updated) {
+      setStatus(updated);
+      setAccountSid(updated.accountSid);
+      setAuthToken(updated.authToken);
+      setFromNumber(updated.fromNumber);
+      setMessagingEnabled(updated.messagingEnabled !== false);
+      setChannel(updated.channel ?? 'whatsapp');
+      setSendTo(updated.sendTo ?? 'client');
+    }
     setSaving(false); setSaved(true); setTimeout(() => setSaved(false), 3000);
   }
 
@@ -617,14 +631,83 @@ function SectionWhatsapp() {
         ⚠️ Chaque destinataire doit d'abord envoyer le mot-clé du sandbox à ce numéro avant de recevoir tes messages.<br />
         <strong>Production :</strong> enregistre un numéro WhatsApp Business dans <strong>Messaging → Senders → WhatsApp Senders</strong>.
       </div>
+      {/* ── Préférences d'envoi ── */}
+      <div style={{ borderTop: '1px solid var(--border)', margin: '20px 0 16px', paddingTop: 16 }}>
+        <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--ink-500)', textTransform: 'uppercase', letterSpacing: '.06em', marginBottom: 14 }}>
+          Préférences d'envoi
+        </div>
+
+        {/* Toggle enabled */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14, padding: '10px 14px', background: 'var(--bg-soft)', borderRadius: 8, border: '1px solid var(--border)' }}>
+          <div>
+            <div style={{ fontSize: 13.5, fontWeight: 600 }}>Activer l'envoi de messages</div>
+            <div style={{ fontSize: 12, color: 'var(--ink-400)', marginTop: 2 }}>
+              {messagingEnabled ? 'Messages activés — les envois seront effectués' : 'Messages désactivés — aucun message ne sera envoyé'}
+            </div>
+          </div>
+          <div onClick={() => setMessagingEnabled(v => !v)} style={{
+            width: 44, height: 24, borderRadius: 12, cursor: 'pointer', flexShrink: 0,
+            background: messagingEnabled ? 'var(--brand-500)' : 'var(--ink-200)',
+            position: 'relative', transition: 'background .2s',
+          }}>
+            <div style={{
+              position: 'absolute', top: 2, left: messagingEnabled ? 22 : 2,
+              width: 20, height: 20, borderRadius: 10, background: 'white',
+              transition: 'left .2s', boxShadow: '0 1px 3px rgba(0,0,0,.2)',
+            }} />
+          </div>
+        </div>
+
+        {/* Channel */}
+        <div style={{ marginBottom: 14 }}>
+          <label className="label" style={{ marginBottom: 8 }}>Canal d'envoi</label>
+          <div style={{ display: 'flex', gap: 6 }}>
+            {[['whatsapp', '💬 WhatsApp'], ['sms', '📱 SMS']].map(([val, lbl]) => (
+              <button key={val} type="button"
+                className={'btn btn--sm ' + (channel === val ? 'btn--brand' : 'btn--ghost')}
+                onClick={() => setChannel(val)} style={{ flex: 1, justifyContent: 'center' }}>
+                {lbl}
+              </button>
+            ))}
+          </div>
+          {channel === 'sms' && (
+            <div style={{ marginTop: 8, fontSize: 12, color: 'var(--ink-500)', background: 'var(--warn-50)', border: '1px solid var(--warn-100)', borderRadius: 6, padding: '8px 12px' }}>
+              Le mode SMS envoie via Twilio sans le préfixe WhatsApp. Le numéro expéditeur doit être capable d'envoyer des SMS.
+            </div>
+          )}
+        </div>
+
+        {/* Send to */}
+        <div style={{ marginBottom: 4 }}>
+          <label className="label" style={{ marginBottom: 8 }}>Envoyer à</label>
+          <div style={{ display: 'flex', gap: 6 }}>
+            {[
+              ['client', '👤 Client (expéditeur principal)'],
+              ['recip',  '📦 Destinataire (contact au départ)'],
+            ].map(([val, lbl]) => (
+              <button key={val} type="button"
+                className={'btn btn--sm ' + (sendTo === val ? 'btn--brand' : 'btn--ghost')}
+                onClick={() => setSendTo(val)} style={{ flex: 1, justifyContent: 'center' }}>
+                {lbl}
+              </button>
+            ))}
+          </div>
+          <div style={{ marginTop: 8, fontSize: 12, color: 'var(--ink-400)', lineHeight: 1.5 }}>
+            {sendTo === 'client'
+              ? 'Les messages seront envoyés au numéro du client (expéditeur principal du colis).'
+              : 'Les messages seront envoyés au numéro du destinataire renseigné sur le colis.'}
+          </div>
+        </div>
+      </div>
+
       <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
         <button className="btn btn--brand btn--sm" disabled={saving} onClick={handleSave}>
           {saving ? t.common.saving : t.common.save}
         </button>
         <button className="btn btn--ghost btn--sm" disabled={testing} onClick={handleTest}>
-          {testing ? /* TODO i18n */ 'Test en cours…' : /* TODO i18n */ '⚡ Tester la connexion'}
+          {testing ? 'Test en cours…' : '⚡ Tester la connexion'}
         </button>
-        {saved && <span style={{ fontSize: 12, color: 'var(--ok-700)', fontWeight: 600 }}>✓ {/* TODO i18n */}Sauvegardé</span>}
+        {saved && <span style={{ fontSize: 12, color: 'var(--ok-700)', fontWeight: 600 }}>✓ Sauvegardé</span>}
       </div>
       {testResult && (
         <div style={{ marginTop: 12, padding: '10px 14px', borderRadius: 8, background: testResult.ok ? 'var(--ok-50)' : 'var(--bad-50)', border: '1px solid ' + (testResult.ok ? 'var(--ok-200)' : 'var(--bad-200)') }}>

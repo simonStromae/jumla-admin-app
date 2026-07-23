@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/src/lib/prisma';
 import { requireAdmin } from '@/src/lib/api-auth';
 
-const KEYS = ['TWILIO_ACCOUNT_SID', 'TWILIO_AUTH_TOKEN', 'TWILIO_WHATSAPP_FROM'] as const;
+const KEYS = ['TWILIO_ACCOUNT_SID', 'TWILIO_AUTH_TOKEN', 'TWILIO_WHATSAPP_FROM', 'MESSAGING_ENABLED', 'MESSAGING_CHANNEL', 'MESSAGING_SEND_TO'] as const;
 
 export async function GET() {
   const { error } = await requireAdmin();
@@ -17,11 +17,13 @@ export async function GET() {
   const token = m['TWILIO_AUTH_TOKEN']  ?? '';
 
   return NextResponse.json({
-    // Show first 6 + last 4 chars so user can verify what's stored without exposing the full value
     accountSid:  sid   ? sid.slice(0, 6)   + '••••••••••••••••••••••' + sid.slice(-4)   : '',
     authToken:   token ? token.slice(0, 4) + '••••••••••••••••••••••' + token.slice(-4) : '',
     fromNumber:  m['TWILIO_WHATSAPP_FROM'] ?? '',
-    configured:  KEYS.every(k => !!m[k]),
+    configured:  !!(m['TWILIO_ACCOUNT_SID'] && m['TWILIO_AUTH_TOKEN'] && m['TWILIO_WHATSAPP_FROM']),
+    messagingEnabled: m['MESSAGING_ENABLED'] !== 'false',
+    channel:          m['MESSAGING_CHANNEL'] ?? 'whatsapp',
+    sendTo:           m['MESSAGING_SEND_TO'] ?? 'client',
   });
 }
 
@@ -29,7 +31,7 @@ export async function PUT(req: NextRequest) {
   const { error } = await requireAdmin();
   if (error) return error;
 
-  const body = await req.json() as { accountSid?: string; authToken?: string; fromNumber?: string };
+  const body = await req.json() as { accountSid?: string; authToken?: string; fromNumber?: string; messagingEnabled?: boolean; channel?: string; sendTo?: string };
 
   // Remove every non-printable-ASCII character (invisible Unicode, zero-width spaces, etc.)
   const sanitize = (s: string) => s.trim().replace(/[^\x20-\x7E]/g, '');
@@ -54,6 +56,28 @@ export async function PUT(req: NextRequest) {
       where:  { key: 'TWILIO_WHATSAPP_FROM' },
       create: { key: 'TWILIO_WHATSAPP_FROM', value: sanitize(body.fromNumber) },
       update: { value: sanitize(body.fromNumber) },
+    }));
+  }
+
+  if (body.messagingEnabled !== undefined) {
+    ops.push(prisma.setting.upsert({
+      where:  { key: 'MESSAGING_ENABLED' },
+      create: { key: 'MESSAGING_ENABLED', value: body.messagingEnabled ? 'true' : 'false' },
+      update: { value: body.messagingEnabled ? 'true' : 'false' },
+    }));
+  }
+  if (body.channel) {
+    ops.push(prisma.setting.upsert({
+      where:  { key: 'MESSAGING_CHANNEL' },
+      create: { key: 'MESSAGING_CHANNEL', value: body.channel },
+      update: { value: body.channel },
+    }));
+  }
+  if (body.sendTo) {
+    ops.push(prisma.setting.upsert({
+      where:  { key: 'MESSAGING_SEND_TO' },
+      create: { key: 'MESSAGING_SEND_TO', value: body.sendTo },
+      update: { value: body.sendTo },
     }));
   }
 

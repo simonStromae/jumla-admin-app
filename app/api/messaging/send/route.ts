@@ -18,6 +18,18 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'parcelIds et body sont requis' }, { status: 400 });
   }
 
+  // Read messaging preferences
+  const prefRows = await prisma.setting.findMany({
+    where: { key: { in: ['MESSAGING_ENABLED', 'MESSAGING_CHANNEL', 'MESSAGING_SEND_TO'] } },
+  }).catch(() => []);
+  const pref: Record<string, string> = {};
+  for (const r of prefRows) pref[r.key] = r.value;
+  if (pref['MESSAGING_ENABLED'] === 'false') {
+    return NextResponse.json({ error: 'L\'envoi de messages est désactivé' }, { status: 403 });
+  }
+  const channel = pref['MESSAGING_CHANNEL'] ?? 'whatsapp';
+  const sendTo  = pref['MESSAGING_SEND_TO']  ?? 'client';
+
   const { accountSid, authToken, fromNumber } = await getTwilioSettings();
   if (!accountSid || !authToken || !fromNumber) {
     return NextResponse.json({ error: 'API Twilio non configurée' }, { status: 503 });
@@ -44,13 +56,19 @@ export async function POST(req: NextRequest) {
   const results: { parcelId: string; status: string; error?: string; mode?: string }[] = [];
 
   for (const p of parcels) {
-    const phone = p.client.phone;
+    // Pick phone based on sendTo setting
+    const rawPhone = sendTo === 'recip'
+      ? ((p as any).recipPhone ?? p.client.phone)
+      : p.client.phone;
+    const phone = rawPhone;
     if (!phone) {
       results.push({ parcelId: p.id, status: 'failed', error: 'Numéro manquant' });
       continue;
     }
 
-    const firstName = p.client.name.split(' ')[0];
+    const firstName = sendTo === 'recip'
+      ? (((p as any).recipName ?? p.client.name).split(' ')[0])
+      : p.client.name.split(' ')[0];
     const amount    = (p.payment?.amount ?? p.priceXaf ?? 0).toLocaleString('fr');
     const weight    = String(p.weightKg ?? '—');
     const arrDate   = p.campaign.arrivalDate
@@ -89,7 +107,7 @@ export async function POST(req: NextRequest) {
       .replace(/\{warehouse_address\}/g, warehouseAddress)
       .replace(/\{agent_phone\}/g,       agentPhone);
 
-    const toPhone = formatWhatsappNumber(phone);
+    const toPhone = channel === 'sms' ? phone.replace(/\s/g, '') : formatWhatsappNumber(phone);
 
     try {
       let msg: { sid: string; status: string };
