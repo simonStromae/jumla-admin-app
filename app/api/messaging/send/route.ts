@@ -2,7 +2,7 @@ export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/src/lib/prisma';
 import { requirePermission } from '@/src/lib/api-auth';
-import { getTwilioSettings, twilioSendWhatsapp, twilioSendWhatsappTemplate, formatWhatsappNumber } from '@/src/lib/twilio';
+import { getTwilioSettings, twilioSendWhatsapp, twilioSendSms, twilioSendWhatsappTemplate, formatWhatsappNumber } from '@/src/lib/twilio';
 import { TWILIO_TEMPLATES, buildContentVariables } from '@/src/lib/wa-template';
 
 export async function POST(req: NextRequest) {
@@ -119,13 +119,14 @@ export async function POST(req: NextRequest) {
       let msg: { sid: string; status: string };
       let mode: string;
 
-      if (contentSid && templateId) {
-        // Use approved WhatsApp template
+      if (channel === 'sms') {
+        msg  = await twilioSendSms(accountSid, authToken, fromNumber, toPhone, finalBody);
+        mode = 'sms';
+      } else if (contentSid && templateId) {
         const contentVariables = buildContentVariables(templateId, namedVars) ?? {};
         msg  = await twilioSendWhatsappTemplate(accountSid, authToken, fromNumber, toPhone, contentSid, contentVariables);
         mode = 'template';
       } else {
-        // Free-form (works only within 24h session window)
         msg  = await twilioSendWhatsapp(accountSid, authToken, fromNumber, toPhone, finalBody);
         mode = 'freeform';
       }

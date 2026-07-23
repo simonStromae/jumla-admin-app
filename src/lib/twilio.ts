@@ -65,6 +65,27 @@ export async function twilioSendWhatsapp(
   return data as { sid: string; status: string };
 }
 
+export async function twilioSendSms(
+  accountSid: string,
+  authToken: string,
+  from: string,
+  to: string,
+  body: string,
+) {
+  const url    = `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Messages.json`;
+  const clean  = (n: string) => n.replace(/^whatsapp:/i, '').replace(/\s/g, '');
+  const params = new URLSearchParams({ From: clean(from), To: clean(to), Body: body });
+
+  const res  = await fetch(url, {
+    method:  'POST',
+    headers: { Authorization: basicAuth(accountSid, authToken), 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: params.toString(),
+  });
+  const data = await res.json() as any;
+  if (!res.ok) throw Object.assign(new Error(data.message ?? `HTTP ${res.status}`), { code: data.code ?? res.status });
+  return data as { sid: string; status: string };
+}
+
 // Send a pre-approved WhatsApp template (works without 24h session)
 export async function twilioSendWhatsappTemplate(
   accountSid: string,
