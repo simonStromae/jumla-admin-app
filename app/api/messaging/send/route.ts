@@ -20,7 +20,7 @@ export async function POST(req: NextRequest) {
 
   // Read messaging preferences
   const prefRows = await prisma.setting.findMany({
-    where: { key: { in: ['MESSAGING_ENABLED', 'MESSAGING_CHANNEL', 'MESSAGING_SEND_TO'] } },
+    where: { key: { in: ['MESSAGING_ENABLED', 'MESSAGING_CHANNEL', 'MESSAGING_SEND_TO', 'TWILIO_SMS_FROM'] } },
   }).catch(() => []);
   const pref: Record<string, string> = {};
   for (const r of prefRows) pref[r.key] = r.value;
@@ -30,9 +30,15 @@ export async function POST(req: NextRequest) {
   const channel = pref['MESSAGING_CHANNEL'] ?? 'whatsapp';
   const sendTo  = pref['MESSAGING_SEND_TO']  ?? 'client';
 
-  const { accountSid, authToken, fromNumber } = await getTwilioSettings();
-  if (!accountSid || !authToken || !fromNumber) {
+  const { accountSid, authToken, fromNumber: waFrom } = await getTwilioSettings();
+  if (!accountSid || !authToken) {
     return NextResponse.json({ error: 'API Twilio non configurée' }, { status: 503 });
+  }
+  const fromNumber = channel === 'sms'
+    ? (pref['TWILIO_SMS_FROM'] || waFrom)
+    : waFrom;
+  if (!fromNumber) {
+    return NextResponse.json({ error: 'Numéro expéditeur non configuré' }, { status: 503 });
   }
 
   // Look up template ContentSid if a templateId was provided

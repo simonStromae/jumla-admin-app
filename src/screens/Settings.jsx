@@ -523,6 +523,7 @@ function SectionWhatsapp() {
   const [accountSid,       setAccountSid]       = useState('');
   const [authToken,        setAuthToken]         = useState('');
   const [fromNumber,       setFromNumber]       = useState('');
+  const [smsFrom,          setSmsFrom]          = useState('');
   const [showSid,          setShowSid]          = useState(false);
   const [showToken,        setShowToken]        = useState(false);
   const [saving,           setSaving]           = useState(false);
@@ -539,6 +540,7 @@ function SectionWhatsapp() {
       setAccountSid(d.accountSid ?? '');
       setAuthToken(d.authToken ?? '');
       setFromNumber(d.fromNumber ?? '');
+      setSmsFrom(d.smsFrom ?? '');
       setMessagingEnabled(d.messagingEnabled !== false);
       setChannel(d.channel ?? 'whatsapp');
       setSendTo(d.sendTo ?? 'client');
@@ -560,7 +562,7 @@ function SectionWhatsapp() {
     setSaving(true); setSaved(false); setTestResult(null);
     await fetch('/api/settings/whatsapp', {
       method: 'PUT', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ accountSid, authToken, fromNumber, messagingEnabled, channel, sendTo }),
+      body: JSON.stringify({ accountSid, authToken, fromNumber, smsFrom, messagingEnabled, channel, sendTo }),
     });
     const updated = await fetch('/api/settings/whatsapp').then(r => r.json()).catch(() => null);
     if (updated) {
@@ -568,6 +570,7 @@ function SectionWhatsapp() {
       setAccountSid(updated.accountSid);
       setAuthToken(updated.authToken);
       setFromNumber(updated.fromNumber);
+      setSmsFrom(updated.smsFrom ?? '');
       setMessagingEnabled(updated.messagingEnabled !== false);
       setChannel(updated.channel ?? 'whatsapp');
       setSendTo(updated.sendTo ?? 'client');
@@ -620,9 +623,18 @@ function SectionWhatsapp() {
           </div>
         </div>
       </div>
-      <div className="field" style={{ marginBottom: 8 }}>
-        <label className="label">{/* TODO i18n: Numéro expéditeur WhatsApp */}Numéro expéditeur WhatsApp</label>
-        <input className="input mono" placeholder="+14155238886" value={fromNumber} onChange={e => setFromNumber(e.target.value)} />
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 8 }}>
+        <div className="field">
+          <label className="label">Numéro expéditeur WhatsApp</label>
+          <input className="input mono" placeholder="+14155238886" value={fromNumber} onChange={e => setFromNumber(e.target.value)} />
+        </div>
+        <div className="field">
+          <label className="label">
+            Numéro expéditeur SMS
+            <span style={{ marginLeft: 6, fontSize: 11, fontWeight: 400, color: 'var(--ink-400)' }}>(canal SMS uniquement)</span>
+          </label>
+          <input className="input mono" placeholder="+15141234567" value={smsFrom} onChange={e => setSmsFrom(e.target.value)} />
+        </div>
       </div>
       <div style={{ fontSize: 12, color: 'var(--ink-500)', background: 'var(--info-50)', border: '1px solid var(--info-100)', borderRadius: 8, padding: '10px 14px', marginBottom: 16, lineHeight: 1.6 }}>
         {/* TODO i18n: Twilio sandbox instructions */}

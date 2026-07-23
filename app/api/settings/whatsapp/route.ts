@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/src/lib/prisma';
 import { requireAdmin } from '@/src/lib/api-auth';
 
-const KEYS = ['TWILIO_ACCOUNT_SID', 'TWILIO_AUTH_TOKEN', 'TWILIO_WHATSAPP_FROM', 'MESSAGING_ENABLED', 'MESSAGING_CHANNEL', 'MESSAGING_SEND_TO'] as const;
+const KEYS = ['TWILIO_ACCOUNT_SID', 'TWILIO_AUTH_TOKEN', 'TWILIO_WHATSAPP_FROM', 'TWILIO_SMS_FROM', 'MESSAGING_ENABLED', 'MESSAGING_CHANNEL', 'MESSAGING_SEND_TO'] as const;
 
 export async function GET() {
   const { error } = await requireAdmin();
@@ -20,6 +20,7 @@ export async function GET() {
     accountSid:  sid   ? sid.slice(0, 6)   + '••••••••••••••••••••••' + sid.slice(-4)   : '',
     authToken:   token ? token.slice(0, 4) + '••••••••••••••••••••••' + token.slice(-4) : '',
     fromNumber:  m['TWILIO_WHATSAPP_FROM'] ?? '',
+    smsFrom:     m['TWILIO_SMS_FROM'] ?? '',
     configured:  !!(m['TWILIO_ACCOUNT_SID'] && m['TWILIO_AUTH_TOKEN'] && m['TWILIO_WHATSAPP_FROM']),
     messagingEnabled: m['MESSAGING_ENABLED'] !== 'false',
     channel:          m['MESSAGING_CHANNEL'] ?? 'whatsapp',
@@ -31,7 +32,7 @@ export async function PUT(req: NextRequest) {
   const { error } = await requireAdmin();
   if (error) return error;
 
-  const body = await req.json() as { accountSid?: string; authToken?: string; fromNumber?: string; messagingEnabled?: boolean; channel?: string; sendTo?: string };
+  const body = await req.json() as { accountSid?: string; authToken?: string; fromNumber?: string; smsFrom?: string; messagingEnabled?: boolean; channel?: string; sendTo?: string };
 
   // Remove every non-printable-ASCII character (invisible Unicode, zero-width spaces, etc.)
   const sanitize = (s: string) => s.trim().replace(/[^\x20-\x7E]/g, '');
@@ -56,6 +57,13 @@ export async function PUT(req: NextRequest) {
       where:  { key: 'TWILIO_WHATSAPP_FROM' },
       create: { key: 'TWILIO_WHATSAPP_FROM', value: sanitize(body.fromNumber) },
       update: { value: sanitize(body.fromNumber) },
+    }));
+  }
+  if (body.smsFrom !== undefined) {
+    ops.push(prisma.setting.upsert({
+      where:  { key: 'TWILIO_SMS_FROM' },
+      create: { key: 'TWILIO_SMS_FROM', value: sanitize(body.smsFrom) },
+      update: { value: sanitize(body.smsFrom) },
     }));
   }
 
