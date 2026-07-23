@@ -993,6 +993,9 @@ export default function BookingScreen({ onNav, embedded = false }) {
       }
       setBookingRef(json.trackingCode);
       setDropoffInfo(json.dropoff ?? null);
+      if (typeof window !== 'undefined' && typeof window.fbq === 'function') {
+        window.fbq('track', 'AddToCart');
+      }
       setPayStatus('pending');
     } catch {
       setBookingErr('Erreur réseau. Réessayez.');
