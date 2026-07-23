@@ -223,6 +223,9 @@ export async function DELETE(_: NextRequest, { params }: { params: { id: string 
   const { error } = await requirePermission('campaigns');
   if (error) return error;
 
-  await prisma.campaign.delete({ where: { id: params.id } });
+  await prisma.campaign.update({
+    where: { id: params.id },
+    data:  { deletedAt: new Date() } as any,
+  });
   return NextResponse.json({ ok: true });
 }

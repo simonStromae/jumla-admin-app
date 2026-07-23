@@ -40,6 +40,7 @@ export async function GET() {
   // ── Campaigns ──────────────────────────────────────────────────────────────
   await run('campaigns.status_to_text', `ALTER TABLE campaigns ALTER COLUMN status TYPE TEXT USING status::TEXT`);
   await run('campaigns.statusNotes',    `ALTER TABLE campaigns ADD COLUMN IF NOT EXISTS "statusNotes" JSONB`);
+  await run('campaigns.deletedAt',      `ALTER TABLE campaigns ADD COLUMN IF NOT EXISTS "deletedAt" TIMESTAMPTZ`);
 
   // ── Campaign costs ─────────────────────────────────────────────────────────
   await run('campaign_costs.entrepot', `ALTER TABLE campaign_costs ADD COLUMN IF NOT EXISTS entrepot INTEGER NOT NULL DEFAULT 0`);

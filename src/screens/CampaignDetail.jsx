@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import I from '../components/Icons.jsx';
-import { RoutePill, Avatar, Modal } from '../components/Shell.jsx';
+import { RoutePill, Avatar, Modal, useCan } from '../components/Shell.jsx';
 import { useAdminT } from '../lib/useAdminT.js';
 
 // Main linear flow (shown in timeline)
@@ -57,6 +57,7 @@ const PARCEL_STATUS = {
 
 export default function CampaignDetailScreen({ id, onNav }) {
   const t = useAdminT();
+  const can = useCan();
   const [campaign,           setCampaign]           = useState(null);
   const [loading,            setLoading]            = useState(true);
   const [advancing,          setAdvancing]          = useState(false);
@@ -64,6 +65,7 @@ export default function CampaignDetailScreen({ id, onNav }) {
   const [showConfirmModal,   setShowConfirmModal]   = useState(null); // nextStep
   const [showDepartureModal, setShowDepartureModal] = useState(null); // targetStep
   const [statusNotes,        setStatusNotes]        = useState({});
+  const [archiving,          setArchiving]          = useState(false);
   const [showBroadcast,      setShowBroadcast]      = useState(false);
   const [broadcastPreview,   setBroadcastPreview]   = useState(null); // { total, campaign }
   const [broadcasting,       setBroadcasting]       = useState(false);
@@ -199,6 +201,21 @@ export default function CampaignDetailScreen({ id, onNav }) {
           <button className="btn btn--ghost" onClick={() => onNav('/admin/campaigns/' + campaign.id + '/edit')}>
             <I.Edit />{t.common.edit}
           </button>
+          {can('campaigns', 'delete') && (
+            <button
+              className="btn btn--ghost"
+              disabled={archiving}
+              onClick={async () => {
+                if (!confirm('Archiver cette cargaison ? Elle sera masquée mais pas supprimée.')) return;
+                setArchiving(true);
+                await fetch('/api/campaigns/' + id, { method: 'DELETE' });
+                setArchiving(false);
+                onNav('/');
+              }}
+            >
+              <I.Archive /> {archiving ? '…' : 'Archiver'}
+            </button>
+          )}
           <button onClick={() => {
             setBroadcastResult(null);
             fetch('/api/campaigns/' + campaign.id + '/broadcast')

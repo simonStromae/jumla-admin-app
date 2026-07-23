@@ -3,11 +3,14 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/src/lib/prisma';
 import { requireAdmin, requirePermission, mapCampaignStatus } from '@/src/lib/api-auth';
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   const { error } = await requireAdmin();
   if (error) return error;
 
-  const campaigns = await prisma.campaign.findMany({
+  const archived = req.nextUrl.searchParams.get('archived') === 'true';
+
+  const campaigns = await (prisma.campaign.findMany as any)({
+    where: archived ? { deletedAt: { not: null } } : { deletedAt: null },
     orderBy: { createdAt: 'desc' },
     include: {
       route: true,
@@ -63,6 +66,7 @@ export async function GET() {
       capacityKg:    c.capacityKg,
       departureDate: c.departureDate,
       arrivalDate:   c.arrivalDate,
+      deletedAt:     (c as any).deletedAt,
     };
   });
 

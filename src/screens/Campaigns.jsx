@@ -93,17 +93,22 @@ export default function CampaignsScreen({ onNav, onNewCampaign }) {
   const [campaigns, setCampaigns]     = useState([]);
   const [routes, setRoutes]           = useState([]);
   const [loading, setLoading]         = useState(true);
+  const [showArchived, setShowArchived] = useState(false);
+  const [archiving, setArchiving]       = useState(null);
 
-  useEffect(() => {
+  function loadCampaigns(archived) {
+    setLoading(true);
     Promise.all([
-      fetch('/api/campaigns').then(r => r.json()),
+      fetch('/api/campaigns' + (archived ? '?archived=true' : '')).then(r => r.json()),
       fetch('/api/routes').then(r => r.json()),
     ]).then(([cData, rData]) => {
       setCampaigns(Array.isArray(cData) ? cData : []);
       setRoutes(Array.isArray(rData) ? rData : []);
       setLoading(false);
     });
-  }, []);
+  }
+
+  useEffect(() => { loadCampaigns(showArchived); }, [showArchived]);
 
   const filtered = campaigns.filter(c => {
     if (routeFilter !== 'all' && c.route !== routeFilter) return false;
@@ -119,6 +124,21 @@ export default function CampaignsScreen({ onNav, onNewCampaign }) {
     if (!byMonth[key]) byMonth[key] = [];
     byMonth[key].push(c);
   });
+
+  async function handleArchive(campaignId) {
+    if (!confirm('Archiver cette cargaison ?')) return;
+    setArchiving(campaignId);
+    await fetch('/api/campaigns/' + campaignId, { method: 'DELETE' });
+    setArchiving(null);
+    loadCampaigns(showArchived);
+  }
+
+  async function handleRestore(campaignId) {
+    setArchiving(campaignId);
+    await fetch('/api/campaigns/' + campaignId + '/restore', { method: 'POST' });
+    setArchiving(null);
+    loadCampaigns(showArchived);
+  }
 
   const totalCollected = campaigns.reduce((s, c) => s + (c.collected ?? 0), 0);
   const totalInvoiced  = campaigns.reduce((s, c) => s + (c.invoiced  ?? 0), 0);
@@ -144,7 +164,15 @@ export default function CampaignsScreen({ onNav, onNewCampaign }) {
             </select>
           </div>
           <button className="btn btn--ghost"><I.Download />{t.common.export}</button>
-          {can('campaigns', 'create') && <button className="btn btn--brand" onClick={onNewCampaign}><I.Plus />{t.campaigns.new}</button>}
+          {can('campaigns', 'delete') && (
+            <button
+              className={'btn ' + (showArchived ? 'btn--soft' : 'btn--ghost')}
+              onClick={() => { setShowArchived(v => !v); setFilter('all'); }}
+            >
+              <I.Archive /> {showArchived ? 'Archivées' : 'Archivées'}
+            </button>
+          )}
+          {can('campaigns', 'create') && !showArchived && <button className="btn btn--brand" onClick={onNewCampaign}><I.Plus />{t.campaigns.new}</button>}
         </div>
       </div>
 
@@ -250,7 +278,33 @@ export default function CampaignsScreen({ onNav, onNewCampaign }) {
             </span>
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(360px, 1fr))', gap: 14 }}>
-            {list.map(c => <CampaignCard key={c.id} c={c} onClick={() => onNav('/admin/campaigns/' + c.id)} />)}
+            {list.map(c => (
+              <div key={c.id} style={{ position: 'relative' }}>
+                <CampaignCard c={c} onClick={showArchived ? undefined : () => onNav('/admin/campaigns/' + c.id)} />
+                {showArchived && can('campaigns', 'delete') && (
+                  <div style={{ padding: '8px 12px', display: 'flex', gap: 8, borderTop: '1px solid var(--border-soft)', background: 'var(--bg-soft)', borderRadius: '0 0 10px 10px', marginTop: -1 }}>
+                    <button
+                      className="btn btn--sm btn--ghost"
+                      style={{ flex: 1 }}
+                      disabled={archiving === c.id}
+                      onClick={() => handleRestore(c.id)}
+                    >
+                      {archiving === c.id ? '…' : '↩ Restaurer'}
+                    </button>
+                  </div>
+                )}
+                {!showArchived && can('campaigns', 'delete') && (
+                  <button
+                    style={{ position: 'absolute', top: 10, right: 10, background: 'none', border: 'none', cursor: 'pointer', color: 'var(--ink-300)', padding: 4, borderRadius: 6, lineHeight: 1, zIndex: 2 }}
+                    title="Archiver"
+                    disabled={archiving === c.id}
+                    onClick={e => { e.stopPropagation(); handleArchive(c.id); }}
+                  >
+                    <I.Archive style={{ width: 14, height: 14 }} />
+                  </button>
+                )}
+              </div>
+            ))}
           </div>
         </div>
       ))}

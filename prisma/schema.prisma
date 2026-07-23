@@ -96,6 +96,7 @@ model Campaign {
   createdById   String?
   createdBy     User?          @relation(fields: [createdById], references: [id])
   createdAt     DateTime       @default(now())
+  deletedAt     DateTime?
 
   costs         CampaignCost?
   costItems     CampaignCostItem[]
