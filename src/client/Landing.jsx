@@ -353,7 +353,7 @@ function JSteps({ onBook, content }) {
 
       <div className="jc">
         {/* Header */}
-        <div className="js2-steps-hd" style={{ textAlign: 'center', marginBottom: 64 }}>
+        <div className="js2-steps-hd" data-reveal style={{ textAlign: 'center', marginBottom: 64 }}>
           <div style={{ display: 'inline-flex', alignItems: 'center', background: 'rgba(0,180,216,.1)', color: '#00B4D8', border: '1px solid rgba(0,180,216,.25)', padding: '5px 16px', borderRadius: 99, fontSize: 12, fontWeight: 700, letterSpacing: '.05em', textTransform: 'uppercase', marginBottom: 18 }}>
             {st.eyebrow ?? 'Comment ça marche'}
           </div>
@@ -368,7 +368,7 @@ function JSteps({ onBook, content }) {
         {/* Steps */}
         <div className="js2-wrap">
           {stepsData.map((step, i) => (
-            <div key={step.num} className={`js2-row js2-row--${step.side}`}>
+            <div key={step.num} className={`js2-row js2-row--${step.side}`} data-reveal data-delay={i + 1}>
 
               {/* Card */}
               <div className="js2-card-wrap">
@@ -417,6 +417,23 @@ function JSteps({ onBook, content }) {
   );
 }
 
+/* ─── Scroll reveal hook ─── */
+function useScrollReveal() {
+  useEffect(() => {
+    const els = document.querySelectorAll('[data-reveal]');
+    const io = new IntersectionObserver((entries) => {
+      entries.forEach(e => {
+        if (e.isIntersecting) {
+          e.target.classList.add('sr-visible');
+          io.unobserve(e.target);
+        }
+      });
+    }, { threshold: 0.12 });
+    els.forEach(el => io.observe(el));
+    return () => io.disconnect();
+  }, []);
+}
+
 /* ─── Floating chatbot ─── */
 const CHAT_QS = [
   { emoji:'⏱️', label:'Délai de livraison ?',      answer:"Le transit moyen est de 14 jours porte à porte Douala → Montréal. Vous recevez une notification WhatsApp à chaque étape clé du voyage." },
@@ -443,6 +460,7 @@ function JChatBot() {
   return (
     <>
       <button
+        className="jchat-btn"
         onClick={() => { setOpen(v => !v); setCurrent(null); }}
         aria-label="Chat"
         style={{
@@ -460,7 +478,7 @@ function JChatBot() {
       </button>
 
       {open && (
-        <div style={{ position:'fixed', bottom:90, right:24, zIndex:1000, width:'min(320px, calc(100vw - 48px))', background:'white', borderRadius:16, boxShadow:'0 8px 48px rgba(0,0,0,.15)', overflow:'hidden' }}>
+        <div className="jchat-panel" style={{ position:'fixed', bottom:90, right:24, zIndex:1000, width:'min(320px, calc(100vw - 48px))', background:'white', borderRadius:16, boxShadow:'0 8px 48px rgba(0,0,0,.15)', overflow:'hidden' }}>
           <div style={{ background:'linear-gradient(135deg,#0D2E6E,#1B4FD8)', padding:'14px 18px' }}>
             <div style={{ display:'flex', alignItems:'center', gap:10 }}>
               <div style={{ width:36, height:36, borderRadius:'50%', background:'rgba(255,255,255,.15)', display:'grid', placeItems:'center', fontSize:18 }}>✈️</div>
@@ -599,7 +617,7 @@ function JServices({ onBook, content }) {
   return (
     <section className="jsvc3" id="jsvc">
       <div className="jc">
-        <div className="jsvc3__head">
+        <div className="jsvc3__head" data-reveal>
           <div className="jsvc3__eyebrow">{st.eyebrow ?? t('services.eyebrow')}</div>
           <h2 className="jsvc3__title">
             {st.title ?? t('services.title')}
@@ -609,8 +627,8 @@ function JServices({ onBook, content }) {
           </p>
         </div>
         <div className="jsvc3__grid">
-          {svcs.map(({ Icon, num, t: title, d }) => (
-            <div key={title} className="jsvc3__item">
+          {svcs.map(({ Icon, num, t: title, d }, i) => (
+            <div key={title} className="jsvc3__item" data-reveal data-delay={i + 1}>
               <div className="jsvc3__item-top">
                 <div className="jsvc3__num">{num}</div>
                 <div className="jsvc3__icon-wrap">
@@ -640,7 +658,7 @@ function JFeats({ onBook, content }) {
         <div className="jfeats3__grid">
 
           {/* Left */}
-          <div className="jfeats3__left">
+          <div className="jfeats3__left" data-reveal>
             <div className="jfeats3__eyebrow">{st.eyebrow ?? t('features.eyebrow')}</div>
             <h2 className="jfeats3__title">
               {st.title1 ?? t('features.title1')}{' '}
@@ -667,7 +685,7 @@ function JFeats({ onBook, content }) {
           </div>
 
           {/* Right — accordion */}
-          <div className="jfeats3__right">
+          <div className="jfeats3__right" data-reveal data-delay="2">
             {feats.map((f, i) => (
               <div key={i} className={'jfeats3__item' + (open === i ? ' is-open' : '')}
                 onClick={() => setOpen(open === i ? -1 : i)}>
@@ -716,7 +734,7 @@ function JEstimator({ onBook, content }) {
   return (
     <section className="jest-wrap" id="jest">
       <div className="jc">
-        <div style={{ textAlign: 'center', marginBottom: 40 }}>
+        <div data-reveal style={{ textAlign: 'center', marginBottom: 40 }}>
           <div className="jsvc3__eyebrow" style={{ display: 'block', marginBottom: 10 }}>{st.eyebrow ?? t('estimator.eyebrow')}</div>
           <h2 style={{ fontFamily: "'Inter', system-ui, sans-serif", fontSize: 'clamp(22px, 5vw, 36px)', color: 'var(--ink-900)', fontWeight: 800, letterSpacing: '-.03em' }}>
             {st.title ?? t('estimator.title')}
@@ -726,7 +744,7 @@ function JEstimator({ onBook, content }) {
           </p>
         </div>
 
-        <div className="jest">
+        <div className="jest" data-reveal data-delay="1">
           {/* ── Header: title + route selector ── */}
           <div className="jest__head">
             <I.Calculator style={{ width: 16, height: 16, color: 'var(--brand-400)' }} />
@@ -832,7 +850,7 @@ function JFAQ({ content }) {
     <section className="jfaq-section" id="jfaq">
       <div className="jc">
         <div className="jfaq-grid">
-          <div>
+          <div data-reveal>
             <div className="jsvc3__eyebrow" style={{ display: 'block', marginBottom: 12 }}>{st.eyebrow ?? t('faq.eyebrow')}</div>
             <h2 style={{ fontFamily: "'Inter', system-ui, sans-serif", fontSize: 'clamp(22px, 5vw, 36px)', fontWeight: 800, letterSpacing: '-.03em', color: 'var(--ink-900)', marginBottom: 16 }}>
               {st.title ?? t('faq.title')}
@@ -841,7 +859,7 @@ function JFAQ({ content }) {
               {st.subtitle ?? t('faq.subtitle')}
             </p>
           </div>
-          <div className="jfaq">
+          <div className="jfaq" data-reveal data-delay="2">
             {faqs.map((f, i) => (
               <div key={i} className={'jfaq__item' + (open === i ? ' is-open' : '')}>
                 <button className="jfaq__q" onClick={() => setOpen(open === i ? -1 : i)}>
@@ -1017,6 +1035,7 @@ export default function LandingPage({ onNav }) {
   const { data: session } = useSession();
   const role    = session?.user?.role;
   const content = useLandingContent();
+  useScrollReveal();
 
   const onBook = () => {
     if (!onNav) return;
@@ -1031,6 +1050,40 @@ export default function LandingPage({ onNav }) {
 
   return (
     <div className="jpage">
+      <style>{`
+        /* ── Scroll reveal ── */
+        [data-reveal] {
+          opacity: 0;
+          transform: translateY(36px);
+          transition: opacity 0.65s cubic-bezier(.22,1,.36,1), transform 0.65s cubic-bezier(.22,1,.36,1);
+        }
+        [data-reveal].sr-visible { opacity: 1; transform: none; }
+        [data-reveal][data-delay="1"] { transition-delay: 0.10s; }
+        [data-reveal][data-delay="2"] { transition-delay: 0.20s; }
+        [data-reveal][data-delay="3"] { transition-delay: 0.30s; }
+        [data-reveal][data-delay="4"] { transition-delay: 0.40s; }
+        [data-reveal][data-delay="5"] { transition-delay: 0.50s; }
+        /* ── Chatbot animation ── */
+        .jchat-panel {
+          transform-origin: bottom right;
+          animation: chatOpen 0.28s cubic-bezier(.34,1.56,.64,1) both;
+        }
+        @keyframes chatOpen {
+          from { opacity: 0; transform: scale(0.88) translateY(12px); }
+          to   { opacity: 1; transform: scale(1) translateY(0); }
+        }
+        .jchat-btn {
+          transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        .jchat-btn:hover { transform: scale(1.08); box-shadow: 0 6px 32px rgba(27,79,216,.55) !important; }
+        /* ── FAQ/accordion smooth open ── */
+        .jfaq__a   { animation: fadeSlide 0.25s ease both; }
+        .jfeats3__item-body { animation: fadeSlide 0.25s ease both; }
+        @keyframes fadeSlide {
+          from { opacity: 0; transform: translateY(-6px); }
+          to   { opacity: 1; transform: none; }
+        }
+      `}</style>
       <SiteNav onNav={onNav} onBook={onBook} mode="landing" />
       <JHero onBook={onBook} onNav={onNav} content={content} />
       <JEstimator onBook={onBook} content={content} />
