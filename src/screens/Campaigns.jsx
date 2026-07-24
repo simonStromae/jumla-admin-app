@@ -195,7 +195,7 @@ export default function CampaignsScreen({ onNav, onNewCampaign }) {
         </div>
         <div className="kpi">
           {/* TODO: no translation key for "Impayés en cours" */}
-          <div className="kpi__label">Impayés en cours <span style={{ textTransform: 'none', color: 'var(--ink-300)' }}>/ Outstanding</span></div>
+          <div className="kpi__label">En cours <span style={{ textTransform: 'none', color: 'var(--ink-300)' }}>/ Outstanding</span></div>
           <div className="kpi__value" style={{ color: outstanding > 0 ? 'var(--bad-600)' : 'var(--ok-600)' }}>
             {Math.max(0, outstanding / 1000).toFixed(1)}k <span style={{ fontSize: 14, color: 'var(--ink-400)' }}>CAD</span>
           </div>

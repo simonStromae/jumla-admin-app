@@ -127,7 +127,7 @@ const CLIENT_ARTICLES = [
 
 Cliquez sur un colis pour voir son statut, la facture, le bordereau et les coordonnées de votre agent.
 
-Un code couleur indique l'état du paiement : vert = payé, orange = partiel, rouge = impayé.`,
+Un code couleur indique l'état du paiement : vert = payé, orange = en cours, orange = partiel.`,
   },
   {
     id: 'cl-statuts', section: 'Mes colis', icon: '📋',

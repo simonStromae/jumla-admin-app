@@ -78,7 +78,7 @@ const fr = {
   },
 
   paymentStatus: {
-    completed: 'Payé', pending: 'En attente', partial: 'Partiel', cancelled: 'Annulé',
+    completed: 'Payé', pending: 'En cours', partial: 'Partiel', cancelled: 'Annulé',
   },
 
   blStatus: {

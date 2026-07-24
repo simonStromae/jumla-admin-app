@@ -60,8 +60,7 @@ export default function AllParcelsScreen({ onNav, initialSearch = '' }) {
   const filtered = allParcels.filter(p => {
     if (campaignFilter !== 'all' && p.campaignId !== campaignFilter) return false;
     if (tab === 'ann')     return p.status === 'ann';
-    if (tab === 'unpaid')  return p.paid === 'unpaid' && p.status !== 'ann';
-    if (tab === 'pending') return p.paid === 'pending' && p.status !== 'ann';
+    if (tab === 'pending') return (p.paid === 'pending' || p.paid === 'unpaid') && p.status !== 'ann';
     if (tab === 'overrun') return p.overrun && p.status !== 'ann';
     if (tab === 'home')    return p.delivery === 'home' && p.status !== 'ann';
     // "Tous" exclut les annulés
@@ -81,7 +80,7 @@ export default function AllParcelsScreen({ onNav, initialSearch = '' }) {
   const someParcelsChecked = pagedIds.some(id => selected.includes(id));
 
   function exportCSV(onlySelected = false) {
-    const PAYMENT_LABEL = { paid: 'Payé', pending: 'En cours', unpaid: 'Impayé' };
+    const PAYMENT_LABEL = { paid: 'Payé', pending: 'En cours', unpaid: 'En cours' };
     const STATUS_LABEL  = { enr: 'Enregistré', rec: 'Reçu entrepôt', pre: 'Vérifié/Préparé', exp: 'Expédié', tra: 'En transit', apd: 'Arrivé pays dest.', dou: 'Aux douanes', ins: 'Inspection', ret: 'Retenu', lib: 'Libéré', ard: 'Entrepôt dest.', ver: 'Vérification', pdl: 'Prêt livraison', liv: 'En livraison', ok: 'Livré', adr: 'Adresse incompl.', tdl: 'Tentative livr.', rte: 'Retour entrepôt', dom: 'Endommagé', cla: 'Réclamation' };
     const headers = ['Code', 'Cargaison', 'Expéditeur', 'Tél expéditeur', 'Destinataire', 'Ville', 'Poids (kg)', 'Montant (CAD)', 'Paiement', 'Statut', 'Date'];
     const data = onlySelected && selected.length > 0 ? filtered.filter(p => selected.includes(p.id)) : filtered;
@@ -140,13 +139,12 @@ export default function AllParcelsScreen({ onNav, initialSearch = '' }) {
           <div className="kpi__label" style={{ color: 'var(--ok-700)' }}>{t.paymentStatus.completed}</div>
           <div className="kpi__value" style={{ color: 'var(--ok-700)' }}>{allParcels.filter(p => p.paid === 'paid').length}</div>
         </div>
-        <div className="kpi" style={{ background: 'var(--bad-50)', borderColor: 'var(--bad-100)' }}>
-          <div className="kpi__label" style={{ color: 'var(--bad-700)' }}>{'Impayés'}</div>
-          <div className="kpi__value" style={{ color: 'var(--bad-700)' }}>{allParcels.filter(p => p.paid === 'unpaid').length}</div>
+        <div className="kpi" style={{ background: 'var(--warn-50)', borderColor: 'var(--warn-100)' }}>
+          <div className="kpi__label" style={{ color: 'var(--warn-700)' }}>En cours</div>
+          <div className="kpi__value" style={{ color: 'var(--warn-700)' }}>{allParcels.filter(p => (p.paid === 'pending' || p.paid === 'unpaid') && p.status !== 'ann').length}</div>
         </div>
         <div className="kpi" style={{ background: 'var(--warn-50)', borderColor: 'var(--warn-100)' }}>
-          {/* TODO: no translation key for "Dépassements" (overrun) */}
-          <div className="kpi__label" style={{ color: 'var(--warn-700)' }}>Dépassements</div>
+          <div className="kpi__label" style={{ color: 'var(--warn-700)' }}>Surpoids</div>
           <div className="kpi__value" style={{ color: 'var(--warn-700)' }}>{allParcels.filter(p => p.overrun).length}</div>
         </div>
       </div>
@@ -154,8 +152,7 @@ export default function AllParcelsScreen({ onNav, initialSearch = '' }) {
       <div className="toolbar">
         <div className="tabs">
           <button className={'tab ' + (tab === 'all' ? 'is-active' : '')} onClick={() => setTab('all')}>{t.parcels.filterAll} <span className="count">{allParcels.filter(p => p.status !== 'ann').length}</span></button>
-          <button className={'tab ' + (tab === 'unpaid' ? 'is-active' : '')} onClick={() => setTab('unpaid')}>{'Impayés'} <span className="count">{allParcels.filter(p => p.paid === 'unpaid' && p.status !== 'ann').length}</span></button>
-          <button className={'tab ' + (tab === 'pending' ? 'is-active' : '')} onClick={() => setTab('pending')}>En cours</button>
+          <button className={'tab ' + (tab === 'pending' ? 'is-active' : '')} onClick={() => setTab('pending')}>En cours <span className="count">{allParcels.filter(p => (p.paid === 'pending' || p.paid === 'unpaid') && p.status !== 'ann').length}</span></button>
           <button className={'tab ' + (tab === 'home' ? 'is-active' : '')} onClick={() => setTab('home')}>À livrer</button>
           <button className={'tab ' + (tab === 'overrun' ? 'is-active' : '')} onClick={() => setTab('overrun')}>Dépassements</button>
           <button className={'tab ' + (tab === 'ann' ? 'is-active' : '')} onClick={() => setTab('ann')} style={{ color: tab === 'ann' ? undefined : 'var(--ink-400)' }}>Annulés <span className="count">{allParcels.filter(p => p.status === 'ann').length}</span></button>

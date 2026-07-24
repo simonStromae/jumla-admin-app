@@ -153,11 +153,11 @@ export default function AnalyticsScreen({ onNav }) {
         <KpiCard label="Poids transporté" en="Weight" value={(totalWeight/1000).toFixed(1)} unit="t" color="var(--brand-500)" />
         {/* TODO: no i18n key for "Impayés" KPI label, "paiement(s) en attente", "Tout à jour" */}
         <KpiCard
-          label="Impayés" en="Outstanding"
+          label="En cours" en="Outstanding"
           value={unpaidTotal > 0 ? (unpaidTotal/1000).toFixed(1)+'k' : '0'}
           unit="CAD"
-          color="var(--bad-500)"
-          sub={unpaidCount > 0 ? unpaidCount + ' paiement' + (unpaidCount > 1 ? 's' : '') + ' en attente' : 'Tout à jour'}
+          color="var(--warn-500)"
+          sub={unpaidCount > 0 ? unpaidCount + ' paiement' + (unpaidCount > 1 ? 's' : '') + ' en cours' : 'Tout à jour'}
         />
       </div>
 
@@ -214,15 +214,14 @@ export default function AnalyticsScreen({ onNav }) {
         </ChartCard>
       </div>
 
-      {/* ── Routes + Impayés + Méthodes de paiement ── */}
+      {/* ── Routes + En cours + Méthodes de paiement ── */}
       <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr 1fr', gap: 14, marginBottom: 14 }}>
         {/* TODO: no i18n key for sub "Volume et chiffre d'affaires encaissé" */}
         <ChartCard title={t.analytics.sections.routes} sub="Volume et chiffre d'affaires encaissé">
           <RoutesBar routeStats={routeStats} />
         </ChartCard>
 
-        {/* TODO: no i18n key for "Impayés" chart title, "paiement(s) en attente", "CAD en attente", "Tout est à jour" */}
-        <ChartCard title="Impayés" sub={`${unpaidCount} paiement${unpaidCount !== 1 ? 's' : ''} en attente`}>
+        <ChartCard title="En cours" sub={`${unpaidCount} paiement${unpaidCount !== 1 ? 's' : ''} en cours`}>
           <div style={{ textAlign: 'center', padding: '12px 0 8px' }}>
             <div style={{ fontSize: 28, fontWeight: 800, color: unpaidTotal > 0 ? 'var(--bad-600)' : 'var(--ok-600)', fontFamily: 'var(--ff-mono)' }}>
               {unpaidTotal > 0 ? unpaidTotal.toLocaleString('fr') : '0'}
@@ -325,15 +324,14 @@ export default function AnalyticsScreen({ onNav }) {
         </ChartCard>
       </div>
 
-      {/* ── Impayés à relancer + Activité récente ── */}
+      {/* ── En cours · à relancer + Activité récente ── */}
       <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr', gap: 14 }}>
-        {/* TODO: no i18n key for "Impayés à relancer", "Voir tout", "Aucun impayé", "paiement(s) en attente", "Colis" column header, "Supplément", "Impayé" status */}
-        <ChartCard title="Impayés à relancer" sub={unpaidCount + ' paiement' + (unpaidCount !== 1 ? 's' : '') + ' en attente'} actions={
+        <ChartCard title="En cours · à relancer" sub={unpaidCount + ' paiement' + (unpaidCount !== 1 ? 's' : '') + ' en cours'} actions={
           <a style={{ fontSize: 12, color: 'var(--brand-700)', fontWeight: 600, cursor: 'pointer' }} onClick={() => onNav('/payments')}>Voir tout →</a>
         }>
           {unpaid.length === 0 ? (
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '32px 0', color: 'var(--ok-600)', fontSize: 13, fontWeight: 600 }}>
-              ✓ Aucun impayé
+              ✓ Aucun en cours
             </div>
           ) : (
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
@@ -355,7 +353,7 @@ export default function AnalyticsScreen({ onNav }) {
                         background: p.status === 'supplement_pending' ? 'var(--info-50)' : 'var(--bad-50)',
                         color:      p.status === 'supplement_pending' ? 'var(--info-700)' : 'var(--bad-700)',
                       }}>
-                        {p.status === 'supplement_pending' ? 'Supplément' /* TODO: no i18n key */ : p.status === 'pending' ? t.paymentStatus.pending : 'Impayé' /* TODO: no i18n key */}
+                        {p.status === 'supplement_pending' ? 'Supplément' : 'En cours'}
                       </span>
                     </td>
                   </tr>

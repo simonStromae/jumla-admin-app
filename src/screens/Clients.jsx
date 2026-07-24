@@ -549,7 +549,7 @@ function ClientDrawer({ cl, onClose, onEdit, onNav, onStatusChange, onDeleted })
             // TODO: no i18n key for 'CA total'; using analytics.kpi.revenue as closest match
             { label: t.analytics.kpi.revenue,             value: totalAmt.toLocaleString('fr') + ' CAD', color: 'var(--ok-600)' },
             // TODO: no i18n key for 'Impayés'
-            { label: 'Impayés',                           value: unpaidAmt > 0 ? unpaidAmt.toLocaleString('fr') + ' CAD' : '0 CAD', color: unpaidAmt > 0 ? 'var(--bad-600)' : 'var(--ink-400)' },
+            { label: 'En cours',                          value: unpaidAmt > 0 ? unpaidAmt.toLocaleString('fr') + ' CAD' : '0 CAD', color: unpaidAmt > 0 ? 'var(--warn-700)' : 'var(--ink-400)' },
             { label: 'Annulés',                           value: cancelledCount, color: cancelledCount > 0 ? 'var(--warn-700)' : 'var(--ink-300)' },
           ].map(({ label, value, color }) => (
             <div key={label}>

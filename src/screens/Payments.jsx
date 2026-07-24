@@ -21,9 +21,9 @@ const TYPE_LABELS = {
 const PAY_STATUS = {
   completed: { label: 'Payé',       cls: 'ok'      }, // → t.paymentStatus.completed
   paid:      { label: 'Payé',       cls: 'ok'      }, // → t.paymentStatus.completed
-  pending:   { label: 'En attente', cls: 'warn'    }, // → t.paymentStatus.pending
+  pending:   { label: 'En cours',   cls: 'warn'    }, // → t.paymentStatus.pending
   partial:   { label: 'Partiel',    cls: 'warn'    }, // TODO: i18n — no translation key
-  unpaid:    { label: 'Impayé',     cls: 'bad'     }, // TODO: i18n — no translation key
+  unpaid:    { label: 'En cours',   cls: 'warn'    }, // → same as pending
   failed:    { label: 'Échoué',     cls: 'bad'     }, // TODO: i18n — no translation key
   refunded:  { label: 'Remboursé',  cls: 'neutral' }, // TODO: i18n — no translation key
 };
@@ -1206,10 +1206,10 @@ export default function PaymentsScreen({ onNav }) {
           <div className="kpi__value" style={{ color: 'var(--ok-700)' }}>{percu.toLocaleString('fr')} <span style={{ fontSize: 14, opacity: .6 }}>CAD</span></div>
           <Progress pct={taux} />
         </div>
-        <div className="kpi" style={{ background: 'var(--bad-50)', borderColor: 'var(--bad-100)' }}>
-          <div className="kpi__label" style={{ color: 'var(--bad-700)' }}>Impayés <span style={{ textTransform: 'none', opacity: .6 }}>/ Outstanding</span></div>
-          <div className="kpi__value" style={{ color: 'var(--bad-700)' }}>{impayes.toLocaleString('fr')} <span style={{ fontSize: 14, opacity: .6 }}>CAD</span></div>
-          <div className="kpi__delta" style={{ color: 'var(--bad-600)' }}>
+        <div className="kpi" style={{ background: 'var(--warn-50)', borderColor: 'var(--warn-100)' }}>
+          <div className="kpi__label" style={{ color: 'var(--warn-700)' }}>En cours <span style={{ textTransform: 'none', opacity: .6 }}>/ Outstanding</span></div>
+          <div className="kpi__value" style={{ color: 'var(--warn-700)' }}>{impayes.toLocaleString('fr')} <span style={{ fontSize: 14, opacity: .6 }}>CAD</span></div>
+          <div className="kpi__delta" style={{ color: 'var(--warn-600)' }}>
             {nbImpayes} {t.paymentStatus.pending}
           </div>
         </div>

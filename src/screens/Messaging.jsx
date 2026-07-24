@@ -311,7 +311,7 @@ export default function MessagingScreen({ onNav, campaignId }) {
 
             <div style={{ display: 'flex', gap: 6 }}>
               <button className={'btn btn--sm ' + (filter === 'all' ? 'btn--soft' : 'btn--ghost')} style={{ flex: 1, justifyContent: 'center' }} onClick={() => setFilter('all')}>{t.parcels.filterAll}</button>
-              <button className={'btn btn--sm ' + (filter === 'unpaid' ? 'btn--soft' : 'btn--ghost')} style={{ flex: 1, justifyContent: 'center' }} onClick={() => setFilter('unpaid')}>Impayés</button>
+              <button className={'btn btn--sm ' + (filter === 'unpaid' ? 'btn--soft' : 'btn--ghost')} style={{ flex: 1, justifyContent: 'center' }} onClick={() => setFilter('unpaid')}>En cours</button>
               <button className={'btn btn--sm ' + (filter === 'cancelled' ? 'btn--soft' : 'btn--ghost')} style={{ flex: 1, justifyContent: 'center', color: filter === 'cancelled' ? undefined : 'var(--warn-700)' }} onClick={() => setFilter('cancelled')}>Annulés</button>
             </div>
           </div>
@@ -344,7 +344,7 @@ export default function MessagingScreen({ onNav, campaignId }) {
                   <div style={{ textAlign: 'right' }}>
                     <div className="mono" style={{ fontSize: 12.5, fontWeight: 700 }}>{(p.amount ?? 0).toLocaleString('fr')} CAD</div>
                     <div style={{ fontSize: 10.5, color: isPaid ? 'var(--ok-600)' : 'var(--bad-600)', fontWeight: 600 }}>
-                      {isPaid ? `✓ ${t.paymentStatus.completed}` : '○ Impayé'}
+                      {isPaid ? `✓ ${t.paymentStatus.completed}` : '○ En cours'}
                     </div>
                   </div>
                   <button className="icon-btn" title={t.messaging.actions.send} onClick={e => { e.preventDefault(); handleSendOne(p.id); }}>
@@ -367,7 +367,7 @@ export default function MessagingScreen({ onNav, campaignId }) {
             {/* TODO: no i18n key for "Sélectionner les impayés / annulés" or "Configurer WhatsApp" */}
             <button className="btn btn--soft btn--sm" style={{ flex: 1, justifyContent: 'center' }}
               onClick={() => setSelected(filtered.filter(p => p.paid !== 'paid' && p.paid !== 'ann').map(p => p.id))}>
-              <I.Send />Impayés
+              <I.Send />En cours
             </button>
             <button className="btn btn--soft btn--sm" style={{ flex: 1, justifyContent: 'center', color: 'var(--warn-700)' }}
               onClick={() => setSelected(filtered.filter(p => p.paid === 'ann').map(p => p.id))}>
