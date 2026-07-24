@@ -83,7 +83,10 @@ export default function MessagingScreen({ onNav, campaignId }) {
 
   const filtered = parcels.filter(p => {
     if (campaignFilter && p.campaignId !== campaignFilter) return false;
-    if (filter === 'unpaid') return p.paid !== 'paid';
+    if (filter === 'unpaid')    return p.paid !== 'paid' && p.paid !== 'ann';
+    if (filter === 'cancelled') return p.paid === 'ann';
+    // 'all': exclude cancelled parcels unless explicitly filtering for them
+    if (p.paid === 'ann') return false;
     if (search) {
       const q = search.toLowerCase();
       return (p.senderName ?? '').toLowerCase().includes(q)
@@ -309,6 +312,7 @@ export default function MessagingScreen({ onNav, campaignId }) {
             <div style={{ display: 'flex', gap: 6 }}>
               <button className={'btn btn--sm ' + (filter === 'all' ? 'btn--soft' : 'btn--ghost')} style={{ flex: 1, justifyContent: 'center' }} onClick={() => setFilter('all')}>{t.parcels.filterAll}</button>
               <button className={'btn btn--sm ' + (filter === 'unpaid' ? 'btn--soft' : 'btn--ghost')} style={{ flex: 1, justifyContent: 'center' }} onClick={() => setFilter('unpaid')}>Impayés</button>
+              <button className={'btn btn--sm ' + (filter === 'cancelled' ? 'btn--soft' : 'btn--ghost')} style={{ flex: 1, justifyContent: 'center', color: filter === 'cancelled' ? undefined : 'var(--warn-700)' }} onClick={() => setFilter('cancelled')}>Annulés</button>
             </div>
           </div>
 
@@ -360,10 +364,14 @@ export default function MessagingScreen({ onNav, campaignId }) {
               </button>
             )}
             <div style={{ display: 'flex', gap: 6 }}>
-            {/* TODO: no i18n key for "Sélectionner les impayés" or "Configurer WhatsApp" */}
+            {/* TODO: no i18n key for "Sélectionner les impayés / annulés" or "Configurer WhatsApp" */}
             <button className="btn btn--soft btn--sm" style={{ flex: 1, justifyContent: 'center' }}
-              onClick={() => setSelected(filtered.filter(p => p.paid !== 'paid').map(p => p.id))}>
-              <I.Send />Sélectionner les impayés
+              onClick={() => setSelected(filtered.filter(p => p.paid !== 'paid' && p.paid !== 'ann').map(p => p.id))}>
+              <I.Send />Impayés
+            </button>
+            <button className="btn btn--soft btn--sm" style={{ flex: 1, justifyContent: 'center', color: 'var(--warn-700)' }}
+              onClick={() => setSelected(filtered.filter(p => p.paid === 'ann').map(p => p.id))}>
+              <I.Ban style={{ width: 13, height: 13 }} />Annulés
             </button>
             {!apiStatus?.configured ? (
               <button className="btn btn--sm" style={{ flex: 1, justifyContent: 'center', background: 'var(--warn-500)', color: 'white' }}

@@ -493,9 +493,11 @@ function ClientDrawer({ cl, onClose, onEdit, onNav, onStatusChange, onDeleted })
       .catch(() => setLoading(false));
   }, [cl.id]);
 
-  const parcels   = detail?.parcels ?? [];
-  const totalAmt  = parcels.reduce((s, p) => s + (p.invoiced ?? p.amount ?? 0), 0);
-  const unpaidAmt = parcels.reduce((s, p) => s + (p.remaining ?? (p.paid ? 0 : p.amount ?? 0)), 0);
+  const parcels        = detail?.parcels ?? [];
+  const cancelledCount = parcels.filter(p => p.paid === 'ann').length;
+  const activeParcels  = parcels.filter(p => p.paid !== 'ann');
+  const totalAmt  = activeParcels.reduce((s, p) => s + (p.invoiced ?? p.amount ?? 0), 0);
+  const unpaidAmt = activeParcels.reduce((s, p) => s + (p.remaining ?? (p.paid ? 0 : p.amount ?? 0)), 0);
   const since     = detail?.createdAt
     ? new Date(detail.createdAt).toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' })
     : '—';
@@ -539,15 +541,16 @@ function ClientDrawer({ cl, onClose, onEdit, onNav, onStatusChange, onDeleted })
           </div>
         </div>
 
-        <div style={{ padding: '16px 22px', display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, borderBottom: '1px solid var(--border-soft)' }}>
-          {loading ? [1,2,3].map(i => (
+        <div style={{ padding: '16px 22px', display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 12, borderBottom: '1px solid var(--border-soft)' }}>
+          {loading ? [1,2,3,4].map(i => (
             <div key={i}><Skel w="50%" h={10} style={{ marginBottom: 6 }} /><Skel w="70%" h={20} /></div>
           )) : [
-            { label: 'Total colis', value: parcels.length },
+            { label: 'Total colis', value: activeParcels.length },
             // TODO: no i18n key for 'CA total'; using analytics.kpi.revenue as closest match
             { label: t.analytics.kpi.revenue,             value: totalAmt.toLocaleString('fr') + ' CAD', color: 'var(--ok-600)' },
             // TODO: no i18n key for 'Impayés'
             { label: 'Impayés',                           value: unpaidAmt > 0 ? unpaidAmt.toLocaleString('fr') + ' CAD' : '0 CAD', color: unpaidAmt > 0 ? 'var(--bad-600)' : 'var(--ink-400)' },
+            { label: 'Annulés',                           value: cancelledCount, color: cancelledCount > 0 ? 'var(--warn-700)' : 'var(--ink-300)' },
           ].map(({ label, value, color }) => (
             <div key={label}>
               <div style={{ fontSize: 11, color: 'var(--ink-400)', textTransform: 'uppercase', letterSpacing: '.04em', fontWeight: 600 }}>{label}</div>
@@ -711,22 +714,25 @@ function ClientDrawer({ cl, onClose, onEdit, onNav, onStatusChange, onDeleted })
                       {(p.invoiced ?? p.amount) ? (p.invoiced ?? p.amount).toLocaleString('fr') + ' CAD' : '—'}
                     </td>
                     <td>
-                      {p.displayStatus === 'paid' && (
+                      {p.paid === 'ann' && (
+                        <span className="badge badge--dot" style={{ background: 'var(--warn-50)', color: 'var(--warn-700)', borderColor: 'var(--warn-200)' }}>Annulé</span>
+                      )}
+                      {p.paid !== 'ann' && p.displayStatus === 'paid' && (
                         <span className="badge badge--dot badge--ok">{t.paymentStatus.completed}</span>
                       )}
                       {/* TODO: no i18n key for 'Payé · Suppl.' */}
-                      {p.displayStatus === 'paid_supp_pending' && (
+                      {p.paid !== 'ann' && p.displayStatus === 'paid_supp_pending' && (
                         <span className="badge badge--dot" style={{ background: 'var(--info-100)', color: 'var(--info-700)', borderColor: 'var(--info-100)' }}>Payé · Suppl.</span>
                       )}
                       {/* TODO: no i18n key for 'Partiel' */}
-                      {p.displayStatus === 'partial' && (
+                      {p.paid !== 'ann' && p.displayStatus === 'partial' && (
                         <span className="badge badge--dot badge--warn">Partiel</span>
                       )}
-                      {p.displayStatus === 'pending' && (
+                      {p.paid !== 'ann' && p.displayStatus === 'pending' && (
                         <span className="badge badge--dot badge--warn">{t.paymentStatus.pending}</span>
                       )}
                       {/* TODO: no i18n key for 'Sans facture' */}
-                      {(!p.displayStatus || p.displayStatus === 'none') && (
+                      {p.paid !== 'ann' && (!p.displayStatus || p.displayStatus === 'none') && (
                         <span className="badge badge--dot badge--neutral">Sans facture</span>
                       )}
                     </td>

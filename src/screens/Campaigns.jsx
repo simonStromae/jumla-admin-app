@@ -73,6 +73,12 @@ export function CampaignCard({ c, onClick }) {
               Reste à percevoir · <span className="mono" style={{ fontWeight: 600 }}>{outstanding.toLocaleString('fr')} CAD</span>
             </div>
           )}
+          {(c.cancelled ?? 0) > 0 && (
+            <div style={{ fontSize: 11, color: 'var(--warn-700)', marginTop: 4, display: 'flex', alignItems: 'center', gap: 4 }}>
+              <I.Ban style={{ width: 10, height: 10 }} />
+              <span><span className="mono" style={{ fontWeight: 700 }}>{c.cancelled}</span> réservation{c.cancelled > 1 ? 's' : ''} annulée{c.cancelled > 1 ? 's' : ''}</span>
+            </div>
+          )}
         </div>
       </div>
 
