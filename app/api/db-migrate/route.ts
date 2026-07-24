@@ -60,6 +60,7 @@ export async function GET() {
   await run('parcels.waiverAccepted',        `ALTER TABLE parcels ADD COLUMN IF NOT EXISTS "waiverAccepted" BOOLEAN NOT NULL DEFAULT false`);
   await run('parcels.forbiddenAcknowledged', `ALTER TABLE parcels ADD COLUMN IF NOT EXISTS "forbiddenAcknowledged" BOOLEAN NOT NULL DEFAULT false`);
   await run('parcels.disclaimerAcceptedAt',  `ALTER TABLE parcels ADD COLUMN IF NOT EXISTS "disclaimerAcceptedAt" TIMESTAMPTZ`);
+  await run('parcels.cancellationReason',    `ALTER TABLE parcels ADD COLUMN IF NOT EXISTS "cancellationReason" TEXT`);
 
   // ── Tracking events ────────────────────────────────────────────────────────
   await run('tracking_events.status_to_text', `ALTER TABLE tracking_events ALTER COLUMN status TYPE TEXT USING status::TEXT`);

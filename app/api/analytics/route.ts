@@ -38,7 +38,7 @@ export async function GET(req: NextRequest) {
   if (yearCampaignIds.length > 0) {
     [parcels, costs] = await Promise.all([
       prisma.parcel.findMany({
-        where: { campaignId: { in: yearCampaignIds } },
+        where: { campaignId: { in: yearCampaignIds }, NOT: { status: 'ann' } },
         include: {
           client:  { select: { id: true, name: true, city: true } },
           payment: true,

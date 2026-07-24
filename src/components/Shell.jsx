@@ -468,7 +468,7 @@ export function Progress({ pct, kind }) {
   );
 }
 
-export function ParcelActionsMenu({ parcel, onNav, isLocked }) {
+export function ParcelActionsMenu({ parcel, onNav, isLocked, onDelete, onCancel }) {
   const [open, setOpen] = useState(false);
   const wrapRef = useRef(null);
 
@@ -490,7 +490,8 @@ export function ParcelActionsMenu({ parcel, onNav, isLocked }) {
       { icon: I.Print, label: 'Bordereau du colis',      onClick: () => onNav('/admin/slips/' + parcel.id) },
     ],
     [
-      { icon: I.Trash, label: 'Supprimer',               onClick: () => {}, danger: true, disabled: isLocked },
+      ...(onCancel ? [{ icon: I.Ban, label: 'Annuler la réservation', onClick: () => onCancel(), disabled: isLocked }] : []),
+      { icon: I.Trash, label: 'Supprimer', onClick: () => onDelete?.(), danger: true, disabled: isLocked || !onDelete },
     ],
   ];
 

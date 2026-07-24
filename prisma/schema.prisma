@@ -192,8 +192,9 @@ model Parcel {
   status        String       @default("enr")
   confirmed     Boolean      @default(false)
   notes         String?
-  createdAt     DateTime     @default(now())
-  deletedAt     DateTime?
+  createdAt          DateTime     @default(now())
+  deletedAt          DateTime?
+  cancellationReason String?
 
   payment        Payment?
   trackingEvents TrackingEvent[]

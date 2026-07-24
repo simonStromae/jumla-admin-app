@@ -32,7 +32,7 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
   if (error) return error;
 
   const body = await req.json();
-  const { status, confirmed, notes, weightKg, priceXaf, eventNote, eventLocation, items, confirmedPriceXaf, adjustmentStatus, marginPct, driverId, delivery } = body;
+  const { status, confirmed, notes, weightKg, priceXaf, eventNote, eventLocation, items, confirmedPriceXaf, adjustmentStatus, marginPct, driverId, delivery, cancellationReason } = body;
 
   // Fetch parcel with campaign to check lock status
   const existing = await prisma.parcel.findUnique({
@@ -41,10 +41,19 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
       clientId: true,
       trackingCode: true,
       priceXaf: true,
+      status: true,
       campaign: { select: { status: true } },
       client: { select: { name: true, email: true, phone: true } },
     },
   });
+
+  // Cancellation guard — only allowed before shipment
+  if (status === 'ann') {
+    const CANCELLABLE = ['enr', 'rec', 'pre'];
+    if (!CANCELLABLE.includes((existing as any)?.status ?? '')) {
+      return NextResponse.json({ error: 'Ce colis ne peut plus être annulé — il a déjà été expédié.' }, { status: 403 });
+    }
+  }
   // Content edits (weight, items, price) are locked once the campaign is in transit.
   // Status updates and driver assignment are ALWAYS allowed.
   const LOCKED_STATUSES = ['exp', 'tra', 'apd', 'dou', 'lib', 'ard', 'pdl', 'ok'];
@@ -81,6 +90,7 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
       ...(marginPct !== undefined && { marginPct: Number(marginPct) }),
       ...(driverId  !== undefined && { driverId:  driverId  || null }),
       ...(delivery  !== undefined && { delivery:  delivery  || null }),
+      ...(cancellationReason !== undefined && { cancellationReason } as any),
     },
   });
 
@@ -92,7 +102,7 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
     }).catch(() => {});
   }
 
-  if (status) {
+  if (status && status !== 'ann') {
     const sess = await import('@/auth').then(m => m.auth());
     await prisma.trackingEvent.create({
       data: {

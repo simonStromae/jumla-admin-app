@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useAdminT } from '../lib/useAdminT.js';
 import { STATUS } from '../data.js';
 import I from '../components/Icons.jsx';
-import { Bi, Avatar, ParcelActionsMenu, useCan } from '../components/Shell.jsx';
+import { Bi, Avatar, ParcelActionsMenu, Modal, useCan } from '../components/Shell.jsx';
 import { Pagination } from '../components/Pagination.jsx';
 
 export default function AllParcelsScreen({ onNav, initialSearch = '' }) {
@@ -17,6 +17,7 @@ export default function AllParcelsScreen({ onNav, initialSearch = '' }) {
   const [campaigns, setCampaigns]         = useState([]);
   const [loading, setLoading]             = useState(true);
   const [selected, setSelected]           = useState([]);
+  const [cancelingParcel, setCancelingParcel] = useState(null);
 
   useEffect(() => {
     Promise.all([
@@ -36,12 +37,35 @@ export default function AllParcelsScreen({ onNav, initialSearch = '' }) {
     else setSelected(prev => prev.filter(x => !ids.includes(x)));
   };
 
+  const handleDeleteParcel = async (parcel) => {
+    if (!confirm(`Supprimer le colis ${parcel.code} ? Action irréversible.`)) return;
+    const res = await fetch(`/api/parcels/${parcel.id}`, { method: 'DELETE' });
+    const d = await res.json();
+    if (!res.ok) { alert(d.error || 'Erreur'); return; }
+    setAllParcels(prev => prev.filter(p => p.id !== parcel.id));
+  };
+
+  const handleCancelConfirm = async (parcel, reason) => {
+    const res = await fetch(`/api/parcels/${parcel.id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status: 'ann', cancellationReason: reason }),
+    });
+    const d = await res.json();
+    if (!res.ok) { alert(d.error || 'Erreur'); return; }
+    setAllParcels(prev => prev.map(p => p.id === parcel.id ? { ...p, status: 'ann', paid: 'ann', cancellationReason: reason } : p));
+    setCancelingParcel(null);
+  };
+
   const filtered = allParcels.filter(p => {
     if (campaignFilter !== 'all' && p.campaignId !== campaignFilter) return false;
-    if (tab === 'unpaid') return p.paid === 'unpaid';
-    if (tab === 'pending') return p.paid === 'pending';
-    if (tab === 'overrun') return p.overrun;
-    if (tab === 'home') return p.delivery === 'home';
+    if (tab === 'ann')     return p.status === 'ann';
+    if (tab === 'unpaid')  return p.paid === 'unpaid' && p.status !== 'ann';
+    if (tab === 'pending') return p.paid === 'pending' && p.status !== 'ann';
+    if (tab === 'overrun') return p.overrun && p.status !== 'ann';
+    if (tab === 'home')    return p.delivery === 'home' && p.status !== 'ann';
+    // "Tous" exclut les annulés
+    if (p.status === 'ann') return false;
     if (search.trim()) {
       const q = search.toLowerCase();
       return (p.code || '').toLowerCase().includes(q) ||
@@ -129,14 +153,12 @@ export default function AllParcelsScreen({ onNav, initialSearch = '' }) {
 
       <div className="toolbar">
         <div className="tabs">
-          <button className={'tab ' + (tab === 'all' ? 'is-active' : '')} onClick={() => setTab('all')}>{t.parcels.filterAll} <span className="count">{allParcels.length}</span></button>
-          <button className={'tab ' + (tab === 'unpaid' ? 'is-active' : '')} onClick={() => setTab('unpaid')}>{'Impayés'} <span className="count">{allParcels.filter(p => p.paid === 'unpaid').length}</span></button>
-          {/* TODO: no translation key for "En cours" tab */}
+          <button className={'tab ' + (tab === 'all' ? 'is-active' : '')} onClick={() => setTab('all')}>{t.parcels.filterAll} <span className="count">{allParcels.filter(p => p.status !== 'ann').length}</span></button>
+          <button className={'tab ' + (tab === 'unpaid' ? 'is-active' : '')} onClick={() => setTab('unpaid')}>{'Impayés'} <span className="count">{allParcels.filter(p => p.paid === 'unpaid' && p.status !== 'ann').length}</span></button>
           <button className={'tab ' + (tab === 'pending' ? 'is-active' : '')} onClick={() => setTab('pending')}>En cours</button>
-          {/* TODO: no translation key for "À livrer" tab */}
           <button className={'tab ' + (tab === 'home' ? 'is-active' : '')} onClick={() => setTab('home')}>À livrer</button>
-          {/* TODO: no translation key for "Dépassements" tab */}
           <button className={'tab ' + (tab === 'overrun' ? 'is-active' : '')} onClick={() => setTab('overrun')}>Dépassements</button>
+          <button className={'tab ' + (tab === 'ann' ? 'is-active' : '')} onClick={() => setTab('ann')} style={{ color: tab === 'ann' ? undefined : 'var(--ink-400)' }}>Annulés <span className="count">{allParcels.filter(p => p.status === 'ann').length}</span></button>
         </div>
         <div className="spacer" />
         <div style={{ position: 'relative' }}>
@@ -272,7 +294,16 @@ export default function AllParcelsScreen({ onNav, initialSearch = '' }) {
                 )}
               </td>
               <td style={{ overflow: 'visible' }}>
-                <ParcelActionsMenu parcel={{ ...p, id: p.id.split('-').pop() }} onNav={onNav} isLocked={false} />
+                {p.status === 'ann'
+                  ? <span className="badge" style={{ background: 'var(--bad-50)', color: 'var(--bad-700)', border: '1px solid var(--bad-200)', fontSize: 11 }}>Annulé</span>
+                  : <ParcelActionsMenu
+                      parcel={{ ...p, id: p.id.split('-').pop() }}
+                      onNav={onNav}
+                      isLocked={false}
+                      onDelete={can('parcels', 'delete') ? () => handleDeleteParcel(p) : undefined}
+                      onCancel={can('parcels', 'delete') ? () => setCancelingParcel(p) : undefined}
+                    />
+                }
               </td>
             </tr>
           ))}
@@ -283,6 +314,71 @@ export default function AllParcelsScreen({ onNav, initialSearch = '' }) {
         onPageChange={setPage}
         onPageSizeChange={(s) => { setPageSize(s); setPage(1); }} />
 
+      {cancelingParcel && (
+        <CancelParcelModal
+          parcel={cancelingParcel}
+          onClose={() => setCancelingParcel(null)}
+          onConfirm={handleCancelConfirm}
+        />
+      )}
     </div>
+  );
+}
+
+const CANCEL_REASONS = [
+  'Dépôt jamais effectué',
+  'Client injoignable',
+  'Annulation à la demande du client',
+  'Poids/volume non conforme',
+  'Autre',
+];
+
+function CancelParcelModal({ parcel, onClose, onConfirm }) {
+  const [reason, setReason] = useState(CANCEL_REASONS[0]);
+  const [note, setNote] = useState('');
+  const [saving, setSaving] = useState(false);
+
+  const handleSubmit = async () => {
+    setSaving(true);
+    await onConfirm(parcel, reason + (note.trim() ? ` — ${note.trim()}` : ''));
+    setSaving(false);
+  };
+
+  return (
+    <Modal
+      title="Annuler la réservation"
+      sub={`Colis ${parcel.code} · ${parcel.senderName}`}
+      width={480}
+      onClose={onClose}
+      footer={
+        <>
+          <button className="btn btn--ghost" onClick={onClose}>Retour</button>
+          <button
+            className="btn"
+            style={{ background: 'var(--bad-600)', color: 'white' }}
+            onClick={handleSubmit}
+            disabled={saving}>
+            <I.Ban style={{ width: 13, height: 13 }} />
+            {saving ? 'Annulation…' : 'Confirmer l\'annulation'}
+          </button>
+        </>
+      }
+    >
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+        <div style={{ padding: '10px 14px', background: 'var(--warn-50)', border: '1px solid var(--warn-200)', borderRadius: 8, fontSize: 13, color: 'var(--warn-800)' }}>
+          ⚠ Ce colis sera marqué comme annulé et retiré des montants impayés. L'action est réversible via la modification du statut.
+        </div>
+        <div>
+          <label className="label">Raison de l'annulation *</label>
+          <select className="select" value={reason} onChange={e => setReason(e.target.value)}>
+            {CANCEL_REASONS.map(r => <option key={r} value={r}>{r}</option>)}
+          </select>
+        </div>
+        <div>
+          <label className="label">Précisions (optionnel)</label>
+          <input className="input" value={note} onChange={e => setNote(e.target.value)} placeholder="Détails complémentaires…" />
+        </div>
+      </div>
+    </Modal>
   );
 }

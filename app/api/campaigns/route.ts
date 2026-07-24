@@ -43,13 +43,15 @@ export async function GET(req: NextRequest) {
   }
 
   const result = campaigns.map(c => {
-    const invoiced  = c.parcels.reduce((s, p) => s + (p.payment?.amount ?? p.priceXaf ?? 0), 0);
-    const collected = c.parcels.reduce((s, p) =>
+    const active    = c.parcels.filter(p => p.status !== 'ann');
+    const cancelled = c.parcels.filter(p => p.status === 'ann').length;
+    const invoiced  = active.reduce((s, p) => s + (p.payment?.amount ?? p.priceXaf ?? 0), 0);
+    const collected = active.reduce((s, p) =>
       s + (p.payment?.status === 'completed' ? p.payment.amount : 0), 0);
-    const weight    = c.parcels.reduce((s, p) => s + (p.weightKg ?? 0), 0);
-    const unpaid    = c.parcels.filter(p => !p.payment || p.payment.status !== 'completed').length;
+    const weight    = active.reduce((s, p) => s + (p.weightKg ?? 0), 0);
+    const unpaid    = active.filter(p => !p.payment || p.payment.status !== 'completed').length;
 
-    const allBordereaux   = c.parcels.flatMap(p => (p as any).bordereaux ?? []);
+    const allBordereaux   = active.flatMap(p => (p as any).bordereaux ?? []);
     const totalBordereaux = allBordereaux.length;
     const verifiedBordereaux = allBordereaux.filter((b: any) =>
       b.status === 'verifie' || b.status === 'ecart'
@@ -66,11 +68,12 @@ export async function GET(req: NextRequest) {
       dep:        c.departureDate ? new Intl.DateTimeFormat('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' }).format(c.departureDate) : '—',
       arrival:    c.arrivalDate   ? new Intl.DateTimeFormat('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' }).format(c.arrivalDate) : '—',
       status:     mapCampaignStatus(c.status),
-      parcels:    c.parcels.length,
+      parcels:    active.length,
       weight:     Math.round(weight * 10) / 10,
       invoiced,
       collected,
       alerts:     unpaid,
+      cancelled,
       totalBordereaux,
       verifiedBordereaux,
       costs:      c.costs ? {
