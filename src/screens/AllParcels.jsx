@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useAdminT } from '../lib/useAdminT.js';
 import { STATUS } from '../data.js';
 import I from '../components/Icons.jsx';
@@ -18,6 +18,7 @@ export default function AllParcelsScreen({ onNav, initialSearch = '' }) {
   const [loading, setLoading]             = useState(true);
   const [selected, setSelected]           = useState([]);
   const [cancelingParcel, setCancelingParcel] = useState(null);
+  const [deleteError, setDeleteError]     = useState(null);
 
   useEffect(() => {
     Promise.all([
@@ -38,10 +39,15 @@ export default function AllParcelsScreen({ onNav, initialSearch = '' }) {
   };
 
   const handleDeleteParcel = async (parcel) => {
+    setDeleteError(null);
     if (!confirm(`Supprimer le colis ${parcel.code} ? Action irréversible.`)) return;
     const res = await fetch(`/api/parcels/${parcel.id}`, { method: 'DELETE' });
     const d = await res.json();
-    if (!res.ok) { alert(d.error || 'Erreur'); return; }
+    if (!res.ok) {
+      setDeleteError(d.error || 'Erreur lors de la suppression.');
+      setTimeout(() => setDeleteError(null), 6000);
+      return;
+    }
     setAllParcels(prev => prev.filter(p => p.id !== parcel.id));
   };
 
@@ -173,6 +179,14 @@ export default function AllParcelsScreen({ onNav, initialSearch = '' }) {
         </div>
       </div>
 
+      {deleteError && (
+        <div style={{ padding: '10px 14px', background: 'var(--bad-50)', border: '1px solid var(--bad-200)', borderRadius: 8, marginBottom: 8, fontSize: 13, color: 'var(--bad-700)', display: 'flex', alignItems: 'center', gap: 8 }}>
+          <I.Alert style={{ width: 14, height: 14, flexShrink: 0 }} />
+          {deleteError}
+          <button onClick={() => setDeleteError(null)} style={{ marginLeft: 'auto', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--bad-500)', fontWeight: 700 }}>✕</button>
+        </div>
+      )}
+
       {selected.length > 0 && (
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 14px', background: 'var(--brand-50)', border: '1px solid var(--brand-200)', borderBottom: 0, borderRadius: '8px 8px 0 0', fontSize: 13 }}>
           <span style={{ fontWeight: 600, color: 'var(--brand-700)' }}>{selected.length} sélectionné(s)</span>
@@ -203,6 +217,7 @@ export default function AllParcelsScreen({ onNav, initialSearch = '' }) {
             <th>{t.parcels.table.weight}</th>
             <th style={{ textAlign: 'right' }}>{t.parcels.table.amount}</th>
             <th>{t.parcels.table.payment}</th>
+            <th>Statut colis</th>
             {/* TODO: no translation key for "Livraison" delivery-type column */}
             <th>Livraison</th>
             <th title="Dernier message WhatsApp">WA</th>
@@ -260,9 +275,16 @@ export default function AllParcelsScreen({ onNav, initialSearch = '' }) {
                 )}
               </td>
               <td>
-                <span className={'badge badge--dot badge--' + STATUS.payment[p.paid].cls}>
-                  {STATUS.payment[p.paid].label}
-                </span>
+                {(() => {
+                  const ps = STATUS.payment[p.paid] ?? STATUS.payment['pending'];
+                  return <span className={'badge badge--dot badge--' + ps.cls}>{ps.label}</span>;
+                })()}
+              </td>
+              <td>
+                {(() => {
+                  const ps = STATUS.parcel[p.status] ?? { label: p.status, cls: 'neutral' };
+                  return <span className={'badge badge--dot badge--' + ps.cls} style={{ fontSize: 11 }}>{ps.label}</span>;
+                })()}
               </td>
               <td>
                 <span style={{ fontSize: 12, display: 'inline-flex', alignItems: 'center', gap: 4, color: 'var(--ink-600)' }}>
