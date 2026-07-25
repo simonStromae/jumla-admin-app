@@ -18,6 +18,8 @@ export default function AllParcelsScreen({ onNav, initialSearch = '' }) {
   const [loading, setLoading]             = useState(true);
   const [selected, setSelected]           = useState([]);
   const [cancelingParcel, setCancelingParcel] = useState(null);
+  const [confirmDeleteParcel, setConfirmDeleteParcel] = useState(null);
+  const [deleting, setDeleting]           = useState(false);
   const [deleteError, setDeleteError]     = useState(null);
 
   useEffect(() => {
@@ -38,17 +40,24 @@ export default function AllParcelsScreen({ onNav, initialSearch = '' }) {
     else setSelected(prev => prev.filter(x => !ids.includes(x)));
   };
 
-  const handleDeleteParcel = async (parcel) => {
+  const handleDeleteConfirmed = async () => {
+    if (!confirmDeleteParcel) return;
+    setDeleting(true);
     setDeleteError(null);
-    if (!confirm(`Supprimer le colis ${parcel.code} ? Action irréversible.`)) return;
-    const res = await fetch(`/api/parcels/${parcel.id}`, { method: 'DELETE' });
-    const d = await res.json();
-    if (!res.ok) {
-      setDeleteError(d.error || 'Erreur lors de la suppression.');
-      setTimeout(() => setDeleteError(null), 6000);
-      return;
+    try {
+      const res = await fetch(`/api/parcels/${confirmDeleteParcel.id}`, { method: 'DELETE' });
+      const d = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setDeleteError(d.error || 'Erreur lors de la suppression.');
+        setDeleting(false);
+        return;
+      }
+      setAllParcels(prev => prev.filter(p => p.id !== confirmDeleteParcel.id));
+      setConfirmDeleteParcel(null);
+    } catch {
+      setDeleteError('Erreur réseau — veuillez réessayer.');
     }
-    setAllParcels(prev => prev.filter(p => p.id !== parcel.id));
+    setDeleting(false);
   };
 
   const handleCancelConfirm = async (parcel, reason) => {
@@ -57,8 +66,12 @@ export default function AllParcelsScreen({ onNav, initialSearch = '' }) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ status: 'ann', cancellationReason: reason }),
     });
-    const d = await res.json();
-    if (!res.ok) { alert(d.error || 'Erreur'); return; }
+    const d = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      setDeleteError(d.error || 'Erreur');
+      setTimeout(() => setDeleteError(null), 6000);
+      return;
+    }
     setAllParcels(prev => prev.map(p => p.id === parcel.id ? { ...p, status: 'ann', paid: 'ann', cancellationReason: reason } : p));
     setCancelingParcel(null);
   };
@@ -319,7 +332,7 @@ export default function AllParcelsScreen({ onNav, initialSearch = '' }) {
                       parcel={{ ...p, id: p.id.split('-').pop() }}
                       onNav={onNav}
                       isLocked={false}
-                      onDelete={can('parcels', 'delete') ? () => handleDeleteParcel(p) : undefined}
+                      onDelete={can('parcels', 'delete') ? () => setConfirmDeleteParcel(p) : undefined}
                       onCancel={can('parcels', 'delete') ? () => setCancelingParcel(p) : undefined}
                     />
                 }
@@ -339,6 +352,45 @@ export default function AllParcelsScreen({ onNav, initialSearch = '' }) {
           onClose={() => setCancelingParcel(null)}
           onConfirm={handleCancelConfirm}
         />
+      )}
+
+      {confirmDeleteParcel && (
+        <Modal
+          title="Supprimer ce colis"
+          sub={`${confirmDeleteParcel.code} · ${confirmDeleteParcel.senderName}`}
+          width={420}
+          onClose={() => { setConfirmDeleteParcel(null); setDeleteError(null); }}
+          footer={
+            <>
+              <div style={{ flex: 1 }} />
+              <button className="btn btn--ghost" onClick={() => { setConfirmDeleteParcel(null); setDeleteError(null); }}>Annuler</button>
+              <button
+                className="btn"
+                style={{ background: 'var(--bad-600)', color: 'white' }}
+                onClick={handleDeleteConfirmed}
+                disabled={deleting}
+              >
+                <I.Trash style={{ width: 13, height: 13 }} />
+                {deleting ? 'Suppression…' : 'Supprimer définitivement'}
+              </button>
+            </>
+          }
+        >
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            <div style={{ padding: '12px 14px', background: 'var(--bad-50)', border: '1px solid var(--bad-200)', borderRadius: 8, fontSize: 13, color: 'var(--bad-700)' }}>
+              Cette action est <strong>irréversible</strong>. Le colis et son historique seront définitivement supprimés.
+            </div>
+            <div style={{ fontSize: 13, color: 'var(--ink-500)' }}>
+              Seuls les colis au statut <strong>Enregistré</strong> ou <strong>Reçu entrepôt</strong> peuvent être supprimés.
+              Pour les autres statuts, utilisez l'<strong>annulation</strong>.
+            </div>
+            {deleteError && (
+              <div style={{ padding: '10px 14px', background: 'var(--bad-50)', border: '1px solid var(--bad-300)', borderRadius: 8, fontSize: 13, color: 'var(--bad-700)', fontWeight: 600 }}>
+                {deleteError}
+              </div>
+            )}
+          </div>
+        </Modal>
       )}
     </div>
   );
