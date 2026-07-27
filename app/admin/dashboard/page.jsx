@@ -94,7 +94,7 @@ export default function DashboardPage() {
   const unconfirmed = data?.unconfirmedBordereaux ?? [];
   const unpaid = data?.unpaidInvoices ?? [];
   const missingWeight = data?.missingWeightCount ?? 0;
-  const totalUnpaid = unpaid.reduce((sum, inv) => sum + (Number(inv.amount) || 0), 0);
+  const totalUnpaid = unpaid.reduce((sum, inv) => sum + (Number(inv.invoiced ?? inv.amount) || 0), 0);
   const hasUrgences = unconfirmed.length > 0 || unpaid.length > 0;
 
   return (
@@ -273,7 +273,12 @@ export default function DashboardPage() {
                   <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--ink-800)' }}>{inv.clientName}</div>
                 </div>
                 <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--ink-900)' }}>
-                  {formatCAD(inv.amount)}
+                  {formatCAD(inv.invoiced ?? inv.amount)}
+                  {inv.invoiced > inv.amount && (
+                    <span style={{ fontSize: 11, color: 'var(--warn-600)', marginLeft: 6 }}>
+                      (+ {formatCAD(inv.invoiced - inv.amount)} suppl.)
+                    </span>
+                  )}
                 </div>
                 <StatusBadge status={inv.status} />
                 <div style={{ fontSize: 12, color: 'var(--ink-400)', whiteSpace: 'nowrap' }}>

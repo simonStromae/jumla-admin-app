@@ -24,14 +24,24 @@ export async function GET() {
   }
 
   try {
-    unpaidInvoices = await prisma.$queryRawUnsafe(
-      `SELECT py.id, py.amount, py.status, py."createdAt", p."trackingCode", u.name as "clientName", p.id as "parcelId"
+    const rows: any[] = await prisma.$queryRawUnsafe(
+      `SELECT py.id, py.amount, py.status, py."createdAt",
+              p."trackingCode", u.name as "clientName", p.id as "parcelId",
+              p."confirmedPriceXaf", p."adjustmentStatus"
        FROM payments py
        JOIN parcels p ON p.id = py."parcelId"
        JOIN users u ON u.id = py."clientId"
        WHERE py.status IN ('pending','partial') AND p."deletedAt" IS NULL
        ORDER BY py."createdAt" ASC`
     );
+    unpaidInvoices = rows.map((inv: any) => {
+      const adj  = inv.adjustmentStatus ?? 'none';
+      const conf = inv.confirmedPriceXaf != null ? Number(inv.confirmedPriceXaf) : null;
+      const invoiced = (adj === 'paid' || adj === 'discount') && conf != null
+        ? conf
+        : Number(inv.amount);
+      return { ...inv, amount: Number(inv.amount), invoiced };
+    });
   } catch (e) {
     unpaidInvoices = [];
   }
