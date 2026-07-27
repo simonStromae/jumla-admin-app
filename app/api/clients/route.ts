@@ -37,6 +37,7 @@ export async function GET(req: NextRequest) {
       orderBy: { createdAt: 'desc' },
       include: {
         parcels: {
+          where:   { deletedAt: null },
           include: {
             campaign: { select: { code: true } },
             payment:  true,

@@ -11,6 +11,7 @@ export async function GET(_: NextRequest, { params }: { params: { id: string } }
     where: { id: params.id },
     include: {
       parcels: {
+        where:   { deletedAt: null },
         orderBy: { createdAt: 'desc' },
         include: {
           campaign: { select: { id: true, code: true, status: true } },
@@ -150,10 +151,10 @@ export async function DELETE(_: NextRequest, { params }: { params: { id: string 
   const { error } = await requireAdmin();
   if (error) return error;
 
-  const parcelCount = await prisma.parcel.count({ where: { clientId: params.id } });
+  const parcelCount = await prisma.parcel.count({ where: { clientId: params.id, deletedAt: null } });
   if (parcelCount > 0) {
     return NextResponse.json(
-      { error: 'Ce client a des colis enregistrés. Supprimez-les d\'abord.' },
+      { error: `Ce client a ${parcelCount} colis actif${parcelCount > 1 ? 's' : ''}. Supprimez ou annulez-les d'abord.` },
       { status: 400 },
     );
   }
