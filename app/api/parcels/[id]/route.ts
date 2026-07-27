@@ -96,6 +96,25 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
     },
   });
 
+  // Si adjustmentStatus passe à 'paid' et qu'aucun paiement n'existe, créer un paiement complété
+  if (finalAdjustmentStatus === 'paid' && existing?.clientId) {
+    const existingPayment = await prisma.payment.findFirst({ where: { parcelId: params.id } });
+    if (!existingPayment) {
+      const payAmt = Math.round(Number(confirmedPriceXaf ?? existing?.priceXaf ?? 0));
+      if (payAmt > 0) {
+        await prisma.payment.create({
+          data: {
+            parcelId: params.id,
+            clientId: existing.clientId,
+            amount:   payAmt,
+            status:   'completed',
+            paidAt:   new Date(),
+          },
+        }).catch(() => {});
+      }
+    }
+  }
+
   // Mettre à jour le montant du paiement si remise appliquée
   if (paymentAmountUpdate !== undefined) {
     await prisma.payment.updateMany({

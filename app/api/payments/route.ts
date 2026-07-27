@@ -54,9 +54,9 @@ export async function GET() {
       ? Math.max(rawAllocated, p.amount)   // legacy completed = full amount
       : rawAllocated;
 
-    // Supplement amounts
-    const suppAmt = (confirmedPriceXaf != null && (p.parcel as any).priceXaf != null)
-      ? Math.max(0, confirmedPriceXaf - (p.parcel as any).priceXaf)
+    // Supplement amounts (priceXaf null means 0 — whole confirmedPrice is the adjustment)
+    const suppAmt = confirmedPriceXaf != null
+      ? Math.max(0, confirmedPriceXaf - ((p.parcel as any).priceXaf ?? 0))
       : 0;
     const suppPaid    = adjustmentStatus === 'paid'    ? suppAmt : 0;
     const suppPending = adjustmentStatus === 'pending' ? suppAmt : 0;

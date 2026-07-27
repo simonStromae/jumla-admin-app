@@ -66,8 +66,8 @@ export async function GET(_: NextRequest, { params }: { params: { id: string } }
         ? Math.max(rawAllocated, p.payment!.amount)
         : rawAllocated;
 
-      const suppAmt     = confirmedPriceXaf != null && p.priceXaf != null
-        ? Math.max(0, confirmedPriceXaf - p.priceXaf)
+      const suppAmt     = confirmedPriceXaf != null
+        ? Math.max(0, confirmedPriceXaf - (p.priceXaf ?? 0))
         : 0;
       const suppPaid    = adjustmentStatus === 'paid'    ? suppAmt : 0;
       const suppPending = adjustmentStatus === 'pending' ? suppAmt : 0;
