@@ -71,6 +71,15 @@ export async function GET(req: NextRequest) {
   }
   const paymentsWithAllocations = new Set(allocationsWithDates.map(a => a.paymentId));
 
+  // ── Helper: invoiced amount for a single parcel (same rule as campaigns list) ──
+  function parcelInvoiced(p: any): number {
+    const adj  = (p.adjustmentStatus ?? 'none') as string;
+    const conf = p.confirmedPriceXaf as number | null;
+    return (adj === 'paid' || adj === 'discount') && conf != null
+      ? conf
+      : (p.payment?.amount ?? p.priceXaf ?? 0);
+  }
+
   // ── Helper: collected amount for a single parcel ────────────────────────────
   function parcelCollected(p: any): number {
     let collected = 0;
@@ -86,7 +95,8 @@ export async function GET(req: NextRequest) {
     if ((p.adjustmentStatus ?? 'none') === 'paid' && p.confirmedPriceXaf != null) {
       collected += Math.max(0, p.confirmedPriceXaf - (p.priceXaf ?? 0));
     }
-    return collected;
+    // Cap at invoiced to prevent double-counting when priceXaf = null
+    return Math.min(collected, parcelInvoiced(p));
   }
 
   // ── Per-parcel aggregation ─────────────────────────────────────────────────
@@ -100,7 +110,7 @@ export async function GET(req: NextRequest) {
   for (const p of parcels) {
     const adjStatus      = (p as any).adjustmentStatus ?? 'none';
     const confirmedPrice = (p as any).confirmedPriceXaf as number | null;
-    const invoiced = confirmedPrice ?? p.priceXaf ?? 0;
+    const invoiced  = parcelInvoiced(p);
     const collected = parcelCollected(p);
 
     totalInvoiced  += invoiced;
@@ -122,17 +132,23 @@ export async function GET(req: NextRequest) {
     // Unpaid
     const remaining = Math.max(0, invoiced - collected);
     if (remaining > 0) {
-      const mainRemaining = p.payment
-        ? Math.max(0, p.payment.amount - (p.payment.status === 'completed' ? p.payment.amount : (allocByPayment[p.payment.id] ?? 0)))
-        : 0;
-      const suppRemaining = adjStatus === 'pending' && confirmedPrice != null
-        ? Math.max(0, confirmedPrice - (p.priceXaf ?? 0))
-        : 0;
-      if (mainRemaining > 0 && p.payment) {
-        unpaidItems.push({ id: p.payment.id, clientName: p.client.name, trackingCode: p.trackingCode, amount: mainRemaining, status: p.payment.status });
-      }
-      if (suppRemaining > 0) {
-        unpaidItems.push({ id: 'sup_' + p.id, clientName: p.client.name, trackingCode: p.trackingCode, amount: suppRemaining, status: 'supplement_pending' });
+      if (!p.payment) {
+        // No payment record at all — full invoice outstanding
+        unpaidItems.push({ id: 'nopay_' + p.id, clientName: p.client.name, trackingCode: p.trackingCode, amount: invoiced, status: 'pending' });
+      } else {
+        const mainAllocated = p.payment.status === 'completed'
+          ? (paymentsWithAllocations.has(p.payment.id) ? (allocByPayment[p.payment.id] ?? p.payment.amount) : p.payment.amount)
+          : (allocByPayment[p.payment.id] ?? 0);
+        const mainRemaining = Math.max(0, p.payment.amount - mainAllocated);
+        const suppRemaining = adjStatus === 'pending' && confirmedPrice != null
+          ? Math.max(0, confirmedPrice - (p.priceXaf ?? 0))
+          : 0;
+        if (mainRemaining > 0) {
+          unpaidItems.push({ id: p.payment.id, clientName: p.client.name, trackingCode: p.trackingCode, amount: mainRemaining, status: p.payment.status });
+        }
+        if (suppRemaining > 0) {
+          unpaidItems.push({ id: 'sup_' + p.id, clientName: p.client.name, trackingCode: p.trackingCode, amount: suppRemaining, status: 'supplement_pending' });
+        }
       }
     }
   }
@@ -148,8 +164,10 @@ export async function GET(req: NextRequest) {
       const d = new Date(p.payment.paidAt ?? p.payment.createdAt);
       if (d.getFullYear() === year) monthlyRevMap[d.getMonth()] += p.payment.amount;
     }
-    if (((p as any).adjustmentStatus ?? 'none') === 'paid' && (p as any).confirmedPriceXaf != null) {
-      const supp = Math.max(0, (p as any).confirmedPriceXaf - (p.priceXaf ?? 0));
+    // Only add supplement to monthly when priceXaf is set — otherwise the full
+    // confirmedPriceXaf is already counted in the base payment above.
+    if (((p as any).adjustmentStatus ?? 'none') === 'paid' && (p as any).confirmedPriceXaf != null && p.priceXaf != null) {
+      const supp = Math.max(0, (p as any).confirmedPriceXaf - p.priceXaf);
       if (supp > 0) {
         const camp = yearCampaigns.find(c => c.id === p.campaignId);
         const d    = camp?.departureDate ? new Date(camp.departureDate) : new Date();
@@ -195,7 +213,7 @@ export async function GET(req: NextRequest) {
       };
     }
     for (const p of parcels.filter((p: any) => p.campaignId === c.id)) {
-      const inv  = ((p as any).confirmedPriceXaf ?? p.priceXaf ?? 0) as number;
+      const inv  = parcelInvoiced(p);
       const coll = parcelCollected(p);
       routeRevMap[rid].collected += coll;
       routeRevMap[rid].invoiced  += inv;
