@@ -16,7 +16,7 @@ export async function GET(_: NextRequest, { params }: { params: { id: string } }
       route: true,
       costs: true,
       parcels: {
-        where: { deletedAt: null },
+        where: { deletedAt: null, status: { not: 'ann' } },
         include: {
           client: { select: { id: true, name: true, email: true, phone: true, city: true } },
           payment: true,

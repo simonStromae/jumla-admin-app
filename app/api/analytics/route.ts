@@ -22,10 +22,13 @@ export async function GET(req: NextRequest) {
   const yearStart = new Date(year, 0, 1);
   const yearEnd   = new Date(year + 1, 0, 1);
 
-  const campaigns = await prisma.campaign.findMany({
+  const campaigns = await (prisma.campaign.findMany as any)({
+    where: { deletedAt: null, ...(routeId ? { routeId } : {}) },
+    include: { route: true },
+  }).catch(() => prisma.campaign.findMany({
     where: { ...(routeId ? { routeId } : {}) },
     include: { route: true },
-  });
+  }));
 
   const yearCampaigns = campaigns.filter(c =>
     c.departureDate ? (c.departureDate >= yearStart && c.departureDate < yearEnd) : true
@@ -229,7 +232,7 @@ export async function GET(req: NextRequest) {
 
   // Délai moyen de transit (campaign.departureDate → arrivalDate pour cargaisons arrivées)
   const deliveredCampaigns = yearCampaigns.filter((c: any) =>
-    c.arrivalDate && c.departureDate && ['ard', 'ok', 'tra'].includes(c.status)
+    c.arrivalDate && c.departureDate && ['ard', 'ok'].includes(c.status)
   );
   const avgDeliveryDays = deliveredCampaigns.length > 0
     ? Math.round(deliveredCampaigns.reduce((sum: number, c: any) =>

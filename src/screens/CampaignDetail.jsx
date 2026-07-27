@@ -108,7 +108,7 @@ export default function CampaignDetailScreen({ id, onNav }) {
 
   const parcels = campaign.parcels || [];
   const totalWeight = parcels.reduce((s, p) => s + (p.weightKg || 0), 0);
-  const invoiced    = parcels.reduce((s, p) => s + (p.payment?.amount ?? p.priceXaf ?? 0), 0);
+  const invoiced    = parcels.reduce((s, p) => s + (p.confirmedPriceXaf ?? p.payment?.amount ?? p.priceXaf ?? 0), 0);
   const collected   = parcels.reduce((s, p) => s + (p.payment?.status === 'completed' ? (p.payment.amount || 0) : 0), 0);
   const outstanding = invoiced - collected;
   const pct = invoiced > 0 ? Math.round(collected / invoiced * 100) : 0;
