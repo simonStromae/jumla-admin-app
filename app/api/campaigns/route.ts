@@ -18,6 +18,7 @@ export async function GET(req: NextRequest) {
         route: true,
         costs: true,
         parcels: {
+          where: { deletedAt: null },
           include: {
             payment: true,
             bordereaux: { select: { status: true } },
