@@ -151,18 +151,61 @@ export async function DELETE(_: NextRequest, { params }: { params: { id: string 
   const { error } = await requireAdmin();
   if (error) return error;
 
-  const parcelCount = await prisma.parcel.count({ where: { clientId: params.id, deletedAt: null } });
-  if (parcelCount > 0) {
-    return NextResponse.json(
-      { error: `Ce client a ${parcelCount} colis actif${parcelCount > 1 ? 's' : ''}. Supprimez ou annulez-les d'abord.` },
-      { status: 400 },
-    );
+  try {
+    // Block if active (non-deleted) parcels remain
+    const parcelCount = await prisma.parcel.count({ where: { clientId: params.id, deletedAt: null } });
+    if (parcelCount > 0) {
+      return NextResponse.json(
+        { error: `Ce client a ${parcelCount} colis actif${parcelCount > 1 ? 's' : ''}. Supprimez ou annulez-les d'abord.` },
+        { status: 400 },
+      );
+    }
+
+    // Collect ALL parcel IDs (including soft-deleted) for cascade
+    const parcels = await prisma.parcel.findMany({
+      where:  { clientId: params.id },
+      select: { id: true },
+    });
+    const parcelIds = parcels.map(p => p.id);
+
+    if (parcelIds.length > 0) {
+      // Get payment IDs to clean up transaction_allocations first (FK: allocation → payment)
+      const payments = await prisma.payment.findMany({
+        where:  { parcelId: { in: parcelIds } },
+        select: { id: true },
+      });
+      const paymentIds = payments.map(p => p.id);
+      if (paymentIds.length > 0) {
+        await prisma.$executeRawUnsafe(
+          `DELETE FROM transaction_allocations WHERE "paymentId" = ANY($1::text[])`, paymentIds
+        ).catch(() => {});
+      }
+
+      // Delete parcel-level dependants in safe order
+      await prisma.trackingEvent.deleteMany({ where: { parcelId: { in: parcelIds } } }).catch(() => {});
+      await prisma.bordereau.deleteMany({ where: { parcelId: { in: parcelIds } } }).catch(() => {});
+      await prisma.notification.deleteMany({ where: { parcelId: { in: parcelIds } } }).catch(() => {});
+      await prisma.payment.deleteMany({ where: { parcelId: { in: parcelIds } } }).catch(() => {});
+      // Hard-delete all parcels (including soft-deleted ones still in DB)
+      await prisma.parcel.deleteMany({ where: { id: { in: parcelIds } } });
+    }
+
+    // Delete client-level records (tables created via migration — use raw SQL with catch)
+    await prisma.$executeRawUnsafe(
+      `DELETE FROM transaction_allocations WHERE "paymentId" IN (SELECT id FROM payments WHERE "clientId" = $1)`,
+      params.id
+    ).catch(() => {});
+    await prisma.$executeRawUnsafe(`DELETE FROM transactions WHERE "clientId" = $1`, params.id).catch(() => {});
+    await prisma.notification.deleteMany({ where: { userId: params.id } }).catch(() => {});
+    await prisma.$executeRawUnsafe(`DELETE FROM push_subscriptions WHERE "userId" = $1`, params.id).catch(() => {});
+    await prisma.$executeRawUnsafe(`DELETE FROM login_logs WHERE "userId" = $1`, params.id).catch(() => {});
+    await prisma.message.deleteMany({ where: { OR: [{ senderId: params.id }, { recipientId: params.id }] } }).catch(() => {});
+
+    await prisma.user.delete({ where: { id: params.id } });
+
+    return NextResponse.json({ ok: true });
+  } catch (e: any) {
+    console.error('[DELETE /api/clients/[id]]', e);
+    return NextResponse.json({ error: e?.message ?? 'Erreur serveur' }, { status: 500 });
   }
-
-  await prisma.$transaction([
-    prisma.message.deleteMany({ where: { OR: [{ senderId: params.id }, { recipientId: params.id }] } }),
-    prisma.user.delete({ where: { id: params.id } }),
-  ]);
-
-  return NextResponse.json({ ok: true });
 }
