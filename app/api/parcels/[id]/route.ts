@@ -206,20 +206,27 @@ export async function DELETE(_: NextRequest, { params }: { params: { id: string 
       return NextResponse.json({ error: 'Colis introuvable' }, { status: 404 });
     }
 
-    const DELETABLE = ['enr', 'rec'];
-    if (!DELETABLE.includes(parcel.status)) {
+    // Block only if the parcel is already in transit or delivered
+    const BLOCKED = ['exp', 'tra', 'apd', 'dou', 'lib', 'ard', 'pdl', 'liv', 'ok'];
+    if (BLOCKED.includes(parcel.status)) {
       return NextResponse.json(
-        { error: `Impossible de supprimer — statut "${parcel.status}" non supprimable. Seuls Enregistré (enr) et Reçu entrepôt (rec) le sont. Utilisez l'annulation pour les autres.` },
+        { error: `Impossible de supprimer — le colis est déjà en transit ou livré (statut "${parcel.status}"). Utilisez l'annulation.` },
         { status: 403 },
       );
     }
 
+    // Block only if money was actually received
     if (parcel.payment?.status === 'completed') {
       return NextResponse.json(
-        { error: 'Ce colis a un paiement complété. Remboursez le client avant de supprimer.' },
+        { error: 'Ce colis a un paiement encaissé. Remboursez le client avant de supprimer.' },
         { status: 403 },
       );
     }
+
+    // Delete any pending/partial payment first to avoid FK constraint on hard delete
+    await prisma.payment.deleteMany({
+      where: { parcelId: params.id, status: { not: 'completed' } },
+    }).catch(() => {});
 
     try {
       // Soft-delete (preferred) — requires deletedAt column
