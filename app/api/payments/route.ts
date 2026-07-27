@@ -8,7 +8,8 @@ export async function GET() {
   if (error) return error;
 
   const payments = await prisma.payment.findMany({
-    orderBy: { createdAt: 'desc' },
+    where:    { parcel: { deletedAt: null } },
+    orderBy:  { createdAt: 'desc' },
     include: {
       client: { select: { name: true, phone: true, email: true } },
       parcel: {

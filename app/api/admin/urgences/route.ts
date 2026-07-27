@@ -16,7 +16,7 @@ export async function GET() {
        FROM bordereaux b
        JOIN parcels p ON p.id = b."parcelId"
        JOIN users u ON u.id = p."clientId"
-       WHERE b.status = 'valide' AND b."clientConfirmed" = false
+       WHERE b.status = 'valide' AND b."clientConfirmed" = false AND p."deletedAt" IS NULL
        ORDER BY b."createdAt" ASC`
     );
   } catch (e) {
@@ -29,7 +29,7 @@ export async function GET() {
        FROM payments py
        JOIN parcels p ON p.id = py."parcelId"
        JOIN users u ON u.id = py."clientId"
-       WHERE py.status IN ('pending','partial')
+       WHERE py.status IN ('pending','partial') AND p."deletedAt" IS NULL
        ORDER BY py."createdAt" ASC`
     );
   } catch (e) {
@@ -38,7 +38,7 @@ export async function GET() {
 
   try {
     const result: any[] = await prisma.$queryRawUnsafe(
-      `SELECT COUNT(*)::int as count FROM parcels WHERE "weightKg" IS NULL AND status NOT IN ('ok')`
+      `SELECT COUNT(*)::int as count FROM parcels WHERE "weightKg" IS NULL AND status NOT IN ('ok') AND "deletedAt" IS NULL`
     );
     missingWeightCount = result[0]?.count ?? 0;
   } catch (e) {
