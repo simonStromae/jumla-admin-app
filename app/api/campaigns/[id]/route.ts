@@ -16,6 +16,7 @@ export async function GET(_: NextRequest, { params }: { params: { id: string } }
       route: true,
       costs: true,
       parcels: {
+        where: { deletedAt: null },
         include: {
           client: { select: { id: true, name: true, email: true, phone: true, city: true } },
           payment: true,
@@ -102,6 +103,7 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
           const toRollback = await prisma.parcel.findMany({
             where: {
               campaignId: params.id,
+              deletedAt:  null,
               status:     { in: aheadStatuses, notIn: EXCEPTIONAL },
             },
             select: { id: true },
@@ -143,6 +145,7 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
           const toUpdate = await prisma.parcel.findMany({
             where: {
               campaignId: params.id,
+              deletedAt:  null,
               status:     { in: fromStatuses, notIn: EXCEPTIONAL },
             },
             select: { id: true },
@@ -176,7 +179,7 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
     // WhatsApp to all unique clients of this campaign when status changes
     if (prismaStatus && updated?.code) {
       const campaignParcels = await prisma.parcel.findMany({
-        where:  { campaignId: params.id },
+        where:  { campaignId: params.id, deletedAt: null },
         select: { id: true, trackingCode: true, client: { select: { name: true, phone: true } } },
       });
 

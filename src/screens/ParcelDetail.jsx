@@ -936,14 +936,19 @@ export default function ParcelDetailScreen({ id, onNav }) {
               onClick={async () => {
                 setDeleting(true);
                 setDeleteError('');
-                const res = await fetch('/api/parcels/' + id, { method: 'DELETE' });
-                const json = await res.json();
-                setDeleting(false);
-                if (res.ok) {
-                  setShowDeleteModal(false);
-                  onNav(campaign?.id ? '/campaign/' + campaign.id : '/parcels');
-                } else {
-                  setDeleteError(json.error || t.common.error);
+                try {
+                  const res = await fetch('/api/parcels/' + id, { method: 'DELETE' });
+                  const json = await res.json().catch(() => ({}));
+                  if (res.ok) {
+                    setShowDeleteModal(false);
+                    onNav(campaign?.id ? '/campaign/' + campaign.id : '/parcels');
+                  } else {
+                    setDeleteError(json.error || t.common.error);
+                  }
+                } catch {
+                  setDeleteError('Erreur réseau — veuillez réessayer.');
+                } finally {
+                  setDeleting(false);
                 }
               }}
               style={{ padding: '8px 16px', borderRadius: 8, border: 'none', background: 'var(--bad-500)', color: 'white', fontSize: 13, fontWeight: 700, cursor: deleting ? 'not-allowed' : 'pointer', opacity: deleting ? .6 : 1 }}
