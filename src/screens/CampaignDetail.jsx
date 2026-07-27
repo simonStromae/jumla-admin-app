@@ -115,8 +115,20 @@ export default function CampaignDetailScreen({ id, onNav }) {
   const shownParcels   = parcelTab === 'cancelled' ? cancelledParcels : parcels;
 
   const totalWeight = parcels.reduce((s, p) => s + (p.weightKg || 0), 0);
-  const invoiced    = parcels.reduce((s, p) => s + (p.confirmedPriceXaf ?? p.payment?.amount ?? p.priceXaf ?? 0), 0);
-  const collected   = parcels.reduce((s, p) => s + (p.payment?.status === 'completed' ? (p.payment.amount || 0) : 0), 0);
+  const invoiced = parcels.reduce((s, p) => {
+    const adj = p.adjustmentStatus, conf = p.confirmedPriceXaf;
+    return s + ((adj === 'paid' || adj === 'discount') && conf != null
+      ? conf : (p.payment?.amount ?? p.priceXaf ?? 0));
+  }, 0);
+  const collected = parcels.reduce((s, p) => {
+    const adj = p.adjustmentStatus, conf = p.confirmedPriceXaf;
+    const inv     = (adj === 'paid' || adj === 'discount') && conf != null
+      ? conf : (p.payment?.amount ?? p.priceXaf ?? 0);
+    const payAmt  = p.payment?.status === 'completed' ? (p.payment.amount || 0) : 0;
+    const suppAmt = conf != null ? Math.max(0, conf - (p.priceXaf ?? 0)) : 0;
+    const suppPaid = adj === 'paid' ? suppAmt : 0;
+    return s + Math.min(payAmt + suppPaid, inv);
+  }, 0);
   const outstanding = invoiced - collected;
   const pct = invoiced > 0 ? Math.round(collected / invoiced * 100) : 0;
 

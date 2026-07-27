@@ -46,15 +46,23 @@ export async function GET(req: NextRequest) {
     const active    = c.parcels.filter(p => p.status !== 'ann');
     const cancelled = c.parcels.filter(p => p.status === 'ann').length;
     const invoiced  = active.reduce((s, p) => {
-      const inv = (p as any).confirmedPriceXaf ?? p.payment?.amount ?? p.priceXaf ?? 0;
+      const adj  = (p as any).adjustmentStatus;
+      const conf = (p as any).confirmedPriceXaf;
+      // Include confirmed price only when supplement is fully resolved (no impact on rate for pending supplements)
+      const inv = (adj === 'paid' || adj === 'discount') && conf != null
+        ? conf
+        : (p.payment?.amount ?? p.priceXaf ?? 0);
       return s + inv;
     }, 0);
     const collected = active.reduce((s, p) => {
-      const inv      = (p as any).confirmedPriceXaf ?? p.payment?.amount ?? p.priceXaf ?? 0;
-      const payAmt   = p.payment?.status === 'completed' ? p.payment.amount : 0;
-      const suppAmt  = (p as any).confirmedPriceXaf != null
-        ? Math.max(0, (p as any).confirmedPriceXaf - (p.priceXaf ?? 0)) : 0;
-      const suppPaid = (p as any).adjustmentStatus === 'paid' ? suppAmt : 0;
+      const adj  = (p as any).adjustmentStatus;
+      const conf = (p as any).confirmedPriceXaf;
+      const inv  = (adj === 'paid' || adj === 'discount') && conf != null
+        ? conf
+        : (p.payment?.amount ?? p.priceXaf ?? 0);
+      const payAmt  = p.payment?.status === 'completed' ? p.payment.amount : 0;
+      const suppAmt = conf != null ? Math.max(0, conf - (p.priceXaf ?? 0)) : 0;
+      const suppPaid = adj === 'paid' ? suppAmt : 0;
       return s + Math.min(payAmt + suppPaid, inv);
     }, 0);
     const weight    = active.reduce((s, p) => s + (p.weightKg ?? 0), 0);
