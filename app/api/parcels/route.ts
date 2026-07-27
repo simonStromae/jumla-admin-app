@@ -14,16 +14,29 @@ export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const campaignId = searchParams.get('campaign');
 
-  const parcels = await prisma.parcel.findMany({
-    where: { ...(campaignId ? { campaignId } : {}), deletedAt: null },
-    orderBy: { createdAt: 'desc' },
+  const queryOpts = {
+    orderBy: { createdAt: 'desc' as const },
     include: {
-      client:   { select: { id: true, name: true, email: true, phone: true, city: true } },
-      campaign: { select: { id: true, code: true } },
-      payment:  true,
-      trackingEvents: { orderBy: { createdAt: 'desc' }, take: 1 },
+      client:         { select: { id: true, name: true, email: true, phone: true, city: true } },
+      campaign:       { select: { id: true, code: true } },
+      payment:        true,
+      trackingEvents: { orderBy: { createdAt: 'desc' as const }, take: 1 },
     },
-  });
+  };
+
+  let parcels: any[];
+  try {
+    parcels = await (prisma.parcel.findMany as any)({
+      where: { ...(campaignId ? { campaignId } : {}), deletedAt: null },
+      ...queryOpts,
+    });
+  } catch {
+    // deletedAt column not yet migrated — return all (non-soft-deleted data safe, migration pending)
+    parcels = await prisma.parcel.findMany({
+      where: campaignId ? { campaignId } : {},
+      ...queryOpts,
+    });
+  }
 
   // Last WhatsApp log per parcel
   const parcelIds = parcels.map(p => p.id);

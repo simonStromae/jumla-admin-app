@@ -957,15 +957,17 @@ function InvoicesTab({ onReload, onNav }) {
 
   useEffect(() => { loadPayments(); }, []);
 
+  const isEnCours = p => p.status === 'pending' || p.status === 'unpaid' || p.status === 'partial';
+
   const tabs = [
-    { id: 'all',     l: 'Tous',         n: payments.length },
-    { id: 'paid',    l: 'Payés',        n: payments.filter(p => p.status === 'paid').length,    cls: 'ok'  },
-    { id: 'pending', l: 'En attente',   n: payments.filter(p => p.status === 'pending').length, cls: 'warn' },
-    { id: 'unpaid',  l: /* TODO: i18n — no filterUnpaid key in t.payments */ 'Impayées', n: payments.filter(p => p.status === 'unpaid').length, cls: 'bad'  },
+    { id: 'all',      l: 'Tous',     n: payments.length },
+    { id: 'paid',     l: 'Payés',    n: payments.filter(p => p.status === 'paid').length,  cls: 'ok'   },
+    { id: 'encours',  l: 'En cours', n: payments.filter(isEnCours).length,                 cls: 'warn' },
+    { id: 'partial',  l: 'Partiel',  n: payments.filter(p => p.status === 'partial').length, cls: 'warn' },
   ];
 
   const filtered = payments
-    .filter(p => tab === 'all' || p.status === tab)
+    .filter(p => tab === 'all' || (tab === 'encours' ? isEnCours(p) : p.status === tab))
     .filter(p => {
       if (!search) return true;
       const q = search.toLowerCase();
