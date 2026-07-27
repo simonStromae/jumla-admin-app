@@ -73,7 +73,7 @@ export async function GET(_: NextRequest, { params }: { params: { id: string } }
       const suppPending = adjustmentStatus === 'pending' ? suppAmt : 0;
 
       const invoiced  = confirmedPriceXaf ?? p.payment?.amount ?? p.priceXaf ?? 0;
-      const collected = allocated + suppPaid;
+      const collected = Math.min(allocated + suppPaid, invoiced);
       const remaining = Math.max(0, invoiced - collected);
 
       const displayStatus =

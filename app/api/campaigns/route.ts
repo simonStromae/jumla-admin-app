@@ -45,9 +45,18 @@ export async function GET(req: NextRequest) {
   const result = campaigns.map(c => {
     const active    = c.parcels.filter(p => p.status !== 'ann');
     const cancelled = c.parcels.filter(p => p.status === 'ann').length;
-    const invoiced  = active.reduce((s, p) => s + (p.payment?.amount ?? p.priceXaf ?? 0), 0);
-    const collected = active.reduce((s, p) =>
-      s + (p.payment?.status === 'completed' ? p.payment.amount : 0), 0);
+    const invoiced  = active.reduce((s, p) => {
+      const inv = (p as any).confirmedPriceXaf ?? p.payment?.amount ?? p.priceXaf ?? 0;
+      return s + inv;
+    }, 0);
+    const collected = active.reduce((s, p) => {
+      const inv      = (p as any).confirmedPriceXaf ?? p.payment?.amount ?? p.priceXaf ?? 0;
+      const payAmt   = p.payment?.status === 'completed' ? p.payment.amount : 0;
+      const suppAmt  = (p as any).confirmedPriceXaf != null
+        ? Math.max(0, (p as any).confirmedPriceXaf - (p.priceXaf ?? 0)) : 0;
+      const suppPaid = (p as any).adjustmentStatus === 'paid' ? suppAmt : 0;
+      return s + Math.min(payAmt + suppPaid, inv);
+    }, 0);
     const weight    = active.reduce((s, p) => s + (p.weightKg ?? 0), 0);
     const unpaid    = active.filter(p => !p.payment || p.payment.status !== 'completed').length;
 

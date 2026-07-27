@@ -64,8 +64,8 @@ export async function GET() {
     // Total invoiced for this parcel (base + supplement)
     const invoiced = (confirmedPriceXaf ?? p.amount) + 0;  // confirmedPriceXaf already includes supplement
 
-    // Total collected for this parcel
-    const collected = allocated + suppPaid;
+    // Total collected — capped at invoiced to avoid double-counting when priceXaf=null
+    const collected = Math.min(allocated + suppPaid, invoiced);
 
     // Remaining owed
     const remaining = Math.max(0, invoiced - collected);

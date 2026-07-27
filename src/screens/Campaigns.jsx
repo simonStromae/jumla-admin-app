@@ -269,51 +269,114 @@ export default function CampaignsScreen({ onNav, onNewCampaign }) {
         </div>
       )}
 
-      {Object.entries(byMonth).map(([month, list]) => (
-        <div key={month} style={{ marginBottom: 26 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12, margin: '4px 0 12px' }}>
-            <h3 style={{ margin: 0, fontSize: 14, fontWeight: 700, color: 'var(--ink-800)' }}>{month}</h3>
-            <span style={{ fontSize: 11, color: 'var(--ink-400)', background: 'var(--ink-100)', padding: '2px 8px', borderRadius: 999, fontWeight: 600 }}>
-              {/* TODO: no translation key for "cargaison(s)" */}
-              {list.length} cargaison{list.length > 1 ? 's' : ''}
-            </span>
-            <div style={{ flex: 1, height: 1, background: 'var(--border-soft)' }} />
-            <span style={{ fontSize: 11.5, color: 'var(--ink-400)' }} className="mono">
-              {list.reduce((a, c) => a + (c.weight ?? 0), 0).toLocaleString('fr')} kg ·{' '}
-              {list.reduce((a, c) => a + (c.invoiced ?? 0), 0).toLocaleString('fr')} CAD
-            </span>
-          </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(360px, 1fr))', gap: 14 }}>
-            {list.map(c => (
-              <div key={c.id} style={{ position: 'relative' }}>
-                <CampaignCard c={c} onClick={showArchived ? undefined : () => onNav('/admin/campaigns/' + c.id)} />
-                {showArchived && can('campaigns', 'delete') && (
-                  <div style={{ padding: '8px 12px', display: 'flex', gap: 8, borderTop: '1px solid var(--border-soft)', background: 'var(--bg-soft)', borderRadius: '0 0 10px 10px', marginTop: -1 }}>
+      {view === 'list' ? (
+        <table className="tbl">
+          <thead>
+            <tr>
+              <th>Code</th>
+              <th>Route</th>
+              <th>Statut</th>
+              <th>Départ</th>
+              <th style={{ textAlign: 'right' }}>Colis</th>
+              <th style={{ textAlign: 'right' }}>Poids</th>
+              <th style={{ textAlign: 'right' }}>Facturé</th>
+              <th style={{ textAlign: 'right' }}>Perçu</th>
+              <th style={{ textAlign: 'right' }}>%</th>
+              <th style={{ textAlign: 'right' }}>Reste dû</th>
+              {can('campaigns', 'delete') && <th style={{ width: 40 }}></th>}
+            </tr>
+          </thead>
+          <tbody>
+            {filtered.map(c => {
+              const CAMPAIGN_STATUS = getCampaignStatus(t);
+              const s   = CAMPAIGN_STATUS[c.status] ?? { label: c.status, dot: 'neutral' };
+              const pct = (c.invoiced ?? 0) > 0 ? Math.min(100, Math.round((c.collected ?? 0) / c.invoiced * 100)) : 0;
+              const outstanding = Math.max(0, (c.invoiced ?? 0) - (c.collected ?? 0));
+              return (
+                <tr key={c.id} style={{ cursor: showArchived ? 'default' : 'pointer' }}
+                  onClick={showArchived ? undefined : () => onNav('/admin/campaigns/' + c.id)}>
+                  <td><span className="mono" style={{ fontWeight: 700, color: 'var(--brand-700)' }}>{c.code}</span></td>
+                  <td><RoutePill from={c.from} to={c.to} /></td>
+                  <td><StatusDot kind={s.dot} label={s.label} /></td>
+                  <td style={{ fontSize: 12.5, color: 'var(--ink-600)' }}>{c.dep}</td>
+                  <td style={{ textAlign: 'right' }} className="mono">{c.parcels}</td>
+                  <td style={{ textAlign: 'right' }} className="mono">{(c.weight ?? 0).toLocaleString('fr')} kg</td>
+                  <td style={{ textAlign: 'right' }} className="mono">{(c.invoiced ?? 0).toLocaleString('fr')}</td>
+                  <td style={{ textAlign: 'right' }} className="mono">{(c.collected ?? 0).toLocaleString('fr')}</td>
+                  <td style={{ textAlign: 'right' }}>
+                    <span className="mono" style={{ fontWeight: 700, fontSize: 12, color: pct >= 95 ? 'var(--ok-600)' : pct >= 70 ? 'var(--warn-700)' : 'var(--bad-600)' }}>
+                      {pct}%
+                    </span>
+                  </td>
+                  <td style={{ textAlign: 'right' }}>
+                    {outstanding > 0
+                      ? <span className="mono" style={{ fontWeight: 600, color: 'var(--bad-600)', fontSize: 12 }}>{outstanding.toLocaleString('fr')}</span>
+                      : <span style={{ color: 'var(--ok-600)', fontSize: 12 }}>✓</span>}
+                  </td>
+                  {can('campaigns', 'delete') && (
+                    <td onClick={e => e.stopPropagation()}>
+                      {showArchived ? (
+                        <button className="btn btn--ghost btn--sm" style={{ fontSize: 11 }} disabled={archiving === c.id} onClick={() => handleRestore(c.id)}>
+                          ↩
+                        </button>
+                      ) : (
+                        <button className="btn btn--ghost btn--sm" style={{ color: 'var(--ink-300)', padding: '3px 6px' }} title="Archiver" disabled={archiving === c.id} onClick={() => handleArchive(c.id)}>
+                          <I.Archive style={{ width: 13, height: 13 }} />
+                        </button>
+                      )}
+                    </td>
+                  )}
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      ) : (
+        Object.entries(byMonth).map(([month, list]) => (
+          <div key={month} style={{ marginBottom: 26 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, margin: '4px 0 12px' }}>
+              <h3 style={{ margin: 0, fontSize: 14, fontWeight: 700, color: 'var(--ink-800)' }}>{month}</h3>
+              <span style={{ fontSize: 11, color: 'var(--ink-400)', background: 'var(--ink-100)', padding: '2px 8px', borderRadius: 999, fontWeight: 600 }}>
+                {list.length} cargaison{list.length > 1 ? 's' : ''}
+              </span>
+              <div style={{ flex: 1, height: 1, background: 'var(--border-soft)' }} />
+              <span style={{ fontSize: 11.5, color: 'var(--ink-400)' }} className="mono">
+                {list.reduce((a, c) => a + (c.weight ?? 0), 0).toLocaleString('fr')} kg ·{' '}
+                {list.reduce((a, c) => a + (c.invoiced ?? 0), 0).toLocaleString('fr')} CAD
+              </span>
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(360px, 1fr))', gap: 14 }}>
+              {list.map(c => (
+                <div key={c.id} style={{ position: 'relative' }}>
+                  <CampaignCard c={c} onClick={showArchived ? undefined : () => onNav('/admin/campaigns/' + c.id)} />
+                  {showArchived && can('campaigns', 'delete') && (
+                    <div style={{ padding: '8px 12px', display: 'flex', gap: 8, borderTop: '1px solid var(--border-soft)', background: 'var(--bg-soft)', borderRadius: '0 0 10px 10px', marginTop: -1 }}>
+                      <button
+                        className="btn btn--sm btn--ghost"
+                        style={{ flex: 1 }}
+                        disabled={archiving === c.id}
+                        onClick={() => handleRestore(c.id)}
+                      >
+                        {archiving === c.id ? '…' : '↩ Restaurer'}
+                      </button>
+                    </div>
+                  )}
+                  {!showArchived && can('campaigns', 'delete') && (
                     <button
-                      className="btn btn--sm btn--ghost"
-                      style={{ flex: 1 }}
+                      style={{ position: 'absolute', top: 10, right: 10, background: 'none', border: 'none', cursor: 'pointer', color: 'var(--ink-300)', padding: 4, borderRadius: 6, lineHeight: 1, zIndex: 2 }}
+                      title="Archiver"
                       disabled={archiving === c.id}
-                      onClick={() => handleRestore(c.id)}
+                      onClick={e => { e.stopPropagation(); handleArchive(c.id); }}
                     >
-                      {archiving === c.id ? '…' : '↩ Restaurer'}
+                      <I.Archive style={{ width: 14, height: 14 }} />
                     </button>
-                  </div>
-                )}
-                {!showArchived && can('campaigns', 'delete') && (
-                  <button
-                    style={{ position: 'absolute', top: 10, right: 10, background: 'none', border: 'none', cursor: 'pointer', color: 'var(--ink-300)', padding: 4, borderRadius: 6, lineHeight: 1, zIndex: 2 }}
-                    title="Archiver"
-                    disabled={archiving === c.id}
-                    onClick={e => { e.stopPropagation(); handleArchive(c.id); }}
-                  >
-                    <I.Archive style={{ width: 14, height: 14 }} />
-                  </button>
-                )}
-              </div>
-            ))}
+                  )}
+                </div>
+              ))}
+            </div>
           </div>
-        </div>
-      ))}
+        ))
+      )}
     </div>
   );
 }
