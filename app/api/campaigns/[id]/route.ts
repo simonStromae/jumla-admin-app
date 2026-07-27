@@ -16,7 +16,7 @@ export async function GET(_: NextRequest, { params }: { params: { id: string } }
       route: true,
       costs: true,
       parcels: {
-        where: { deletedAt: null, status: { not: 'ann' } },
+        where: { deletedAt: null },
         include: {
           client: { select: { id: true, name: true, email: true, phone: true, city: true } },
           payment: true,
@@ -33,7 +33,7 @@ export async function GET(_: NextRequest, { params }: { params: { id: string } }
     ...c,
     status: mapCampaignStatus(c.status),
     statusNotes: (c.statusNotes as any) ?? {},
-    collected: c.parcels.reduce((s, p) =>
+    collected: c.parcels.filter(p => p.status !== 'ann').reduce((s, p) =>
       s + (p.payment?.status === 'completed' ? p.payment.amount : 0), 0),
   });
 }

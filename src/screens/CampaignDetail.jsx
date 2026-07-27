@@ -70,6 +70,9 @@ export default function CampaignDetailScreen({ id, onNav }) {
   const [broadcastPreview,   setBroadcastPreview]   = useState(null); // { total, campaign }
   const [broadcasting,       setBroadcasting]       = useState(false);
   const [broadcastResult,    setBroadcastResult]    = useState(null); // { sent, failed, total }
+  const [parcelTab,          setParcelTab]          = useState('active'); // 'active' | 'cancelled'
+  const [deletingParcelId,   setDeletingParcelId]   = useState(null);
+  const [deleteParcelErr,    setDeleteParcelErr]    = useState('');
 
   useEffect(() => {
     fetch('/api/campaigns/' + id)
@@ -106,7 +109,11 @@ export default function CampaignDetailScreen({ id, onNav }) {
     );
   }
 
-  const parcels = campaign.parcels || [];
+  const allParcels     = campaign.parcels || [];
+  const parcels        = allParcels.filter(p => p.status !== 'ann');
+  const cancelledParcels = allParcels.filter(p => p.status === 'ann');
+  const shownParcels   = parcelTab === 'cancelled' ? cancelledParcels : parcels;
+
   const totalWeight = parcels.reduce((s, p) => s + (p.weightKg || 0), 0);
   const invoiced    = parcels.reduce((s, p) => s + (p.confirmedPriceXaf ?? p.payment?.amount ?? p.priceXaf ?? 0), 0);
   const collected   = parcels.reduce((s, p) => s + (p.payment?.status === 'completed' ? (p.payment.amount || 0) : 0), 0);
@@ -118,6 +125,31 @@ export default function CampaignDetailScreen({ id, onNav }) {
   const currentStepInfo = ALL_STEPS.find(s => s.id === campaign.status);
 
   const unpaidCount = parcels.filter(p => p.payment?.status !== 'completed').length;
+
+  const handleDeleteParcel = async (parcelId, e) => {
+    e.stopPropagation();
+    if (deletingParcelId === parcelId) {
+      // Second click = confirm
+      setDeleteParcelErr('');
+      try {
+        const res = await fetch('/api/parcels/' + parcelId, { method: 'DELETE' });
+        const json = await res.json().catch(() => ({}));
+        if (res.ok) {
+          setCampaign(c => ({ ...c, parcels: c.parcels.filter(p => p.id !== parcelId) }));
+          setDeletingParcelId(null);
+        } else {
+          setDeleteParcelErr(json.error || 'Erreur');
+          setDeletingParcelId(null);
+        }
+      } catch {
+        setDeleteParcelErr('Erreur réseau');
+        setDeletingParcelId(null);
+      }
+    } else {
+      setDeleteParcelErr('');
+      setDeletingParcelId(parcelId);
+    }
+  };
 
   const getPaymentLabel = (status) => {
     if (status === 'completed') return t.paymentStatus.completed;
@@ -421,17 +453,57 @@ export default function CampaignDetailScreen({ id, onNav }) {
       <CampaignTimeline campaign={campaign} route={route} />
 
       {/* Parcel table */}
-      {parcels.length === 0 ? (
+      {/* Tabs: Actifs / Annulés */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 0, marginBottom: 0, borderBottom: '1px solid var(--border)' }}>
+        {[
+          { key: 'active',    label: 'Actifs',   count: parcels.length },
+          { key: 'cancelled', label: 'Annulés',  count: cancelledParcels.length },
+        ].map(tab => (
+          <button
+            key={tab.key}
+            onClick={() => { setParcelTab(tab.key); setDeletingParcelId(null); setDeleteParcelErr(''); }}
+            style={{
+              padding: '10px 18px', fontSize: 13, fontWeight: 600, cursor: 'pointer',
+              background: 'none', border: 'none', borderBottom: parcelTab === tab.key ? '2px solid var(--brand-600)' : '2px solid transparent',
+              color: parcelTab === tab.key ? 'var(--brand-700)' : 'var(--ink-400)',
+              display: 'flex', alignItems: 'center', gap: 6, marginBottom: -1,
+            }}
+          >
+            {tab.label}
+            {tab.count > 0 && (
+              <span style={{
+                fontSize: 11, fontWeight: 700, minWidth: 18, height: 18,
+                display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                borderRadius: 9, padding: '0 5px',
+                background: parcelTab === tab.key ? 'var(--brand-100)' : 'var(--ink-100)',
+                color:      parcelTab === tab.key ? 'var(--brand-700)' : 'var(--ink-500)',
+              }}>
+                {tab.count}
+              </span>
+            )}
+          </button>
+        ))}
+        {campaign.status === 'enr' && parcelTab === 'active' && (
+          <button className="btn btn--brand btn--sm" style={{ marginLeft: 'auto' }} onClick={() => onNav('/parcels/new?campaign=' + id)}>
+            <I.Plus />{t.parcels.new}
+          </button>
+        )}
+      </div>
+
+      {deleteParcelErr && (
+        <div style={{ padding: '8px 14px', background: 'var(--bad-50)', borderRadius: 6, fontSize: 12.5, color: 'var(--bad-700)', marginTop: 8 }}>
+          {deleteParcelErr}
+        </div>
+      )}
+
+      {shownParcels.length === 0 ? (
         <div className="card" style={{ padding: '48px 24px', textAlign: 'center' }}>
           <div style={{ fontSize: 32, marginBottom: 12 }}>📦</div>
-          {/* TODO: i18n — "Aucun colis dans cette cargaison" has no exact translation key */}
-          <div style={{ fontSize: 16, fontWeight: 600, color: 'var(--ink-700)', marginBottom: 6 }}>Aucun colis dans cette cargaison</div>
-          {/* TODO: i18n — "Ajoutez le premier colis pour commencer." has no translation key */}
-          <div style={{ fontSize: 13, color: 'var(--ink-400)', marginBottom: 20 }}>Ajoutez le premier colis pour commencer.</div>
-          {campaign.status === 'enr' && (
-            <button className="btn btn--brand" onClick={() => onNav('/parcels/new?campaign=' + id)}>
-              <I.Plus />{t.parcels.new}
-            </button>
+          <div style={{ fontSize: 16, fontWeight: 600, color: 'var(--ink-700)', marginBottom: 6 }}>
+            {parcelTab === 'cancelled' ? 'Aucun colis annulé' : 'Aucun colis dans cette cargaison'}
+          </div>
+          {parcelTab === 'active' && (
+            <div style={{ fontSize: 13, color: 'var(--ink-400)', marginBottom: 20 }}>Ajoutez le premier colis pour commencer.</div>
           )}
         </div>
       ) : (
@@ -445,20 +517,22 @@ export default function CampaignDetailScreen({ id, onNav }) {
               <th style={{ textAlign: 'right' }}>{t.parcels.table.amount}</th>
               <th>{t.parcels.table.payment}</th>
               <th>{t.parcels.table.status}</th>
+              {can('parcels') && parcelTab === 'active' && <th style={{ width: 60 }}></th>}
             </tr>
           </thead>
           <tbody>
-            {parcels.map(p => {
+            {shownParcels.map(p => {
               const payInfo = PAYMENT_STATUS[p.payment?.status] || { label: p.payment?.status || '—', cls: 'neutral' };
               const payLabel = getPaymentLabel(p.payment?.status);
               const parcelLabel = PARCEL_STATUS[p.status] || p.status || '—';
               const clientName = p.client?.name || '—';
               const initials = clientName.split(' ').map(x => x[0]).join('').slice(0, 2).toUpperCase();
+              const isConfirming = deletingParcelId === p.id;
               return (
                 <tr
                   key={p.id}
-                  style={{ cursor: 'pointer' }}
-                  onClick={() => onNav('/parcels/' + p.id)}
+                  style={{ cursor: 'pointer', background: isConfirming ? 'var(--bad-50)' : undefined }}
+                  onClick={() => { if (!isConfirming) onNav('/parcels/' + p.id); }}
                 >
                   <td>
                     <span className="mono" style={{ fontWeight: 700, color: 'var(--brand-700)' }}>
@@ -497,6 +571,37 @@ export default function CampaignDetailScreen({ id, onNav }) {
                   <td>
                     <span className="badge badge--neutral">{parcelLabel}</span>
                   </td>
+                  {can('parcels') && parcelTab === 'active' && (
+                    <td onClick={e => e.stopPropagation()}>
+                      {isConfirming ? (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                          <button
+                            className="btn btn--sm"
+                            style={{ background: 'var(--bad-600)', color: '#fff', border: 'none', fontSize: 11, padding: '3px 8px' }}
+                            onClick={e => handleDeleteParcel(p.id, e)}
+                          >
+                            Confirmer
+                          </button>
+                          <button
+                            className="btn btn--ghost btn--sm"
+                            style={{ fontSize: 11, padding: '3px 8px' }}
+                            onClick={e => { e.stopPropagation(); setDeletingParcelId(null); }}
+                          >
+                            Annuler
+                          </button>
+                        </div>
+                      ) : (
+                        <button
+                          className="btn btn--ghost btn--sm"
+                          style={{ color: 'var(--ink-300)', padding: '4px 6px' }}
+                          title="Supprimer ce colis"
+                          onClick={e => handleDeleteParcel(p.id, e)}
+                        >
+                          <I.Trash style={{ width: 13, height: 13 }} />
+                        </button>
+                      )}
+                    </td>
+                  )}
                 </tr>
               );
             })}
@@ -506,7 +611,7 @@ export default function CampaignDetailScreen({ id, onNav }) {
 
       {/* TODO: i18n — "colis · Capacité" has no translation key */}
       <div style={{ marginTop: 12, fontSize: 12, color: 'var(--ink-400)', marginBottom: 8 }}>
-        {parcels.length} colis · Capacité {campaign.capacityKg != null ? campaign.capacityKg + ' kg' : '—'}
+        {parcels.length} colis actifs · Capacité {campaign.capacityKg != null ? campaign.capacityKg + ' kg' : '—'}
       </div>
     </div>
   );
