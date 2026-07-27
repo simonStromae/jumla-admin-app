@@ -31,6 +31,7 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
   const { error } = await requirePermission('parcels');
   if (error) return error;
 
+  try {
   const body = await req.json();
   const { status, confirmed, notes, weightKg, priceXaf, eventNote, eventLocation, items, confirmedPriceXaf, adjustmentStatus, marginPct, driverId, delivery, cancellationReason } = body;
 
@@ -185,40 +186,55 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
   }
 
   return NextResponse.json({ ok: true, parcel });
+  } catch (e: any) {
+    console.error('[PUT /api/parcels/[id]]', e);
+    return NextResponse.json({ error: e?.message ?? 'Erreur serveur' }, { status: 500 });
+  }
 }
 
 export async function DELETE(_: NextRequest, { params }: { params: { id: string } }) {
   const { error } = await requirePermission('parcels');
   if (error) return error;
 
-  const parcel = await prisma.parcel.findUnique({
-    where: { id: params.id },
-    select: { id: true, status: true, trackingCode: true, payment: { select: { status: true } } },
-  });
+  try {
+    const parcel = await prisma.parcel.findUnique({
+      where: { id: params.id },
+      select: { id: true, status: true, trackingCode: true, payment: { select: { status: true } } },
+    });
 
-  if (!parcel || (parcel as any).deletedAt) {
-    return NextResponse.json({ error: 'Colis introuvable' }, { status: 404 });
+    if (!parcel) {
+      return NextResponse.json({ error: 'Colis introuvable' }, { status: 404 });
+    }
+
+    const DELETABLE = ['enr', 'rec'];
+    if (!DELETABLE.includes(parcel.status)) {
+      return NextResponse.json(
+        { error: `Impossible de supprimer — statut "${parcel.status}" non supprimable. Seuls Enregistré (enr) et Reçu entrepôt (rec) le sont. Utilisez l'annulation pour les autres.` },
+        { status: 403 },
+      );
+    }
+
+    if (parcel.payment?.status === 'completed') {
+      return NextResponse.json(
+        { error: 'Ce colis a un paiement complété. Remboursez le client avant de supprimer.' },
+        { status: 403 },
+      );
+    }
+
+    try {
+      // Soft-delete (preferred) — requires deletedAt column
+      await prisma.$executeRawUnsafe(
+        `UPDATE parcels SET "deletedAt" = NOW() WHERE id = $1`,
+        params.id,
+      );
+    } catch {
+      // deletedAt column not yet migrated — fall back to hard delete
+      await prisma.parcel.delete({ where: { id: params.id } });
+    }
+
+    return NextResponse.json({ ok: true, trackingCode: parcel.trackingCode });
+  } catch (e: any) {
+    console.error('[DELETE /api/parcels/[id]]', e);
+    return NextResponse.json({ error: e?.message ?? 'Erreur serveur' }, { status: 500 });
   }
-
-  const DELETABLE = ['enr', 'rec'];
-  if (!DELETABLE.includes(parcel.status)) {
-    return NextResponse.json(
-      { error: `Impossible de supprimer un colis au statut "${parcel.status}". Seuls les statuts Enregistré et Reçu sont supprimables.` },
-      { status: 403 },
-    );
-  }
-
-  if (parcel.payment?.status === 'completed') {
-    return NextResponse.json(
-      { error: 'Ce colis a un paiement complété. Remboursez le client avant de supprimer.' },
-      { status: 403 },
-    );
-  }
-
-  await prisma.$executeRawUnsafe(
-    `UPDATE parcels SET "deletedAt" = NOW() WHERE id = $1`,
-    params.id,
-  );
-
-  return NextResponse.json({ ok: true, trackingCode: parcel.trackingCode });
 }
