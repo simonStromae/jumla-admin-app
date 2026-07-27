@@ -28,8 +28,9 @@ export async function GET(_: NextRequest, { params }: { params: { id: string } }
 }
 
 export async function PUT(req: NextRequest, { params }: { params: { id: string } }) {
-  const { error } = await requirePermission('parcels');
+  const { error, session } = await requirePermission('parcels');
   if (error) return error;
+  const isAdmin = (session!.user as any).role === 'admin';
 
   try {
   const body = await req.json();
@@ -59,7 +60,7 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
   // Status updates and driver assignment are ALWAYS allowed.
   const LOCKED_STATUSES = ['exp', 'tra', 'apd', 'dou', 'lib', 'ard', 'pdl', 'ok'];
   const contentChanged  = weightKg !== undefined || priceXaf !== undefined || items !== undefined || confirmed !== undefined || notes !== undefined;
-  if (contentChanged && existing?.campaign && LOCKED_STATUSES.includes(existing.campaign.status as string)) {
+  if (!isAdmin && contentChanged && existing?.campaign && LOCKED_STATUSES.includes(existing.campaign.status as string)) {
     return NextResponse.json({ error: 'Colis verrouillé — le contenu ne peut plus être modifié (cargaison en transit).' }, { status: 403 });
   }
 
