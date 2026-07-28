@@ -21,6 +21,10 @@ export default function AllParcelsScreen({ onNav, initialSearch = '' }) {
   const [confirmDeleteParcel, setConfirmDeleteParcel] = useState(null);
   const [deleting, setDeleting]           = useState(false);
   const [deleteError, setDeleteError]     = useState(null);
+  const [repairOpen, setRepairOpen]       = useState(false);
+  const [repairCodes, setRepairCodes]     = useState('');
+  const [repairLoading, setRepairLoading] = useState(false);
+  const [repairResults, setRepairResults] = useState(null);
 
   useEffect(() => {
     Promise.all([
@@ -58,6 +62,32 @@ export default function AllParcelsScreen({ onNav, initialSearch = '' }) {
       setDeleteError('Erreur réseau — veuillez réessayer.');
     }
     setDeleting(false);
+  };
+
+  const handleRepairPayments = async () => {
+    const trackingCodes = repairCodes
+      .split(/[\n,\s]+/)
+      .map(s => s.trim())
+      .filter(Boolean);
+    if (trackingCodes.length === 0) return;
+    setRepairLoading(true);
+    setRepairResults(null);
+    try {
+      const res = await fetch('/api/admin/repair-payment', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ trackingCodes }),
+      });
+      const d = await res.json();
+      setRepairResults(d.results ?? []);
+      // Refresh parcel list to reflect new payment statuses
+      fetch('/api/parcels').then(r => r.json()).then(data => {
+        if (Array.isArray(data)) setAllParcels(data);
+      });
+    } catch {
+      setRepairResults([{ trackingCode: '—', ok: false, message: 'Erreur réseau' }]);
+    }
+    setRepairLoading(false);
   };
 
   const handleCancelConfirm = async (parcel, reason) => {
@@ -138,7 +168,12 @@ export default function AllParcelsScreen({ onNav, initialSearch = '' }) {
         </div>
         <div className="page__actions">
           <button className="btn btn--ghost" onClick={exportCSV}><I.Download />{t.parcels.exportCsv} ({filtered.length})</button>
-          {/* TODO: no newParcel key in t.parcels */}
+          {can('parcels', 'admin') && (
+            <button className="btn btn--ghost" onClick={() => { setRepairOpen(true); setRepairCodes(''); setRepairResults(null); }}
+              title="Rétablir des paiements manquants">
+              <I.Check style={{ width: 14, height: 14 }} /> Rétablir paiements
+            </button>
+          )}
           {can('parcels', 'create') && <button className="btn btn--brand" onClick={() => onNav('/parcels/new')}><I.Plus />Nouveau colis</button>}
         </div>
       </div>
@@ -352,6 +387,77 @@ export default function AllParcelsScreen({ onNav, initialSearch = '' }) {
           onClose={() => setCancelingParcel(null)}
           onConfirm={handleCancelConfirm}
         />
+      )}
+
+      {repairOpen && (
+        <Modal
+          title="Rétablir des paiements manquants"
+          sub="Crée un paiement 'Réglé' pour chaque colis sans enregistrement de paiement"
+          width={520}
+          onClose={() => { setRepairOpen(false); setRepairResults(null); }}
+          footer={
+            repairResults ? (
+              <>
+                <div style={{ flex: 1 }} />
+                <button className="btn btn--ghost" onClick={() => { setRepairOpen(false); setRepairResults(null); }}>Fermer</button>
+                <button className="btn btn--ghost" onClick={() => { setRepairResults(null); setRepairCodes(''); }}>Nouveau lot</button>
+              </>
+            ) : (
+              <>
+                <div style={{ flex: 1 }} />
+                <button className="btn btn--ghost" onClick={() => setRepairOpen(false)}>Annuler</button>
+                <button
+                  className="btn btn--brand"
+                  onClick={handleRepairPayments}
+                  disabled={repairLoading || !repairCodes.trim()}
+                >
+                  {repairLoading ? 'Traitement…' : 'Rétablir les paiements'}
+                </button>
+              </>
+            )
+          }
+        >
+          {repairResults ? (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              <div style={{ fontSize: 13, color: 'var(--ink-500)', marginBottom: 4 }}>
+                {repairResults.filter(r => r.ok).length} paiement(s) créé(s) · {repairResults.filter(r => !r.ok).length} ignoré(s)
+              </div>
+              {repairResults.map((r, i) => (
+                <div key={i} style={{
+                  display: 'flex', alignItems: 'center', gap: 10,
+                  padding: '8px 12px', borderRadius: 8,
+                  background: r.ok ? 'var(--ok-50)' : 'var(--bad-50)',
+                  border: `1px solid ${r.ok ? 'var(--ok-100)' : 'var(--bad-100)'}`,
+                  fontSize: 13,
+                }}>
+                  <span style={{ fontFamily: 'var(--ff-mono)', fontWeight: 700, color: r.ok ? 'var(--ok-700)' : 'var(--bad-700)', minWidth: 100 }}>
+                    {r.trackingCode}
+                  </span>
+                  <span style={{ flex: 1, color: r.ok ? 'var(--ok-700)' : 'var(--bad-600)' }}>
+                    {r.ok ? `✓ Paiement créé — ${r.amount?.toLocaleString('fr')} CAD` : `✗ ${r.message}`}
+                  </span>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+              <div style={{ padding: '10px 14px', background: 'var(--info-50, #eff6ff)', border: '1px solid var(--info-100, #dbeafe)', borderRadius: 8, fontSize: 13, color: 'var(--info-700, #1d4ed8)' }}>
+                Entrez les codes colis (un par ligne, ou séparés par des virgules/espaces). Un paiement "Réglé" sera créé pour chaque colis sans paiement existant, en utilisant le montant enregistré.
+              </div>
+              <div>
+                <label className="label">Codes colis</label>
+                <textarea
+                  className="input"
+                  rows={6}
+                  placeholder={'JMS-62042\nJMS-65120\nJMS-21541\nJMS-63753'}
+                  value={repairCodes}
+                  onChange={e => setRepairCodes(e.target.value)}
+                  style={{ fontFamily: 'var(--ff-mono)', fontSize: 13, resize: 'vertical' }}
+                />
+              </div>
+            </div>
+          )}
+        </Modal>
       )}
 
       {confirmDeleteParcel && (
