@@ -240,7 +240,9 @@ function ClientsGridView({ clients, setOpen }) {
     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 12, background: 'white', border: '1px solid var(--border)', borderTop: 0, padding: 14 }}>
       {clients.map(cl => (
         <div key={cl.id} className="card" style={{ padding: 14, position: 'relative', cursor: 'pointer', opacity: cl.status === 'suspended' ? .7 : 1 }} onClick={() => setOpen(cl)}>
-          <div style={{ position: 'absolute', top: 12, right: 12, display: 'flex', gap: 4 }}>
+          <div style={{ position: 'absolute', top: 12, right: 12, display: 'flex', gap: 4, alignItems: 'center' }}>
+            {cl.clientType === 'commercial' && <span className="badge" style={{ background: 'var(--ok-50)', color: 'var(--ok-700)', border: '1px solid var(--ok-200)', fontSize: 10 }}>🏢</span>}
+            {cl.clientType === 'partenaire' && <span className="badge" style={{ background: '#f5f3ff', color: '#6d28d9', border: '1px solid #ddd6fe', fontSize: 10 }}>🤝</span>}
             {cl.status === 'suspended' && <span className="badge" style={{ background: 'var(--bad-50)', color: 'var(--bad-700)', border: '1px solid var(--bad-200)', fontSize: 10 }}>{t.common.inactive}</span>}
             {/* TODO: no i18n key for 'Non vérifié' badge */}
             {!cl.emailVerified && <span className="badge" style={{ background: 'var(--warn-50)', color: 'var(--warn-700)', border: '1px solid var(--warn-200)', fontSize: 10 }}>Non vérifié</span>}
@@ -331,7 +333,11 @@ function ClientsListView({ clients, setOpen, onToggleStatus, page, pageSize, sel
                       {cl.name}
                       {cl.loyal && <I.Star style={{ width: 11, height: 11, color: 'var(--brand-500)' }} />}
                     </div>
-                    <div className="mono" style={{ fontSize: 10.5, color: 'var(--ink-400)' }}>{cl.code}</div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginTop: 2 }}>
+                      <span className="mono" style={{ fontSize: 10.5, color: 'var(--ink-400)' }}>{cl.code}</span>
+                      {cl.clientType === 'commercial' && <span style={{ fontSize: 9.5, fontWeight: 700, color: 'var(--ok-700)', background: 'var(--ok-50)', border: '1px solid var(--ok-200)', borderRadius: 4, padding: '0 4px' }}>🏢 Commercial</span>}
+                      {cl.clientType === 'partenaire' && <span style={{ fontSize: 9.5, fontWeight: 700, color: '#6d28d9', background: '#f5f3ff', border: '1px solid #ddd6fe', borderRadius: 4, padding: '0 4px' }}>🤝 Partenaire</span>}
+                    </div>
                   </div>
                 </div>
               </td>
@@ -521,6 +527,12 @@ function ClientDrawer({ cl, onClose, onEdit, onNav, onStatusChange, onDeleted })
                 {cl.name}
                 {cl.loyal && <I.Star style={{ width: 14, height: 14, color: 'var(--brand-500)', marginLeft: 6, verticalAlign: -1 }} />}
               </div>
+              {cl.clientType === 'commercial' && (
+                <span className="badge" style={{ background: 'var(--ok-50)', color: 'var(--ok-700)', border: '1px solid var(--ok-200)' }}>🏢 Commercial</span>
+              )}
+              {cl.clientType === 'partenaire' && (
+                <span className="badge" style={{ background: '#f5f3ff', color: '#6d28d9', border: '1px solid #ddd6fe' }}>🤝 Partenaire</span>
+              )}
               {cl.status === 'suspended' && (
                 <span className="badge" style={{ background: 'var(--bad-50)', color: 'var(--bad-700)', border: '1px solid var(--bad-200)' }}>{t.common.inactive}</span>
               )}

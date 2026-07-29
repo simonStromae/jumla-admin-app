@@ -17,6 +17,7 @@ export default function ClientFormModal({ mode = 'create', client, onClose, onSa
     email:           client?.email || '',
     loyal:           client?.loyal || false,
     notes:           client?.notes || '',
+    clientType:      client?.clientType || 'standard',
     deliveryName:    client?.deliveryName    || '',
     deliveryAddress: client?.deliveryAddress || '',
     deliveryPhone:   client?.deliveryPhone   || '',
@@ -45,6 +46,7 @@ export default function ClientFormModal({ mode = 'create', client, onClose, onSa
           phone:           data.phone.trim()           || null,
           city:            data.city                   || null,
           whatsapp:        data.whatsapp.trim()        || null,
+          clientType:      data.clientType,
           deliveryName:    data.deliveryName.trim()    || null,
           deliveryAddress: data.deliveryAddress.trim() || null,
           deliveryPhone:   data.deliveryPhone.trim()   || null,
@@ -205,6 +207,31 @@ export default function ClientFormModal({ mode = 'create', client, onClose, onSa
               {/* TODO: no exact translation key for "Téléphone de livraison" */}
               <label className="label">Téléphone de livraison <span className="opt">/ À Montréal</span></label>
               <PhoneInput value={data.deliveryPhone} onChange={v => upd('deliveryPhone', v)} />
+            </div>
+          </div>
+
+          {/* Client type block */}
+          <div className="card" style={{ padding: 16, marginBottom: 14 }}>
+            <div className="section-title" style={{ marginBottom: 12 }}>
+              <I.Users style={{ width: 14, height: 14, color: 'var(--brand-600)' }} /> Profil expéditeur
+            </div>
+            <div style={{ display: 'flex', gap: 8 }}>
+              {[
+                { key: 'standard',   icon: '📦', label: 'Standard',   color: 'var(--brand-500)', bg: 'var(--brand-50)', border: 'var(--brand-200)' },
+                { key: 'commercial', icon: '🏢', label: 'Commercial', color: 'var(--ok-600)',    bg: 'var(--ok-50)',    border: 'var(--ok-200)'    },
+                { key: 'partenaire', icon: '🤝', label: 'Partenaire', color: '#7c3aed',          bg: '#f5f3ff',         border: '#ddd6fe'           },
+              ].map(type => (
+                <button key={type.key} onClick={() => upd('clientType', type.key)} style={{
+                  flex: 1, padding: '10px 8px', borderRadius: 10, cursor: 'pointer',
+                  border: `2px solid ${data.clientType === type.key ? type.color : 'var(--border)'}`,
+                  background: data.clientType === type.key ? type.bg : 'var(--bg-soft)',
+                  display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4,
+                  transition: 'all .15s',
+                }}>
+                  <span style={{ fontSize: 18 }}>{type.icon}</span>
+                  <span style={{ fontSize: 11.5, fontWeight: 700, color: data.clientType === type.key ? type.color : 'var(--ink-600)' }}>{type.label}</span>
+                </button>
+              ))}
             </div>
           </div>
 

@@ -40,6 +40,7 @@ model User {
   city               String?
   country            String    @default("CM")
   addresses          Json?
+  clientType         String?   @default("standard")
   createdAt          DateTime  @default(now())
 
   parcels          Parcel[]       @relation("ClientParcels")
