@@ -93,8 +93,8 @@ export async function GET(_: NextRequest, { params }: { params: { campaignId: st
     campaign: {
       id:            campaign.id,
       code:          campaign.code,
-      from:          (campaign as any).from ?? campaign.route?.from,
-      to:            (campaign as any).to   ?? campaign.route?.to,
+      from:          (campaign as any).from ?? campaign.route?.origin,
+      to:            (campaign as any).to   ?? campaign.route?.destination,
       departureDate: campaign.departureDate,
       arrivalDate:   campaign.arrivalDate,
       status:        campaign.status,
