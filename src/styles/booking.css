@@ -499,17 +499,13 @@
     margin-right: 0 !important;
   }
   .co-item-pieces {
-    grid-column: 1;
+    grid-column: 1 / 3;
     grid-row: 3;
     margin-right: 0 !important;
   }
   .co-item-kg {
-    grid-column: 2 / 4;
-    grid-row: 3;
+    grid-column: 1 / 3;
+    grid-row: 4;
     margin-right: 0 !important;
   }
-
-  /* Pseudo-labels via placeholder enhancement */
-  .co-item-pieces::placeholder { content: attr(title); }
-  .co-items-table .co-item-pieces { background-image: none; }
 }

@@ -1294,9 +1294,12 @@ export default function BookingScreen({ onNav, embedded = false }) {
                               disabled={isStd}
                               onChange={e => updItem(item.id, 'pieces', e.target.value)}
                               style={{ opacity: isStd ? .35 : 1, cursor: isStd ? 'not-allowed' : 'text', marginRight: 6 }}
-                              title={isStd ? 'Non requis pour Standard' : ''} />
+                              placeholder="Nb pièces"
+                              aria-label="Nombre de pièces"
+                              title={isStd ? 'Non requis pour Standard' : 'Nombre de pièces'} />
                             <input className="co-input co-item-kg" type="number" min="0" step="0.5" value={item.kg}
-                              onChange={e => updItem(item.id, 'kg', e.target.value)} placeholder="0"
+                              onChange={e => updItem(item.id, 'kg', e.target.value)} placeholder="Poids (kg)"
+                              aria-label="Poids en kg"
                               style={{ marginRight: 6 }} />
                             <button className="co-item-del" style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--ink-300)', fontSize: 20, display: 'grid', placeItems: 'center', opacity: items.length === 1 ? .25 : 1 }}
                               disabled={items.length === 1}
@@ -1456,7 +1459,7 @@ export default function BookingScreen({ onNav, embedded = false }) {
                     <div className="co-split-block">
                       <div className="co-split-block__title">{t('booking.coords.sender')}</div>
                       <Field label={t('booking.coords.name')}>
-                        <input className="co-input" value={form.senderName} onChange={e => upd('senderName', e.target.value)} placeholder="Awa Nkemdirim" />
+                        <input className="co-input" value={form.senderName} onChange={e => upd('senderName', e.target.value)} placeholder="ex : Awa Nkemdirim" />
                       </Field>
                       <Field label={t('booking.coords.phone')}>
                         <PhoneInput value={form.senderPhone} onChange={v => upd('senderPhone', v)} />
@@ -1488,7 +1491,7 @@ export default function BookingScreen({ onNav, embedded = false }) {
                         </Field>
                       )}
                       <Field label={t('booking.coords.name')}>
-                        <input className="co-input" value={form.recipName} onChange={e => upd('recipName', e.target.value)} placeholder="Jean Mbarga" />
+                        <input className="co-input" value={form.recipName} onChange={e => upd('recipName', e.target.value)} placeholder="ex : Jean Mbarga" />
                       </Field>
                       <Field label={t('booking.coords.phone')}>
 <PhoneInput value={form.recipPhone} onChange={v => upd('recipPhone', v)} />

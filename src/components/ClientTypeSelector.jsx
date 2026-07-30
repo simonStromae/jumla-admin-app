@@ -165,9 +165,7 @@ export default function ClientTypeSelector() {
             style={{
               width: '100%', padding: '14px',
               borderRadius: 12, border: 'none',
-              background: selected
-                ? `linear-gradient(90deg, ${type?.color}, ${type?.color}cc)`
-                : 'var(--ink-100)',
+              background: selected ? type?.color : 'var(--ink-100)',
               color: selected ? 'white' : 'var(--ink-400)',
               fontSize: 15, fontWeight: 700, cursor: selected ? 'pointer' : 'not-allowed',
               transition: 'all .2s',
