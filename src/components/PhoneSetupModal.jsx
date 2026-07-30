@@ -21,7 +21,7 @@ export default function PhoneSetupModal() {
     if (session?.user?.phone) return;                         // already has phone in session
     if (localStorage.getItem(STORAGE_KEY) === '1') return;   // dismissed before
     if (sessionStorage.getItem(DONE_KEY) === '1') return;    // clientType just selected — wait for next mount
-    if (!session?.user?.clientType) return;                   // don't show until type is chosen
+    if (!session?.user?.clientTypeChosen) return;              // don't show until type is chosen
     const timer = setTimeout(() => setVisible(true), 800);
     return () => clearTimeout(timer);
   }, [status, session]);

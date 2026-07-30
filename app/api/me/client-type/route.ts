@@ -17,7 +17,7 @@ export async function PATCH(req: NextRequest) {
   const userId = (session!.user as any).id;
   await prisma.user.update({
     where: { id: userId },
-    data:  { clientType } as any,
+    data:  { clientType, clientTypeChosen: true } as any,
   });
 
   return NextResponse.json({ ok: true, clientType });
