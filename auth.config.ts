@@ -14,6 +14,7 @@ export const authConfig = {
         token.status             = (user as any).status ?? 'active';
         token.sessionVersion     = (user as any).sessionVersion ?? 0;
         token.clientType         = (user as any).clientType ?? null;
+        token.phone              = (user as any).phone ?? null;
         // Set token expiry: 2h without remember me, 30 days with
         const remember = (user as any).remember === true;
         token.exp = Math.floor(Date.now() / 1000) + (remember ? 30 * 24 * 3600 : 2 * 3600);
@@ -22,6 +23,7 @@ export const authConfig = {
         if (session.mustChangePassword !== undefined) token.mustChangePassword = session.mustChangePassword;
         if (session.status             !== undefined) token.status             = session.status;
         if (session.clientType         !== undefined) token.clientType         = session.clientType;
+        if (session.phone              !== undefined) token.phone              = session.phone;
       }
       return token;
     },
@@ -33,6 +35,7 @@ export const authConfig = {
         (session.user as any).mustChangePassword = token.mustChangePassword ?? false;
         (session.user as any).status             = token.status ?? 'active';
         (session.user as any).clientType         = token.clientType ?? null;
+        (session.user as any).phone              = token.phone ?? null;
       }
       return session;
     },

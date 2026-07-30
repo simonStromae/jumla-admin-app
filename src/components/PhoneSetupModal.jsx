@@ -3,10 +3,12 @@ import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import PhoneInput from './PhoneInput.jsx';
 
+const DONE_KEY = 'ctsv1'; // same key as ClientTypeSelector
+
 const STORAGE_KEY = 'jumla_phone_setup_v1';
 
 export default function PhoneSetupModal() {
-  const { data: session, status } = useSession();
+  const { data: session, status, update } = useSession();
   const [visible, setVisible] = useState(false);
   const [phone,   setPhone]   = useState('');
   const [saving,  setSaving]  = useState(false);
@@ -16,9 +18,11 @@ export default function PhoneSetupModal() {
     if (status !== 'authenticated') return;
     const role = session?.user?.role;
     if (role !== 'client') return;
-    if (session?.user?.phone) return; // already has phone
-    if (localStorage.getItem(STORAGE_KEY) === '1') return; // dismissed
-    const timer = setTimeout(() => setVisible(true), 800); // let onboarding show first
+    if (session?.user?.phone) return;                         // already has phone in session
+    if (localStorage.getItem(STORAGE_KEY) === '1') return;   // dismissed before
+    if (sessionStorage.getItem(DONE_KEY) === '1') return;    // clientType just selected — wait for next mount
+    if (!session?.user?.clientType) return;                   // don't show until type is chosen
+    const timer = setTimeout(() => setVisible(true), 800);
     return () => clearTimeout(timer);
   }, [status, session]);
 
@@ -37,9 +41,10 @@ export default function PhoneSetupModal() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ phone }),
     }).catch(() => {});
+    localStorage.setItem(STORAGE_KEY, '1');
+    await update({ phone }).catch(() => {});
     setSaving(false);
     setDone(true);
-    localStorage.setItem(STORAGE_KEY, '1');
     setTimeout(() => setVisible(false), 900);
   };
 

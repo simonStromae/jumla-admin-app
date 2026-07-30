@@ -35,13 +35,22 @@ const TYPES = [
   },
 ];
 
+const DONE_KEY = 'ctsv1';
+
 export default function ClientTypeSelector() {
   const { data: session, update } = useSession();
   const [selected, setSelected]   = useState(null);
   const [saving, setSaving]       = useState(false);
-  const [done, setDone]           = useState(false);
+  const [done, setDone]           = useState(() => {
+    if (typeof window === 'undefined') return false;
+    return !!sessionStorage.getItem(DONE_KEY);
+  });
 
   const clientType = session?.user?.clientType;
+
+  // Once session carries the type, clear the temporary flag
+  useState(() => { if (clientType) sessionStorage.removeItem(DONE_KEY); });
+
   if (clientType || done) return null;
 
   const handleConfirm = async () => {
@@ -53,9 +62,13 @@ export default function ClientTypeSelector() {
         headers: { 'Content-Type': 'application/json' },
         body:    JSON.stringify({ clientType: selected }),
       });
-      await update({ clientType: selected });
+      // Mark done BEFORE calling update() — update() can trigger a re-render
+      // that would reset done=false before the state update lands
+      sessionStorage.setItem(DONE_KEY, '1');
       setDone(true);
+      await update({ clientType: selected });
     } catch {
+      sessionStorage.removeItem(DONE_KEY);
       setSaving(false);
     }
   };
