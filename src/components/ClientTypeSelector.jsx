@@ -41,7 +41,7 @@ export default function ClientTypeSelector() {
   const [saving, setSaving]       = useState(false);
   const [done, setDone]           = useState(false);
 
-  const clientType = (session?.user as any)?.clientType;
+  const clientType = session?.user?.clientType;
   if (clientType || done) return null;
 
   const handleConfirm = async () => {
