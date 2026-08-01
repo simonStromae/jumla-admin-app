@@ -349,7 +349,7 @@ function ClientDashboardInner() {
     });
   }, [parcels, tab, isBusiness]);
 
-  const displayed = tab === 'active' ? active : done;
+  const displayed = tab === 'active' ? active : tab === 'done' ? done : cancelled;
 
   return (
     <div>
@@ -378,7 +378,7 @@ function ClientDashboardInner() {
           <p style={{ fontSize: 13.5, color: '#6b7280', margin: 0 }}>
             {loading ? t('loading') : isBusiness
               ? `${campaignGroups?.length ?? 0} cargaison${(campaignGroups?.length ?? 0) > 1 ? 's' : ''} · ${parcels.length} colis`
-              : `${active.length} colis en cours · ${done.length} livré${done.length > 1 ? 's' : ''}`}
+              : `${active.length} en cours · ${done.length} livré${done.length > 1 ? 's' : ''}${cancelled.length > 0 ? ` · ${cancelled.length} annulé${cancelled.length > 1 ? 's' : ''}` : ''}`}
           </p>
         </div>
         {!suspended && (
@@ -416,18 +416,15 @@ function ClientDashboardInner() {
       {!loading && parcels.length > 0 && (
         <div style={{ display: 'flex', gap: 4, marginBottom: 16, background: '#f3f4f6', borderRadius: 10, padding: 4 }}>
           {[
-            { key: 'active', label: isBusiness
-                ? `En cours (${active.length})`
-                : t('dashboard.tabs.active').replace('{n}', active.length) },
-            { key: 'done', label: isBusiness
-                ? `Livrées (${done.length})`
-                : t('dashboard.tabs.delivered').replace('{n}', done.length) },
+            { key: 'active', label: isBusiness ? `En cours (${active.length})` : t('dashboard.tabs.active').replace('{n}', active.length) },
+            { key: 'done',   label: isBusiness ? `Livrées (${done.length})`    : t('dashboard.tabs.delivered').replace('{n}', done.length) },
+            ...(cancelled.length > 0 ? [{ key: 'cancelled', label: `Annulés (${cancelled.length})` }] : []),
           ].map(tabItem => (
             <button key={tabItem.key} onClick={() => setTab(tabItem.key)} style={{
               flex: 1, padding: '8px 0', borderRadius: 7, border: 'none', cursor: 'pointer',
               fontWeight: tab === tabItem.key ? 700 : 500, fontSize: 13.5,
               background: tab === tabItem.key ? 'white' : 'transparent',
-              color: tab === tabItem.key ? '#111827' : '#6b7280',
+              color: tab === tabItem.key ? (tabItem.key === 'cancelled' ? '#dc2626' : '#111827') : '#6b7280',
               boxShadow: tab === tabItem.key ? '0 1px 4px rgba(0,0,0,.1)' : 'none',
             }}>{tabItem.label}</button>
           ))}
@@ -439,6 +436,35 @@ function ClientDashboardInner() {
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           {[1, 2].map(i => (
             <div key={i} style={{ height: 160, borderRadius: 16, background: 'white', border: '1.5px solid #e5e7eb', animation: 'pulse 1.5s infinite' }} />
+          ))}
+        </div>
+      ) : tab === 'cancelled' ? (
+        /* Cancelled tab */
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          {cancelled.map(p => (
+            <div key={p.id} style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12,
+              padding: '14px 16px', borderRadius: 14, background: 'white',
+              border: '1px solid #fca5a5', cursor: 'pointer',
+            }} onClick={() => router.push('/client/colis/' + p.id)}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12, minWidth: 0 }}>
+                <div style={{ width: 40, height: 40, borderRadius: 10, background: '#fff1f2', display: 'grid', placeItems: 'center', fontSize: 18, flexShrink: 0 }}>🚫</div>
+                <div style={{ minWidth: 0 }}>
+                  <div style={{ fontFamily: 'monospace', fontSize: 13, fontWeight: 700, color: '#374151' }}>{p.trackingCode}</div>
+                  <div style={{ fontSize: 12, color: '#9ca3af', marginTop: 1 }}>{p.campaign?.from} → {p.campaign?.to} · {p.campaign?.code}</div>
+                </div>
+              </div>
+              <button
+                onClick={e => { e.stopPropagation(); router.push('/client/booking?prefill=' + p.id); }}
+                style={{
+                  flexShrink: 0, padding: '7px 14px', borderRadius: 8, border: 'none',
+                  background: 'linear-gradient(90deg,#00B4D8,#1B4FD8)',
+                  color: 'white', fontSize: 12.5, fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap',
+                }}
+              >
+                ↻ Réserver à nouveau
+              </button>
+            </div>
           ))}
         </div>
       ) : isBusiness ? (
@@ -489,44 +515,6 @@ function ClientDashboardInner() {
             ))}
           </div>
         )
-      )}
-
-      {/* Cancelled parcels section */}
-      {!loading && cancelled.length > 0 && (
-        <div style={{ marginTop: 28 }}>
-          <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.07em', color: '#9ca3af', marginBottom: 10 }}>
-            Annulés récemment
-          </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            {cancelled.slice(0, 5).map(p => (
-              <div key={p.id} style={{
-                display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12,
-                padding: '12px 14px', borderRadius: 12,
-                background: '#fafafa', border: '1px solid #e5e7eb', opacity: .75,
-              }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
-                  <span style={{ fontSize: 18, flexShrink: 0 }}>🚫</span>
-                  <div style={{ minWidth: 0 }}>
-                    <div style={{ fontFamily: 'monospace', fontSize: 12.5, fontWeight: 700, color: '#374151' }}>{p.trackingCode}</div>
-                    <div style={{ fontSize: 11.5, color: '#9ca3af', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                      {p.campaign?.from} → {p.campaign?.to}
-                    </div>
-                  </div>
-                </div>
-                <button
-                  onClick={() => router.push('/client/booking?prefill=' + p.id)}
-                  style={{
-                    flexShrink: 0, padding: '6px 12px', borderRadius: 8, border: 'none',
-                    background: 'linear-gradient(90deg,#00B4D8,#1B4FD8)',
-                    color: 'white', fontSize: 12, fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap',
-                  }}
-                >
-                  ↻ Réserver à nouveau
-                </button>
-              </div>
-            ))}
-          </div>
-        </div>
       )}
     </div>
   );
