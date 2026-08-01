@@ -751,7 +751,7 @@ function CampaignCalendar({ campaigns, selected, onSelect, routeLabel }) {
   );
 }
 
-export default function BookingScreen({ onNav, embedded = false }) {
+export default function BookingScreen({ onNav, embedded = false, prefillId = null }) {
   const { data: sessionData } = useSession();
   const t = useT();
   const { locale } = useLocale();
@@ -846,24 +846,65 @@ export default function BookingScreen({ onNav, embedded = false }) {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [embedded, effectiveUser?.name, effectiveUser?.email]);
 
-  // Pre-fill sender phone + load saved addresses from profile API when embedded
+  // Pre-fill sender phone + city/delivery defaults + saved addresses from profile API
   useEffect(() => {
     if (!embedded) return;
     fetch('/api/me/profile')
       .then(r => r.ok ? r.json() : null)
       .then(profile => {
-        if (profile?.phone) {
-          setForm(f => ({ ...f, senderPhone: f.senderPhone || profile.phone }));
-        }
-        if (Array.isArray(profile?.savedAddresses)  && profile.savedAddresses.length  > 0) {
-          setSavedAddresses(profile.savedAddresses);
-        }
-        if (Array.isArray(profile?.savedRecipients) && profile.savedRecipients.length > 0) {
-          setSavedRecipients(profile.savedRecipients);
-        }
+        if (!profile) return;
+        setForm(f => ({
+          ...f,
+          senderPhone: f.senderPhone || profile.phone || '',
+          recipCity:   profile.city && CITIES.find(c => c.label === profile.city)
+                         ? profile.city : f.recipCity,
+          delivery:    profile.defaultDelivery && ['pickup', 'home', 'expedition'].includes(profile.defaultDelivery)
+                         ? profile.defaultDelivery : f.delivery,
+        }));
+        if (Array.isArray(profile.savedAddresses)  && profile.savedAddresses.length  > 0) setSavedAddresses(profile.savedAddresses);
+        if (Array.isArray(profile.savedRecipients) && profile.savedRecipients.length > 0) setSavedRecipients(profile.savedRecipients);
       })
       .catch(() => {});
   }, [embedded]);
+
+  // Pre-fill from a previous parcel (re-booking flow)
+  useEffect(() => {
+    if (!embedded || !prefillId) return;
+    fetch('/api/me/parcels/' + prefillId)
+      .then(r => r.ok ? r.json() : null)
+      .then(data => {
+        if (!data) return;
+        setForm(f => ({
+          ...f,
+          recipName:  data.recipName  || f.recipName,
+          recipPhone: data.recipPhone || f.recipPhone,
+          recipCity:  data.recipCity  || f.recipCity,
+          delivery:   data.delivery   || f.delivery,
+        }));
+        if (Array.isArray(data.items) && data.items.length > 0) {
+          setItems(data.items.map((item, i) => ({
+            id: i + 1,
+            cat: item.cat || 'standard',
+            desc: item.desc || '',
+            pieces: item.pieces || 1,
+            kg: item.kg || '',
+            beerFormat: item.beerFormat || '24x65',
+            nbCasiers: item.nbCasiers || '',
+          })));
+        } else if (data.description || data.weightKg) {
+          setItems([{
+            id: 1,
+            cat: data.productType || 'standard',
+            desc: data.description || '',
+            pieces: 1,
+            kg: data.weightKg || '',
+            beerFormat: '24x65',
+            nbCasiers: '',
+          }]);
+        }
+      })
+      .catch(() => {});
+  }, [embedded, prefillId]);
 
   useEffect(() => {
     fetch('/api/public/routes').then(r => r.json()).then(data => {

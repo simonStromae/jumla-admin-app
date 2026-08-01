@@ -42,6 +42,7 @@ model User {
   addresses          Json?
   clientType         String?   @default("standard")
   clientTypeChosen   Boolean   @default(false)
+  defaultDelivery    String?   @default("pickup")
   createdAt          DateTime  @default(now())
 
   parcels          Parcel[]       @relation("ClientParcels")

@@ -47,7 +47,7 @@ function ProgressDots({ status }) {
 }
 
 // ─── Standard: individual parcel card ────────────────────────────────────────
-function ParcelCard({ parcel, onClick }) {
+function ParcelCard({ parcel, onClick, onRebook }) {
   const t   = useT();
   const s   = JOURNEY[getJourneyStep(parcel.status)] ?? JOURNEY[0];
   const paid = parcel.payment?.status === 'completed';
@@ -121,6 +121,19 @@ function ParcelCard({ parcel, onClick }) {
           <div style={{ marginTop: 10, padding: '8px 12px', borderRadius: 8, background: 'var(--bad-50)', border: '1px solid var(--bad-100)', fontSize: 12.5, color: 'var(--bad-700)', fontWeight: 600 }}>
             {t('dashboard.parcel.borderauPendingAction')}
           </div>
+        )}
+        {isLivré && onRebook && (
+          <button
+            onClick={e => { e.stopPropagation(); onRebook(); }}
+            style={{
+              marginTop: 10, width: '100%', padding: '8px', borderRadius: 8,
+              border: '1.5px solid var(--brand-200)', background: 'var(--brand-50)',
+              color: 'var(--brand-700)', fontSize: 12.5, fontWeight: 700,
+              cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+            }}
+          >
+            ↻ Réserver à nouveau
+          </button>
         )}
       </div>
     </div>
@@ -217,6 +230,23 @@ function CampaignCard({ campaignId, campaign, parcels, router }) {
           </div>
         </div>
       </div>
+
+      {/* Re-book CTA for delivered campaigns */}
+      {allPaid && leadStatus === 'ok' && (
+        <div style={{ padding: '0 18px 14px' }}>
+          <button
+            onClick={e => { e.stopPropagation(); router.push('/client/booking?prefill=' + parcels[0]?.id); }}
+            style={{
+              width: '100%', padding: '8px', borderRadius: 8,
+              border: '1.5px solid var(--brand-200)', background: 'var(--brand-50)',
+              color: 'var(--brand-700)', fontSize: 12.5, fontWeight: 700,
+              cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+            }}
+          >
+            ↻ Réserver à nouveau sur cette route
+          </button>
+        </div>
+      )}
 
       {/* Expanded: individual parcels */}
       {expanded && (
@@ -454,7 +484,7 @@ function ClientDashboardInner() {
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
             {displayed.map(p => (
-              <ParcelCard key={p.id} parcel={p} onClick={() => router.push('/client/colis/' + p.id)} />
+              <ParcelCard key={p.id} parcel={p} onClick={() => router.push('/client/colis/' + p.id)} onRebook={() => router.push('/client/booking?prefill=' + p.id)} />
             ))}
           </div>
         )

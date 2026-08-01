@@ -34,12 +34,13 @@ export async function PUT(req: NextRequest) {
   const { session, error } = await requireAuth();
   if (error) return error;
   const userId = (session.user as any).id;
-  const { name, phone, city, savedAddresses, savedRecipients } = await req.json();
+  const { name, phone, city, defaultDelivery, savedAddresses, savedRecipients } = await req.json();
 
   const data: Record<string, unknown> = {};
-  if (name  !== undefined) data.name  = name?.trim();
-  if (phone !== undefined) data.phone = phone?.trim() || null;
-  if (city  !== undefined) data.city  = city?.trim()  || null;
+  if (name            !== undefined) data.name            = name?.trim();
+  if (phone           !== undefined) data.phone           = phone?.trim() || null;
+  if (city            !== undefined) data.city            = city?.trim()  || null;
+  if (defaultDelivery !== undefined) (data as any).defaultDelivery = defaultDelivery || null;
 
   if (savedAddresses !== undefined || savedRecipients !== undefined) {
     const existing = await prisma.user.findUnique({ where: { id: userId }, select: { addresses: true } });
