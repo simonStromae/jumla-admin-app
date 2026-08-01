@@ -82,6 +82,21 @@ Réservez votre place dès maintenant.
 
 Jumla Shipping`,
   },
+  auto_new_campaign_route: {
+    label:   'Nouvelle cargaison — anciens clients du trajet',
+    trigger: "Déclenché manuellement depuis la fiche cargaison pour alerter les anciens clients du même trajet",
+    vars:    ['{first_name}', '{route}', '{departure_date}'],
+    body:
+`Bonjour {first_name} 👋
+
+Bonne nouvelle ! Une nouvelle cargaison est disponible sur votre trajet habituel :
+📦 *{route}*
+🗓 Départ prévu : *{departure_date}*
+
+Réservez votre place dès maintenant sur jumla.app
+
+Jumla Shipping`,
+  },
 
   invite_staff: {
     label: 'Invitation compte (agent / livreur)',
@@ -96,6 +111,35 @@ Vous êtes invité(e) à rejoindre *Jumla Shipping* en tant que *{role_label}*.
 🌐 Connectez-vous sur : jumla.app
 
 Vous devrez changer ce mot de passe à la première connexion.`,
+  },
+
+  auto_reengage_j3: {
+    label:   'Relance annulation J+3',
+    trigger: "Déclenché automatiquement 3 jours après une annulation client — propose de réserver à nouveau",
+    vars:    ['{first_name}', '{route}', '{departure_date}'],
+    body:
+`Bonjour {first_name} 👋
+
+On a remarqué que vous avez annulé votre réservation récemment. Pas de souci — tout le monde change de plans parfois !
+
+Si vous souhaitez envoyer votre colis, une cargaison est disponible sur *{route}* avec départ prévu le *{departure_date}*.
+
+Réservez sur jumla.app — ça prend 2 minutes. 📦
+
+Jumla Shipping`,
+  },
+  auto_reengage_j7: {
+    label:   'Relance annulation J+7',
+    trigger: "Déclenché automatiquement 7 jours après une annulation client — dernier rappel",
+    vars:    ['{first_name}', '{route}'],
+    body:
+`Bonjour {first_name} 👋
+
+Il y a une semaine vous avez annulé votre réservation chez Jumla. Les places se remplissent vite sur le trajet *{route}* !
+
+Votre compte est prêt, réservez en quelques clics sur jumla.app 🚀
+
+Jumla Shipping`,
   },
 
   // ── Automatiques ────────────────────────────────────────────────────────

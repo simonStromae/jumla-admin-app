@@ -70,6 +70,10 @@ export default function CampaignDetailScreen({ id, onNav }) {
   const [broadcastPreview,   setBroadcastPreview]   = useState(null); // { total, campaign }
   const [broadcasting,       setBroadcasting]       = useState(false);
   const [broadcastResult,    setBroadcastResult]    = useState(null); // { sent, failed, total }
+  const [showRouteAlert,     setShowRouteAlert]     = useState(false);
+  const [routeAlertPreview,  setRouteAlertPreview]  = useState(null); // { total, route }
+  const [routeAlerting,      setRouteAlerting]      = useState(false);
+  const [routeAlertResult,   setRouteAlertResult]   = useState(null);
   const [parcelTab,          setParcelTab]          = useState('active'); // 'active' | 'cancelled'
   const [deletingParcelId,   setDeletingParcelId]   = useState(null);
   const [deleteParcelErr,    setDeleteParcelErr]    = useState('');
@@ -275,6 +279,20 @@ export default function CampaignDetailScreen({ id, onNav }) {
             {/* TODO: i18n — no translation key for "Notifier les clients" */}
             Notifier les clients
           </button>
+          <button onClick={() => {
+            setRouteAlertResult(null);
+            fetch('/api/campaigns/' + campaign.id + '/route-alert')
+              .then(r => r.json()).then(d => setRouteAlertPreview(d)).catch(() => {});
+            setShowRouteAlert(true);
+          }} style={{
+            display: 'flex', alignItems: 'center', gap: 8,
+            padding: '8px 14px', borderRadius: 8,
+            border: '1px solid #8b5cf6', background: 'white',
+            color: '#8b5cf6', fontSize: 13, fontWeight: 700, cursor: 'pointer',
+          }}>
+            <svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16"><path d="M17.5 14.4c-.3-.1-1.7-.9-2-1s-.5-.1-.7.1c-.2.3-.7 1-.9 1.1-.2.2-.3.2-.6 0-.3-.1-1.2-.5-2.3-1.4-.8-.7-1.4-1.7-1.6-2-.2-.3 0-.5.1-.6l.5-.5c.1-.2.2-.3.3-.5 0-.2 0-.4-.1-.5 0-.1-.7-1.6-1-2.2-.2-.6-.5-.5-.7-.5h-.6c-.2 0-.5.1-.7.4-.3.3-1 1-1 2.4s1 2.8 1.2 3.1c.2.2 2 3 4.8 4.3.7.3 1.2.4 1.6.6.7.2 1.3.2 1.8.1.6-.1 1.7-.7 1.9-1.3.3-.7.3-1.2.2-1.3-.1-.2-.3-.3-.6-.4zM12 21a9 9 0 0 1-4.6-1.3L3 21l1.3-4.3A9 9 0 1 1 12 21z" /></svg>
+            Anciens clients du trajet
+          </button>
           <button onClick={() => onNav('/messaging?campaignId=' + campaign.id)} style={{
             display: 'flex', alignItems: 'center', gap: 8,
             padding: '8px 14px', borderRadius: 8,
@@ -451,6 +469,61 @@ export default function CampaignDetailScreen({ id, onNav }) {
                 >
                   {/* TODO: i18n — "Envoyer à X clients" has no translation key */}
                   {broadcasting ? t.common.sending : `Envoyer à ${broadcastPreview?.total ?? '…'} clients`}
+                </button>
+              </div>
+            </div>
+          )}
+        </Modal>
+      )}
+
+      {/* ── Route Alert modal ── */}
+      {showRouteAlert && (
+        <Modal title="Alerter les anciens clients du trajet" onClose={() => { setShowRouteAlert(false); setRouteAlertResult(null); }}>
+          {routeAlertResult ? (
+            <div style={{ textAlign: 'center', padding: '8px 0 16px' }}>
+              <div style={{ fontSize: 40, marginBottom: 12 }}>{routeAlertResult.failed === 0 ? '✅' : '⚠️'}</div>
+              <div style={{ fontSize: 18, fontWeight: 700, marginBottom: 6 }}>
+                {routeAlertResult.sent} message{routeAlertResult.sent > 1 ? 's' : ''} envoyé{routeAlertResult.sent > 1 ? 's' : ''}
+              </div>
+              {routeAlertResult.failed > 0 && (
+                <div style={{ fontSize: 13, color: 'var(--bad-600)', marginBottom: 8 }}>
+                  {routeAlertResult.failed} échec{routeAlertResult.failed > 1 ? 's' : ''} — vérifiez les numéros dans les fiches clients
+                </div>
+              )}
+              <div style={{ fontSize: 12, color: 'var(--ink-400)' }}>{routeAlertResult.total} clients contactés</div>
+              <button className="btn btn--brand" style={{ marginTop: 20 }} onClick={() => { setShowRouteAlert(false); setRouteAlertResult(null); }}>
+                {t.common.close}
+              </button>
+            </div>
+          ) : (
+            <div>
+              <div style={{ background: 'var(--bg-soft)', borderRadius: 10, padding: '14px 16px', marginBottom: 16, fontSize: 13, color: 'var(--ink-600)', lineHeight: 1.6 }}>
+                <strong>Message qui sera envoyé :</strong>
+                <pre style={{ marginTop: 8, fontFamily: 'inherit', whiteSpace: 'pre-wrap', color: 'var(--ink-700)' }}>{`Bonjour [Prénom] 👋\n\nBonne nouvelle ! Une nouvelle cargaison est disponible sur votre trajet habituel :\n📦 ${routeAlertPreview?.route ?? '…'}\n🗓 Départ prévu : ${campaign.departureDate ? new Date(campaign.departureDate).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' }) : 'à définir'}\n\nRéservez votre place dès maintenant sur jumla.app\n\nJumla Shipping`}</pre>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', background: '#f5f3ff', border: '1px solid #ddd6fe', borderRadius: 8, marginBottom: 16, fontSize: 13 }}>
+                <span style={{ fontSize: 20 }}>🎯</span>
+                <div>
+                  <strong style={{ color: '#6d28d9' }}>
+                    {routeAlertPreview ? routeAlertPreview.total : '…'} ancien{routeAlertPreview?.total !== 1 ? 's' : ''} client{routeAlertPreview?.total !== 1 ? 's' : ''} du trajet
+                  </strong>
+                  <div style={{ color: '#7c3aed', fontSize: 12 }}>Clients ayant déjà envoyé sur ce trajet, non encore inscrits à cette cargaison</div>
+                </div>
+              </div>
+              <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+                <button className="btn btn--ghost" onClick={() => setShowRouteAlert(false)}>{t.common.cancel}</button>
+                <button
+                  style={{ padding: '8px 16px', borderRadius: 8, background: '#8b5cf6', color: 'white', fontWeight: 700, fontSize: 13, border: 'none', cursor: routeAlerting || !routeAlertPreview ? 'not-allowed' : 'pointer', opacity: routeAlerting || !routeAlertPreview ? .6 : 1 }}
+                  disabled={routeAlerting || !routeAlertPreview}
+                  onClick={async () => {
+                    setRouteAlerting(true);
+                    const res = await fetch('/api/campaigns/' + campaign.id + '/route-alert', { method: 'POST' });
+                    const json = await res.json();
+                    setRouteAlerting(false);
+                    setRouteAlertResult(json);
+                  }}
+                >
+                  {routeAlerting ? t.common.sending : `Envoyer à ${routeAlertPreview?.total ?? '…'} clients`}
                 </button>
               </div>
             </div>

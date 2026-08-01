@@ -362,7 +362,7 @@ export default function AllParcelsScreen({ onNav, initialSearch = '' }) {
               </td>
               <td style={{ overflow: 'visible' }}>
                 {p.status === 'ann'
-                  ? <span className="badge" style={{ background: 'var(--bad-50)', color: 'var(--bad-700)', border: '1px solid var(--bad-200)', fontSize: 11 }}>Annulé</span>
+                  ? <span className="badge" title={p.cancellationReason || 'Aucune raison renseignée'} style={{ background: 'var(--bad-50)', color: 'var(--bad-700)', border: '1px solid var(--bad-200)', fontSize: 11, cursor: 'help' }}>Annulé</span>
                   : <ParcelActionsMenu
                       parcel={{ ...p, id: p.id.split('-').pop() }}
                       onNav={onNav}
