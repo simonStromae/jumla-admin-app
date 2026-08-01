@@ -131,9 +131,16 @@ export async function DELETE(req: NextRequest, { params }: { params: { id: strin
     );
   }
 
+  let cancellationReason: string | null = null;
+  try {
+    const body = await req.json().catch(() => ({}));
+    if (body.reason) cancellationReason = String(body.reason).slice(0, 500);
+  } catch {}
+
   await prisma.$executeRawUnsafe(
-    `UPDATE parcels SET "deletedAt" = NOW() WHERE id = $1`,
+    `UPDATE parcels SET "deletedAt" = NOW(), "cancellationReason" = $2 WHERE id = $1`,
     params.id,
+    cancellationReason,
   );
 
   return NextResponse.json({ ok: true, trackingCode: parcel.trackingCode });
