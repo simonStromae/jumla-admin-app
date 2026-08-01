@@ -68,6 +68,7 @@ export default function ParcelDetailPage({ params }) {
   const [cancelError,       setCancelError]       = useState('');
   const [cancelReason,      setCancelReason]      = useState('');
   const [cancelCustom,      setCancelCustom]      = useState('');
+  const [cancelledId,       setCancelledId]       = useState(null);
 
   const fmt = (date, opts) => {
     if (!date) return '—';
@@ -257,7 +258,7 @@ export default function ParcelDetailPage({ params }) {
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
               {locale === 'fr' ? 'Étiquettes' : 'Labels'}
             </button>
-            {parcel.status === 'enr' && !parcel.payment && (
+            {parcel.status === 'enr' && (!parcel.payment || (parcel.payment.status !== 'completed' && parcel.payment.status !== 'partial')) && (
               <button
                 onClick={() => { setCancelError(''); setShowCancel(true); }}
                 style={{
@@ -706,6 +707,34 @@ export default function ParcelDetailPage({ params }) {
             </div>
 
             <div style={{ padding: '16px 22px 20px' }}>
+              {cancelledId ? (
+                <div style={{ textAlign: 'center', padding: '8px 0 8px' }}>
+                  <div style={{ fontSize: 42, marginBottom: 12 }}>✅</div>
+                  <div style={{ fontSize: 16, fontWeight: 800, color: '#111827', marginBottom: 6 }}>
+                    {locale === 'fr' ? 'Réservation annulée' : 'Booking cancelled'}
+                  </div>
+                  <div style={{ fontSize: 13, color: '#6b7280', marginBottom: 22, lineHeight: 1.5 }}>
+                    {locale === 'fr'
+                      ? 'Votre colis a été retiré. Vous pouvez réserver à nouveau dès maintenant si vous le souhaitez.'
+                      : 'Your parcel has been removed. You can book again anytime.'}
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                    <button
+                      onClick={() => router.push('/client/booking?prefill=' + cancelledId)}
+                      style={{ padding: '12px 16px', borderRadius: 10, border: 'none', fontWeight: 700, fontSize: 14, cursor: 'pointer', background: 'linear-gradient(90deg,#00B4D8,#1B4FD8)', color: 'white' }}
+                    >
+                      ↻ {locale === 'fr' ? 'Réserver à nouveau' : 'Book again'}
+                    </button>
+                    <button
+                      onClick={() => router.push('/client/dashboard')}
+                      style={{ padding: '10px 16px', borderRadius: 10, border: '1px solid #d1d5db', background: 'white', fontWeight: 600, fontSize: 13, cursor: 'pointer', color: '#374151' }}
+                    >
+                      {locale === 'fr' ? 'Retour au tableau de bord' : 'Back to dashboard'}
+                    </button>
+                  </div>
+                </div>
+              ) : (
+              <>
               {/* Reason question */}
               <div style={{ fontSize: 13, fontWeight: 700, color: '#374151', marginBottom: 12 }}>
                 Pourquoi souhaitez-vous annuler ?
@@ -788,7 +817,7 @@ export default function ParcelDetailPage({ params }) {
                     const json = await res.json();
                     setCancelling(false);
                     if (res.ok) {
-                      router.push('/client/dashboard');
+                      setCancelledId(parcel.id);
                     } else {
                       setCancelError(json.error || 'Erreur, veuillez réessayer.');
                     }
@@ -806,6 +835,8 @@ export default function ParcelDetailPage({ params }) {
                   {cancelling ? 'Annulation…' : 'Confirmer l\'annulation'}
                 </button>
               </div>
+              </>
+              )}
             </div>
           </div>
         </div>
