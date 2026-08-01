@@ -138,7 +138,7 @@ export async function DELETE(req: NextRequest, { params }: { params: { id: strin
   } catch {}
 
   await prisma.$executeRawUnsafe(
-    `UPDATE parcels SET "deletedAt" = NOW(), "cancellationReason" = $2 WHERE id = $1`,
+    `UPDATE parcels SET "deletedAt" = NOW(), status = 'ann', "cancellationReason" = $2 WHERE id = $1`,
     params.id,
     cancellationReason,
   );

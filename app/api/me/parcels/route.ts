@@ -9,8 +9,8 @@ export async function GET() {
 
   const userId = (session!.user as any).id;
 
-  const parcels = await prisma.parcel.findMany({
-    where:   { clientId: userId, deletedAt: null },
+  const parcels = await (prisma.parcel.findMany as any)({
+    where:   { clientId: userId, OR: [{ deletedAt: null }, { status: 'ann' }] },
     orderBy: { createdAt: 'desc' },
     include: {
       campaign: { include: { route: true } },

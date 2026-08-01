@@ -222,21 +222,49 @@ export default function ParcelDetailPage({ params }) {
         {t('parcel.back')}
       </button>
 
+      {/* Cancelled banner */}
+      {parcel.status === 'ann' && (
+        <div style={{ marginBottom: 16, padding: '14px 16px', borderRadius: 14, background: '#fff1f2', border: '1.5px solid #fca5a5', display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
+            <span style={{ fontSize: 20, flexShrink: 0 }}>🚫</span>
+            <div>
+              <div style={{ fontWeight: 800, fontSize: 15, color: '#dc2626', marginBottom: 2 }}>
+                {locale === 'fr' ? 'Réservation annulée' : 'Booking cancelled'}
+              </div>
+              <div style={{ fontSize: 12.5, color: '#ef4444', lineHeight: 1.5 }}>
+                {locale === 'fr'
+                  ? 'Ce colis a été annulé. Vous pouvez réserver à nouveau si besoin.'
+                  : 'This parcel was cancelled. You can book again anytime.'}
+              </div>
+            </div>
+          </div>
+          <button
+            onClick={() => router.push('/client/booking?prefill=' + parcel.id)}
+            style={{ flexShrink: 0, padding: '8px 14px', borderRadius: 9, border: 'none', background: 'linear-gradient(90deg,#00B4D8,#1B4FD8)', color: 'white', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}
+          >
+            ↻ {locale === 'fr' ? 'Réserver à nouveau' : 'Book again'}
+          </button>
+        </div>
+      )}
+
       {/* Hero status card */}
       <div style={{
         background: 'white', border: '1px solid #e5e7eb',
-        borderLeft: `4px solid ${parcel.status === 'ok' ? 'var(--ok-500)' : 'var(--brand-400)'}`,
+        borderLeft: `4px solid ${parcel.status === 'ok' ? 'var(--ok-500)' : parcel.status === 'ann' ? '#fca5a5' : 'var(--brand-400)'}`,
         borderRadius: 16, padding: '20px', marginBottom: 20,
         display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap',
+        opacity: parcel.status === 'ann' ? 0.7 : 1,
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
           <div style={{
             width: 48, height: 48, borderRadius: 12, flexShrink: 0,
-            background: parcel.status === 'ok' ? 'var(--ok-100)' : 'var(--brand-50)',
+            background: parcel.status === 'ok' ? 'var(--ok-100)' : parcel.status === 'ann' ? '#fff1f2' : 'var(--brand-50)',
             display: 'grid', placeItems: 'center', fontSize: 22,
-          }}>{journeyIcon}</div>
+          }}>{parcel.status === 'ann' ? '🚫' : journeyIcon}</div>
           <div>
-            <div style={{ fontSize: 18, fontWeight: 800, color: '#111827', marginBottom: 2 }}>{journeyLabel}</div>
+            <div style={{ fontSize: 18, fontWeight: 800, color: parcel.status === 'ann' ? '#dc2626' : '#111827', marginBottom: 2 }}>
+              {parcel.status === 'ann' ? (locale === 'fr' ? 'Annulé' : 'Cancelled') : journeyLabel}
+            </div>
             <div style={{ fontSize: 12.5, color: '#6b7280' }}>{journeyDesc}</div>
           </div>
         </div>

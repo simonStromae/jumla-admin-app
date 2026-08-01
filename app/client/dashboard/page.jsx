@@ -324,9 +324,10 @@ function ClientDashboardInner() {
 
   useEffect(() => { load(); }, [load]);
 
-  const active  = parcels.filter(p => p.status !== 'ok');
-  const done    = parcels.filter(p => p.status === 'ok');
-  const actions = active.filter(p =>
+  const active    = parcels.filter(p => p.status !== 'ok' && p.status !== 'ann');
+  const done      = parcels.filter(p => p.status === 'ok');
+  const cancelled = parcels.filter(p => p.status === 'ann');
+  const actions   = active.filter(p =>
     p.bordereaux?.some(b => !b.clientConfirmed) ||
     (p.payment && p.payment.status !== 'completed')
   );
@@ -488,6 +489,44 @@ function ClientDashboardInner() {
             ))}
           </div>
         )
+      )}
+
+      {/* Cancelled parcels section */}
+      {!loading && cancelled.length > 0 && (
+        <div style={{ marginTop: 28 }}>
+          <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.07em', color: '#9ca3af', marginBottom: 10 }}>
+            Annulés récemment
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {cancelled.slice(0, 5).map(p => (
+              <div key={p.id} style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12,
+                padding: '12px 14px', borderRadius: 12,
+                background: '#fafafa', border: '1px solid #e5e7eb', opacity: .75,
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
+                  <span style={{ fontSize: 18, flexShrink: 0 }}>🚫</span>
+                  <div style={{ minWidth: 0 }}>
+                    <div style={{ fontFamily: 'monospace', fontSize: 12.5, fontWeight: 700, color: '#374151' }}>{p.trackingCode}</div>
+                    <div style={{ fontSize: 11.5, color: '#9ca3af', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      {p.campaign?.from} → {p.campaign?.to}
+                    </div>
+                  </div>
+                </div>
+                <button
+                  onClick={() => router.push('/client/booking?prefill=' + p.id)}
+                  style={{
+                    flexShrink: 0, padding: '6px 12px', borderRadius: 8, border: 'none',
+                    background: 'linear-gradient(90deg,#00B4D8,#1B4FD8)',
+                    color: 'white', fontSize: 12, fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap',
+                  }}
+                >
+                  ↻ Réserver à nouveau
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
       )}
     </div>
   );
