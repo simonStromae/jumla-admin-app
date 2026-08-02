@@ -101,6 +101,7 @@ export function Sidebar({ route, onNav }) {
     { id: 'home',      label: t.nav.campaigns,  icon: I.Plane,  route: '/admin/campaigns', count: stats.campaigns || null,      perm: 'campaigns' },
     { id: 'analytics', label: t.nav.analytics,  icon: I.Activity, route: '/admin/analytics',                                    perm: 'analytics' },
     { id: 'parcels',   label: t.nav.parcels,    icon: I.Box,    route: '/admin/parcels',                                        perm: 'parcels' },
+    { id: 'livraison', label: t.nav.livraison,  icon: I.Truck,  route: '/admin/livraison',                                      perm: 'parcels' },
     { id: 'verify',    label: t.nav.verify,     icon: I.Check,  route: '/admin/verify',    badge: stats.verifyPending || null,  perm: 'campaigns' },
     { id: 'clients',   label: t.nav.clients,    icon: I.Users,  route: '/admin/clients',   count: stats.clients || null,        perm: null },
     { id: 'payments',  label: t.nav.payments,   icon: I.Wallet, route: '/admin/payments',  badge: stats.unpaidPayments || null, perm: 'payments' },
