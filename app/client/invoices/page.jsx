@@ -193,10 +193,16 @@ export default function ClientInvoices() {
   }, []);
 
   useEffect(() => {
-    fetch('/api/me/parcels').then(r => r.json()).then(data => {
-      setParcels(Array.isArray(data) ? data : []);
-      setLoading(false);
-    }).catch(() => setLoading(false));
+    const load = () => {
+      fetch('/api/me/parcels').then(r => r.json()).then(data => {
+        setParcels(Array.isArray(data) ? data : []);
+        setLoading(false);
+      }).catch(() => setLoading(false));
+    };
+    load();
+    const onVisible = () => { if (!document.hidden) load(); };
+    document.addEventListener('visibilitychange', onVisible);
+    return () => document.removeEventListener('visibilitychange', onVisible);
   }, []);
 
   // Group by campaign for business clients
@@ -271,8 +277,8 @@ export default function ClientInvoices() {
       ) : parcels.length === 0 ? (
         <div style={{ textAlign: 'center', padding: 40, color: 'var(--ink-400)', fontSize: 14 }}>{t('invoices.empty')}</div>
       ) : (
-        <div style={{ background: 'white', border: '1px solid var(--border)', borderRadius: 12, overflow: 'hidden' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+        <div style={{ background: 'white', border: '1px solid var(--border)', borderRadius: 12, overflowX: 'auto' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 480 }}>
             <thead>
               <tr style={{ background: 'var(--bg-soft)', borderBottom: '1px solid var(--border)' }}>
                 <th style={{ padding: '10px 16px', textAlign: 'left', fontSize: 11.5, fontWeight: 700, color: 'var(--ink-500)', textTransform: 'uppercase', letterSpacing: '.04em' }}>

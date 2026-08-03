@@ -7,6 +7,18 @@ import AdminOnboarding from './AdminOnboarding.jsx';
 import HelpCenter from './HelpCenter.jsx';
 import { useAdminT } from '../lib/useAdminT.js';
 
+function useOnlineStatus() {
+  const [online, setOnline] = useState(typeof navigator !== 'undefined' ? navigator.onLine : true);
+  useEffect(() => {
+    const up = () => setOnline(true);
+    const dn = () => setOnline(false);
+    window.addEventListener('online', up);
+    window.addEventListener('offline', dn);
+    return () => { window.removeEventListener('online', up); window.removeEventListener('offline', dn); };
+  }, []);
+  return online;
+}
+
 const PERM_ALIAS = { campaigns: 'cargaisons' };
 
 export function useCan() {
@@ -357,6 +369,7 @@ function AdminMobileBlock() {
 }
 
 export function Shell({ route, onNav, title, sub, actions, children, hideChrome }) {
+  const online = useOnlineStatus();
   const [sidebarOpen, setSidebarOpen] = useState(() => {
     if (typeof window === 'undefined') return true;
     const saved = localStorage.getItem('jumla_sidebar');
@@ -395,6 +408,17 @@ export function Shell({ route, onNav, title, sub, actions, children, hideChrome 
         <Sidebar route={route} onNav={handleNav} />
         <main style={{ minWidth: 0 }}>
           <Topbar title={title} sub={sub} actions={actions} onNav={onNav} onToggleSidebar={toggleSidebar} sidebarOpen={sidebarOpen} />
+          {!online && (
+            <div style={{
+              background: '#1f2937', color: 'white',
+              padding: '9px 20px', fontSize: 13,
+              display: 'flex', alignItems: 'center', gap: 10,
+              borderBottom: '1px solid #374151',
+            }}>
+              <span style={{ fontSize: 15 }}>⚡</span>
+              <span style={{ flex: 1 }}>Pas de connexion réseau — les sauvegardes sont suspendues jusqu'au retour du réseau.</span>
+            </div>
+          )}
           {children}
         </main>
       </div>

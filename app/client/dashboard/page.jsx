@@ -322,7 +322,12 @@ function ClientDashboardInner() {
     setLoading(false);
   }, []);
 
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => {
+    load();
+    const onVisible = () => { if (!document.hidden) load(); };
+    document.addEventListener('visibilitychange', onVisible);
+    return () => document.removeEventListener('visibilitychange', onVisible);
+  }, [load]);
 
   const active    = parcels.filter(p => p.status !== 'ok' && p.status !== 'ann');
   const done      = parcels.filter(p => p.status === 'ok');
