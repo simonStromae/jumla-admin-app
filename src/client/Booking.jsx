@@ -751,7 +751,7 @@ function CampaignCalendar({ campaigns, selected, onSelect, routeLabel }) {
   );
 }
 
-export default function BookingScreen({ onNav, embedded = false }) {
+export default function BookingScreen({ onNav, embedded = false, prefillId = null }) {
   const { data: sessionData } = useSession();
   const t = useT();
   const { locale } = useLocale();
@@ -846,24 +846,65 @@ export default function BookingScreen({ onNav, embedded = false }) {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [embedded, effectiveUser?.name, effectiveUser?.email]);
 
-  // Pre-fill sender phone + load saved addresses from profile API when embedded
+  // Pre-fill sender phone + city/delivery defaults + saved addresses from profile API
   useEffect(() => {
     if (!embedded) return;
     fetch('/api/me/profile')
       .then(r => r.ok ? r.json() : null)
       .then(profile => {
-        if (profile?.phone) {
-          setForm(f => ({ ...f, senderPhone: f.senderPhone || profile.phone }));
-        }
-        if (Array.isArray(profile?.savedAddresses)  && profile.savedAddresses.length  > 0) {
-          setSavedAddresses(profile.savedAddresses);
-        }
-        if (Array.isArray(profile?.savedRecipients) && profile.savedRecipients.length > 0) {
-          setSavedRecipients(profile.savedRecipients);
-        }
+        if (!profile) return;
+        setForm(f => ({
+          ...f,
+          senderPhone: f.senderPhone || profile.phone || '',
+          recipCity:   profile.city && CITIES.find(c => c.label === profile.city)
+                         ? profile.city : f.recipCity,
+          delivery:    profile.defaultDelivery && ['pickup', 'home', 'expedition'].includes(profile.defaultDelivery)
+                         ? profile.defaultDelivery : f.delivery,
+        }));
+        if (Array.isArray(profile.savedAddresses)  && profile.savedAddresses.length  > 0) setSavedAddresses(profile.savedAddresses);
+        if (Array.isArray(profile.savedRecipients) && profile.savedRecipients.length > 0) setSavedRecipients(profile.savedRecipients);
       })
       .catch(() => {});
   }, [embedded]);
+
+  // Pre-fill from a previous parcel (re-booking flow)
+  useEffect(() => {
+    if (!embedded || !prefillId) return;
+    fetch('/api/me/parcels/' + prefillId)
+      .then(r => r.ok ? r.json() : null)
+      .then(data => {
+        if (!data) return;
+        setForm(f => ({
+          ...f,
+          recipName:  data.recipName  || f.recipName,
+          recipPhone: data.recipPhone || f.recipPhone,
+          recipCity:  data.recipCity  || f.recipCity,
+          delivery:   data.delivery   || f.delivery,
+        }));
+        if (Array.isArray(data.items) && data.items.length > 0) {
+          setItems(data.items.map((item, i) => ({
+            id: i + 1,
+            cat: item.cat || 'standard',
+            desc: item.desc || '',
+            pieces: item.pieces || 1,
+            kg: item.kg || '',
+            beerFormat: item.beerFormat || '24x65',
+            nbCasiers: item.nbCasiers || '',
+          })));
+        } else if (data.description || data.weightKg) {
+          setItems([{
+            id: 1,
+            cat: data.productType || 'standard',
+            desc: data.description || '',
+            pieces: 1,
+            kg: data.weightKg || '',
+            beerFormat: '24x65',
+            nbCasiers: '',
+          }]);
+        }
+      })
+      .catch(() => {});
+  }, [embedded, prefillId]);
 
   useEffect(() => {
     fetch('/api/public/routes').then(r => r.json()).then(data => {
@@ -1294,9 +1335,12 @@ export default function BookingScreen({ onNav, embedded = false }) {
                               disabled={isStd}
                               onChange={e => updItem(item.id, 'pieces', e.target.value)}
                               style={{ opacity: isStd ? .35 : 1, cursor: isStd ? 'not-allowed' : 'text', marginRight: 6 }}
-                              title={isStd ? 'Non requis pour Standard' : ''} />
+                              placeholder="Nb pièces"
+                              aria-label="Nombre de pièces"
+                              title={isStd ? 'Non requis pour Standard' : 'Nombre de pièces'} />
                             <input className="co-input co-item-kg" type="number" min="0" step="0.5" value={item.kg}
-                              onChange={e => updItem(item.id, 'kg', e.target.value)} placeholder="0"
+                              onChange={e => updItem(item.id, 'kg', e.target.value)} placeholder="Poids (kg)"
+                              aria-label="Poids en kg"
                               style={{ marginRight: 6 }} />
                             <button className="co-item-del" style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--ink-300)', fontSize: 20, display: 'grid', placeItems: 'center', opacity: items.length === 1 ? .25 : 1 }}
                               disabled={items.length === 1}
@@ -1456,7 +1500,7 @@ export default function BookingScreen({ onNav, embedded = false }) {
                     <div className="co-split-block">
                       <div className="co-split-block__title">{t('booking.coords.sender')}</div>
                       <Field label={t('booking.coords.name')}>
-                        <input className="co-input" value={form.senderName} onChange={e => upd('senderName', e.target.value)} placeholder="Awa Nkemdirim" />
+                        <input className="co-input" value={form.senderName} onChange={e => upd('senderName', e.target.value)} placeholder="ex : Awa Nkemdirim" />
                       </Field>
                       <Field label={t('booking.coords.phone')}>
                         <PhoneInput value={form.senderPhone} onChange={v => upd('senderPhone', v)} />
@@ -1488,7 +1532,7 @@ export default function BookingScreen({ onNav, embedded = false }) {
                         </Field>
                       )}
                       <Field label={t('booking.coords.name')}>
-                        <input className="co-input" value={form.recipName} onChange={e => upd('recipName', e.target.value)} placeholder="Jean Mbarga" />
+                        <input className="co-input" value={form.recipName} onChange={e => upd('recipName', e.target.value)} placeholder="ex : Jean Mbarga" />
                       </Field>
                       <Field label={t('booking.coords.phone')}>
 <PhoneInput value={form.recipPhone} onChange={v => upd('recipPhone', v)} />

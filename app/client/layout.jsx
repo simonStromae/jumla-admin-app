@@ -8,6 +8,7 @@ import { useCompanyAssets } from '@/src/lib/useCompanyAssets.js';
 import { useT } from '@/src/lib/i18n';
 import LanguageSwitcher from '@/src/components/LanguageSwitcher.jsx';
 import ClientOnboarding from '@/src/components/ClientOnboarding.jsx';
+import ClientTypeSelector from '@/src/components/ClientTypeSelector.jsx';
 import PhoneSetupModal from '@/src/components/PhoneSetupModal.jsx';
 import HelpCenter from '@/src/components/HelpCenter.jsx';
 
@@ -305,6 +306,7 @@ export default function ClientLayout({ children }) {
 
   return (
     <>
+      <ClientTypeSelector />
       <ClientOnboarding />
       <PhoneSetupModal />
       <HelpCenter variant="client" />

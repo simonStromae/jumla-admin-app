@@ -1,8 +1,19 @@
 'use client';
-import { useRouter } from 'next/navigation';
+import { Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import BookingScreen from '@/src/client/Booking';
 
-export default function ClientBookingPage() {
+function BookingPageInner() {
   const router = useRouter();
-  return <BookingScreen embedded onNav={(path) => router.push(path)} />;
+  const searchParams = useSearchParams();
+  const prefillId = searchParams.get('prefill') || undefined;
+  return <BookingScreen embedded prefillId={prefillId} onNav={(path) => router.push(path)} />;
+}
+
+export default function ClientBookingPage() {
+  return (
+    <Suspense>
+      <BookingPageInner />
+    </Suspense>
+  );
 }

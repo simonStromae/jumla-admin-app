@@ -63,6 +63,7 @@ export async function GET(req: NextRequest) {
       email:         u.email,
       status:        (u as any).status ?? 'active',
       emailVerified: (u as any).emailVerified ?? false,
+      clientType:    (u as any).clientType ?? 'standard',
       code:          'CL-' + String(i + 1).padStart(4, '0'),
       phone:         u.phone ?? '—',
       city:          u.city  ?? '—',

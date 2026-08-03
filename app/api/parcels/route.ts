@@ -24,16 +24,20 @@ export async function GET(req: NextRequest) {
     },
   };
 
+  // Include client-cancelled parcels (deletedAt set + status='ann') alongside admin-cancelled ones
+  const baseWhere = campaignId ? { campaignId } : {};
   let parcels: any[];
   try {
     parcels = await (prisma.parcel.findMany as any)({
-      where: { ...(campaignId ? { campaignId } : {}), deletedAt: null },
+      where: {
+        ...baseWhere,
+        OR: [{ deletedAt: null }, { status: 'ann' }],
+      },
       ...queryOpts,
     });
   } catch {
-    // deletedAt column not yet migrated — return all (non-soft-deleted data safe, migration pending)
     parcels = await prisma.parcel.findMany({
-      where: campaignId ? { campaignId } : {},
+      where: baseWhere,
       ...queryOpts,
     });
   }

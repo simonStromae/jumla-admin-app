@@ -49,6 +49,9 @@ export async function GET(_: NextRequest, { params }: { params: { id: string } }
     email:            client.email,
     phone:            client.phone,
     city:             client.city,
+    clientType:       (client as any).clientType      ?? 'standard',
+    companyName:      (client as any).companyName     ?? null,
+    billingAddress:   (client as any).billingAddress  ?? null,
     whatsapp:         addresses.whatsapp ?? client.phone,
     deliveryName:     delivery.name    ?? '',
     deliveryAddress:  delivery.address ?? '',
@@ -117,7 +120,7 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
   const { error } = await requirePermission('clients');
   if (error) return error;
 
-  const { name, email, phone, city, whatsapp, deliveryName, deliveryAddress, deliveryPhone } = await req.json();
+  const { name, email, phone, city, whatsapp, deliveryName, deliveryAddress, deliveryPhone, clientType } = await req.json();
 
   // Merge into existing addresses JSON
   const existing = await prisma.user.findUnique({ where: { id: params.id }, select: { addresses: true } });
@@ -133,13 +136,15 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
     },
   };
 
+  const VALID_CLIENT_TYPES = ['standard', 'commercial', 'partenaire'];
   const user = await prisma.user.update({
     where: { id: params.id },
     data: {
-      ...(name  !== undefined && { name }),
-      ...(email !== undefined && { email }),
-      ...(phone !== undefined && { phone: phone || null }),
-      ...(city  !== undefined && { city:  city  || null }),
+      ...(name       !== undefined && { name }),
+      ...(email      !== undefined && { email }),
+      ...(phone      !== undefined && { phone: phone || null }),
+      ...(city       !== undefined && { city:  city  || null }),
+      ...(clientType !== undefined && VALID_CLIENT_TYPES.includes(clientType) && { clientType } as any),
       addresses,
     },
   });

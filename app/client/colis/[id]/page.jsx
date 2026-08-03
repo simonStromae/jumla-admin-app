@@ -63,9 +63,12 @@ export default function ParcelDetailPage({ params }) {
   const [saving,    setSaving]    = useState(false);
   const [saveErr,   setSaveErr]   = useState('');
   const [blConfirm,    setBlConfirm]    = useState({});
-  const [showCancel,   setShowCancel]   = useState(false);
-  const [cancelling,   setCancelling]   = useState(false);
-  const [cancelError,  setCancelError]  = useState('');
+  const [showCancel,        setShowCancel]        = useState(false);
+  const [cancelling,        setCancelling]        = useState(false);
+  const [cancelError,       setCancelError]       = useState('');
+  const [cancelReason,      setCancelReason]      = useState('');
+  const [cancelCustom,      setCancelCustom]      = useState('');
+  const [cancelledId,       setCancelledId]       = useState(null);
 
   const fmt = (date, opts) => {
     if (!date) return '—';
@@ -219,21 +222,49 @@ export default function ParcelDetailPage({ params }) {
         {t('parcel.back')}
       </button>
 
+      {/* Cancelled banner */}
+      {parcel.status === 'ann' && (
+        <div style={{ marginBottom: 16, padding: '14px 16px', borderRadius: 14, background: '#fff1f2', border: '1.5px solid #fca5a5', display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
+            <span style={{ fontSize: 20, flexShrink: 0 }}>🚫</span>
+            <div>
+              <div style={{ fontWeight: 800, fontSize: 15, color: '#dc2626', marginBottom: 2 }}>
+                {locale === 'fr' ? 'Réservation annulée' : 'Booking cancelled'}
+              </div>
+              <div style={{ fontSize: 12.5, color: '#ef4444', lineHeight: 1.5 }}>
+                {locale === 'fr'
+                  ? 'Ce colis a été annulé. Vous pouvez réserver à nouveau si besoin.'
+                  : 'This parcel was cancelled. You can book again anytime.'}
+              </div>
+            </div>
+          </div>
+          <button
+            onClick={() => router.push('/client/booking?prefill=' + parcel.id)}
+            style={{ flexShrink: 0, padding: '8px 14px', borderRadius: 9, border: 'none', background: 'linear-gradient(90deg,#00B4D8,#1B4FD8)', color: 'white', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}
+          >
+            ↻ {locale === 'fr' ? 'Réserver à nouveau' : 'Book again'}
+          </button>
+        </div>
+      )}
+
       {/* Hero status card */}
       <div style={{
         background: 'white', border: '1px solid #e5e7eb',
-        borderLeft: `4px solid ${parcel.status === 'ok' ? 'var(--ok-500)' : 'var(--brand-400)'}`,
+        borderLeft: `4px solid ${parcel.status === 'ok' ? 'var(--ok-500)' : parcel.status === 'ann' ? '#fca5a5' : 'var(--brand-400)'}`,
         borderRadius: 16, padding: '20px', marginBottom: 20,
         display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap',
+        opacity: parcel.status === 'ann' ? 0.7 : 1,
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
           <div style={{
             width: 48, height: 48, borderRadius: 12, flexShrink: 0,
-            background: parcel.status === 'ok' ? 'var(--ok-100)' : 'var(--brand-50)',
+            background: parcel.status === 'ok' ? 'var(--ok-100)' : parcel.status === 'ann' ? '#fff1f2' : 'var(--brand-50)',
             display: 'grid', placeItems: 'center', fontSize: 22,
-          }}>{journeyIcon}</div>
+          }}>{parcel.status === 'ann' ? '🚫' : journeyIcon}</div>
           <div>
-            <div style={{ fontSize: 18, fontWeight: 800, color: '#111827', marginBottom: 2 }}>{journeyLabel}</div>
+            <div style={{ fontSize: 18, fontWeight: 800, color: parcel.status === 'ann' ? '#dc2626' : '#111827', marginBottom: 2 }}>
+              {parcel.status === 'ann' ? (locale === 'fr' ? 'Annulé' : 'Cancelled') : journeyLabel}
+            </div>
             <div style={{ fontSize: 12.5, color: '#6b7280' }}>{journeyDesc}</div>
           </div>
         </div>
@@ -255,7 +286,7 @@ export default function ParcelDetailPage({ params }) {
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
               {locale === 'fr' ? 'Étiquettes' : 'Labels'}
             </button>
-            {parcel.status === 'enr' && !parcel.payment && (
+            {parcel.status === 'enr' && (!parcel.payment || (parcel.payment.status !== 'completed' && parcel.payment.status !== 'partial')) && (
               <button
                 onClick={() => { setCancelError(''); setShowCancel(true); }}
                 style={{
@@ -692,45 +723,148 @@ export default function ParcelDetailPage({ params }) {
 
       {/* Annulation modal */}
       {showCancel && (
-        <div style={{ position: 'fixed', inset: 0, zIndex: 200, background: 'rgba(0,0,0,.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
-          <div style={{ background: 'white', borderRadius: 16, padding: 24, maxWidth: 420, width: '100%', boxShadow: '0 20px 60px rgba(0,0,0,.2)' }}>
-            <div style={{ fontSize: 16, fontWeight: 700, color: '#111827', marginBottom: 8 }}>
-              {locale === 'fr' ? 'Annuler ma réservation' : 'Cancel my booking'}
-            </div>
-            <div style={{ fontSize: 13, color: '#6b7280', lineHeight: 1.6, marginBottom: 16 }}>
-              {locale === 'fr'
-                ? `Vous êtes sur le point d'annuler le colis ${parcel.trackingCode}. Cette action est définitive.`
-                : `You are about to cancel parcel ${parcel.trackingCode}. This action is final.`}
-            </div>
-            {cancelError && (
-              <div style={{ padding: '8px 12px', background: '#fee2e2', borderRadius: 7, fontSize: 13, color: '#dc2626', marginBottom: 12 }}>
-                {cancelError}
+        <div style={{ position: 'fixed', inset: 0, zIndex: 200, background: 'rgba(0,0,0,.45)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
+          <div style={{ background: 'white', borderRadius: 18, width: '100%', maxWidth: 440, boxShadow: '0 24px 64px rgba(0,0,0,.22)', overflow: 'hidden' }}>
+
+            {/* Header */}
+            <div style={{ padding: '20px 22px 16px', borderBottom: '1px solid #f3f4f6' }}>
+              <div style={{ fontSize: 16, fontWeight: 800, color: '#111827', marginBottom: 4 }}>
+                Annuler ma réservation
               </div>
-            )}
-            <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
-              <button onClick={() => setShowCancel(false)} style={{ padding: '8px 16px', borderRadius: 8, border: '1px solid #d1d5db', background: 'white', fontSize: 13, fontWeight: 600, cursor: 'pointer', color: '#374151' }}>
-                {locale === 'fr' ? 'Retour' : 'Back'}
-              </button>
-              <button
-                disabled={cancelling}
-                onClick={async () => {
-                  setCancelling(true);
-                  setCancelError('');
-                  const res = await fetch('/api/me/parcels/' + parcel.id, { method: 'DELETE' });
-                  const json = await res.json();
-                  setCancelling(false);
-                  if (res.ok) {
-                    router.push('/client/dashboard');
-                  } else {
-                    setCancelError(json.error || (locale === 'fr' ? 'Erreur, veuillez réessayer.' : 'Error, please try again.'));
-                  }
-                }}
-                style={{ padding: '8px 16px', borderRadius: 8, border: 'none', background: cancelling ? '#9ca3af' : '#dc2626', color: 'white', fontSize: 13, fontWeight: 700, cursor: cancelling ? 'not-allowed' : 'pointer' }}
-              >
-                {cancelling
-                  ? (locale === 'fr' ? 'Annulation…' : 'Cancelling…')
-                  : (locale === 'fr' ? 'Confirmer l\'annulation' : 'Confirm cancellation')}
-              </button>
+              <div style={{ fontSize: 12.5, color: '#9ca3af', fontFamily: 'monospace' }}>{parcel.trackingCode}</div>
+            </div>
+
+            <div style={{ padding: '16px 22px 20px' }}>
+              {cancelledId ? (
+                <div style={{ textAlign: 'center', padding: '8px 0 8px' }}>
+                  <div style={{ fontSize: 42, marginBottom: 12 }}>✅</div>
+                  <div style={{ fontSize: 16, fontWeight: 800, color: '#111827', marginBottom: 6 }}>
+                    {locale === 'fr' ? 'Réservation annulée' : 'Booking cancelled'}
+                  </div>
+                  <div style={{ fontSize: 13, color: '#6b7280', marginBottom: 22, lineHeight: 1.5 }}>
+                    {locale === 'fr'
+                      ? 'Votre colis a été retiré. Vous pouvez réserver à nouveau dès maintenant si vous le souhaitez.'
+                      : 'Your parcel has been removed. You can book again anytime.'}
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                    <button
+                      onClick={() => router.push('/client/booking?prefill=' + cancelledId)}
+                      style={{ padding: '12px 16px', borderRadius: 10, border: 'none', fontWeight: 700, fontSize: 14, cursor: 'pointer', background: 'linear-gradient(90deg,#00B4D8,#1B4FD8)', color: 'white' }}
+                    >
+                      ↻ {locale === 'fr' ? 'Réserver à nouveau' : 'Book again'}
+                    </button>
+                    <button
+                      onClick={() => router.push('/client/dashboard')}
+                      style={{ padding: '10px 16px', borderRadius: 10, border: '1px solid #d1d5db', background: 'white', fontWeight: 600, fontSize: 13, cursor: 'pointer', color: '#374151' }}
+                    >
+                      {locale === 'fr' ? 'Retour au tableau de bord' : 'Back to dashboard'}
+                    </button>
+                  </div>
+                </div>
+              ) : (
+              <>
+              {/* Reason question */}
+              <div style={{ fontSize: 13, fontWeight: 700, color: '#374151', marginBottom: 12 }}>
+                Pourquoi souhaitez-vous annuler ?
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 16 }}>
+                {[
+                  { key: 'price',         label: 'Prix trop élevé' },
+                  { key: 'date_change',   label: 'Changement de date de départ' },
+                  { key: 'parcel_issue',  label: 'Problème avec mon colis' },
+                  { key: 'other_service', label: "J'utilise un autre transporteur" },
+                  { key: 'other',         label: 'Autre raison' },
+                ].map(opt => (
+                  <label key={opt.key} style={{
+                    display: 'flex', alignItems: 'center', gap: 10,
+                    padding: '10px 12px', borderRadius: 9, cursor: 'pointer',
+                    border: `1.5px solid ${cancelReason === opt.key ? '#fca5a5' : '#e5e7eb'}`,
+                    background: cancelReason === opt.key ? '#fff1f2' : 'white',
+                    transition: 'all .12s',
+                  }}>
+                    <input
+                      type="radio"
+                      name="cancelReason"
+                      value={opt.key}
+                      checked={cancelReason === opt.key}
+                      onChange={() => setCancelReason(opt.key)}
+                      style={{ accentColor: '#dc2626', width: 16, height: 16, flexShrink: 0 }}
+                    />
+                    <span style={{ fontSize: 13, fontWeight: 500, color: '#374151' }}>{opt.label}</span>
+                  </label>
+                ))}
+              </div>
+
+              {/* Custom reason text when "Autre" selected */}
+              {cancelReason === 'other' && (
+                <textarea
+                  value={cancelCustom}
+                  onChange={e => setCancelCustom(e.target.value)}
+                  placeholder="Précisez votre raison…"
+                  rows={2}
+                  style={{
+                    width: '100%', padding: '9px 12px', marginBottom: 14,
+                    border: '1.5px solid #e5e7eb', borderRadius: 8,
+                    fontFamily: 'inherit', fontSize: 13, resize: 'vertical',
+                    boxSizing: 'border-box',
+                  }}
+                />
+              )}
+
+              {cancelError && (
+                <div style={{ padding: '8px 12px', background: '#fee2e2', borderRadius: 7, fontSize: 12.5, color: '#dc2626', marginBottom: 12 }}>
+                  {cancelError}
+                </div>
+              )}
+
+              <div style={{ padding: '10px 14px', borderRadius: 8, background: '#fff7ed', border: '1px solid #fed7aa', fontSize: 12, color: '#92400e', marginBottom: 16, lineHeight: 1.5 }}>
+                ⚠️ Cette action est définitive. Le colis sera supprimé de votre espace.
+              </div>
+
+              <div style={{ display: 'flex', gap: 8 }}>
+                <button
+                  onClick={() => { setShowCancel(false); setCancelReason(''); setCancelCustom(''); setCancelError(''); }}
+                  style={{ flex: 1, padding: '10px 14px', borderRadius: 9, border: '1px solid #d1d5db', background: 'white', fontSize: 13, fontWeight: 600, cursor: 'pointer', color: '#374151' }}
+                >
+                  Retour
+                </button>
+                <button
+                  disabled={!cancelReason || (cancelReason === 'other' && !cancelCustom.trim()) || cancelling}
+                  onClick={async () => {
+                    setCancelling(true);
+                    setCancelError('');
+                    const reason = cancelReason === 'other'
+                      ? `other: ${cancelCustom.trim()}`
+                      : cancelReason;
+                    const res = await fetch('/api/me/parcels/' + parcel.id, {
+                      method: 'DELETE',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ reason }),
+                    });
+                    const json = await res.json();
+                    setCancelling(false);
+                    if (res.ok) {
+                      setCancelledId(parcel.id);
+                    } else {
+                      setCancelError(json.error || 'Erreur, veuillez réessayer.');
+                    }
+                  }}
+                  style={{
+                    flex: 2, padding: '10px 14px', borderRadius: 9, border: 'none',
+                    background: (!cancelReason || (cancelReason === 'other' && !cancelCustom.trim()) || cancelling)
+                      ? '#e5e7eb' : '#dc2626',
+                    color: (!cancelReason || (cancelReason === 'other' && !cancelCustom.trim())) ? '#9ca3af' : 'white',
+                    fontSize: 13, fontWeight: 700,
+                    cursor: (!cancelReason || (cancelReason === 'other' && !cancelCustom.trim()) || cancelling) ? 'not-allowed' : 'pointer',
+                    transition: 'background .15s',
+                  }}
+                >
+                  {cancelling ? 'Annulation…' : 'Confirmer l\'annulation'}
+                </button>
+              </div>
+              </>
+              )}
             </div>
           </div>
         </div>

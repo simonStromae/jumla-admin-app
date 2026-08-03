@@ -243,6 +243,23 @@ export default function ParcelDetailScreen({ id, onNav }) {
         </div>
       </div>
 
+      {/* Cancellation reason banner */}
+      {parcel.status === 'ann' && (
+        <div style={{ marginBottom: 16, padding: '12px 16px', background: 'var(--bad-50)', border: '1px solid var(--bad-200)', borderRadius: 10, display: 'flex', gap: 10, alignItems: 'flex-start' }}>
+          <span style={{ fontSize: 16, flexShrink: 0, marginTop: 1 }}>🚫</span>
+          <div>
+            <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--bad-700)', marginBottom: 2 }}>Colis annulé</div>
+            {parcel.cancellationReason ? (
+              <div style={{ fontSize: 12.5, color: 'var(--bad-600)', lineHeight: 1.5 }}>
+                <span style={{ fontWeight: 600 }}>Raison :</span> {parcel.cancellationReason}
+              </div>
+            ) : (
+              <div style={{ fontSize: 12, color: 'var(--bad-400)', fontStyle: 'italic' }}>Aucune raison renseignée</div>
+            )}
+          </div>
+        </div>
+      )}
+
       <div className="layout-2col">
         {/* Left */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>

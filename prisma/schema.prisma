@@ -40,6 +40,11 @@ model User {
   city               String?
   country            String    @default("CM")
   addresses          Json?
+  clientType         String?   @default("standard")
+  clientTypeChosen   Boolean   @default(false)
+  defaultDelivery    String?   @default("pickup")
+  companyName        String?
+  billingAddress     String?
   createdAt          DateTime  @default(now())
 
   parcels          Parcel[]       @relation("ClientParcels")
@@ -51,6 +56,7 @@ model User {
   campaignCosts    CampaignCost[]
   campaigns        Campaign[]
   notifications    Notification[]
+  invoices         Invoice[]
 
   @@map("users")
 }
@@ -102,6 +108,7 @@ model Campaign {
   costItems     CampaignCostItem[]
   legs          CampaignLeg[]
   parcels       Parcel[]
+  invoices      Invoice[]
 
   @@map("campaigns")
 }
@@ -300,4 +307,23 @@ model Notification {
 
   @@index([userId, createdAt(sort: Desc)])
   @@map("notifications")
+}
+
+model Invoice {
+  id         String    @id @default(cuid())
+  number     String    @unique
+  clientId   String
+  client     User      @relation(fields: [clientId], references: [id])
+  campaignId String?
+  campaign   Campaign? @relation(fields: [campaignId], references: [id])
+  amountXaf  Int
+  status     String    @default("draft") // draft | sent | paid | overdue
+  notes      String?
+  issuedAt   DateTime?
+  dueAt      DateTime?
+  paidAt     DateTime?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  @@map("invoices")
 }
