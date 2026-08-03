@@ -98,10 +98,15 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           name:               user.name,
           role:               user.role,
           permissions:        user.permissions,
-          mustChangePassword: (user as any).mustChangePassword ?? false,
-          status:             (user as any).status ?? 'active',
+          mustChangePassword: (user as any).mustChangePassword  ?? false,
+          status:             (user as any).status              ?? 'active',
           remember:           credentials.remember === 'true',
           sessionVersion:     updated.sessionVersion,
+          clientType:         (user as any).clientType          ?? null,
+          clientTypeChosen:   (user as any).clientTypeChosen    ?? false,
+          phone:              (user as any).phone               ?? null,
+          city:               (user as any).city                ?? null,
+          defaultDelivery:    (user as any).defaultDelivery     ?? null,
         };
       },
     }),
@@ -139,30 +144,46 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         token.permissions        = (user as any).permissions;
         token.mustChangePassword = (user as any).mustChangePassword ?? false;
         token.status             = (user as any).status ?? 'active';
+        token.sessionVersion     = (user as any).sessionVersion ?? 0;
+        token.clientType         = (user as any).clientType         ?? null;
+        token.clientTypeChosen   = (user as any).clientTypeChosen   ?? false;
+        token.phone              = (user as any).phone              ?? null;
+        token.city               = (user as any).city               ?? null;
+        token.defaultDelivery    = (user as any).defaultDelivery    ?? null;
+        const remember = (user as any).remember === true;
+        token.exp = Math.floor(Date.now() / 1000) + (remember ? 30 * 24 * 3600 : 2 * 3600);
       }
 
       if (user && account && account.provider !== 'credentials') {
-        const dbUser = await prisma.user.findUnique({ where: { email: user.email! } });
+        const dbUser = await (prisma.user as any).findUnique({ where: { email: user.email! } });
         if (dbUser) {
           token.id                 = dbUser.id;
           token.role               = dbUser.role;
           token.permissions        = dbUser.permissions;
-          token.mustChangePassword = (dbUser as any).mustChangePassword ?? false;
-          token.status             = (dbUser as any).status ?? 'active';
+          token.mustChangePassword = dbUser.mustChangePassword ?? false;
+          token.status             = dbUser.status ?? 'active';
+          token.clientType         = dbUser.clientType         ?? null;
+          token.clientTypeChosen   = dbUser.clientTypeChosen   ?? false;
+          token.phone              = dbUser.phone              ?? null;
+          token.city               = dbUser.city               ?? null;
+          token.defaultDelivery    = dbUser.defaultDelivery    ?? null;
         }
       }
 
       // Subsequent calls (no fresh user object) — always re-fetch from DB so that
-      // permission/role/status changes made by an admin take effect immediately,
-      // without requiring the target user to log out and back in.
+      // permission/role/status/clientType changes made by an admin take effect immediately.
       if (!user && token.id) {
         try {
           const fresh = await (prisma.user as any).findUnique({
             where:  { id: token.id as string },
-            select: { role: true, permissions: true, status: true, mustChangePassword: true, sessionVersion: true },
+            select: {
+              role: true, permissions: true, status: true,
+              mustChangePassword: true, sessionVersion: true,
+              clientType: true, clientTypeChosen: true,
+              phone: true, city: true, defaultDelivery: true,
+            },
           });
           if (!fresh) return null;
-          // Session exclusivity: only enforce if DB has the column (sessionVersion is a number)
           if (typeof fresh.sessionVersion === 'number' && typeof token.sessionVersion === 'number') {
             if (fresh.sessionVersion !== token.sessionVersion) return null;
           }
@@ -171,8 +192,12 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           token.permissions        = fresh.permissions;
           token.status             = fresh.status ?? 'active';
           token.mustChangePassword = fresh.mustChangePassword ?? false;
+          token.clientType         = fresh.clientType         ?? null;
+          token.clientTypeChosen   = fresh.clientTypeChosen   ?? false;
+          token.phone              = fresh.phone              ?? null;
+          token.city               = fresh.city               ?? null;
+          token.defaultDelivery    = fresh.defaultDelivery    ?? null;
         } catch {
-          // Column may not exist yet — fall back to query without sessionVersion
           const fresh = await prisma.user.findUnique({
             where:  { id: token.id as string },
             select: { role: true, permissions: true, status: true, mustChangePassword: true },
@@ -189,6 +214,11 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       if (trigger === 'update' && session) {
         if (session.mustChangePassword !== undefined) token.mustChangePassword = session.mustChangePassword;
         if (session.status             !== undefined) token.status             = session.status;
+        if (session.clientType         !== undefined) token.clientType         = session.clientType;
+        if (session.clientTypeChosen   !== undefined) token.clientTypeChosen   = session.clientTypeChosen;
+        if (session.phone              !== undefined) token.phone              = session.phone;
+        if (session.city               !== undefined) token.city               = session.city;
+        if (session.defaultDelivery    !== undefined) token.defaultDelivery    = session.defaultDelivery;
       }
       return token;
     },
