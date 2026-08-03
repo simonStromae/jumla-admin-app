@@ -127,7 +127,7 @@ export default function PartenairesScreen({ onNav }) {
   const activeParcels = partners.reduce((s, p) => s + p.stats.activeParcels, 0);
 
   return (
-    <div style={{ padding: '28px 32px', maxWidth: 1100, margin: '0 auto' }}>
+    <div style={{ padding: '28px 32px' }}>
       {/* Header */}
       <div style={{ marginBottom: 28 }}>
         <h1 style={{ fontSize: 24, fontWeight: 800, margin: 0, color: 'var(--ink-900)' }}>Partenaires</h1>
