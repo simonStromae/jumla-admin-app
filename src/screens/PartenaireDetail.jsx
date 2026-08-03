@@ -34,7 +34,7 @@ function CampaignBlock({ group, onNavParcel }) {
   const totalAmount = parcels.reduce((s, p) => s + (p.confirmedPriceXaf ?? p.priceXaf ?? 0), 0);
   const totalWeight = parcels.reduce((s, p) => s + (p.weightKg ?? 0), 0);
   const allPaid = parcels.every(p => p.payment?.status === 'completed');
-  const somePaid = !allPaid && parcels.some(p => (p.payment?.allocated ?? 0) > 0 || p.payment?.status === 'completed');
+  const somePaid = !allPaid && parcels.some(p => p.payment?.status === 'completed' || p.payment?.status === 'partial');
 
   const isActive = campaign && !['ok', 'ann', 'fin'].includes(campaign.status);
 
