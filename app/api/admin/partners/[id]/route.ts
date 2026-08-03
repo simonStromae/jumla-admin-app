@@ -43,7 +43,7 @@ export async function GET(_req: NextRequest, { params }: { params: { id: string 
               route: { select: { origin: true, destination: true } },
             },
           },
-          payment: { select: { status: true, amount: true, allocated: true, remaining: true, paidAt: true } },
+          payment: { select: { status: true, amount: true, paidAt: true } },
         },
         orderBy: { createdAt: 'desc' },
       },
@@ -99,6 +99,8 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
   for (const key of allowed) {
     if (key in body) data[key] = body[key];
   }
+  // Admin explicitly chose a type → suppress the onboarding modal for the user
+  if (body.clientType) data.clientTypeChosen = true;
 
   await (prisma.user.update as any)({ where: { id: params.id }, data });
   return NextResponse.json({ ok: true });
