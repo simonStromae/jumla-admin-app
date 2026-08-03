@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/src/lib/prisma';
 import { requireAdmin } from '@/src/lib/api-auth';
 
-const KEYS = ['TWILIO_ACCOUNT_SID', 'TWILIO_AUTH_TOKEN', 'TWILIO_WHATSAPP_FROM', 'TWILIO_SMS_FROM', 'MESSAGING_ENABLED', 'MESSAGING_CHANNEL', 'MESSAGING_SEND_TO'] as const;
+const KEYS = ['TWILIO_ACCOUNT_SID', 'TWILIO_AUTH_TOKEN', 'TWILIO_WHATSAPP_FROM', 'TWILIO_SMS_FROM', 'MESSAGING_ENABLED', 'MESSAGING_CHANNEL'] as const;
 
 export async function GET() {
   const { error } = await requireAdmin();
@@ -24,7 +24,6 @@ export async function GET() {
     configured:  !!(m['TWILIO_ACCOUNT_SID'] && m['TWILIO_AUTH_TOKEN'] && m['TWILIO_WHATSAPP_FROM']),
     messagingEnabled: m['MESSAGING_ENABLED'] !== 'false',
     channel:          m['MESSAGING_CHANNEL'] ?? 'whatsapp',
-    sendTo:           m['MESSAGING_SEND_TO'] ?? 'client',
   });
 }
 
@@ -32,7 +31,7 @@ export async function PUT(req: NextRequest) {
   const { error } = await requireAdmin();
   if (error) return error;
 
-  const body = await req.json() as { accountSid?: string; authToken?: string; fromNumber?: string; smsFrom?: string; messagingEnabled?: boolean; channel?: string; sendTo?: string };
+  const body = await req.json() as { accountSid?: string; authToken?: string; fromNumber?: string; smsFrom?: string; messagingEnabled?: boolean; channel?: string };
 
   // Remove every non-printable-ASCII character (invisible Unicode, zero-width spaces, etc.)
   const sanitize = (s: string) => s.trim().replace(/[^\x20-\x7E]/g, '');
@@ -81,14 +80,6 @@ export async function PUT(req: NextRequest) {
       update: { value: body.channel },
     }));
   }
-  if (body.sendTo) {
-    ops.push(prisma.setting.upsert({
-      where:  { key: 'MESSAGING_SEND_TO' },
-      create: { key: 'MESSAGING_SEND_TO', value: body.sendTo },
-      update: { value: body.sendTo },
-    }));
-  }
-
   await Promise.all(ops);
   return NextResponse.json({ ok: true });
 }
