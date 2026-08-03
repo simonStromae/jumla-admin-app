@@ -418,6 +418,13 @@ function ClientDrawer({ cl, onClose, onEdit, onNav, onStatusChange, onDeleted })
   const [loginLogs, setLoginLogs] = useState(null);
   const [logsLoading, setLogsLoading] = useState(false);
 
+  // Client type editing
+  const [clientTypeEdit, setClientTypeEdit]           = useState(cl.clientType ?? 'standard');
+  const [companyNameEdit, setCompanyNameEdit]         = useState('');
+  const [billingAddressEdit, setBillingAddressEdit]   = useState('');
+  const [typeSaving, setTypeSaving]                   = useState(false);
+  const [typeSaved, setTypeSaved]                     = useState(false);
+
   const handleDelete = async () => {
     setDeleting(true);
     setDeleteErr('');
@@ -495,9 +502,30 @@ function ClientDrawer({ cl, onClose, onEdit, onNav, onStatusChange, onDeleted })
   useEffect(() => {
     fetch('/api/clients/' + cl.id)
       .then(r => r.json())
-      .then(d => { setDetail(d); setLoading(false); })
+      .then(d => {
+        setDetail(d);
+        setCompanyNameEdit(d.companyName ?? '');
+        setBillingAddressEdit(d.billingAddress ?? '');
+        setLoading(false);
+      })
       .catch(() => setLoading(false));
   }, [cl.id]);
+
+  const handleTypeSave = async () => {
+    setTypeSaving(true);
+    await fetch('/api/admin/partners/' + cl.id, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        clientType:      clientTypeEdit,
+        companyName:     companyNameEdit     || null,
+        billingAddress:  billingAddressEdit  || null,
+      }),
+    }).catch(() => {});
+    setTypeSaving(false);
+    setTypeSaved(true);
+    setTimeout(() => setTypeSaved(false), 2500);
+  };
 
   const parcels        = detail?.parcels ?? [];
   const cancelledCount = parcels.filter(p => p.paid === 'ann').length;
@@ -580,6 +608,59 @@ function ClientDrawer({ cl, onClose, onEdit, onNav, onStatusChange, onDeleted })
             <DrawerRow icon={<I.Whatsapp />} label="WhatsApp"        value={detail?.whatsapp ?? cl.phone ?? '—'} mono />
             <DrawerRow icon={<I.Mail />}     label={t.common.email}  value={detail?.email    ?? '—'} />
           </div>
+        </div>
+
+        {/* ── Type de client ───────────────────────────────────── */}
+        <div style={{ padding: '16px 22px', borderBottom: '1px solid var(--border-soft)' }}>
+          <div className="section-title" style={{ marginBottom: 12 }}>🤝 Type de client</div>
+          <div style={{ display: 'flex', gap: 6, marginBottom: 12 }}>
+            {[
+              { key: 'standard',   label: 'Standard',   color: 'var(--ink-600)',  bg: 'var(--bg-soft)',  border: 'var(--border)' },
+              { key: 'commercial', label: '🏢 Commercial', color: 'var(--ok-700)',  bg: 'var(--ok-50)',   border: 'var(--ok-300)' },
+              { key: 'partenaire', label: '🤝 Partenaire', color: '#6d28d9',        bg: '#f5f3ff',        border: '#c4b5fd' },
+            ].map(opt => (
+              <button
+                key={opt.key}
+                onClick={() => setClientTypeEdit(opt.key)}
+                style={{
+                  flex: 1, padding: '7px 4px', borderRadius: 8, cursor: 'pointer', fontSize: 12, fontWeight: 700,
+                  border: `2px solid ${clientTypeEdit === opt.key ? opt.border : 'var(--border)'}`,
+                  background: clientTypeEdit === opt.key ? opt.bg : 'white',
+                  color: clientTypeEdit === opt.key ? opt.color : 'var(--ink-400)',
+                  transition: 'all .15s',
+                }}
+              >{opt.label}</button>
+            ))}
+          </div>
+
+          {(clientTypeEdit === 'commercial' || clientTypeEdit === 'partenaire') && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 12 }}>
+              <input
+                value={companyNameEdit}
+                onChange={e => setCompanyNameEdit(e.target.value)}
+                placeholder="Nom de la société / raison sociale"
+                style={{ padding: '7px 10px', border: '1px solid var(--border)', borderRadius: 7, fontSize: 13, width: '100%', boxSizing: 'border-box' }}
+              />
+              <input
+                value={billingAddressEdit}
+                onChange={e => setBillingAddressEdit(e.target.value)}
+                placeholder="Adresse de facturation"
+                style={{ padding: '7px 10px', border: '1px solid var(--border)', borderRadius: 7, fontSize: 13, width: '100%', boxSizing: 'border-box' }}
+              />
+            </div>
+          )}
+
+          <button
+            onClick={handleTypeSave}
+            disabled={typeSaving}
+            style={{
+              padding: '7px 16px', borderRadius: 7, border: 'none', cursor: 'pointer',
+              background: typeSaved ? 'var(--ok-600)' : 'var(--brand-600)',
+              color: 'white', fontSize: 12.5, fontWeight: 700, transition: 'background .3s',
+            }}
+          >
+            {typeSaving ? 'Enregistrement…' : typeSaved ? '✓ Enregistré' : 'Enregistrer le type'}
+          </button>
         </div>
 
         {detail?.savedRecipients?.length > 0 && (
