@@ -2,6 +2,18 @@
 import { useSession, signOut } from 'next-auth/react';
 import { useRouter, usePathname } from 'next/navigation';
 import { useEffect, useState, useRef } from 'react';
+
+function useOnlineStatus() {
+  const [online, setOnline] = useState(typeof navigator !== 'undefined' ? navigator.onLine : true);
+  useEffect(() => {
+    const up = () => setOnline(true);
+    const dn = () => setOnline(false);
+    window.addEventListener('online', up);
+    window.addEventListener('offline', dn);
+    return () => { window.removeEventListener('online', up); window.removeEventListener('offline', dn); };
+  }, []);
+  return online;
+}
 import '@/src/styles/tokens.css';
 import I from '@/src/components/Icons.jsx';
 import { useCompanyAssets } from '@/src/lib/useCompanyAssets.js';
@@ -205,6 +217,7 @@ export default function ClientLayout({ children }) {
   const [plusOpen, setPlusOpen] = useState(false);
   const isLoggedIn = status === 'authenticated';
   const { state: pushState, enable: enablePush, dismiss: dismissPush } = usePush(isLoggedIn);
+  const online = useOnlineStatus();
 
   const openHelp = () => {
     window.dispatchEvent(new CustomEvent('jumla:open-help'));
@@ -417,6 +430,18 @@ export default function ClientLayout({ children }) {
                 background: 'none', border: 'none', cursor: 'pointer', padding: '2px 6px',
                 color: '#6ee7b7', fontSize: 13, lineHeight: 1, flexShrink: 0,
               }}>✕</button>
+            </div>
+          )}
+
+          {!online && (
+            <div style={{
+              background: '#1f2937', color: 'white',
+              padding: '9px 20px', fontSize: 13,
+              display: 'flex', alignItems: 'center', gap: 10,
+              borderBottom: '1px solid #374151',
+            }}>
+              <span style={{ fontSize: 15 }}>⚡</span>
+              <span>Pas de connexion — vos modifications ne seront pas enregistrées jusqu'au retour du réseau.</span>
             </div>
           )}
 
