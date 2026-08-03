@@ -44,6 +44,9 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
       trackingCode: true,
       priceXaf: true,
       status: true,
+      notifyTarget: true,
+      notifyPhone: true,
+      notifyEmail: true,
       campaign: { select: { status: true } },
       client: { select: { name: true, email: true, phone: true } },
     },
@@ -134,27 +137,53 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
         createdById: (sess?.user as any)?.id ?? null,
       },
     });
-    if (existing?.client?.email && existing.trackingCode) {
+    // Resolve notification targets based on notifyTarget setting
+    const notifyTarget = (existing as any).notifyTarget ?? 'sender';
+    const notifyPhone  = (existing as any).notifyPhone  ?? null;
+    const notifyEmail  = (existing as any).notifyEmail  ?? null;
+
+    const sendToSender    = notifyTarget === 'sender' || notifyTarget === 'both';
+    const sendToRecipient = notifyTarget === 'recipient' || notifyTarget === 'both';
+    const sendToCustom    = notifyTarget === 'custom';
+
+    const recipientName  = existing?.client?.name ?? 'Client';
+    const firstName      = recipientName.split(' ')[0];
+    const statusLabel    = PARCEL_STATUS_LABELS[status] ?? status;
+    const trackingCode   = existing?.trackingCode ?? '';
+
+    // Email — sender
+    if (sendToSender && existing?.client?.email && trackingCode) {
       sendStatusEmail(
-        existing.client.email,
-        existing.client.name ?? 'Client',
-        existing.trackingCode,
-        status,
-        eventLocation || null,
-        eventNote || null,
+        existing.client.email, recipientName,
+        trackingCode, status, eventLocation || null, eventNote || null,
       ).catch(() => {});
     }
-    if (existing?.client?.phone) {
-      const firstName   = (existing.client.name ?? 'Client').split(' ')[0];
-      const statusLabel = PARCEL_STATUS_LABELS[status] ?? status;
+    // Email — recipient / custom
+    const targetEmail = sendToRecipient || sendToCustom ? notifyEmail : null;
+    if (targetEmail && trackingCode) {
+      sendStatusEmail(
+        targetEmail, recipientName,
+        trackingCode, status, eventLocation || null, eventNote || null,
+      ).catch(() => {});
+    }
+
+    // WhatsApp — sender
+    if (sendToSender && existing?.client?.phone) {
       renderWaTemplate('auto_status_parcel', {
-        first_name:   firstName,
-        parcel_code:  existing.trackingCode,
-        status_label: statusLabel,
+        first_name: firstName, parcel_code: trackingCode, status_label: statusLabel,
       }).then(msg => sendWhatsappNotification(
-        existing!.client!.phone!, msg, params.id,
-        'auto_status_parcel',
-        { first_name: firstName, parcel_code: existing.trackingCode, status_label: statusLabel },
+        existing!.client!.phone!, msg, params.id, 'auto_status_parcel',
+        { first_name: firstName, parcel_code: trackingCode, status_label: statusLabel },
+      )).catch(() => {});
+    }
+    // WhatsApp — recipient / custom
+    const targetPhone = (sendToRecipient || sendToCustom) ? notifyPhone : null;
+    if (targetPhone) {
+      renderWaTemplate('auto_status_parcel', {
+        first_name: firstName, parcel_code: trackingCode, status_label: statusLabel,
+      }).then(msg => sendWhatsappNotification(
+        targetPhone, msg, params.id, 'auto_status_parcel',
+        { first_name: firstName, parcel_code: trackingCode, status_label: statusLabel },
       )).catch(() => {});
     }
     // Push notification on status change

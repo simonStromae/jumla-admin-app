@@ -51,6 +51,9 @@ export async function POST(req: NextRequest) {
     declaredValueCad,
     waiverAccepted,
     forbiddenAcknowledged,
+    notifyTarget,
+    notifyPhone,
+    notifyEmail,
   } = body;
 
   if (!campaignId) {
@@ -138,6 +141,9 @@ export async function POST(req: NextRequest) {
       waiverAccepted:        !hasValuable && !!waiverAccepted,
       forbiddenAcknowledged: !!forbiddenAcknowledged,
       disclaimerAcceptedAt:  new Date(),
+      notifyTarget:          notifyTarget  || 'sender',
+      notifyPhone:           notifyPhone   || null,
+      notifyEmail:           notifyEmail   || null,
     },
     include: { campaign: { select: { code: true } } },
   });

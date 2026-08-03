@@ -24,7 +24,7 @@ export async function POST(req: NextRequest) {
 
   // Read messaging preferences
   const prefRows = await prisma.setting.findMany({
-    where: { key: { in: ['MESSAGING_ENABLED', 'MESSAGING_CHANNEL', 'MESSAGING_SEND_TO', 'TWILIO_SMS_FROM'] } },
+    where: { key: { in: ['MESSAGING_ENABLED', 'MESSAGING_CHANNEL', 'TWILIO_SMS_FROM'] } },
   }).catch(() => []);
   const pref: Record<string, string> = {};
   for (const r of prefRows) pref[r.key] = r.value;
@@ -32,7 +32,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'L\'envoi de messages est désactivé' }, { status: 403 });
   }
   const channel = pref['MESSAGING_CHANNEL'] ?? 'whatsapp';
-  const sendTo  = pref['MESSAGING_SEND_TO']  ?? 'client';
 
   const { accountSid, authToken, fromNumber: waFrom } = await getTwilioSettings();
   if (!accountSid || !authToken) {
@@ -61,14 +60,16 @@ export async function POST(req: NextRequest) {
       campaign: { select: { code: true, arrivalDate: true, route: { select: { destination: true, fees: true } } } },
       payment:  { select: { status: true, amount: true } },
     },
-  });
+  }) as any[];
 
   const results: { parcelId: string; status: string; error?: string; mode?: string }[] = [];
 
   for (const p of parcels) {
-    // Pick phone based on sendTo setting
-    const rawPhone = sendTo === 'recip'
-      ? ((p as any).recipPhone ?? p.client.phone)
+    // Pick phone based on per-parcel notifyTarget setting
+    const notifyTarget = p.notifyTarget ?? 'sender';
+    const useRecipient = notifyTarget === 'recipient' || notifyTarget === 'both' || notifyTarget === 'custom';
+    const rawPhone = useRecipient
+      ? (p.notifyPhone ?? p.recipPhone ?? p.client.phone)
       : p.client.phone;
     const phone = rawPhone;
     if (!phone) {
@@ -76,8 +77,8 @@ export async function POST(req: NextRequest) {
       continue;
     }
 
-    const firstName = sendTo === 'recip'
-      ? (((p as any).recipName ?? p.client.name).split(' ')[0])
+    const firstName = useRecipient
+      ? ((p.recipName ?? p.client.name).split(' ')[0])
       : p.client.name.split(' ')[0];
     const amount    = (p.payment?.amount ?? p.priceXaf ?? 0).toLocaleString('fr');
     const weight    = String(p.weightKg ?? '—');

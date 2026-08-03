@@ -202,6 +202,9 @@ model Parcel {
   createdAt          DateTime     @default(now())
   deletedAt          DateTime?
   cancellationReason String?
+  notifyTarget       String?  @default("sender") // sender | recipient | both | custom
+  notifyPhone        String?
+  notifyEmail        String?
 
   payment        Payment?
   trackingEvents TrackingEvent[]

@@ -532,7 +532,6 @@ function SectionWhatsapp() {
   const [testResult,       setTestResult]       = useState(null);
   const [messagingEnabled, setMessagingEnabled] = useState(true);
   const [channel,          setChannel]          = useState('whatsapp');
-  const [sendTo,           setSendTo]           = useState('client');
 
   useEffect(() => {
     fetch('/api/settings/whatsapp').then(r => r.json()).then(d => {
@@ -543,7 +542,6 @@ function SectionWhatsapp() {
       setSmsFrom(d.smsFrom ?? '');
       setMessagingEnabled(d.messagingEnabled !== false);
       setChannel(d.channel ?? 'whatsapp');
-      setSendTo(d.sendTo ?? 'client');
     }).catch(() => {});
   }, []);
 
@@ -562,7 +560,7 @@ function SectionWhatsapp() {
     setSaving(true); setSaved(false); setTestResult(null);
     await fetch('/api/settings/whatsapp', {
       method: 'PUT', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ accountSid, authToken, fromNumber, smsFrom, messagingEnabled, channel, sendTo }),
+      body: JSON.stringify({ accountSid, authToken, fromNumber, smsFrom, messagingEnabled, channel }),
     });
     const updated = await fetch('/api/settings/whatsapp').then(r => r.json()).catch(() => null);
     if (updated) {
@@ -573,7 +571,6 @@ function SectionWhatsapp() {
       setSmsFrom(updated.smsFrom ?? '');
       setMessagingEnabled(updated.messagingEnabled !== false);
       setChannel(updated.channel ?? 'whatsapp');
-      setSendTo(updated.sendTo ?? 'client');
     }
     setSaving(false); setSaved(true); setTimeout(() => setSaved(false), 3000);
   }
@@ -689,26 +686,8 @@ function SectionWhatsapp() {
           )}
         </div>
 
-        {/* Send to */}
-        <div style={{ marginBottom: 4 }}>
-          <label className="label" style={{ marginBottom: 8 }}>Envoyer à</label>
-          <div style={{ display: 'flex', gap: 6 }}>
-            {[
-              ['client', '👤 Client (expéditeur principal)'],
-              ['recip',  '📦 Destinataire (contact au départ)'],
-            ].map(([val, lbl]) => (
-              <button key={val} type="button"
-                className={'btn btn--sm ' + (sendTo === val ? 'btn--brand' : 'btn--ghost')}
-                onClick={() => setSendTo(val)} style={{ flex: 1, justifyContent: 'center' }}>
-                {lbl}
-              </button>
-            ))}
-          </div>
-          <div style={{ marginTop: 8, fontSize: 12, color: 'var(--ink-400)', lineHeight: 1.5 }}>
-            {sendTo === 'client'
-              ? 'Les messages seront envoyés au numéro du client (expéditeur principal du colis).'
-              : 'Les messages seront envoyés au numéro du destinataire renseigné sur le colis.'}
-          </div>
+        <div style={{ fontSize: 12, color: 'var(--ink-400)', background: 'var(--bg-soft)', border: '1px solid var(--border-soft)', borderRadius: 8, padding: '10px 14px', lineHeight: 1.6 }}>
+          💬 Le destinataire des notifications est désormais défini <strong>par colis</strong> lors de la réservation (expéditeur, destinataire, les deux, ou un contact personnalisé).
         </div>
       </div>
 

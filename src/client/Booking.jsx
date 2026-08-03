@@ -773,6 +773,7 @@ export default function BookingScreen({ onNav, embedded = false, prefillId = nul
     senderName: '', senderPhone: '', senderEmail: '',
     recipName: '', recipPhone: '', recipCity: 'Montréal', recipCityCustom: '',
     delivery: 'pickup',
+    notifyTarget: 'sender', notifyPhone: '', notifyEmail: '',
     recipAddress: '', recipApt: '', recipProvince: 'QC', recipPostal: '',
     payMethod: 'card',
   });
@@ -1024,6 +1025,9 @@ export default function BookingScreen({ onNav, embedded = false, prefillId = nul
           declaredValueCad:      hasValuable ? Number(declaredValueCad) : null,
           waiverAccepted:        !hasValuable && waiverAccepted,
           forbiddenAcknowledged: forbiddenAcknowledged,
+          notifyTarget:          form.notifyTarget || 'sender',
+          notifyPhone:           form.notifyPhone  || null,
+          notifyEmail:           form.notifyEmail  || null,
         }),
       });
       const json = await res.json();
@@ -1564,6 +1568,83 @@ export default function BookingScreen({ onNav, embedded = false, prefillId = nul
                         </label>
                       )}
                     </div>
+                  </div>
+
+                  {/* Notification target */}
+                  <div style={{ marginTop: 22, padding: '16px', background: 'var(--bg-soft)', borderRadius: 12, border: '1px solid var(--border-soft)' }}>
+                    <div className="co-label" style={{ marginBottom: 10 }}>📬 Qui reçoit les notifications de suivi ?</div>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6, marginBottom: 10 }}>
+                      {[
+                        { key: 'sender',    label: 'Moi' },
+                        { key: 'recipient', label: 'Le destinataire' },
+                        { key: 'both',      label: 'Les deux' },
+                        { key: 'custom',    label: 'Autre contact' },
+                      ].map(opt => (
+                        <button
+                          key={opt.key}
+                          type="button"
+                          onClick={() => {
+                            upd('notifyTarget', opt.key);
+                            if (opt.key === 'recipient' || opt.key === 'both') {
+                              upd('notifyPhone', form.recipPhone || '');
+                            }
+                            if (opt.key === 'sender' || opt.key === 'custom') {
+                              upd('notifyPhone', '');
+                              upd('notifyEmail', '');
+                            }
+                          }}
+                          style={{
+                            padding: '8px 10px', borderRadius: 8, cursor: 'pointer',
+                            fontSize: 12.5, fontWeight: 600, textAlign: 'center',
+                            border: `2px solid ${form.notifyTarget === opt.key ? 'var(--brand-500)' : 'var(--border)'}`,
+                            background: form.notifyTarget === opt.key ? 'var(--brand-50)' : 'white',
+                            color: form.notifyTarget === opt.key ? 'var(--brand-700)' : 'var(--ink-500)',
+                          }}
+                        >{opt.label}</button>
+                      ))}
+                    </div>
+
+                    {form.notifyTarget === 'sender' && (
+                      <div style={{ fontSize: 12, color: 'var(--ink-400)', fontStyle: 'italic' }}>
+                        Les mises à jour seront envoyées à votre email et numéro de téléphone.
+                      </div>
+                    )}
+
+                    {(form.notifyTarget === 'recipient' || form.notifyTarget === 'both' || form.notifyTarget === 'custom') && (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 8 }}>
+                        <div>
+                          <div style={{ fontSize: 11.5, fontWeight: 600, color: 'var(--ink-600)', marginBottom: 4 }}>
+                            {form.notifyTarget === 'custom' ? 'Téléphone WhatsApp' : 'Téléphone destinataire'}
+                          </div>
+                          <input
+                            type="tel"
+                            className="co-input"
+                            value={form.notifyPhone}
+                            onChange={e => upd('notifyPhone', e.target.value)}
+                            placeholder="Ex : +237 6XX XXX XXX"
+                          />
+                        </div>
+                        <div>
+                          <div style={{ fontSize: 11.5, fontWeight: 600, color: 'var(--ink-600)', marginBottom: 4 }}>
+                            {form.notifyTarget === 'custom' ? 'Email' : 'Email destinataire'}{' '}
+                            <span style={{ fontWeight: 400, color: 'var(--ink-400)' }}>(optionnel)</span>
+                          </div>
+                          <input
+                            type="email"
+                            className="co-input"
+                            value={form.notifyEmail}
+                            onChange={e => upd('notifyEmail', e.target.value)}
+                            placeholder="Ex : jean.mbarga@email.com"
+                          />
+                        </div>
+                      </div>
+                    )}
+
+                    {form.notifyTarget === 'both' && (
+                      <div style={{ fontSize: 12, color: 'var(--ink-400)', marginTop: 8, fontStyle: 'italic' }}>
+                        Vous et le destinataire recevrez chacun les mises à jour.
+                      </div>
+                    )}
                   </div>
 
                   {/* Delivery method */}
