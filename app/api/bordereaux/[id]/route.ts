@@ -99,17 +99,23 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
     }
   }
 
-  const bordereau = await prisma.bordereau.update({
-    where: { id: params.id },
-    data: {
-      ...(description !== undefined && { description }),
-      ...(weightKg    !== undefined && { weightKg: weightKg ? Number(weightKg) : null }),
-      ...(nbPieces    !== undefined && { nbPieces: Number(nbPieces) }),
-      ...(status      !== undefined && { status }),
-      ...(notes       !== undefined && { notes }),
-      ...(items       !== undefined && { items } as any),
-    } as any,
-  });
+  let bordereau;
+  try {
+    bordereau = await prisma.bordereau.update({
+      where: { id: params.id },
+      data: {
+        ...(description !== undefined && { description }),
+        ...(weightKg    !== undefined && { weightKg: weightKg ? Number(weightKg) : null }),
+        ...(nbPieces    !== undefined && { nbPieces: Number(nbPieces) }),
+        ...(status      !== undefined && { status }),
+        ...(notes       !== undefined && { notes }),
+        ...(items       !== undefined && { items } as any),
+      } as any,
+    });
+  } catch (e: any) {
+    console.error('[bordereau PUT]', e?.message ?? e);
+    return NextResponse.json({ error: e?.message ?? 'Erreur base de données' }, { status: 500 });
+  }
 
   // Validating a bordereau moves the parcel to "recu" + notifies client
   if (status === 'valide') {

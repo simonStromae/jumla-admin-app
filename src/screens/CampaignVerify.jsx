@@ -44,7 +44,8 @@ export default function CampaignVerifyPanel({ parcels, campaign, onExit, onSaveP
       return [p.id, allDone];
     }))
   );
-  const [saving,   setSavingMap]  = useState({});   // parcelId → true
+  const [saving,    setSavingMap] = useState({});   // parcelId → true
+  const [saveError, setSaveError] = useState(null); // last save error message
 
   const initVerifRow = (r) => {
     // Prefer per-item state saved in items JSON (_verifStatus et al.)
@@ -99,9 +100,12 @@ export default function CampaignVerifyPanel({ parcels, campaign, onExit, onSaveP
 
   const handleSave = async (p) => {
     setSavingMap(s => ({ ...s, [p.id]: true }));
+    setSaveError(null);
     try {
       await onSaveParcel(p, verifs);
       setSaved(s => ({ ...s, [p.id]: true }));
+    } catch (err) {
+      setSaveError(err.message || 'Erreur lors de la sauvegarde');
     } finally {
       setSavingMap(s => ({ ...s, [p.id]: false }));
     }
@@ -159,6 +163,13 @@ export default function CampaignVerifyPanel({ parcels, campaign, onExit, onSaveP
             transition: 'width .3s ease',
           }} />
         </div>
+        {saveError && (
+          <div style={{ marginTop: 8, padding: '8px 12px', background: 'var(--bad-50)', border: '1px solid var(--bad-200)', borderRadius: 8, fontSize: 12.5, color: 'var(--bad-700)', display: 'flex', alignItems: 'center', gap: 8 }}>
+            <span>⚠</span>
+            <span style={{ flex: 1 }}>{saveError}</span>
+            <button onClick={() => setSaveError(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--bad-500)', fontSize: 16, lineHeight: 1, padding: 0 }}>×</button>
+          </div>
+        )}
       </div>
 
       {/* Parcel cards */}
