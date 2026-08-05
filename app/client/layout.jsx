@@ -31,6 +31,65 @@ function urlBase64ToUint8Array(b64) {
   return Uint8Array.from([...raw].map(c => c.charCodeAt(0)));
 }
 
+const INSTALL_DISMISS_KEY = 'pwa-install-dismissed';
+
+function useInstallPrompt(active) {
+  const [prompt, setPrompt] = useState(null);   // deferred Android event
+  const [platform, setPlatform] = useState(null); // 'android' | 'ios' | null
+  const [dismissed, setDismissed] = useState(true); // start hidden until we know
+
+  useEffect(() => {
+    if (!active) return;
+    if (sessionStorage.getItem(INSTALL_DISMISS_KEY)) return;
+
+    const isStandalone = navigator.standalone === true ||
+                         window.matchMedia('(display-mode: standalone)').matches;
+    if (isStandalone) return; // already installed
+
+    const isIOS = /iPhone|iPad|iPod/.test(navigator.userAgent) ||
+                  (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+
+    if (isIOS) {
+      setPlatform('ios');
+      setDismissed(false);
+      return;
+    }
+
+    // Android / Chrome: intercept the native install prompt
+    const handler = (e) => {
+      e.preventDefault();
+      setPrompt(e);
+      setPlatform('android');
+      setDismissed(false);
+    };
+    window.addEventListener('beforeinstallprompt', handler);
+
+    // Also handle when app is actually installed
+    const installed = () => setDismissed(true);
+    window.addEventListener('appinstalled', installed);
+
+    return () => {
+      window.removeEventListener('beforeinstallprompt', handler);
+      window.removeEventListener('appinstalled', installed);
+    };
+  }, [active]);
+
+  const install = async () => {
+    if (!prompt) return;
+    prompt.prompt();
+    const { outcome } = await prompt.userChoice;
+    if (outcome === 'accepted') setDismissed(true);
+    setPrompt(null);
+  };
+
+  const dismiss = () => {
+    sessionStorage.setItem(INSTALL_DISMISS_KEY, '1');
+    setDismissed(true);
+  };
+
+  return { platform, dismissed, install, dismiss };
+}
+
 function usePush(active) {
   const [state, setState] = useState('idle'); // idle | supported | subscribed | denied | ios-install
 
@@ -217,6 +276,7 @@ export default function ClientLayout({ children }) {
   const [plusOpen, setPlusOpen] = useState(false);
   const isLoggedIn = status === 'authenticated';
   const { state: pushState, enable: enablePush, dismiss: dismissPush } = usePush(isLoggedIn);
+  const { platform: installPlatform, dismissed: installDismissed, install: doInstall, dismiss: dismissInstall } = useInstallPrompt(isLoggedIn);
   const online = useOnlineStatus();
 
   const openHelp = () => {
@@ -394,6 +454,50 @@ export default function ClientLayout({ children }) {
             </div>
           )}
 
+          {/* PWA install prompt */}
+          {!installDismissed && installPlatform === 'android' && (
+            <div style={{
+              background: 'linear-gradient(90deg, #0D2E6E, #1B4FD8)',
+              padding: '10px 16px', fontSize: 13,
+              display: 'flex', alignItems: 'center', gap: 10,
+            }}>
+              <span style={{ fontSize: 18, flexShrink: 0 }}>📲</span>
+              <div style={{ flex: 1, color: 'white', lineHeight: 1.4 }}>
+                <strong>Installer l'application Jumla</strong>
+                <div style={{ fontSize: 11.5, opacity: .85, marginTop: 1 }}>Accès direct depuis votre écran d'accueil, sans passer par le navigateur.</div>
+              </div>
+              <button onClick={doInstall} style={{
+                background: 'white', color: '#1B4FD8',
+                border: 'none', borderRadius: 7, padding: '6px 14px',
+                fontSize: 12.5, fontWeight: 700, cursor: 'pointer', flexShrink: 0,
+              }}>Installer</button>
+              <button onClick={dismissInstall} style={{
+                background: 'none', border: 'none', cursor: 'pointer',
+                color: 'rgba(255,255,255,.6)', fontSize: 18, lineHeight: 1, padding: '0 2px', flexShrink: 0,
+              }}>×</button>
+            </div>
+          )}
+
+          {!installDismissed && installPlatform === 'ios' && (
+            <div style={{
+              background: 'linear-gradient(90deg, #0D2E6E, #1B4FD8)',
+              padding: '10px 16px', fontSize: 13,
+              display: 'flex', alignItems: 'center', gap: 10,
+            }}>
+              <span style={{ fontSize: 18, flexShrink: 0 }}>📲</span>
+              <div style={{ flex: 1, color: 'white', lineHeight: 1.4 }}>
+                <strong>Installer l'application Jumla</strong>
+                <div style={{ fontSize: 11.5, opacity: .85, marginTop: 1 }}>
+                  Safari → <strong>⎙</strong> Partager → <strong>Sur l'écran d'accueil</strong>
+                </div>
+              </div>
+              <button onClick={dismissInstall} style={{
+                background: 'none', border: 'none', cursor: 'pointer',
+                color: 'rgba(255,255,255,.6)', fontSize: 18, lineHeight: 1, padding: '0 2px', flexShrink: 0,
+              }}>×</button>
+            </div>
+          )}
+
           {pushState === 'supported' && (
             <div style={{
               background: '#EFF6FF', borderBottom: '1px solid #BFDBFE',
@@ -411,24 +515,6 @@ export default function ClientLayout({ children }) {
               <button onClick={dismissPush} style={{
                 background: 'none', border: 'none', cursor: 'pointer', padding: '2px 6px',
                 color: '#60a5fa', fontSize: 13, lineHeight: 1,
-              }}>✕</button>
-            </div>
-          )}
-
-          {pushState === 'ios-install' && (
-            <div style={{
-              background: '#F0FDF4', borderBottom: '1px solid #BBF7D0',
-              padding: '9px 16px', fontSize: 12.5,
-              display: 'flex', alignItems: 'center', gap: 8,
-            }}>
-              <span style={{ fontSize: 15, flexShrink: 0 }}>📲</span>
-              <span style={{ flex: 1, color: '#065f46', lineHeight: 1.4 }}>
-                <strong>Installez l'app</strong> pour activer les notifications :{' '}
-                <span style={{ whiteSpace: 'nowrap' }}>Safari → <strong>⎙ Partager</strong> → <strong>Sur l'écran d'accueil</strong></span>
-              </span>
-              <button onClick={dismissPush} style={{
-                background: 'none', border: 'none', cursor: 'pointer', padding: '2px 6px',
-                color: '#6ee7b7', fontSize: 13, lineHeight: 1, flexShrink: 0,
               }}>✕</button>
             </div>
           )}
