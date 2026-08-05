@@ -109,7 +109,7 @@ export default function CampaignVerifyPage({ params }) {
       .then(r => r.ok ? r.json() : Promise.reject(r.status))
       .then(data => {
         setCampaign(data);
-        setParcels((data.parcels || []).map(mapParcel));
+        setParcels((data.parcels || []).filter(p => p.status !== 'ann').map(mapParcel));
         setLoading(false);
       })
       .catch(() => { setError('Impossible de charger la cargaison.'); setLoading(false); });
