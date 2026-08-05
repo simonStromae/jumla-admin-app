@@ -3,11 +3,13 @@ import { useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import '@/src/styles/tokens.css';
 import I from '@/src/components/Icons.jsx';
+import { useCompanyAssets } from '@/src/lib/useCompanyAssets.js';
 
 function ResetForm() {
   const router       = useRouter();
   const searchParams = useSearchParams();
   const token        = searchParams.get('token') ?? '';
+  const { logoIconUrl, logoIconSize } = useCompanyAssets();
 
   const [pw,      setPw]      = useState('');
   const [confirm, setConfirm] = useState('');
@@ -37,39 +39,57 @@ function ResetForm() {
   }
 
   return (
-    <div style={{ minHeight: '100vh', display: 'grid', gridTemplateColumns: '1fr 1fr', background: 'var(--bg-page)' }}>
+    <>
+      <style>{`
+        @media (max-width: 767px) {
+          .rp-layout { grid-template-columns: 1fr !important; }
+          .rp-hero   { display: none !important; }
+          .rp-panel  { padding: 32px 24px 24px !important; }
+        }
+      `}</style>
+      <div className="rp-layout" style={{ minHeight: '100vh', display: 'grid', gridTemplateColumns: '1fr 1fr', background: 'var(--bg-page)' }}>
 
-      {/* Left — same visual as login */}
-      <div style={{
+      {/* Left — hero */}
+      <div className="rp-hero" style={{
         position: 'relative',
-        background: 'linear-gradient(155deg, #1a1408 0%, #2a1d0c 45%, #432a0d 100%)',
+        background: 'linear-gradient(155deg, #1A1A2E 0%, #0D2E6E 55%, #1B4FD8 100%)',
         color: 'white', padding: '48px 56px',
         display: 'flex', flexDirection: 'column', overflow: 'hidden',
       }}>
         <div style={{
           position: 'absolute', inset: 0,
-          backgroundImage: 'radial-gradient(circle at 80% 20%, rgba(245,165,36,.25), transparent 50%), radial-gradient(circle at 20% 80%, rgba(217,119,6,.2), transparent 50%)',
+          backgroundImage: 'radial-gradient(circle at 80% 20%, rgba(0,180,216,.2), transparent 50%), radial-gradient(circle at 20% 80%, rgba(27,79,216,.25), transparent 50%)',
           pointerEvents: 'none',
         }} />
         <svg style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', opacity: .06 }} xmlns="http://www.w3.org/2000/svg">
-          <defs><pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse"><path d="M40 0H0v40" fill="none" stroke="white" strokeWidth=".5" /></pattern></defs>
-          <rect width="100%" height="100%" fill="url(#grid)" />
+          <defs><pattern id="rp-grid" width="40" height="40" patternUnits="userSpaceOnUse"><path d="M40 0H0v40" fill="none" stroke="white" strokeWidth=".5" /></pattern></defs>
+          <rect width="100%" height="100%" fill="url(#rp-grid)" />
         </svg>
         <button onClick={() => router.push('/')} style={{
           display: 'flex', alignItems: 'center', gap: 12, position: 'relative', zIndex: 2,
           background: 'none', border: 'none', cursor: 'pointer', padding: 0, color: 'inherit',
         }}>
-          <div style={{
-            width: 44, height: 44, background: 'linear-gradient(135deg, #F5A524, #D97706)',
-            display: 'grid', placeItems: 'center', fontWeight: 700, fontSize: 19, color: 'white',
-          }}>J</div>
+          {logoIconUrl
+            ? <img src={logoIconUrl} alt="Logo" style={{ width: logoIconSize + 12, height: logoIconSize + 12, objectFit: 'contain' }} />
+            : <svg width="44" height="44" viewBox="0 0 48 48" fill="none">
+                <defs><linearGradient id="rplg" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stopColor="#00B4D8"/><stop offset="100%" stopColor="#1B4FD8"/></linearGradient></defs>
+                <path d="M8 8 C8 6 10 4 12 5 L38 20 C40 21 40 27 38 28 L12 43 C10 44 8 42 8 40 Z" fill="url(#rplg)"/>
+              </svg>
+          }
           <div>
-            <div style={{ fontWeight: 700, fontSize: 18 }}>Jumla Shipping</div>
+            <div style={{ fontWeight: 800, fontSize: 18, letterSpacing: '.03em', textTransform: 'uppercase' }}>JUMLA Shipping</div>
             <div style={{ fontSize: 11.5, color: 'rgba(255,255,255,.55)', marginTop: 1 }}>Fret international · Douala</div>
           </div>
         </button>
         <div style={{ marginTop: 'auto', position: 'relative', zIndex: 2 }}>
-          <h1 style={{ fontSize: 36, fontWeight: 700, letterSpacing: '-.025em', lineHeight: 1.2, margin: '0 0 16px', color: 'white' }}>
+          <div style={{
+            background: 'rgba(255,255,255,.08)', border: '1px solid rgba(0,180,216,.3)',
+            color: 'rgba(255,255,255,.85)', padding: '6px 14px', fontSize: 12,
+            marginBottom: 24, display: 'inline-flex', alignItems: 'center', gap: 8,
+          }}>
+            <span>DOUALA</span><I.Plane style={{ color: '#00B4D8' }} /><span>MONTRÉAL</span>
+          </div>
+          <h1 style={{ fontSize: 36, fontWeight: 800, letterSpacing: '-.02em', lineHeight: 1.2, margin: '0 0 16px', color: 'white' }}>
             Réinitialisation<br />de mot de passe
           </h1>
           <p style={{ fontSize: 14, color: 'rgba(255,255,255,.6)', margin: 0, lineHeight: 1.55 }}>
@@ -82,7 +102,7 @@ function ResetForm() {
       </div>
 
       {/* Right — form */}
-      <div style={{ display: 'flex', flexDirection: 'column', padding: '36px 56px', position: 'relative' }}>
+      <div className="rp-panel" style={{ display: 'flex', flexDirection: 'column', padding: '36px 56px', position: 'relative' }}>
         <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
           <button className="btn btn--ghost btn--sm" onClick={() => router.push('/login')}><I.ArrowRight style={{ transform: 'rotate(180deg)' }} />Retour</button>
         </div>
@@ -160,6 +180,7 @@ function ResetForm() {
         </div>
       </div>
     </div>
+    </>
   );
 }
 

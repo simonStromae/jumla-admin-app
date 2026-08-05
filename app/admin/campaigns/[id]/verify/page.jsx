@@ -54,13 +54,34 @@ function mapParcel(p) {
   });
 
   if (rows.length === 0) {
-    rows = [{
-      id: `${p.id}-fallback`,
-      blId: null, blCode: null, origItem: null,
-      verifStatus: null, verifEcart: 0, verifNote: '',
-      designation: p.description || 'Colis',
-      description: '—', type: '—', nb: 1, pieces: null,
-    }];
+    const parcelItems = Array.isArray(p.items) && p.items.length > 0 ? p.items : null;
+    if (parcelItems) {
+      parcelItems.forEach((it, idx) => {
+        rows.push({
+          id:          `${p.id}-item-${idx}`,
+          blId:        null,
+          blCode:      null,
+          blStatus:    null,
+          origItem:    it,
+          verifStatus: it._verifStatus ?? null,
+          verifEcart:  it._verifEcart  ?? 0,
+          verifNote:   it._verifNote   ?? '',
+          designation: it.designation || p.description || 'Colis',
+          description: it.description || '—',
+          type:        capitalize(it.type),
+          nb:          Number(it.count) || 1,
+          pieces:      it.nbPieces != null ? Number(it.nbPieces) : null,
+        });
+      });
+    } else {
+      rows = [{
+        id: `${p.id}-fallback`,
+        blId: null, blCode: null, blStatus: null, origItem: null,
+        verifStatus: null, verifEcart: 0, verifNote: '',
+        designation: p.description || 'Colis',
+        description: '—', type: '—', nb: 1, pieces: null,
+      }];
+    }
   }
 
   return {
@@ -94,8 +115,9 @@ export default function CampaignVerifyPage({ params }) {
       .catch(() => { setError('Impossible de charger la cargaison.'); setLoading(false); });
   }, [params.id]);
 
-  // Save one parcel's bordereau verifications.
-  // Groups rows by blId, determines worst-case status, stores per-item state in items JSON.
+  // Save one parcel's verifications.
+  // Bordereaux rows → PUT /api/bordereaux/:id (status + embedded items JSON)
+  // No-bordereau rows (declared at booking) → PUT /api/parcels/:id (items JSON only)
   async function saveParcel(parcel, verifs) {
     const byBl = {};
     const blStatusMap = {};
@@ -105,70 +127,82 @@ export default function CampaignVerifyPage({ params }) {
       byBl[r.blId].push(r);
     }
 
-    const responses = await Promise.all(
-      Object.entries(byBl).map(([blId, blRows]) => {
-        // Worst-case status across all items of this bordereau
-        const statuses = blRows.map(r => verifs[parcel.id]?.[r.id]?.status ?? 'pending');
-        let blStatus;
-        if (statuses.includes('missing') || statuses.includes('issue')) blStatus = 'ecart';
-        else if (statuses.every(s => s === 'ok'))                        blStatus = 'verifie';
-        else                                                              blStatus = 'en_attente';
+    const saves = [];
 
-        blStatusMap[blId] = blStatus;
+    // --- Bordereau rows ---
+    for (const [blId, blRows] of Object.entries(byBl)) {
+      const statuses = blRows.map(r => verifs[parcel.id]?.[r.id]?.status ?? 'pending');
+      let blStatus;
+      if (statuses.includes('missing') || statuses.includes('issue')) blStatus = 'ecart';
+      else if (statuses.every(s => s === 'ok'))                        blStatus = 'verifie';
+      else                                                              blStatus = 'en_attente';
 
-        // Build updated items array with per-item verif state embedded
-        const updatedItems = blRows
-          .filter(r => r.origItem)
-          .map(r => {
-            const v = verifs[parcel.id]?.[r.id] ?? { status: 'pending', ecart: 0, note: '' };
-            return {
-              ...r.origItem,
-              _verifStatus: v.status,
-              _verifEcart:  v.ecart  ?? 0,
-              _verifNote:   v.note   ?? '',
-            };
-          });
+      blStatusMap[blId] = blStatus;
 
-        return fetch(`/api/bordereaux/${blId}`, {
-          method:  'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body:    JSON.stringify({
-            status: blStatus,
-            ...(updatedItems.length > 0 ? { items: updatedItems } : {}),
-          }),
+      const updatedItems = blRows
+        .filter(r => r.origItem)
+        .map(r => {
+          const v = verifs[parcel.id]?.[r.id] ?? { status: 'pending', ecart: 0, note: '' };
+          return { ...r.origItem, _verifStatus: v.status, _verifEcart: v.ecart ?? 0, _verifNote: v.note ?? '' };
         });
-      })
-    );
 
-    // Surface any server-side error so the UI doesn't falsely show "✓ saved"
+      saves.push(fetch(`/api/bordereaux/${blId}`, {
+        method:  'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ status: blStatus, ...(updatedItems.length > 0 ? { items: updatedItems } : {}) }),
+      }));
+    }
+
+    // --- Parcel-level rows (no bordereau, items from booking declaration) ---
+    const parcelRows = parcel.rows.filter(r => !r.blId && r.origItem);
+    if (parcelRows.length > 0) {
+      const updatedItems = parcelRows.map(r => {
+        const v = verifs[parcel.id]?.[r.id] ?? { status: 'pending', ecart: 0, note: '' };
+        return { ...r.origItem, _verifStatus: v.status, _verifEcart: v.ecart ?? 0, _verifNote: v.note ?? '' };
+      });
+      saves.push(fetch(`/api/parcels/${parcel.id}`, {
+        method:  'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ items: updatedItems }),
+      }));
+    }
+
+    if (saves.length === 0) return;
+
+    const responses = await Promise.all(saves);
+
     const failed = responses.find(r => !r.ok);
     if (failed) {
       const body = await failed.json().catch(() => ({}));
       throw new Error(body.error || `Erreur ${failed.status}`);
     }
 
-    // Update local row state so the page reflects the new blStatus immediately
-    // (prevents stale display if navigating away and back via client-side router cache)
     setParcels(prev => prev.map(p => {
       if (p.id !== parcel.id) return p;
       return {
         ...p,
         rows: p.rows.map(r => {
-          if (!r.blId || !(r.blId in blStatusMap)) return r;
           const v = verifs[parcel.id]?.[r.id];
-          return {
-            ...r,
-            blStatus:    blStatusMap[r.blId],
-            verifStatus: v?.status  ?? r.verifStatus,
-            verifEcart:  v?.ecart   ?? r.verifEcart,
-            verifNote:   v?.note    ?? r.verifNote,
-            origItem: r.origItem ? {
-              ...r.origItem,
-              _verifStatus: v?.status ?? r.verifStatus,
-              _verifEcart:  v?.ecart  ?? 0,
-              _verifNote:   v?.note   ?? '',
-            } : null,
-          };
+          if (r.blId && r.blId in blStatusMap) {
+            return {
+              ...r,
+              blStatus:    blStatusMap[r.blId],
+              verifStatus: v?.status ?? r.verifStatus,
+              verifEcart:  v?.ecart  ?? r.verifEcart,
+              verifNote:   v?.note   ?? r.verifNote,
+              origItem: r.origItem ? { ...r.origItem, _verifStatus: v?.status ?? r.verifStatus, _verifEcart: v?.ecart ?? 0, _verifNote: v?.note ?? '' } : null,
+            };
+          }
+          if (!r.blId && r.origItem) {
+            return {
+              ...r,
+              verifStatus: v?.status ?? r.verifStatus,
+              verifEcart:  v?.ecart  ?? r.verifEcart,
+              verifNote:   v?.note   ?? r.verifNote,
+              origItem: { ...r.origItem, _verifStatus: v?.status ?? r.verifStatus, _verifEcart: v?.ecart ?? 0, _verifNote: v?.note ?? '' },
+            };
+          }
+          return r;
         }),
       };
     }));
