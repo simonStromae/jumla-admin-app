@@ -98,13 +98,14 @@ export default function CampaignVerifyPage({ params }) {
   // Groups rows by blId, determines worst-case status, stores per-item state in items JSON.
   async function saveParcel(parcel, verifs) {
     const byBl = {};
+    const blStatusMap = {};
     for (const r of parcel.rows) {
       if (!r.blId) continue;
       if (!byBl[r.blId]) byBl[r.blId] = [];
       byBl[r.blId].push(r);
     }
 
-    await Promise.all(
+    const responses = await Promise.all(
       Object.entries(byBl).map(([blId, blRows]) => {
         // Worst-case status across all items of this bordereau
         const statuses = blRows.map(r => verifs[parcel.id]?.[r.id]?.status ?? 'pending');
@@ -112,6 +113,8 @@ export default function CampaignVerifyPage({ params }) {
         if (statuses.includes('missing') || statuses.includes('issue')) blStatus = 'ecart';
         else if (statuses.every(s => s === 'ok'))                        blStatus = 'verifie';
         else                                                              blStatus = 'en_attente';
+
+        blStatusMap[blId] = blStatus;
 
         // Build updated items array with per-item verif state embedded
         const updatedItems = blRows
@@ -136,6 +139,39 @@ export default function CampaignVerifyPage({ params }) {
         });
       })
     );
+
+    // Surface any server-side error so the UI doesn't falsely show "✓ saved"
+    const failed = responses.find(r => !r.ok);
+    if (failed) {
+      const body = await failed.json().catch(() => ({}));
+      throw new Error(body.error || `Erreur ${failed.status}`);
+    }
+
+    // Update local row state so the page reflects the new blStatus immediately
+    // (prevents stale display if navigating away and back via client-side router cache)
+    setParcels(prev => prev.map(p => {
+      if (p.id !== parcel.id) return p;
+      return {
+        ...p,
+        rows: p.rows.map(r => {
+          if (!r.blId || !(r.blId in blStatusMap)) return r;
+          const v = verifs[parcel.id]?.[r.id];
+          return {
+            ...r,
+            blStatus:    blStatusMap[r.blId],
+            verifStatus: v?.status  ?? r.verifStatus,
+            verifEcart:  v?.ecart   ?? r.verifEcart,
+            verifNote:   v?.note    ?? r.verifNote,
+            origItem: r.origItem ? {
+              ...r.origItem,
+              _verifStatus: v?.status ?? r.verifStatus,
+              _verifEcart:  v?.ecart  ?? 0,
+              _verifNote:   v?.note   ?? '',
+            } : null,
+          };
+        }),
+      };
+    }));
   }
 
   async function handleClose() {
