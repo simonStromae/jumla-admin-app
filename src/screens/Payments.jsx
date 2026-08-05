@@ -26,6 +26,7 @@ const PAY_STATUS = {
   unpaid:    { label: 'En cours',   cls: 'warn'    }, // → same as pending
   failed:    { label: 'Échoué',     cls: 'bad'     }, // TODO: i18n — no translation key
   refunded:  { label: 'Remboursé',  cls: 'neutral' }, // TODO: i18n — no translation key
+  cancelled: { label: 'Annulé',     cls: 'neutral' },
 };
 
 /* ─── Record Payment Modal ───────────────────────────────── */
@@ -946,6 +947,8 @@ function InvoicesTab({ onReload, onNav }) {
   const [search, setSearch]             = useState('');
   const [invoiceParcelId, setInvoiceParcelId] = useState(null);
   const [settleInvoice, setSettleInvoice] = useState(null);
+  const [cancellingId, setCancellingId] = useState(null);
+  const [cancelling, setCancelling]     = useState(false);
 
   const loadPayments = () => {
     setLoading(true);
@@ -957,17 +960,33 @@ function InvoicesTab({ onReload, onNav }) {
 
   useEffect(() => { loadPayments(); }, []);
 
+  const cancelPayment = async (paymentId) => {
+    setCancelling(true);
+    const res = await fetch(`/api/payments/${paymentId}`, {
+      method:  'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ status: 'cancelled' }),
+    });
+    setCancelling(false);
+    if (res.ok) {
+      setCancellingId(null);
+      loadPayments();
+      onReload?.();
+    }
+  };
+
   const isEnCours = p => p.status === 'pending' || p.status === 'unpaid' || p.status === 'partial';
 
   const tabs = [
-    { id: 'all',      l: 'Tous',     n: payments.length },
-    { id: 'paid',     l: 'Payés',    n: payments.filter(p => p.status === 'paid').length,  cls: 'ok'   },
-    { id: 'encours',  l: 'En cours', n: payments.filter(isEnCours).length,                 cls: 'warn' },
-    { id: 'partial',  l: 'Partiel',  n: payments.filter(p => p.status === 'partial').length, cls: 'warn' },
+    { id: 'all',       l: 'Tous',     n: payments.filter(p => p.status !== 'cancelled').length },
+    { id: 'paid',      l: 'Payés',    n: payments.filter(p => p.status === 'paid').length,      cls: 'ok'      },
+    { id: 'encours',   l: 'En cours', n: payments.filter(isEnCours).length,                     cls: 'warn'    },
+    { id: 'partial',   l: 'Partiel',  n: payments.filter(p => p.status === 'partial').length,   cls: 'warn'    },
+    { id: 'cancelled', l: 'Annulés',  n: payments.filter(p => p.status === 'cancelled').length, cls: 'neutral' },
   ];
 
   const filtered = payments
-    .filter(p => tab === 'all' || (tab === 'encours' ? isEnCours(p) : p.status === tab))
+    .filter(p => tab === 'all' ? p.status !== 'cancelled' : (tab === 'encours' ? isEnCours(p) : p.status === tab))
     .filter(p => {
       if (!search) return true;
       const q = search.toLowerCase();
@@ -1059,17 +1078,40 @@ function InvoicesTab({ onReload, onNav }) {
                 <td className="mono" style={{ fontSize: 12, color: 'var(--ink-500)' }}>{p.interacRef ?? '—'}</td>
                 <td>
                   <div style={{ display: 'flex', gap: 6, alignItems: 'center', justifyContent: 'flex-end' }}>
-                    <button className="btn btn--ghost btn--xs" title={/* TODO: i18n — no translation key */ "Voir la facture"}
+                    <button className="btn btn--ghost btn--xs" title="Voir la facture"
                       onClick={() => setInvoiceParcelId(p.parcelId)} style={{ padding: '4px 8px' }}>
                       <I.FileText style={{ width: 13, height: 13 }} />
                     </button>
-                    {p.status === 'paid'
-                      ? <span style={{ fontSize: 12, color: 'var(--ok-600)' }}>✓ {t.paymentStatus.completed}</span>
-                      : can('payments', 'validate')
-                        ? <button className="btn btn--brand btn--xs" onClick={() => setSettleInvoice(p)}>
-                            <I.Wallet />{t.payments.settle}
+                    {p.status === 'cancelled' ? (
+                      <span style={{ fontSize: 12, color: 'var(--ink-400)' }}>—</span>
+                    ) : p.status === 'paid' ? (
+                      <span style={{ fontSize: 12, color: 'var(--ok-600)' }}>✓ {t.paymentStatus.completed}</span>
+                    ) : can('payments', 'validate') ? (
+                      <>
+                        <button className="btn btn--brand btn--xs" onClick={() => setSettleInvoice(p)}>
+                          <I.Wallet />{t.payments.settle}
+                        </button>
+                        {cancellingId === p.id ? (
+                          <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
+                            <span style={{ fontSize: 11, color: 'var(--bad-600)', whiteSpace: 'nowrap' }}>Annuler ?</span>
+                            <button className="btn btn--xs" disabled={cancelling}
+                              style={{ background: 'var(--bad-600)', color: 'white', border: 'none', borderRadius: 5, padding: '3px 8px', cursor: 'pointer', fontSize: 12 }}
+                              onClick={() => cancelPayment(p.id)}>
+                              Oui
+                            </button>
+                            <button className="btn btn--ghost btn--xs" onClick={() => setCancellingId(null)}>Non</button>
+                          </div>
+                        ) : (
+                          <button className="btn btn--ghost btn--xs" title="Annuler ce paiement"
+                            onClick={() => setCancellingId(p.id)}
+                            style={{ color: 'var(--bad-500)', padding: '4px 8px' }}>
+                            ✕
                           </button>
-                        : <span style={{ fontSize: 12, color: 'var(--ink-400)' }}>{t.paymentStatus.pending}</span>}
+                        )}
+                      </>
+                    ) : (
+                      <span style={{ fontSize: 12, color: 'var(--ink-400)' }}>{t.paymentStatus.pending}</span>
+                    )}
                   </div>
                 </td>
               </tr>
@@ -1167,12 +1209,13 @@ export default function PaymentsScreen({ onNav }) {
     });
   }, []);
 
-  // KPIs using enriched data from API (allocated, invoiced, collected, remaining)
-  const facture = payments.reduce((s, p) => s + (p.invoiced ?? p.amount ?? 0), 0);
-  const percu   = payments.reduce((s, p) => s + (p.collected ?? (p.status === 'paid' ? p.amount : 0)), 0);
-  const impayes = payments.reduce((s, p) => s + (p.remaining ?? (p.status !== 'paid' && p.status !== 'refunded' ? p.amount : 0)), 0);
-  const taux    = facture > 0 ? Math.round(percu / facture * 100) : 0;
-  const nbImpayes = payments.filter(p => (p.remaining ?? 0) > 0).length;
+  // KPIs — exclude cancelled payments from all calculations
+  const activePayments = payments.filter(p => p.status !== 'cancelled');
+  const facture   = activePayments.reduce((s, p) => s + (p.invoiced ?? p.amount ?? 0), 0);
+  const percu     = activePayments.reduce((s, p) => s + (p.collected ?? (p.status === 'paid' ? p.amount : 0)), 0);
+  const impayes   = activePayments.reduce((s, p) => s + (p.remaining ?? (p.status !== 'paid' && p.status !== 'refunded' ? p.amount : 0)), 0);
+  const taux      = facture > 0 ? Math.round(percu / facture * 100) : 0;
+  const nbImpayes = activePayments.filter(p => (p.remaining ?? 0) > 0).length;
 
   const reloadKpi = () => {
     fetch('/api/payments').then(r => r.json()).then(d => setPayments(Array.isArray(d) ? d : []));
