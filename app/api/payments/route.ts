@@ -67,8 +67,8 @@ export async function GET() {
     // Total collected — capped at invoiced to avoid double-counting when priceXaf=null
     const collected = Math.min(allocated + suppPaid, invoiced);
 
-    // Remaining owed
-    const remaining = Math.max(0, invoiced - collected);
+    // Remaining owed (cancelled payments don't count as outstanding)
+    const remaining = p.status === 'cancelled' ? 0 : Math.max(0, invoiced - collected);
 
     return {
       id:               p.id,
@@ -92,7 +92,7 @@ export async function GET() {
       collected,          // total encaissé (facture + supplément)
       remaining,          // reste dû total
       received:         p.status === 'completed' ? p.amount : 0,
-      status:           p.status === 'completed' ? 'paid' : p.status === 'pending' ? 'pending' : 'unpaid',
+      status:           p.status === 'completed' ? 'paid' : p.status === 'cancelled' ? 'cancelled' : p.status === 'pending' ? 'pending' : 'unpaid',
       interacRef:       p.interacRef,
       paidAt:           p.paidAt,
       createdAt:        p.createdAt,
