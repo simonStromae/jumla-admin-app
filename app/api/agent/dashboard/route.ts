@@ -45,7 +45,7 @@ export async function GET() {
       take: 10,
       include: {
         route: true,
-        _count: { select: { parcels: true } },
+        _count: { select: { parcels: { where: { deletedAt: null, status: { not: 'ann' } } } } },
       },
     }),
     // Tracking events created today

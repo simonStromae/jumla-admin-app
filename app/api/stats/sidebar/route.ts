@@ -10,7 +10,7 @@ export async function GET() {
       prisma.user.count({ where: { role: 'client' } }),
       (prisma.campaign.count as any)({ where: { deletedAt: null, status: { in: ['exp', 'tra', 'apd', 'dou', 'lib', 'ard'] } } })
         .catch(() => prisma.campaign.count({ where: { status: { in: ['exp', 'tra', 'apd', 'dou', 'lib', 'ard'] } } })),
-      prisma.payment.count({ where: { status: 'pending', parcel: { deletedAt: null } } }),
+      prisma.payment.count({ where: { status: 'pending', parcel: { deletedAt: null, status: { not: 'ann' } } } }),
     ]);
     return NextResponse.json({ campaigns, clients, verifyPending, unpaidPayments });
   } catch {
