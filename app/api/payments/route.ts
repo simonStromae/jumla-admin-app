@@ -8,7 +8,7 @@ export async function GET() {
   if (error) return error;
 
   const payments = await prisma.payment.findMany({
-    where:    { parcel: { deletedAt: null } },
+    where:    { parcel: { deletedAt: null, status: { not: 'ann' } } },
     orderBy:  { createdAt: 'desc' },
     include: {
       client: { select: { name: true, phone: true, email: true } },
@@ -61,8 +61,10 @@ export async function GET() {
     const suppPaid    = adjustmentStatus === 'paid'    ? suppAmt : 0;
     const suppPending = adjustmentStatus === 'pending' ? suppAmt : 0;
 
-    // Total invoiced for this parcel (base + supplement)
-    const invoiced = (confirmedPriceXaf ?? p.amount) + 0;  // confirmedPriceXaf already includes supplement
+    // Total invoiced — only include confirmedPriceXaf once the supplement is settled (same rule as analytics/campaigns)
+    const invoiced = (adjustmentStatus === 'paid' || adjustmentStatus === 'discount') && confirmedPriceXaf != null
+      ? confirmedPriceXaf
+      : p.amount;
 
     // Total collected — capped at invoiced to avoid double-counting when priceXaf=null
     const collected = Math.min(allocated + suppPaid, invoiced);

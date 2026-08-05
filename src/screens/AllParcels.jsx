@@ -181,17 +181,17 @@ export default function AllParcelsScreen({ onNav, initialSearch = '' }) {
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 14, marginBottom: 18 }}>
         <div className="kpi">
           <div className="kpi__label">{t.campaigns.kpi.parcels}</div>
-          <div className="kpi__value">{allParcels.length.toLocaleString('fr')}</div>
+          <div className="kpi__value">{allParcels.filter(p => p.status !== 'ann').length.toLocaleString('fr')}</div>
           <div className="kpi__delta">8 cargaisons</div>
         </div>
         <div className="kpi">
           {/* TODO: no translation key for "Poids cumulé" */}
           <div className="kpi__label">Poids cumulé</div>
-          <div className="kpi__value">{allParcels.reduce((a, p) => a + p.actualKg, 0).toFixed(0)} <span style={{ fontSize: 14, color: 'var(--ink-400)' }}>kg</span></div>
+          <div className="kpi__value">{allParcels.filter(p => p.status !== 'ann').reduce((a, p) => a + p.actualKg, 0).toFixed(0)} <span style={{ fontSize: 14, color: 'var(--ink-400)' }}>kg</span></div>
         </div>
         <div className="kpi" style={{ background: 'var(--ok-50)', borderColor: 'var(--ok-100)' }}>
           <div className="kpi__label" style={{ color: 'var(--ok-700)' }}>{t.paymentStatus.completed}</div>
-          <div className="kpi__value" style={{ color: 'var(--ok-700)' }}>{allParcels.filter(p => p.paid === 'paid').length}</div>
+          <div className="kpi__value" style={{ color: 'var(--ok-700)' }}>{allParcels.filter(p => p.paid === 'paid' && p.status !== 'ann').length}</div>
         </div>
         <div className="kpi" style={{ background: 'var(--warn-50)', borderColor: 'var(--warn-100)' }}>
           <div className="kpi__label" style={{ color: 'var(--warn-700)' }}>En cours</div>

@@ -48,10 +48,13 @@ async function getBalance(clientId: string) {
 
   const invoices = payments.map(p => {
     const allocatedOnPayment = allocMap[p.id] || 0;
-    // A payment manually marked completed (old flow) counts as fully paid
-    const effectiveAllocated = p.status === 'completed'
-      ? Math.max(allocatedOnPayment, p.amount)
-      : allocatedOnPayment;
+    // Cancelled payment → client owes nothing (was voided)
+    // Completed payment (old flow) → full amount regardless of allocations
+    const effectiveAllocated = p.status === 'cancelled'
+      ? p.amount
+      : p.status === 'completed'
+        ? Math.max(allocatedOnPayment, p.amount)
+        : allocatedOnPayment;
     return {
       id:           p.id,
       parcelId:     p.parcelId,

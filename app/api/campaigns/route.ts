@@ -43,13 +43,32 @@ export async function GET(req: NextRequest) {
     });
   }
 
+  // Batch-fetch allocations for all parcels' payments across all campaigns
+  const allPaymentIds = campaigns.flatMap(c =>
+    c.parcels.filter(p => p.status !== 'ann' && p.payment).map(p => p.payment!.id)
+  );
+  let allocMap: Record<string, number> = {};
+  if (allPaymentIds.length > 0) {
+    try {
+      const allocRows = await prisma.$queryRawUnsafe<{ paymentId: string; allocated: number }[]>(
+        `SELECT "paymentId", COALESCE(SUM(amount), 0)::int AS allocated
+         FROM transaction_allocations
+         WHERE "paymentId" = ANY($1::text[])
+         GROUP BY "paymentId"`,
+        allPaymentIds
+      );
+      for (const r of allocRows) allocMap[r.paymentId] = Number(r.allocated);
+    } catch {
+      // transaction_allocations table not yet migrated — fall back to payment.amount for completed
+    }
+  }
+
   const result = campaigns.map(c => {
     const active    = c.parcels.filter(p => p.status !== 'ann');
     const cancelled = c.parcels.filter(p => p.status === 'ann').length;
     const invoiced  = active.reduce((s, p) => {
       const adj  = (p as any).adjustmentStatus;
       const conf = (p as any).confirmedPriceXaf;
-      // Include confirmed price only when supplement is fully resolved (no impact on rate for pending supplements)
       const inv = (adj === 'paid' || adj === 'discount') && conf != null
         ? conf
         : (p.payment?.amount ?? p.priceXaf ?? 0);
@@ -61,13 +80,17 @@ export async function GET(req: NextRequest) {
       const inv  = (adj === 'paid' || adj === 'discount') && conf != null
         ? conf
         : (p.payment?.amount ?? p.priceXaf ?? 0);
-      const payAmt  = p.payment?.status === 'completed' ? p.payment.amount : 0;
-      const suppAmt = conf != null ? Math.max(0, conf - (p.priceXaf ?? 0)) : 0;
+      // Use allocation-aware collected (same as analytics route)
+      const rawAllocated = p.payment ? (allocMap[p.payment.id] ?? 0) : 0;
+      const payAmt  = p.payment?.status === 'completed'
+        ? Math.max(rawAllocated, p.payment.amount)
+        : rawAllocated;
+      const suppAmt = conf != null ? Math.max(0, conf - ((p as any).priceXaf ?? 0)) : 0;
       const suppPaid = adj === 'paid' ? suppAmt : 0;
       return s + Math.min(payAmt + suppPaid, inv);
     }, 0);
     const weight    = active.reduce((s, p) => s + (p.weightKg ?? 0), 0);
-    const unpaid    = active.filter(p => !p.payment || p.payment.status !== 'completed').length;
+    const unpaid    = active.filter(p => p.payment?.status !== 'completed' && p.payment?.status !== 'cancelled').length;
 
     const allBordereaux   = active.flatMap(p => (p as any).bordereaux ?? []);
     const totalBordereaux = allBordereaux.length;
