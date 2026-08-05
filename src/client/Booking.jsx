@@ -551,9 +551,8 @@ function CampaignCalendar({ campaigns, selected, onSelect, routeLabel }) {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
-  const firstWithDate = campaigns.find(c => c.departureDate);
-  const [viewYear,  setViewYear]  = useState(() => firstWithDate ? new Date(firstWithDate.departureDate).getUTCFullYear()  : today.getFullYear());
-  const [viewMonth, setViewMonth] = useState(() => firstWithDate ? new Date(firstWithDate.departureDate).getUTCMonth()     : today.getMonth());
+  const [viewYear,  setViewYear]  = useState(() => today.getFullYear());
+  const [viewMonth, setViewMonth] = useState(() => today.getMonth());
 
   const campaignsByDate = {};
   campaigns.forEach(c => {
