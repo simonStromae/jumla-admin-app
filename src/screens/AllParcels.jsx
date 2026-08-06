@@ -25,6 +25,8 @@ export default function AllParcelsScreen({ onNav, initialSearch = '' }) {
   const [repairCodes, setRepairCodes]     = useState('');
   const [repairLoading, setRepairLoading] = useState(false);
   const [repairResults, setRepairResults] = useState(null);
+  const [syncing, setSyncing]             = useState(false);
+  const [syncResult, setSyncResult]       = useState(null);
 
   useEffect(() => {
     Promise.all([
@@ -88,6 +90,25 @@ export default function AllParcelsScreen({ onNav, initialSearch = '' }) {
       setRepairResults([{ trackingCode: '—', ok: false, message: 'Erreur réseau' }]);
     }
     setRepairLoading(false);
+  };
+
+  const handleSyncStatuses = async () => {
+    if (!confirm('Synchroniser les statuts de tous les colis avec leur cargaison ? Les statuts bloqués à "Enregistré" seront mis à jour.')) return;
+    setSyncing(true);
+    setSyncResult(null);
+    try {
+      const res = await fetch('/api/admin/sync-parcel-statuses', { method: 'POST' });
+      const d = await res.json();
+      setSyncResult(d);
+      if (d.totalUpdated > 0) {
+        fetch('/api/parcels').then(r => r.json()).then(data => {
+          if (Array.isArray(data)) setAllParcels(data);
+        });
+      }
+    } catch {
+      setSyncResult({ ok: false, error: 'Erreur réseau' });
+    }
+    setSyncing(false);
   };
 
   const handleCancelConfirm = async (parcel, reason) => {
@@ -173,6 +194,17 @@ export default function AllParcelsScreen({ onNav, initialSearch = '' }) {
               title="Rétablir des paiements manquants">
               <I.Check style={{ width: 14, height: 14 }} /> Rétablir paiements
             </button>
+          )}
+          {can('parcels', 'admin') && (
+            <button className="btn btn--ghost" onClick={handleSyncStatuses} disabled={syncing}
+              title="Mettre à jour les statuts colis selon leur cargaison">
+              <I.Route style={{ width: 14, height: 14 }} /> {syncing ? 'Sync…' : 'Sync statuts'}
+            </button>
+          )}
+          {syncResult && (
+            <span style={{ fontSize: 12, color: syncResult.totalUpdated > 0 ? 'var(--ok-600)' : 'var(--ink-400)', fontWeight: 600 }}>
+              {syncResult.totalUpdated > 0 ? `✓ ${syncResult.totalUpdated} colis mis à jour` : '✓ Déjà à jour'}
+            </span>
           )}
           {can('parcels', 'create') && <button className="btn btn--brand" onClick={() => onNav('/parcels/new')}><I.Plus />Nouveau colis</button>}
         </div>
