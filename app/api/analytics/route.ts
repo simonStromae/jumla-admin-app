@@ -129,9 +129,9 @@ export async function GET(req: NextRequest) {
     clientRevMap[cid].amount += collected;
     if (p.payment) clientRevMap[cid].count++;
 
-    // Unpaid
+    // Unpaid — skip cancelled payments (client owes nothing on a voided invoice)
     const remaining = Math.max(0, invoiced - collected);
-    if (remaining > 0) {
+    if (remaining > 0 && p.payment?.status !== 'cancelled') {
       if (!p.payment) {
         // No payment record at all — full invoice outstanding
         unpaidItems.push({ id: 'nopay_' + p.id, clientName: p.client.name, trackingCode: p.trackingCode, amount: invoiced, status: 'pending' });
@@ -139,7 +139,7 @@ export async function GET(req: NextRequest) {
         const mainAllocated = p.payment.status === 'completed'
           ? (paymentsWithAllocations.has(p.payment.id) ? (allocByPayment[p.payment.id] ?? p.payment.amount) : p.payment.amount)
           : (allocByPayment[p.payment.id] ?? 0);
-        const mainRemaining = Math.max(0, p.payment.amount - mainAllocated);
+        const mainRemaining = Math.max(0, invoiced - mainAllocated);
         const suppRemaining = adjStatus === 'pending' && confirmedPrice != null
           ? Math.max(0, confirmedPrice - (p.priceXaf ?? 0))
           : 0;
