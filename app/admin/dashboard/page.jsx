@@ -94,7 +94,8 @@ export default function DashboardPage() {
   const unconfirmed = data?.unconfirmedBordereaux ?? [];
   const unpaid = data?.unpaidInvoices ?? [];
   const missingWeight = data?.missingWeightCount ?? 0;
-  const totalUnpaid = unpaid.reduce((sum, inv) => sum + (Number(inv.invoiced ?? inv.amount) || 0), 0);
+  // Use remaining (invoiced minus what's already been paid) — consistent with Payments screen
+  const totalUnpaid = unpaid.reduce((sum, inv) => sum + (Number(inv.remaining ?? inv.invoiced ?? inv.amount) || 0), 0);
   const hasUrgences = unconfirmed.length > 0 || unpaid.length > 0;
 
   return (
