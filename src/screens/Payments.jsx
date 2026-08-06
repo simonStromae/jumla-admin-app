@@ -1071,8 +1071,19 @@ function InvoicesTab({ onReload, onNav }) {
                 <td className="mono" style={{ fontSize: 12, fontWeight: 600 }}>{p.campaign}</td>
                 <td className="mono" style={{ fontSize: 12, fontWeight: 600 }}>{p.parcel}</td>
                 <td style={{ textAlign: 'right' }}>
-                  <span className="mono" style={{ fontWeight: 700 }}>{(p.due || 0).toLocaleString('fr')}</span>
-                  <span style={{ fontSize: 11, color: 'var(--ink-400)', marginLeft: 3 }}>CAD</span>
+                  <div>
+                    <span className="mono" style={{ fontWeight: 700 }}>{(p.invoiced ?? p.due ?? 0).toLocaleString('fr')}</span>
+                    <span style={{ fontSize: 11, color: 'var(--ink-400)', marginLeft: 3 }}>CAD</span>
+                  </div>
+                  {p.status !== 'paid' && p.status !== 'cancelled' && (
+                    <div style={{ fontSize: 11, marginTop: 2 }}>
+                      {(p.collected ?? 0) > 0
+                        ? <><span style={{ color: 'var(--ok-600)', fontWeight: 600 }}>{(p.collected).toLocaleString('fr')} reçu</span>
+                            {' · '}<span style={{ color: 'var(--bad-500)', fontWeight: 600 }}>{(p.remaining ?? 0).toLocaleString('fr')} restant</span></>
+                        : <span style={{ color: 'var(--bad-500)' }}>rien reçu</span>
+                      }
+                    </div>
+                  )}
                 </td>
                 <td><span className={'badge badge--dot badge--' + s.cls}>{s.label}</span></td>
                 <td className="mono" style={{ fontSize: 12, color: 'var(--ink-500)' }}>{p.interacRef ?? '—'}</td>
@@ -1242,24 +1253,24 @@ export default function PaymentsScreen({ onNav }) {
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14, marginBottom: 18 }}>
         {/* TODO: i18n — KPI labels 'Facturé', 'Perçu', 'Impayés', 'Taux recouvrement' have no keys in t.payments or t.analytics.kpi */}
         <div className="kpi">
-          <div className="kpi__label">Facturé <span style={{ textTransform: 'none', color: 'var(--ink-300)' }}>/ Invoiced</span></div>
+          <div className="kpi__label">Total facturé</div>
           <div className="kpi__value">{facture.toLocaleString('fr')} <span style={{ fontSize: 14, color: 'var(--ink-400)' }}>CAD</span></div>
-          <div className="kpi__delta">{payments.length} {/* TODO: i18n — no translation key for "facture(s)" */}facture{payments.length !== 1 ? 's' : ''}</div>
+          <div className="kpi__delta">{activePayments.length} facture{activePayments.length !== 1 ? 's' : ''} actives</div>
         </div>
         <div className="kpi" style={{ background: 'var(--ok-50)', borderColor: 'var(--ok-100)' }}>
-          <div className="kpi__label" style={{ color: 'var(--ok-700)' }}>Perçu <span style={{ textTransform: 'none', opacity: .6 }}>/ Collected</span></div>
+          <div className="kpi__label" style={{ color: 'var(--ok-700)' }}>Total encaissé</div>
           <div className="kpi__value" style={{ color: 'var(--ok-700)' }}>{percu.toLocaleString('fr')} <span style={{ fontSize: 14, opacity: .6 }}>CAD</span></div>
           <Progress pct={taux} />
         </div>
         <div className="kpi" style={{ background: 'var(--warn-50)', borderColor: 'var(--warn-100)' }}>
-          <div className="kpi__label" style={{ color: 'var(--warn-700)' }}>En cours <span style={{ textTransform: 'none', opacity: .6 }}>/ Outstanding</span></div>
+          <div className="kpi__label" style={{ color: 'var(--warn-700)' }}>Restant à encaisser</div>
           <div className="kpi__value" style={{ color: 'var(--warn-700)' }}>{impayes.toLocaleString('fr')} <span style={{ fontSize: 14, opacity: .6 }}>CAD</span></div>
           <div className="kpi__delta" style={{ color: 'var(--warn-600)' }}>
-            {nbImpayes} {t.paymentStatus.pending}
+            {nbImpayes} facture{nbImpayes !== 1 ? 's' : ''} en attente
           </div>
         </div>
         <div className="kpi">
-          <div className="kpi__label">Taux recouvrement</div>
+          <div className="kpi__label">Taux d'encaissement</div>
           <div className="kpi__value">{taux}<span style={{ fontSize: 14, color: 'var(--ink-400)' }}>%</span></div>
           <Progress pct={taux} />
         </div>

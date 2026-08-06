@@ -49,7 +49,7 @@ export function CampaignCard({ c, onClick }) {
           {[
             { l: t.campaigns.kpi.parcels,  v: c.parcels,                                          suffix: '' },
             { l: t.common.weight,          v: (c.weight ?? 0).toLocaleString('fr'),              suffix: ' kg' },
-            { l: t.campaigns.kpi.revenue,  v: ((c.invoiced ?? 0) / 1000).toFixed(1) + 'k',       suffix: ' CAD' }, // TODO: "Facturé" (invoiced) mapped to nearest key revenue
+            { l: 'Facturé',               v: ((c.invoiced ?? 0) / 1000).toFixed(1) + 'k',       suffix: ' CAD' },
           ].map(({ l, v, suffix }) => (
             <div key={l}>
               <div style={{ fontSize: 10.5, color: 'var(--ink-400)', textTransform: 'uppercase', letterSpacing: '.04em', fontWeight: 600 }}>{l}</div>
@@ -60,19 +60,26 @@ export function CampaignCard({ c, onClick }) {
 
         <div>
           <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, marginBottom: 5 }}>
-            {/* TODO: no translation key for "Paiements" in this card context */}
-            <span style={{ color: 'var(--ink-400)' }}>Paiements</span>
-            <span style={{ fontWeight: 600, color: pct >= 95 ? 'var(--ok-600)' : pct >= 70 ? 'var(--warn-700)' : 'var(--bad-600)' }} className="mono">
-              {pct}% · {(c.collected ?? 0).toLocaleString('fr')} / {(c.invoiced ?? 0).toLocaleString('fr')}
+            <span style={{ color: 'var(--ink-400)' }}>Encaissement</span>
+            <span style={{ fontWeight: 700, color: pct >= 95 ? 'var(--ok-600)' : pct >= 70 ? 'var(--warn-700)' : 'var(--bad-600)' }} className="mono">
+              {pct}%
             </span>
           </div>
           <Progress pct={pct} kind={pct >= 95 ? null : pct >= 70 ? 'warn' : 'bad'} />
-          {outstanding > 0 && (
-            <div style={{ fontSize: 11, color: 'var(--bad-600)', marginTop: 5 }}>
-              {/* TODO: no translation key for "Reste à percevoir" */}
-              Reste à percevoir · <span className="mono" style={{ fontWeight: 600 }}>{outstanding.toLocaleString('fr')} CAD</span>
-            </div>
-          )}
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, marginTop: 5 }}>
+            <span>
+              <span className="mono" style={{ fontWeight: 600, color: 'var(--ok-600)' }}>{(c.collected ?? 0).toLocaleString('fr')}</span>
+              <span style={{ color: 'var(--ink-400)' }}> CAD encaissé</span>
+            </span>
+            {outstanding > 0 ? (
+              <span>
+                <span className="mono" style={{ fontWeight: 600, color: 'var(--bad-600)' }}>{outstanding.toLocaleString('fr')}</span>
+                <span style={{ color: 'var(--ink-400)' }}> CAD restant</span>
+              </span>
+            ) : (
+              <span style={{ color: 'var(--ok-600)' }}>✓ Tout encaissé</span>
+            )}
+          </div>
           {(c.cancelled ?? 0) > 0 && (
             <div style={{ fontSize: 11, color: 'var(--warn-700)', marginTop: 4, display: 'flex', alignItems: 'center', gap: 4 }}>
               <I.Ban style={{ width: 10, height: 10 }} />
@@ -183,26 +190,27 @@ export default function CampaignsScreen({ onNav, onNewCampaign }) {
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14, marginBottom: 18 }}>
-        <div className="kpi">
-          <div className="kpi__label">{t.campaigns.kpi.revenue} <span style={{ textTransform: 'none', color: 'var(--ink-300)' }}>/ Revenue</span></div>
-          <div className="kpi__value">{(totalCollected / 1000).toFixed(1)}k <span style={{ fontSize: 14, color: 'var(--ink-400)' }}>CAD</span></div>
+        <div className="kpi" style={{ background: 'var(--ok-50)', borderColor: 'var(--ok-100)' }}>
+          <div className="kpi__label" style={{ color: 'var(--ok-700)' }}>Total encaissé</div>
+          <div className="kpi__value" style={{ color: 'var(--ok-700)' }}>{(totalCollected / 1000).toFixed(1)}k <span style={{ fontSize: 14, opacity: .6 }}>CAD</span></div>
+          <div className="kpi__delta" style={{ color: 'var(--ok-600)' }}>sur {(totalInvoiced / 1000).toFixed(1)}k facturés</div>
         </div>
         <div className="kpi">
-          {/* TODO: no translation key for "Taux de recouvrement" */}
-          <div className="kpi__label">Taux de recouvrement <span style={{ textTransform: 'none', color: 'var(--ink-300)' }}>/ Recovery</span></div>
+          <div className="kpi__label">Taux d'encaissement</div>
           <div className="kpi__value">{recoveryRate}<span style={{ fontSize: 20 }}>%</span></div>
           <Progress pct={recoveryRate} />
         </div>
-        <div className="kpi">
-          {/* TODO: no translation key for "Impayés en cours" */}
-          <div className="kpi__label">En cours <span style={{ textTransform: 'none', color: 'var(--ink-300)' }}>/ Outstanding</span></div>
+        <div className="kpi" style={{ background: outstanding > 0 ? 'var(--warn-50)' : undefined, borderColor: outstanding > 0 ? 'var(--warn-100)' : undefined }}>
+          <div className="kpi__label" style={{ color: outstanding > 0 ? 'var(--warn-700)' : undefined }}>Restant à encaisser</div>
           <div className="kpi__value" style={{ color: outstanding > 0 ? 'var(--bad-600)' : 'var(--ok-600)' }}>
-            {Math.max(0, outstanding / 1000).toFixed(1)}k <span style={{ fontSize: 14, color: 'var(--ink-400)' }}>CAD</span>
+            {outstanding > 0 ? (outstanding / 1000).toFixed(1) + 'k' : '0'} <span style={{ fontSize: 14, color: 'var(--ink-400)' }}>CAD</span>
+          </div>
+          <div className="kpi__delta" style={{ color: outstanding > 0 ? 'var(--warn-600)' : 'var(--ok-600)' }}>
+            {outstanding > 0 ? `${campaigns.filter(c => ((c.invoiced??0)-(c.collected??0)) > 0).length} cargaison(s) en cours` : '✓ Tout est encaissé'}
           </div>
         </div>
         <div className="kpi">
-          {/* TODO: no translation key for "Poids moyen / colis" */}
-          <div className="kpi__label">Poids moyen / colis <span style={{ textTransform: 'none', color: 'var(--ink-300)' }}>/ Avg weight</span></div>
+          <div className="kpi__label">Poids moyen / colis</div>
           <div className="kpi__value">{avgWeight}<span style={{ fontSize: 20 }}> kg</span></div>
         </div>
       </div>
@@ -342,7 +350,7 @@ export default function CampaignsScreen({ onNav, onNewCampaign }) {
               <div style={{ flex: 1, height: 1, background: 'var(--border-soft)' }} />
               <span style={{ fontSize: 11.5, color: 'var(--ink-400)' }} className="mono">
                 {list.reduce((a, c) => a + (c.weight ?? 0), 0).toLocaleString('fr')} kg ·{' '}
-                {list.reduce((a, c) => a + (c.invoiced ?? 0), 0).toLocaleString('fr')} CAD
+                {list.reduce((a, c) => a + (c.invoiced ?? 0), 0).toLocaleString('fr')} CAD facturé
               </span>
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(360px, 1fr))', gap: 14 }}>

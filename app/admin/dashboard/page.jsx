@@ -130,7 +130,7 @@ export default function DashboardPage() {
           neutral
         />
         <KpiCard
-          label="Total impayé"
+          label="Restant à encaisser"
           value={loading ? '…' : formatCAD(totalUnpaid)}
           warn={!loading && totalUnpaid > 0}
         />
@@ -273,13 +273,17 @@ export default function DashboardPage() {
                 <div style={{ flex: 1 }}>
                   <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--ink-800)' }}>{inv.clientName}</div>
                 </div>
-                <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--ink-900)' }}>
-                  {formatCAD(inv.invoiced ?? inv.amount)}
-                  {inv.invoiced > inv.amount && (
-                    <span style={{ fontSize: 11, color: 'var(--warn-600)', marginLeft: 6 }}>
-                      (+ {formatCAD(inv.invoiced - inv.amount)} suppl.)
-                    </span>
-                  )}
+                <div style={{ textAlign: 'right' }}>
+                  <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--bad-600)' }}>
+                    {formatCAD(inv.remaining ?? inv.invoiced ?? inv.amount)}
+                    <span style={{ fontSize: 11, fontWeight: 500, color: 'var(--ink-400)', marginLeft: 4 }}>restant</span>
+                  </div>
+                  <div style={{ fontSize: 11, color: 'var(--ink-400)', marginTop: 2 }}>
+                    {(inv.allocated ?? 0) > 0
+                      ? <><span style={{ color: 'var(--ok-600)', fontWeight: 600 }}>{formatCAD(inv.allocated)} reçu</span> · {formatCAD(inv.invoiced ?? inv.amount)} facturé</>
+                      : <>{formatCAD(inv.invoiced ?? inv.amount)} facturé · rien reçu</>
+                    }
+                  </div>
                 </div>
                 <StatusBadge status={inv.status} />
                 <div style={{ fontSize: 12, color: 'var(--ink-400)', whiteSpace: 'nowrap' }}>
