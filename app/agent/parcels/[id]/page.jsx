@@ -249,6 +249,70 @@ export default function AgentParcelPage() {
           </div>
         )}
 
+        {/* Bordereaux — verification status */}
+        {(() => {
+          const bls = parcel.bordereaux ?? [];
+          if (bls.length === 0) return null;
+
+          const hasEcart    = bls.some(b => b.status === 'ecart');
+          const allVerified = bls.every(b => b.status === 'verifie' || b.status === 'ecart');
+          const anyPending  = bls.some(b => b.status === 'en_attente' || b.status === 'valide');
+
+          const summary = hasEcart
+            ? { icon: '⚠️', text: `${bls.filter(b => b.status === 'ecart').length} écart(s) détecté(s) — vérifier avant sortie`, bg: '#FEF2F2', border: '#FECACA', color: '#DC2626' }
+            : allVerified
+            ? { icon: '✅', text: 'Tout vérifié — OK pour sortie', bg: '#ECFDF5', border: '#A7F3D0', color: '#047857' }
+            : { icon: '⏳', text: 'Vérification en cours', bg: '#F0F9FF', border: '#BAE6FD', color: '#0284C7' };
+
+          const BL_STATUS = {
+            en_attente: { label: 'En attente', color: '#6B7280', bg: '#F9FAFB' },
+            valide:     { label: 'Validé',     color: '#1B4FD8', bg: '#EFF6FF' },
+            verifie:    { label: 'Vérifié ✓',  color: '#047857', bg: '#ECFDF5' },
+            ecart:      { label: 'Écart ⚠',    color: '#DC2626', bg: '#FEF2F2' },
+          };
+
+          return (
+            <div className="agent-card" style={{ padding: '14px', marginBottom: 12 }}>
+              <div style={{ fontSize: 11, fontWeight: 700, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '.05em', marginBottom: 10 }}>
+                Bordereaux ({bls.length})
+              </div>
+
+              {/* Summary banner */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '9px 12px', borderRadius: 8, marginBottom: 12, background: summary.bg, border: `1px solid ${summary.border}` }}>
+                <span style={{ fontSize: 15 }}>{summary.icon}</span>
+                <span style={{ fontSize: 12.5, fontWeight: 700, color: summary.color }}>{summary.text}</span>
+              </div>
+
+              {/* List */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                {bls.map((bl, i) => {
+                  const s = BL_STATUS[bl.status] ?? BL_STATUS.en_attente;
+                  return (
+                    <div key={bl.id ?? i} style={{ padding: '10px 12px', borderRadius: 8, border: `1px solid ${bl.status === 'ecart' ? '#FECACA' : '#E5E7EB'}`, background: bl.status === 'ecart' ? '#FFF5F5' : '#FAFAFA' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+                        <span style={{ fontFamily: 'monospace', fontSize: 13, fontWeight: 700, color: '#111827' }}>{bl.code}</span>
+                        <span style={{ fontSize: 11, fontWeight: 700, padding: '2px 8px', borderRadius: 999, background: s.bg, color: s.color }}>
+                          {s.label}
+                        </span>
+                      </div>
+                      <div style={{ display: 'flex', gap: 12, fontSize: 11.5, color: '#6B7280' }}>
+                        {bl.description && <span>📦 {bl.description}</span>}
+                        {bl.nbPieces > 0 && <span>{bl.nbPieces} pièce{bl.nbPieces > 1 ? 's' : ''}</span>}
+                        {bl.weightKg && <span>{bl.weightKg} kg</span>}
+                      </div>
+                      {bl.notes && (
+                        <div style={{ marginTop: 5, fontSize: 11.5, color: bl.status === 'ecart' ? '#DC2626' : '#6B7280', fontStyle: 'italic' }}>
+                          📝 {bl.notes}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          );
+        })()}
+
         {/* Driver assignment — always shown when drivers exist */}
         {drivers.length > 0 && (
           <div className="agent-card" style={{ padding: '14px', marginBottom: 12 }}>
