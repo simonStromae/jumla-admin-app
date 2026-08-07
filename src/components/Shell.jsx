@@ -372,8 +372,20 @@ function AdminMobileBlock() {
             </div>
           ))}
         </div>
+        <button
+          onClick={() => signOut({ callbackUrl: '/login' })}
+          style={{
+            marginTop: 28, display: 'flex', alignItems: 'center', gap: 8,
+            background: 'rgba(255,255,255,.12)', border: '1px solid rgba(255,255,255,.25)',
+            borderRadius: 10, padding: '11px 22px', fontSize: 13.5, fontWeight: 600,
+            color: 'white', cursor: 'pointer', fontFamily: 'inherit',
+          }}
+        >
+          <I.Logout style={{ width: 15, height: 15 }} />
+          Se déconnecter
+        </button>
         <a href="/" style={{
-          marginTop: 32, fontSize: 13, color: 'rgba(255,255,255,.5)',
+          marginTop: 16, fontSize: 13, color: 'rgba(255,255,255,.5)',
           textDecoration: 'underline', cursor: 'pointer',
         }}>
           Retour au site public →
