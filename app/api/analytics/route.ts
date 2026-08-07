@@ -205,7 +205,7 @@ export async function GET(req: NextRequest) {
 
   // ── Restant à encaisser — ALL-TIME (same scope as Dashboard + Payments) ──
   // Derived from all pending/partial payments, not filtered by year.
-  const unpaidRows: any[] = await prisma.$queryRawUnsafe(
+  const unpaidRows = await prisma.$queryRawUnsafe<any[]>(
     `SELECT py.id, py.amount, py.status,
             p."trackingCode", u.name AS "clientName",
             p."confirmedPriceXaf", p."adjustmentStatus"
@@ -221,7 +221,7 @@ export async function GET(req: NextRequest) {
   const unpaidPaymentIds = unpaidRows.map((r: any) => r.id) as string[];
   let unpaidAllocMap: Record<string, number> = {};
   if (unpaidPaymentIds.length > 0) {
-    const allocRows: { paymentId: string; allocated: number }[] = await prisma.$queryRawUnsafe(
+    const allocRows = await prisma.$queryRawUnsafe<{ paymentId: string; allocated: number }[]>(
       `SELECT ta."paymentId", COALESCE(SUM(ta.amount), 0)::int AS allocated
        FROM transaction_allocations ta
        WHERE ta."paymentId" = ANY($1::text[])
