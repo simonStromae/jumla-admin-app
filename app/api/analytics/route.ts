@@ -105,7 +105,6 @@ export async function GET(req: NextRequest) {
   const clientRevMap: Record<string, { name: string; amount: number; count: number }> = {};
   const monthlyRevMap:      number[] = new Array(12).fill(0);
   const monthlyInvoicedMap: number[] = new Array(12).fill(0);
-  const unpaidItems: { id: string; clientName: string; trackingCode: string; amount: number; status: string }[] = [];
 
   for (const p of parcels) {
     const adjStatus      = (p as any).adjustmentStatus ?? 'none';
@@ -129,28 +128,6 @@ export async function GET(req: NextRequest) {
     clientRevMap[cid].amount += collected;
     if (p.payment) clientRevMap[cid].count++;
 
-    // Unpaid — skip cancelled payments (client owes nothing on a voided invoice)
-    const remaining = Math.max(0, invoiced - collected);
-    if (remaining > 0 && p.payment?.status !== 'cancelled') {
-      if (!p.payment) {
-        // No payment record at all — full invoice outstanding
-        unpaidItems.push({ id: 'nopay_' + p.id, clientName: p.client.name, trackingCode: p.trackingCode, amount: invoiced, status: 'pending' });
-      } else {
-        const mainAllocated = p.payment.status === 'completed'
-          ? (paymentsWithAllocations.has(p.payment.id) ? (allocByPayment[p.payment.id] ?? p.payment.amount) : p.payment.amount)
-          : (allocByPayment[p.payment.id] ?? 0);
-        const mainRemaining = Math.max(0, invoiced - mainAllocated);
-        const suppRemaining = adjStatus === 'pending' && confirmedPrice != null
-          ? Math.max(0, confirmedPrice - (p.priceXaf ?? 0))
-          : 0;
-        if (mainRemaining > 0) {
-          unpaidItems.push({ id: p.payment.id, clientName: p.client.name, trackingCode: p.trackingCode, amount: mainRemaining, status: p.payment.status });
-        }
-        if (suppRemaining > 0) {
-          unpaidItems.push({ id: 'sup_' + p.id, clientName: p.client.name, trackingCode: p.trackingCode, amount: suppRemaining, status: 'supplement_pending' });
-        }
-      }
-    }
   }
 
   // Monthly collected — from allocations (transaction dates)
@@ -225,6 +202,46 @@ export async function GET(req: NextRequest) {
   const routeStats = Object.values(routeRevMap)
     .sort((a, b) => b.collected - a.collected)
     .map(r => ({ ...r, meter: Math.round(r.collected / routeMax * 100), weightKg: Math.round(r.weightKg * 10) / 10 }));
+
+  // ── Restant à encaisser — ALL-TIME (same scope as Dashboard + Payments) ──
+  // Derived from all pending/partial payments, not filtered by year.
+  const unpaidRows = await prisma.$queryRawUnsafe<any[]>(
+    `SELECT py.id, py.amount, py.status,
+            p."trackingCode", u.name AS "clientName",
+            p."confirmedPriceXaf", p."adjustmentStatus"
+     FROM payments py
+     JOIN parcels p ON p.id = py."parcelId"
+     JOIN users u ON u.id = py."clientId"
+     WHERE py.status IN ('pending','partial')
+       AND p."deletedAt" IS NULL
+       AND p.status != 'ann'
+     ORDER BY py."createdAt" ASC`
+  ).catch(() => [] as any[]);
+
+  const unpaidPaymentIds = unpaidRows.map((r: any) => r.id) as string[];
+  let unpaidAllocMap: Record<string, number> = {};
+  if (unpaidPaymentIds.length > 0) {
+    const allocRows = await prisma.$queryRawUnsafe<{ paymentId: string; allocated: number }[]>(
+      `SELECT ta."paymentId", COALESCE(SUM(ta.amount), 0)::int AS allocated
+       FROM transaction_allocations ta
+       WHERE ta."paymentId" = ANY($1::text[])
+       GROUP BY ta."paymentId"`,
+      unpaidPaymentIds
+    ).catch(() => [] as any[]);
+    for (const r of allocRows) unpaidAllocMap[r.paymentId] = Number(r.allocated);
+  }
+
+  const unpaidItems: { id: string; clientName: string; trackingCode: string; amount: number; status: string }[] = [];
+  for (const inv of unpaidRows) {
+    const adj  = inv.adjustmentStatus ?? 'none';
+    const conf = inv.confirmedPriceXaf != null ? Number(inv.confirmedPriceXaf) : null;
+    const invoicedAmt = (adj === 'paid' || adj === 'discount') && conf != null ? conf : Number(inv.amount);
+    const allocated   = unpaidAllocMap[inv.id] ?? 0;
+    const remaining   = Math.max(0, invoicedAmt - allocated);
+    if (remaining > 0) {
+      unpaidItems.push({ id: inv.id, clientName: inv.clientName, trackingCode: inv.trackingCode, amount: remaining, status: inv.status });
+    }
+  }
 
   // ── KPIs de base ──────────────────────────────────────────────────────────
   const totalWeight    = parcels.reduce((s: number, p: any) => s + (p.weightKg ?? 0), 0);

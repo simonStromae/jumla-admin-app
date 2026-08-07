@@ -153,11 +153,11 @@ export default function AnalyticsScreen({ onNav }) {
         <KpiCard label="Poids transporté" en="Weight" value={(totalWeight/1000).toFixed(1)} unit="t" color="var(--brand-500)" />
         {/* TODO: no i18n key for "Impayés" KPI label, "paiement(s) en attente", "Tout à jour" */}
         <KpiCard
-          label="En cours" en="Outstanding"
+          label="Restant à encaisser"
           value={unpaidTotal > 0 ? (unpaidTotal/1000).toFixed(1)+'k' : '0'}
           unit="CAD"
-          color="var(--warn-500)"
-          sub={unpaidCount > 0 ? unpaidCount + ' paiement' + (unpaidCount > 1 ? 's' : '') + ' en cours' : 'Tout à jour'}
+          color={unpaidTotal > 0 ? 'var(--bad-600)' : 'var(--ok-600)'}
+          sub={unpaidCount > 0 ? unpaidCount + ' paiement' + (unpaidCount > 1 ? 's' : '') + ' en attente' : 'Tout à jour'}
         />
       </div>
 
@@ -221,7 +221,7 @@ export default function AnalyticsScreen({ onNav }) {
           <RoutesBar routeStats={routeStats} />
         </ChartCard>
 
-        <ChartCard title="En cours" sub={`${unpaidCount} paiement${unpaidCount !== 1 ? 's' : ''} en cours`}>
+        <ChartCard title="Restant à encaisser" sub={`${unpaidCount} paiement${unpaidCount !== 1 ? 's' : ''} en attente`}>
           <div style={{ textAlign: 'center', padding: '12px 0 8px' }}>
             <div style={{ fontSize: 28, fontWeight: 800, color: unpaidTotal > 0 ? 'var(--bad-600)' : 'var(--ok-600)', fontFamily: 'var(--ff-mono)' }}>
               {unpaidTotal > 0 ? unpaidTotal.toLocaleString('fr') : '0'}
@@ -326,7 +326,7 @@ export default function AnalyticsScreen({ onNav }) {
 
       {/* ── En cours · à relancer + Activité récente ── */}
       <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr', gap: 14 }}>
-        <ChartCard title="En cours · à relancer" sub={unpaidCount + ' paiement' + (unpaidCount !== 1 ? 's' : '') + ' en cours'} actions={
+        <ChartCard title="Restant à encaisser" sub={unpaidCount + ' paiement' + (unpaidCount !== 1 ? 's' : '') + ' en attente'} actions={
           <a style={{ fontSize: 12, color: 'var(--brand-700)', fontWeight: 600, cursor: 'pointer' }} onClick={() => onNav('/payments')}>Voir tout →</a>
         }>
           {unpaid.length === 0 ? (
