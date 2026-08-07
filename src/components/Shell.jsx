@@ -232,14 +232,29 @@ export function Sidebar({ route, onNav }) {
           })}
         </>}
       </nav>
-      <div className="sidebar__footer">
-        <div className="sidebar__avatar" onClick={() => onNav('/admin/profile')} style={{ cursor: 'pointer' }}>{initials}</div>
-        <div className="sidebar__userinfo" onClick={() => onNav('/admin/profile')} style={{ cursor: 'pointer' }}>
-          <span className="sidebar__username">{name}</span>
-          <span className="sidebar__userrole">{role === 'admin' ? 'Admin' : role === 'agent' ? 'Agent' : role}</span>
+      <div className="sidebar__footer" style={{ flexDirection: 'column', gap: 8, alignItems: 'stretch' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <div className="sidebar__avatar" onClick={() => onNav('/admin/profile')} style={{ cursor: 'pointer', flexShrink: 0 }}>{initials}</div>
+          <div className="sidebar__userinfo" onClick={() => onNav('/admin/profile')} style={{ cursor: 'pointer' }}>
+            <span className="sidebar__username">{name}</span>
+            <span className="sidebar__userrole">{role === 'admin' ? 'Admin' : role === 'agent' ? 'Agent' : role}</span>
+          </div>
         </div>
-        <button className="icon-btn" title={t.topbar.logout} onClick={() => signOut({ callbackUrl: '/login' })}>
-          <I.Logout />
+        <button
+          onClick={() => signOut({ callbackUrl: '/login' })}
+          style={{
+            display: 'flex', alignItems: 'center', gap: 7,
+            width: '100%', padding: '7px 10px', borderRadius: 8,
+            border: '1px solid var(--border)', background: 'transparent',
+            color: 'var(--ink-500)', fontSize: 12.5, fontWeight: 600,
+            cursor: 'pointer', fontFamily: 'inherit',
+            transition: 'background .15s, color .15s',
+          }}
+          onMouseEnter={e => { e.currentTarget.style.background = 'var(--bad-50)'; e.currentTarget.style.color = 'var(--bad-600)'; e.currentTarget.style.borderColor = 'var(--bad-200)'; }}
+          onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--ink-500)'; e.currentTarget.style.borderColor = 'var(--border)'; }}
+        >
+          <I.Logout style={{ width: 14, height: 14, flexShrink: 0 }} />
+          {t.topbar.logout}
         </button>
       </div>
     </aside>
