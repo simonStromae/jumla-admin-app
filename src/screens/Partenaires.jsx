@@ -7,7 +7,7 @@ const TYPE_LABELS = {
   partenaire: { label: 'Partenaire', color: '#7c3aed', bg: '#f5f3ff' },
 };
 
-function fmt(n) { return (n ?? 0).toLocaleString('fr'); }
+function fmt(n) { return new Intl.NumberFormat('fr-CA', { style: 'currency', currency: 'CAD' }).format(Number(n) || 0); }
 function fmtDate(d) {
   if (!d) return '—';
   return new Date(d).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' });
@@ -141,8 +141,8 @@ export default function PartenairesScreen({ onNav }) {
         {[
           { label: 'Partenaires', value: partners.length, icon: '🤝', color: 'var(--brand-600)' },
           { label: 'Colis actifs', value: activeParcels, icon: '📦', color: 'var(--ok-600)' },
-          { label: 'Volume total', value: fmt(totalAmount) + ' XAF', icon: '💰', color: 'var(--ink-700)' },
-          { label: 'Solde impayé', value: fmt(pendingAmount) + ' XAF', icon: '⚠️', color: pendingAmount > 0 ? 'var(--bad-600)' : 'var(--ok-600)' },
+          { label: 'Volume total', value: fmt(totalAmount) + '', icon: '💰', color: 'var(--ink-700)' },
+          { label: 'Solde impayé', value: fmt(pendingAmount) + '', icon: '⚠️', color: pendingAmount > 0 ? 'var(--bad-600)' : 'var(--ok-600)' },
         ].map(k => (
           <div key={k.label} style={{ background: 'white', border: '1px solid var(--border)', borderRadius: 12, padding: '16px 20px' }}>
             <div style={{ fontSize: 11.5, color: 'var(--ink-400)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '.05em', marginBottom: 8 }}>
