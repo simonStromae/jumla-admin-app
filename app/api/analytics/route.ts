@@ -129,26 +129,12 @@ export async function GET(req: NextRequest) {
     clientRevMap[cid].amount += collected;
     if (p.payment) clientRevMap[cid].count++;
 
-    // Unpaid — skip cancelled payments (client owes nothing on a voided invoice)
-    const remaining = Math.max(0, invoiced - collected);
-    if (remaining > 0 && p.payment?.status !== 'cancelled') {
-      if (!p.payment) {
-        // No payment record at all — full invoice outstanding
-        unpaidItems.push({ id: 'nopay_' + p.id, clientName: p.client.name, trackingCode: p.trackingCode, amount: invoiced, status: 'pending' });
-      } else {
-        const mainAllocated = p.payment.status === 'completed'
-          ? (paymentsWithAllocations.has(p.payment.id) ? (allocByPayment[p.payment.id] ?? p.payment.amount) : p.payment.amount)
-          : (allocByPayment[p.payment.id] ?? 0);
-        const mainRemaining = Math.max(0, invoiced - mainAllocated);
-        const suppRemaining = adjStatus === 'pending' && confirmedPrice != null
-          ? Math.max(0, confirmedPrice - (p.priceXaf ?? 0))
-          : 0;
-        if (mainRemaining > 0) {
-          unpaidItems.push({ id: p.payment.id, clientName: p.client.name, trackingCode: p.trackingCode, amount: mainRemaining, status: p.payment.status });
-        }
-        if (suppRemaining > 0) {
-          unpaidItems.push({ id: 'sup_' + p.id, clientName: p.client.name, trackingCode: p.trackingCode, amount: suppRemaining, status: 'supplement_pending' });
-        }
+    // Unpaid — only pending/partial payments (same scope as Dashboard + Payments screens)
+    if (p.payment && (p.payment.status === 'pending' || p.payment.status === 'partial')) {
+      const mainAllocated = allocByPayment[p.payment.id] ?? 0;
+      const mainRemaining = Math.max(0, invoiced - mainAllocated);
+      if (mainRemaining > 0) {
+        unpaidItems.push({ id: p.payment.id, clientName: p.client.name, trackingCode: p.trackingCode, amount: mainRemaining, status: p.payment.status });
       }
     }
   }
