@@ -9,7 +9,7 @@ import PhoneInput from '@/src/components/PhoneInput.jsx';
 
 // ── Catégories d'articles (alignées avec l'admin) ──
 const ITEM_CATEGORIES = [
-  { id: 'standard',     label: 'Standard',                      icon: '📦', extraPerKg: 0,  hint: 'Savons, épices, cube Maggi, arachides, pagnes…' },
+  { id: 'standard',     label: 'Autre',                         icon: '📦', extraPerKg: 0,  hint: 'Savons, épices, cube Maggi, arachides, pagnes…' },
   { id: 'vetements',    label: 'Vêtements / Chaussures / Sacs', icon: '👗', extraPerKg: 2,  hint: 'Robes, pantalons, chaussures, sacs à main…' },
   { id: 'cosmetique',   label: 'Cosmétiques / Compléments',     icon: '💄', extraPerKg: 3,  hint: 'Crèmes, parfums, produits capillaires…' },
   { id: 'alimentaire',  label: 'Alimentaire / Épices',          icon: '🥘', extraPerKg: 0,  hint: 'Ndolè, poisson fumé, café, cacao, safou…' },
@@ -315,7 +315,7 @@ function Summary({ route, departure, items, price, form, step, isDone }) {
               <div className="co-summary__item-info">
                 <div className="co-summary__item-name">{item.desc || t('booking.summary.article')}</div>
                 <div className="co-summary__item-sub">
-                  {ITEM_CATEGORIES.find(c => c.id === item.cat)?.label || 'Standard'}
+                  {ITEM_CATEGORIES.find(c => c.id === item.cat)?.label || 'Autre'}
                   {item.cat !== 'standard' && item.pieces > 1 ? ` · ${item.pieces} pièces` : ''}
                 </div>
               </div>
