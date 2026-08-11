@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import I from '../components/Icons.jsx';
-import { ROUTES, PARCEL_CATEGORIES, getRoute } from '../data.js';
+import { ITEM_CATEGORIES, calcPrice, routeFeesToCalcFees, DEFAULT_FEES } from '../lib/calcPrice.js';
 import { TopBar, SiteNav, SiteFooter } from './SiteLayout.jsx';
 import { useT, useLocale } from '@/src/lib/i18n';
 import '@/src/styles/client-omega.css';
@@ -709,23 +709,41 @@ function JFeats({ onBook, content }) {
 function JEstimator({ onBook, content }) {
   const t = useT();
   const st = content?.sectionTitles?.estimator ?? {};
-  const cats = PARCEL_CATEGORIES;
-  const routes = ROUTES.filter(r => r.active);
-  const [routeId, setRouteId] = useState(routes[0]?.id || 'r-dla-yul');
+  const cats = ITEM_CATEGORIES;
+  const [liveRoutes, setLiveRoutes] = useState([]);
+  const [routeId, setRouteId] = useState('');
   const [lines, setLines] = useState([{ id: 1, cat: 'standard', weight: 12 }]);
 
-  const r = getRoute(routeId) || routes[0];
-  const tierFor = (w) => r.pricing.find(p => w > p.from && w <= p.to) || r.pricing[r.pricing.length - 1];
-  const calc = (ln) => {
-    const tier = tierFor(+ln.weight || 0);
-    const base = Math.round((+ln.weight || 0) * tier.rate);
-    const cat = cats.find(c => c.id === ln.cat) || cats[0];
-    const surcharge = Math.round(base * cat.pct / 100);
-    return { tier, base, cat, surcharge, total: base + surcharge };
+  useEffect(() => {
+    fetch('/api/public/routes')
+      .then(r => r.json())
+      .then(data => {
+        const active = Array.isArray(data) ? data : data.routes ?? [];
+        setLiveRoutes(active);
+        if (active.length > 0 && !routeId) setRouteId(active[0].id);
+      })
+      .catch(() => {});
+  }, []);
+
+  const currentRoute = liveRoutes.find(r => r.id === routeId) || liveRoutes[0];
+  const fees = currentRoute ? routeFeesToCalcFees(currentRoute.fees) : DEFAULT_FEES;
+
+  const calcLine = (ln) => {
+    const kg = parseFloat(ln.weight) || 0;
+    const result = calcPrice([{ cat: ln.cat, kg }], fees, {}, 'expedition', null);
+    if (!result) return { transport: 0, extras: 0, total: 0, rateLabel: '—' };
+    const extras = result.catSurchargeTotal + result.douane + result.formalites + result.manutention;
+    const rateLabel = result.tier?.transportPerKg
+      ? result.tier.transportPerKg + ' CAD/kg'
+      : result.tier?.transportFlat
+        ? result.tier.transportFlat + ' CAD forfait'
+        : '—';
+    return { transport: result.transport, extras, total: result.prixClient, rateLabel };
   };
-  const computed = lines.map(calc);
-  const grandTotal = computed.reduce((a, c) => a + c.total, 0);
-  const totalWeight = lines.reduce((a, l) => a + (+l.weight || 0), 0);
+
+  const computed = lines.map(calcLine);
+  const grandTotal = Math.round(computed.reduce((a, c) => a + c.total, 0));
+  const totalWeight = lines.reduce((a, l) => a + (parseFloat(l.weight) || 0), 0);
 
   const addLine = () => setLines([...lines, { id: Date.now(), cat: 'standard', weight: 5 }]);
   const removeLine = (id) => setLines(lines.length > 1 ? lines.filter(l => l.id !== id) : lines);
@@ -750,21 +768,21 @@ function JEstimator({ onBook, content }) {
             <I.Calculator style={{ width: 16, height: 16, color: 'var(--brand-400)' }} />
             <span className="jest__title">Simulateur de prix</span>
             <div style={{ marginLeft: 'auto' }}>
-              {routes.length > 1 ? (
+              {liveRoutes.length > 1 ? (
                 <select
                   value={routeId}
                   onChange={e => setRouteId(e.target.value)}
                   className="jest__route-select"
                 >
-                  {routes.map(rr => (
+                  {liveRoutes.map(rr => (
                     <option key={rr.id} value={rr.id}>
-                      {rr.fromCity} → {rr.toCity}
+                      {rr.label ?? `${rr.origin} → ${rr.destination}`}
                     </option>
                   ))}
                 </select>
               ) : (
                 <span className="jest__route-pill">
-                  {r?.fromCity} → {r?.toCity}
+                  {currentRoute?.label ?? `${currentRoute?.origin} → ${currentRoute?.destination}`}
                 </span>
               )}
             </div>
@@ -775,7 +793,7 @@ function JEstimator({ onBook, content }) {
             <div className="jest__lhead">
               <span>Catégorie</span>
               <span>Poids (kg)</span>
-              <span style={{ textAlign: 'right' }}>Base</span>
+              <span style={{ textAlign: 'right' }}>Transport</span>
               <span style={{ textAlign: 'right' }}>Autres frais</span>
               <span />
             </div>
@@ -793,15 +811,15 @@ function JEstimator({ onBook, content }) {
                   <div className="jest__f">
                     <input type="number" min="0.5" step="0.5" value={ln.weight} onChange={e => updLine(ln.id, 'weight', e.target.value)} />
                   </div>
-                  {/* Base */}
+                  {/* Transport */}
                   <div className="jest__cell" style={{ textAlign: 'right' }}>
-                    <div>{c.base} <span className="jest__cur">CAD</span></div>
-                    <div className="jest__tier">{c.tier.rate} CAD/kg</div>
+                    <div>{Math.round(c.transport)} <span className="jest__cur">CAD</span></div>
+                    <div className="jest__tier">{c.rateLabel}</div>
                   </div>
-                  {/* Autres frais */}
-                  <div className="jest__cell" style={{ textAlign: 'right', color: c.surcharge > 0 ? 'var(--brand-600)' : c.surcharge < 0 ? '#059669' : 'var(--ink-300)' }}>
-                    <div>{c.surcharge !== 0 ? (c.surcharge > 0 ? '+' : '') + c.surcharge + ' ' : '—'}{c.surcharge !== 0 && <span className="jest__cur">CAD</span>}</div>
-                    <div className="jest__tier">{c.cat.pct > 0 ? '+' : ''}{c.cat.pct}%</div>
+                  {/* Autres frais (douane + formalités + manutention + suppléments) */}
+                  <div className="jest__cell" style={{ textAlign: 'right', color: c.extras > 0 ? 'var(--brand-600)' : c.extras < 0 ? '#059669' : 'var(--ink-300)' }}>
+                    <div>{c.extras !== 0 ? (c.extras > 0 ? '+' : '') + Math.round(c.extras) + ' ' : '—'}{c.extras !== 0 && <span className="jest__cur">CAD</span>}</div>
+                    <div className="jest__tier">douane · formalités · manut.</div>
                   </div>
                   {/* Delete */}
                   <button className="jest__del" onClick={() => removeLine(ln.id)} disabled={lines.length <= 1}>
