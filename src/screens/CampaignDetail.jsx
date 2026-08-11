@@ -40,10 +40,19 @@ const STEP_EFFECTS = {
 
 // TODO: i18n — use t.paymentStatus.* in render instead of these labels
 const PAYMENT_STATUS = {
-  completed: { label: 'Payé',       cls: 'ok' },
-  pending:   { label: 'En attente', cls: 'warn' },
-  failed:    { label: 'Échoué',     cls: 'bad' },
+  completed: { label: 'Payé',       cls: 'ok'      },
+  pending:   { label: 'En attente', cls: 'warn'    },
+  partial:   { label: 'Partiel',    cls: 'warn'    },
+  cancelled: { label: 'Annulé',     cls: 'neutral' },
+  failed:    { label: 'Échoué',     cls: 'bad'     },
 };
+
+const PAY_METHODS = [
+  { id: 'interac',      label: 'Virement Interac' },
+  { id: 'cash',         label: 'Espèces'          },
+  { id: 'virement',     label: 'Virement bancaire'},
+  { id: 'mobile_money', label: 'Mobile Money'     },
+];
 // TODO: i18n — parcel status labels are not covered by translation keys
 const PARCEL_STATUS = {
   enr: 'Enregistré',  rec: 'Reçu entrepôt',    pre: 'Vérifié/Préparé',
@@ -138,23 +147,36 @@ function ParcelQuickPanel({ parcel: initial, onClose, onRefresh, onNav }) {
     setBusy('');
   };
 
-  const validatePayment = async () => {
-    if (!parcel.payment) return;
+  const [payAmount,    setPayAmount]    = useState(String(initial.payment?.amount ?? ''));
+  const [payMethod,    setPayMethod]    = useState('interac');
+  const [payRef,       setPayRef]       = useState('');
+
+  const submitPayment = async () => {
+    const amt = Math.round(Number(payAmount));
+    if (!amt || amt <= 0 || !parcel.payment) return;
     setBusy('payment'); setErr('');
     try {
-      const r = await fetch(`/api/payments/${parcel.payment.id}`, {
-        method: 'PUT',
+      const clientId = parcel.client?.id ?? parcel.payment.clientId;
+      const r = await fetch('/api/transactions', {
+        method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status: 'completed' }),
+        body: JSON.stringify({
+          clientId,
+          amount: amt,
+          method: payMethod,
+          ...(payRef && { reference: payRef }),
+          allocations: [{ paymentId: parcel.payment.id, amount: amt }],
+        }),
       });
       if (!r.ok) throw new Error();
+      setPayRef('');
       flash('payment'); onRefresh();
-    } catch { setErr('Erreur lors de la validation du paiement.'); }
+    } catch { setErr('Erreur lors de l\'enregistrement du paiement.'); }
     setBusy('');
   };
 
   const payStatus    = parcel.payment?.status;
-  const canValidate  = payStatus === 'pending' || payStatus === 'partial';
+  const canPay       = payStatus === 'pending' || payStatus === 'partial';
   const payInfo      = PAYMENT_STATUS[payStatus] || { label: payStatus || '—', cls: 'neutral' };
   const isHeld       = newStatus === 'ret';
   const allStatuses  = Object.entries(PARCEL_STATUS).map(([id, label]) => ({ id, label }));
@@ -182,28 +204,76 @@ function ParcelQuickPanel({ parcel: initial, onClose, onRefresh, onNav }) {
         {/* ── Paiement ── */}
         {parcel.payment && (
           <PanelSection title="Paiement">
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+            {/* Résumé facture */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: canPay ? 12 : 0 }}>
               <div>
                 <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--ink-900)', fontFamily: 'var(--ff-mono)' }}>
                   {(parcel.payment.amount ?? 0).toLocaleString('fr')} CAD
+                  {payStatus === 'partial' && <span style={{ fontSize: 11, fontWeight: 400, color: 'var(--ink-400)', marginLeft: 6 }}>facturé</span>}
                 </div>
                 <div style={{ fontSize: 11.5, color: 'var(--ink-400)', marginTop: 2 }}>
                   {payInfo.label}
                   {parcel.payment.interacRef && ` · Réf. ${parcel.payment.interacRef}`}
                 </div>
               </div>
-              {canValidate ? (
-                <button
-                  disabled={!!busy}
-                  onClick={validatePayment}
-                  style={{ ...btnBase, background: 'var(--ok-600)', color: '#fff', opacity: busy ? .6 : 1 }}
-                >
-                  {busy === 'payment' ? '…' : done.payment ? '✓ Validé' : '✓ Valider'}
-                </button>
-              ) : payStatus === 'completed' ? (
-                <span style={{ fontSize: 12, color: 'var(--ok-600)', fontWeight: 700 }}>✓ Payé</span>
-              ) : null}
+              {payStatus === 'completed'
+                ? <span style={{ fontSize: 12, color: 'var(--ok-600)', fontWeight: 700 }}>✓ Payé</span>
+                : done.payment
+                ? <span style={{ fontSize: 12, color: 'var(--ok-600)', fontWeight: 700 }}>✓ Enregistré</span>
+                : null}
             </div>
+
+            {/* Formulaire d'encaissement */}
+            {canPay && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8, paddingTop: 10, borderTop: '1px solid var(--border-soft)' }}>
+                <div style={{ fontSize: 11.5, fontWeight: 700, color: 'var(--ink-500)', textTransform: 'uppercase', letterSpacing: '.04em' }}>
+                  Enregistrer un encaissement
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+                  <div>
+                    <div style={{ fontSize: 11, color: 'var(--ink-400)', marginBottom: 3 }}>Montant reçu (CAD)</div>
+                    <input
+                      type="number"
+                      min="1"
+                      value={payAmount}
+                      onChange={e => setPayAmount(e.target.value)}
+                      placeholder="Ex: 500"
+                      style={{ width: '100%', padding: '8px 10px', border: '1px solid var(--border)', borderRadius: 8, fontSize: 13, boxSizing: 'border-box' }}
+                    />
+                  </div>
+                  <div>
+                    <div style={{ fontSize: 11, color: 'var(--ink-400)', marginBottom: 3 }}>Méthode</div>
+                    <select
+                      value={payMethod}
+                      onChange={e => setPayMethod(e.target.value)}
+                      style={{ width: '100%', padding: '8px 10px', border: '1px solid var(--border)', borderRadius: 8, fontSize: 13, background: 'white' }}
+                    >
+                      {PAY_METHODS.map(m => <option key={m.id} value={m.id}>{m.label}</option>)}
+                    </select>
+                  </div>
+                </div>
+                {(payMethod === 'interac' || payMethod === 'virement') && (
+                  <div>
+                    <div style={{ fontSize: 11, color: 'var(--ink-400)', marginBottom: 3 }}>Référence (optionnel)</div>
+                    <input
+                      value={payRef}
+                      onChange={e => setPayRef(e.target.value)}
+                      placeholder="Ex: XK7F2A"
+                      style={{ width: '100%', padding: '8px 10px', border: '1px solid var(--border)', borderRadius: 8, fontSize: 13, boxSizing: 'border-box' }}
+                    />
+                  </div>
+                )}
+                <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                  <button
+                    disabled={!!busy || !payAmount || Number(payAmount) <= 0}
+                    onClick={submitPayment}
+                    style={{ ...btnBase, background: 'var(--ok-600)', color: '#fff', opacity: (!!busy || !payAmount || Number(payAmount) <= 0) ? .5 : 1 }}
+                  >
+                    {busy === 'payment' ? '…' : '✓ Enregistrer le paiement'}
+                  </button>
+                </div>
+              </div>
+            )}
           </PanelSection>
         )}
 
@@ -899,8 +969,8 @@ export default function CampaignDetailScreen({ id, onNav }) {
           </thead>
           <tbody>
             {shownParcels.map(p => {
-              const payInfo = PAYMENT_STATUS[p.payment?.status] || { label: p.payment?.status || '—', cls: 'neutral' };
-              const payLabel = getPaymentLabel(p.payment?.status);
+              const payInfo  = PAYMENT_STATUS[p.payment?.status] || { label: p.payment?.status || '—', cls: 'neutral' };
+              const payLabel = PAYMENT_STATUS[p.payment?.status]?.label ?? getPaymentLabel(p.payment?.status);
               const parcelLabel = PARCEL_STATUS[p.status] || p.status || '—';
               const clientName = p.client?.name || '—';
               const initials = clientName.split(' ').map(x => x[0]).join('').slice(0, 2).toUpperCase();
@@ -944,6 +1014,16 @@ export default function CampaignDetailScreen({ id, onNav }) {
                     <span className={`badge badge--dot badge--${payInfo.cls}`}>
                       {payLabel}
                     </span>
+                    {p.payment?.status === 'partial' && p.payment?.amount != null && (
+                      <div style={{ fontSize: 10.5, color: 'var(--ink-400)', marginTop: 2 }}>
+                        / {p.payment.amount.toLocaleString('fr')} CAD
+                      </div>
+                    )}
+                    {!p.payment && p.priceXaf != null && (
+                      <div style={{ fontSize: 10.5, color: 'var(--ink-400)', marginTop: 2 }}>
+                        Aucune facture
+                      </div>
+                    )}
                   </td>
                   <td>
                     <span className="badge badge--neutral">{parcelLabel}</span>
