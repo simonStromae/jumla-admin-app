@@ -55,6 +55,273 @@ const PARCEL_STATUS = {
   dom: 'Endommagé',   cla: 'Réclamation',
 };
 
+const HOLD_REASONS = [
+  'Défaut de paiement',
+  'Documents manquants',
+  'Vérification supplémentaire',
+  'Inspection douanière',
+  'Autre',
+];
+
+function PanelSection({ title, accent, children }) {
+  const borderColor = accent === 'bad' ? 'var(--bad-100)' : 'var(--border)';
+  const bg = accent === 'bad' ? 'var(--bad-50)' : 'var(--bg-soft)';
+  const labelColor = accent === 'bad' ? 'var(--bad-700)' : 'var(--ink-500)';
+  return (
+    <div style={{ border: `1px solid ${borderColor}`, borderRadius: 10, overflow: 'hidden' }}>
+      <div style={{ padding: '7px 14px', background: bg, borderBottom: `1px solid ${borderColor}`, fontSize: 11, fontWeight: 700, color: labelColor, textTransform: 'uppercase', letterSpacing: '.05em' }}>
+        {title}
+      </div>
+      <div style={{ padding: '12px 14px' }}>{children}</div>
+    </div>
+  );
+}
+
+function ParcelQuickPanel({ parcel: initial, onClose, onRefresh, onNav }) {
+  const [parcel,           setParcel]           = useState(initial);
+  const [newStatus,        setNewStatus]        = useState(initial.status);
+  const [statusNote,       setStatusNote]       = useState('');
+  const [notes,            setNotes]            = useState(initial.notes || '');
+  const [holdReason,       setHoldReason]       = useState(HOLD_REASONS[0]);
+  const [customHoldReason, setCustomHoldReason] = useState('');
+  const [busy,             setBusy]             = useState('');
+  const [done,             setDone]             = useState({});
+  const [err,              setErr]              = useState('');
+
+  const flash = key => {
+    setDone(d => ({ ...d, [key]: true }));
+    setTimeout(() => setDone(d => { const n = { ...d }; delete n[key]; return n; }), 2500);
+  };
+
+  const patchParcel = body =>
+    fetch(`/api/parcels/${parcel.id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    }).then(r => { if (!r.ok) throw new Error(); });
+
+  const saveStatus = async () => {
+    if (newStatus === parcel.status && !statusNote) return;
+    setBusy('status'); setErr('');
+    try {
+      await patchParcel({ status: newStatus, ...(statusNote && { eventNote: statusNote }) });
+      flash('status'); onRefresh();
+    } catch { setErr('Erreur lors de la mise à jour du statut.'); }
+    setBusy('');
+  };
+
+  const saveNotes = async () => {
+    setBusy('notes'); setErr('');
+    try {
+      await patchParcel({ notes });
+      flash('notes'); onRefresh();
+    } catch { setErr('Erreur lors de la sauvegarde des notes.'); }
+    setBusy('');
+  };
+
+  const holdParcel = async () => {
+    const reason = holdReason === 'Autre' ? customHoldReason : holdReason;
+    setBusy('hold'); setErr('');
+    try {
+      await patchParcel({ status: 'ret', eventNote: reason });
+      setNewStatus('ret'); flash('hold'); onRefresh();
+    } catch { setErr('Erreur lors de la mise en retenu.'); }
+    setBusy('');
+  };
+
+  const releaseParcel = async () => {
+    setBusy('release'); setErr('');
+    try {
+      await patchParcel({ status: 'lib' });
+      setNewStatus('lib'); flash('release'); onRefresh();
+    } catch { setErr('Erreur lors de la libération.'); }
+    setBusy('');
+  };
+
+  const validatePayment = async () => {
+    if (!parcel.payment) return;
+    setBusy('payment'); setErr('');
+    try {
+      const r = await fetch(`/api/payments/${parcel.payment.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: 'completed' }),
+      });
+      if (!r.ok) throw new Error();
+      flash('payment'); onRefresh();
+    } catch { setErr('Erreur lors de la validation du paiement.'); }
+    setBusy('');
+  };
+
+  const payStatus    = parcel.payment?.status;
+  const canValidate  = payStatus === 'pending' || payStatus === 'partial';
+  const payInfo      = PAYMENT_STATUS[payStatus] || { label: payStatus || '—', cls: 'neutral' };
+  const isHeld       = newStatus === 'ret';
+  const allStatuses  = Object.entries(PARCEL_STATUS).map(([id, label]) => ({ id, label }));
+  const btnBase      = { padding: '7px 14px', borderRadius: 8, border: 'none', fontWeight: 700, fontSize: 12.5, cursor: 'pointer' };
+
+  return (
+    <Modal title={null} onClose={onClose}>
+      {/* Header */}
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 18 }}>
+        <div>
+          <div style={{ fontFamily: 'var(--ff-mono)', fontWeight: 700, fontSize: 15, color: 'var(--brand-700)', marginBottom: 3 }}>
+            {parcel.trackingCode || parcel.id}
+          </div>
+          <div style={{ fontWeight: 600, fontSize: 13.5, color: 'var(--ink-800)' }}>{parcel.client?.name}</div>
+          {parcel.client?.phone && <div style={{ fontSize: 11.5, color: 'var(--ink-400)', marginTop: 1 }}>{parcel.client.phone}</div>}
+        </div>
+        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', justifyContent: 'flex-end', maxWidth: 200 }}>
+          <span className={`badge badge--dot badge--${payInfo.cls}`}>{payInfo.label}</span>
+          <span className="badge badge--neutral">{PARCEL_STATUS[newStatus] || newStatus}</span>
+        </div>
+      </div>
+
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+
+        {/* ── Paiement ── */}
+        {parcel.payment && (
+          <PanelSection title="Paiement">
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+              <div>
+                <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--ink-900)', fontFamily: 'var(--ff-mono)' }}>
+                  {(parcel.payment.amount ?? 0).toLocaleString('fr')} CAD
+                </div>
+                <div style={{ fontSize: 11.5, color: 'var(--ink-400)', marginTop: 2 }}>
+                  {payInfo.label}
+                  {parcel.payment.interacRef && ` · Réf. ${parcel.payment.interacRef}`}
+                </div>
+              </div>
+              {canValidate ? (
+                <button
+                  disabled={!!busy}
+                  onClick={validatePayment}
+                  style={{ ...btnBase, background: 'var(--ok-600)', color: '#fff', opacity: busy ? .6 : 1 }}
+                >
+                  {busy === 'payment' ? '…' : done.payment ? '✓ Validé' : '✓ Valider'}
+                </button>
+              ) : payStatus === 'completed' ? (
+                <span style={{ fontSize: 12, color: 'var(--ok-600)', fontWeight: 700 }}>✓ Payé</span>
+              ) : null}
+            </div>
+          </PanelSection>
+        )}
+
+        {/* ── Statut ── */}
+        <PanelSection title="Changer le statut">
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <select
+              value={newStatus}
+              onChange={e => setNewStatus(e.target.value)}
+              style={{ width: '100%', padding: '8px 10px', border: '1px solid var(--border)', borderRadius: 8, fontSize: 13, background: 'white' }}
+            >
+              {allStatuses.map(s => <option key={s.id} value={s.id}>{s.label}</option>)}
+            </select>
+            <textarea
+              value={statusNote}
+              onChange={e => setStatusNote(e.target.value)}
+              placeholder="Note / raison (optionnel)…"
+              rows={2}
+              style={{ width: '100%', padding: '8px 10px', border: '1px solid var(--border)', borderRadius: 8, fontSize: 12.5, resize: 'vertical', boxSizing: 'border-box', fontFamily: 'inherit' }}
+            />
+            <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+              <button
+                disabled={!!busy || (newStatus === parcel.status && !statusNote)}
+                onClick={saveStatus}
+                style={{ ...btnBase, background: 'var(--brand-600)', color: '#fff', opacity: (!!busy || (newStatus === parcel.status && !statusNote)) ? .5 : 1 }}
+              >
+                {busy === 'status' ? '…' : done.status ? '✓ Enregistré' : 'Enregistrer'}
+              </button>
+            </div>
+          </div>
+        </PanelSection>
+
+        {/* ── Retenu / Libérer ── */}
+        <PanelSection title={isHeld ? '⚠️ Colis en retenu' : 'Retenu / Libérer'} accent={isHeld ? 'bad' : undefined}>
+          {isHeld ? (
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+              <div style={{ fontSize: 12.5, color: 'var(--bad-700)' }}>Ce colis est actuellement en retenu.</div>
+              <button
+                disabled={!!busy}
+                onClick={releaseParcel}
+                style={{ ...btnBase, background: 'var(--ok-600)', color: '#fff', opacity: busy ? .6 : 1, whiteSpace: 'nowrap' }}
+              >
+                {busy === 'release' ? '…' : done.release ? '✓ Libéré' : '↑ Libérer'}
+              </button>
+            </div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              <select
+                value={holdReason}
+                onChange={e => setHoldReason(e.target.value)}
+                style={{ width: '100%', padding: '8px 10px', border: '1px solid var(--border)', borderRadius: 8, fontSize: 13, background: 'white' }}
+              >
+                {HOLD_REASONS.map(r => <option key={r}>{r}</option>)}
+              </select>
+              {holdReason === 'Autre' && (
+                <input
+                  value={customHoldReason}
+                  onChange={e => setCustomHoldReason(e.target.value)}
+                  placeholder="Précisez la raison…"
+                  style={{ width: '100%', padding: '8px 10px', border: '1px solid var(--border)', borderRadius: 8, fontSize: 13, boxSizing: 'border-box' }}
+                />
+              )}
+              <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                <button
+                  disabled={!!busy || (holdReason === 'Autre' && !customHoldReason)}
+                  onClick={holdParcel}
+                  style={{ ...btnBase, background: 'var(--bad-600)', color: '#fff', opacity: (!!busy || (holdReason === 'Autre' && !customHoldReason)) ? .5 : 1 }}
+                >
+                  {busy === 'hold' ? '…' : done.hold ? '✓ Mis en retenu' : 'Mettre en retenu'}
+                </button>
+              </div>
+            </div>
+          )}
+        </PanelSection>
+
+        {/* ── Notes internes ── */}
+        <PanelSection title="Notes internes">
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <textarea
+              value={notes}
+              onChange={e => setNotes(e.target.value)}
+              placeholder="Instructions, précautions, informations importantes…"
+              rows={3}
+              style={{ width: '100%', padding: '8px 10px', border: '1px solid var(--border)', borderRadius: 8, fontSize: 12.5, resize: 'vertical', boxSizing: 'border-box', fontFamily: 'inherit' }}
+            />
+            <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+              <button
+                disabled={!!busy}
+                onClick={saveNotes}
+                style={{ ...btnBase, background: 'var(--bg-soft)', border: '1px solid var(--border)', color: 'var(--ink-700)', opacity: busy ? .6 : 1 }}
+              >
+                {busy === 'notes' ? '…' : done.notes ? '✓ Sauvegardé' : 'Sauvegarder les notes'}
+              </button>
+            </div>
+          </div>
+        </PanelSection>
+      </div>
+
+      {err && (
+        <div style={{ marginTop: 12, padding: '8px 12px', background: 'var(--bad-50)', borderRadius: 6, fontSize: 12.5, color: 'var(--bad-700)' }}>
+          {err}
+        </div>
+      )}
+
+      <div style={{ marginTop: 18, paddingTop: 14, borderTop: '1px solid var(--border-soft)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <button className="btn btn--ghost btn--sm" onClick={onClose}>Fermer</button>
+        <button
+          className="btn btn--ghost btn--sm"
+          onClick={() => onNav('/parcels/' + parcel.id)}
+          style={{ color: 'var(--brand-600)', fontWeight: 700 }}
+        >
+          Voir la fiche complète →
+        </button>
+      </div>
+    </Modal>
+  );
+}
+
 export default function CampaignDetailScreen({ id, onNav }) {
   const t = useAdminT();
   const can = useCan();
@@ -77,6 +344,21 @@ export default function CampaignDetailScreen({ id, onNav }) {
   const [parcelTab,          setParcelTab]          = useState('active'); // 'active' | 'cancelled'
   const [deletingParcelId,   setDeletingParcelId]   = useState(null);
   const [deleteParcelErr,    setDeleteParcelErr]    = useState('');
+  const [quickParcel,        setQuickParcel]        = useState(null);
+
+  const reload = useCallback(() => {
+    fetch('/api/campaigns/' + id)
+      .then(r => r.json())
+      .then(c => {
+        setCampaign(c);
+        setStatusNotes(c.statusNotes ?? {});
+        // Refresh quick panel parcel data if open
+        if (quickParcel) {
+          const fresh = c.parcels?.find(p => p.id === quickParcel.id);
+          if (fresh) setQuickParcel(fresh);
+        }
+      });
+  }, [id, quickParcel]);
 
   useEffect(() => {
     fetch('/api/campaigns/' + id)
@@ -402,6 +684,16 @@ export default function CampaignDetailScreen({ id, onNav }) {
         />
       )}
 
+      {/* ── Parcel quick actions modal ── */}
+      {quickParcel && (
+        <ParcelQuickPanel
+          parcel={quickParcel}
+          onClose={() => setQuickParcel(null)}
+          onRefresh={reload}
+          onNav={onNav}
+        />
+      )}
+
       {/* Departure note modal (transit steps) */}
       {showDepartureModal && (
         <DepartureNoteModal
@@ -617,7 +909,7 @@ export default function CampaignDetailScreen({ id, onNav }) {
                 <tr
                   key={p.id}
                   style={{ cursor: 'pointer', background: isConfirming ? 'var(--bad-50)' : undefined }}
-                  onClick={() => { if (!isConfirming) onNav('/parcels/' + p.id); }}
+                  onClick={() => { if (!isConfirming) setQuickParcel(p); }}
                 >
                   <td>
                     <span className="mono" style={{ fontWeight: 700, color: 'var(--brand-700)' }}>
