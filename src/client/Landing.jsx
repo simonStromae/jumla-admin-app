@@ -728,22 +728,34 @@ function JEstimator({ onBook, content }) {
   const currentRoute = liveRoutes.find(r => r.id === routeId) || liveRoutes[0];
   const fees = currentRoute ? routeFeesToCalcFees(currentRoute.fees) : DEFAULT_FEES;
 
+  const totalWeight = lines.reduce((a, l) => a + (parseFloat(l.weight) || 0), 0);
+  const allItems = lines.map(l => ({ cat: l.cat, kg: parseFloat(l.weight) || 0 }));
+  // Calculate once for all items combined — uses the correct tier based on total weight
+  const combined = totalWeight > 0 ? calcPrice(allItems, fees, {}, 'expedition', null) : null;
+
   const calcLine = (ln) => {
     const kg = parseFloat(ln.weight) || 0;
-    const result = calcPrice([{ cat: ln.cat, kg }], fees, {}, 'expedition', null);
-    if (!result) return { transport: 0, extras: 0, total: 0, rateLabel: '—' };
-    const extras = result.catSurchargeTotal + result.douane + result.formalites + result.manutention;
-    const rateLabel = result.tier?.transportPerKg
-      ? result.tier.transportPerKg + ' CAD/kg'
-      : result.tier?.transportFlat
-        ? result.tier.transportFlat + ' CAD forfait'
+    if (!combined || !combined.tier) return { transport: 0, extras: 0, rateLabel: '—' };
+    const tier = combined.tier;
+    const transport = tier.transportFlat !== undefined
+      ? (totalWeight > 0 ? combined.transport * (kg / totalWeight) : 0)
+      : (tier.transportPerKg || 0) * kg;
+    const suppRates = fees.supplements || DEFAULT_FEES.supplements;
+    const catDef = ITEM_CATEGORIES.find(c => c.id === ln.cat);
+    const catRate = suppRates[ln.cat] ?? catDef?.extraPerKg ?? 0;
+    const catSurcharge = catRate * kg;
+    const sharedExtras = combined.douane + combined.formalites + combined.manutention;
+    const extras = catSurcharge + (totalWeight > 0 ? sharedExtras * (kg / totalWeight) : 0);
+    const rateLabel = tier.transportPerKg
+      ? tier.transportPerKg + ' CAD/kg'
+      : tier.transportFlat
+        ? tier.transportFlat + ' CAD forfait'
         : '—';
-    return { transport: result.transport, extras, total: result.prixClient, rateLabel };
+    return { transport, extras, rateLabel };
   };
 
   const computed = lines.map(calcLine);
-  const grandTotal = Math.round(computed.reduce((a, c) => a + c.total, 0));
-  const totalWeight = lines.reduce((a, l) => a + (parseFloat(l.weight) || 0), 0);
+  const grandTotal = Math.round(combined?.prixClient ?? 0);
 
   const addLine = () => setLines([...lines, { id: Date.now(), cat: 'standard', weight: 5 }]);
   const removeLine = (id) => setLines(lines.length > 1 ? lines.filter(l => l.id !== id) : lines);
