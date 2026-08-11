@@ -799,7 +799,6 @@ export default function BookingScreen({ onNav, embedded = false, prefillId = nul
         }))
       : [{ id: 1, cat: 'standard', desc: '', pieces: 1, kg: '', beerFormat: '24x65', nbCasiers: '' }]
   );
-  const [showBreakdown, setShowBreakdown] = useState(false);
   const [createAccount, setCreateAccount] = useState(false);
   const [savedAddresses, setSavedAddresses] = useState([]);
   const [savedRecipients, setSavedRecipients] = useState([]);
@@ -1391,8 +1390,79 @@ export default function BookingScreen({ onNav, embedded = false, prefillId = nul
                     </div>
                   )}
 
+                  {/* Estimation — shown right after weight, always expanded */}
+                  {price && (
+                    <div style={{ marginTop: 14, background: 'var(--brand-50)', border: '1.5px solid var(--brand-100)', borderRadius: 'var(--radius)', padding: '14px 16px' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+                        <span style={{ fontSize: 13.5, fontWeight: 700, color: 'var(--brand-700)' }}>
+                          {t('booking.parcel.estimation')} : {price.prixClient.toFixed(0)} {route.currency}
+                        </span>
+                      </div>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12.5, color: 'var(--ink-700)', fontWeight: 600 }}>
+                          <span>{t('booking.payment.transport')} ({price.totalKg} kg)</span><span>{price.transport.toFixed(0)} {route.currency}</span>
+                        </div>
+                        {price.catSurchargeLines.length > 0 && (
+                          <>
+                            <div style={{ fontSize: 10.5, fontWeight: 700, letterSpacing: '.08em', textTransform: 'uppercase', color: 'var(--brand-500)', marginTop: 4, marginBottom: 2 }}>
+                              {t('booking.parcel.supplements')}
+                            </div>
+                            {price.catSurchargeLines.map(l => (
+                              <div key={l.catId} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: 'var(--ink-600)', paddingLeft: 10 }}>
+                                <span>{l.label} ({l.kg} kg × {l.rate >= 0 ? '+' : ''}{l.rate} {route.currency}/kg)</span>
+                                <span>{l.amount >= 0 ? '+' : ''}{l.amount.toFixed(0)} {route.currency}</span>
+                              </div>
+                            ))}
+                          </>
+                        )}
+                        {price.saqLines?.length > 0 && (
+                          <>
+                            <div style={{ fontSize: 10.5, fontWeight: 700, letterSpacing: '.08em', textTransform: 'uppercase', color: 'var(--brand-500)', marginTop: 4, marginBottom: 2 }}>
+                              {t('booking.payment.saq')}
+                            </div>
+                            {price.saqLines.map((l, i) => (
+                              <div key={i} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: 'var(--ink-600)', paddingLeft: 10 }}>
+                                <span>Casier {l.format} × {l.nbCasiers}</span>
+                                <span>+{l.amount.toFixed(2)} {route.currency}</span>
+                              </div>
+                            ))}
+                          </>
+                        )}
+                        {price.addonTotal > 0 && (
+                          <>
+                            <div style={{ fontSize: 10.5, fontWeight: 700, letterSpacing: '.08em', textTransform: 'uppercase', color: 'var(--brand-500)', marginTop: 4, marginBottom: 2 }}>
+                              {t('booking.payment.accessories')}
+                            </div>
+                            {price.addonSmall  > 0 && <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: 'var(--ink-600)', paddingLeft: 10 }}><span>{t('booking.parcel.smallBag')} × {form.addons.smallBag}</span><span>{price.addonSmall.toFixed(0)} {route.currency}</span></div>}
+                            {price.addonMedium > 0 && <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: 'var(--ink-600)', paddingLeft: 10 }}><span>{t('booking.parcel.mediumBag')} × {form.addons.mediumBag}</span><span>{price.addonMedium.toFixed(0)} {route.currency}</span></div>}
+                            {price.addonLarge  > 0 && <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: 'var(--ink-600)', paddingLeft: 10 }}><span>{t('booking.parcel.largeBag')} × {form.addons.largeBag}</span><span>{price.addonLarge.toFixed(0)} {route.currency}</span></div>}
+                            {price.carton > 0 && <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: 'var(--ink-600)', paddingLeft: 10 }}><span>{t('booking.parcel.cartons')} × {form.addons.cartons} ({price.cartonRate} {route.currency}/u)</span><span>{price.carton.toFixed(2)} {route.currency}</span></div>}
+                          </>
+                        )}
+                        {price.manutention > 0 && (
+                          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: 'var(--ink-600)' }}>
+                            <span>{t('booking.payment.handling')}</span><span>{price.manutention.toFixed(2)} {route.currency}</span>
+                          </div>
+                        )}
+                        {price.douane > 0 && (
+                          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: 'var(--ink-600)' }}>
+                            <span>{t('booking.payment.customs')}</span><span>{price.douane.toFixed(2)} {route.currency}</span>
+                          </div>
+                        )}
+                        {price.formalites > 0 && (
+                          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: 'var(--ink-600)' }}>
+                            <span>{t('booking.payment.formalities')}</span><span>{price.formalites.toFixed(2)} {route.currency}</span>
+                          </div>
+                        )}
+                      </div>
+                      <div style={{ marginTop: 10, fontSize: 11.5, color: 'var(--brand-600)', fontStyle: 'italic' }}>
+                        {t('booking.parcel.indicative')}
+                      </div>
+                    </div>
+                  )}
+
                   {/* Accessories */}
-                  <div style={{ marginTop: 20, marginBottom: price ? 20 : 0 }}>
+                  <div style={{ marginTop: 20 }}>
                     <div className="co-label" style={{ marginBottom: 10 }}>{t('booking.parcel.addons')}</div>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                       {[
@@ -1414,83 +1484,6 @@ export default function BookingScreen({ onNav, embedded = false, prefillId = nul
                       ))}
                     </div>
                   </div>
-
-                  {/* Estimation */}
-                  {price && (
-                    <div style={{ background: 'var(--brand-50)', border: '1.5px solid var(--brand-100)', borderRadius: 'var(--radius)', padding: '14px 16px' }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: showBreakdown ? 12 : 0 }}>
-                        <span style={{ fontSize: 13.5, fontWeight: 700, color: 'var(--brand-700)' }}>
-                          {t('booking.parcel.estimation')} : {price.prixClient.toFixed(0)} {route.currency}
-                        </span>
-                        <button onClick={() => setShowBreakdown(b => !b)}
-                          style={{ fontSize: 11.5, color: 'var(--brand-600)', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 600 }}>
-                          {showBreakdown ? t('booking.parcel.hideBreakdown') : t('booking.parcel.showBreakdown')}
-                        </button>
-                      </div>
-                      {showBreakdown && (
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-                          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12.5, color: 'var(--ink-700)', fontWeight: 600 }}>
-                            <span>{t('booking.payment.transport')} ({price.totalKg} kg)</span><span>{price.transport.toFixed(0)} {route.currency}</span>
-                          </div>
-                          {price.catSurchargeLines.length > 0 && (
-                            <>
-                              <div style={{ fontSize: 10.5, fontWeight: 700, letterSpacing: '.08em', textTransform: 'uppercase', color: 'var(--brand-500)', marginTop: 4, marginBottom: 2 }}>
-                                {t('booking.parcel.supplements')}
-                              </div>
-                              {price.catSurchargeLines.map(l => (
-                                <div key={l.catId} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: 'var(--ink-600)', paddingLeft: 10 }}>
-                                  <span>{l.label} ({l.kg} kg × {l.rate >= 0 ? '+' : ''}{l.rate} {route.currency}/kg)</span>
-                                  <span>{l.amount >= 0 ? '+' : ''}{l.amount.toFixed(0)} {route.currency}</span>
-                                </div>
-                              ))}
-                            </>
-                          )}
-                          {price.saqLines?.length > 0 && (
-                            <>
-                              <div style={{ fontSize: 10.5, fontWeight: 700, letterSpacing: '.08em', textTransform: 'uppercase', color: 'var(--brand-500)', marginTop: 4, marginBottom: 2 }}>
-                                {t('booking.payment.saq')}
-                              </div>
-                              {price.saqLines.map((l, i) => (
-                                <div key={i} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: 'var(--ink-600)', paddingLeft: 10 }}>
-                                  <span>Casier {l.format} × {l.nbCasiers}</span>
-                                  <span>+{l.amount.toFixed(2)} {route.currency}</span>
-                                </div>
-                              ))}
-                            </>
-                          )}
-                          {price.addonTotal > 0 && (
-                            <>
-                              <div style={{ fontSize: 10.5, fontWeight: 700, letterSpacing: '.08em', textTransform: 'uppercase', color: 'var(--brand-500)', marginTop: 4, marginBottom: 2 }}>
-                                {t('booking.payment.accessories')}
-                              </div>
-                              {price.addonSmall  > 0 && <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: 'var(--ink-600)', paddingLeft: 10 }}><span>{t('booking.parcel.smallBag')} × {form.addons.smallBag}</span><span>{price.addonSmall.toFixed(0)} {route.currency}</span></div>}
-                              {price.addonMedium > 0 && <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: 'var(--ink-600)', paddingLeft: 10 }}><span>{t('booking.parcel.mediumBag')} × {form.addons.mediumBag}</span><span>{price.addonMedium.toFixed(0)} {route.currency}</span></div>}
-                              {price.addonLarge  > 0 && <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: 'var(--ink-600)', paddingLeft: 10 }}><span>{t('booking.parcel.largeBag')} × {form.addons.largeBag}</span><span>{price.addonLarge.toFixed(0)} {route.currency}</span></div>}
-                              {price.carton > 0 && <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: 'var(--ink-600)', paddingLeft: 10 }}><span>{t('booking.parcel.cartons')} × {form.addons.cartons} ({price.cartonRate} {route.currency}/u)</span><span>{price.carton.toFixed(2)} {route.currency}</span></div>}
-                            </>
-                          )}
-                          {price.manutention > 0 && (
-                            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: 'var(--ink-600)' }}>
-                              <span>{t('booking.payment.handling')}</span><span>{price.manutention.toFixed(2)} {route.currency}</span>
-                            </div>
-                          )}
-                          {price.douane > 0 && (
-                            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: 'var(--ink-600)' }}>
-                              <span>{t('booking.payment.customs')}</span><span>{price.douane.toFixed(2)} {route.currency}</span>
-                            </div>
-                          )}
-                          {price.formalites > 0 && (
-                            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: 'var(--ink-600)' }}>
-                              <span>{t('booking.payment.formalities')}</span><span>{price.formalites.toFixed(2)} {route.currency}</span>
-                            </div>
-                          )}
-                        </div>
-                      )}
-                      <div style={{ marginTop: 10, fontSize: 11.5, color: 'var(--brand-600)', fontStyle: 'italic' }}>
-                        {t('booking.parcel.indicative')}
-                      </div>
-                    </div>
-                  )}
                 </div>
               )}
 
