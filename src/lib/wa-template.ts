@@ -208,6 +208,22 @@ Une discordance a été détectée sur votre bordereau *{bordereau_code}* (colis
 
 Merci de vous connecter à votre espace client pour consulter les détails et régulariser votre dossier.`,
   },
+  auto_bordereau_invite: {
+    label:   'Invitation attestation bordereau',
+    trigger: "Déclenché à la création d'un bordereau — invite le client à attester son contenu",
+    vars:    ['{first_name}', '{bordereau_code}', '{parcel_code}'],
+    body:
+`Bonjour {first_name} 👋
+
+Votre bordereau *{bordereau_code}* (colis {parcel_code}) est maintenant disponible.
+
+📋 *Action requise :* Connectez-vous à votre espace client pour vérifier et attester le contenu de votre bordereau.
+
+⚠️ *Important :* Ne pas attester votre bordereau constitue une renonciation au contenu de celui-ci. Jumla ne sera pas responsable de tout manquement lors de la livraison du colis.
+
+Merci,
+Jumla Shipping`,
+  },
 };
 
 // ─── Twilio Content API template definitions ───────────────────────────────
