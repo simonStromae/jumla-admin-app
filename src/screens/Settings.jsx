@@ -801,6 +801,7 @@ const WA_TMPL_DEFS = {
   auto_campaign_status:       { label: 'Statut cargaison',      group: 'auto', trigger: "Changement de statut d'une cargaison",       vars: ['{first_name}','{campaign_code}','{status_label}','{parcel_codes}'], body: `Bonjour {first_name} 👋\n\nVotre cargaison *{campaign_code}* a été mise à jour.\n\nNouveau statut : *{status_label}*\n\nColis : {parcel_codes}\n\nConnectez-vous à votre espace client pour suivre l'avancement de votre envoi.` },
   auto_bordereau_confirmed:   { label: 'Bordereau confirmé',    group: 'auto', trigger: 'Bordereau passé au statut « validé »',       vars: ['{first_name}','{bordereau_code}','{parcel_code}'], body: `Bonjour {first_name} 👋\n\nVotre bordereau *{bordereau_code}* (colis {parcel_code}) a été confirmé par Jumla Shipping.\n\nMerci de vous connecter à votre espace client pour vérifier et accepter le contenu déclaré avant l'expédition.` },
   auto_bordereau_discordance: { label: 'Discordance bordereau', group: 'auto', trigger: 'Bordereau passé au statut « discordance »',  vars: ['{first_name}','{bordereau_code}','{parcel_code}'], body: `Bonjour {first_name} 👋\n\nUne discordance a été détectée sur votre bordereau *{bordereau_code}* (colis {parcel_code}).\n\nMerci de vous connecter à votre espace client pour consulter les détails et régulariser votre dossier.` },
+  auto_bordereau_invite:      { label: 'Invitation attestation bordereau', group: 'auto', trigger: "Création d'un bordereau — invite le client à attester son contenu", vars: ['{first_name}','{bordereau_code}','{parcel_code}'], body: `Bonjour {first_name} 👋\n\nVotre bordereau *{bordereau_code}* (colis {parcel_code}) est maintenant disponible.\n\n📋 *Action requise :* Connectez-vous à votre espace client pour vérifier et attester le contenu de votre bordereau.\n\n⚠️ *Important :* Ne pas attester votre bordereau constitue une renonciation au contenu de celui-ci. Jumla ne sera pas responsable de tout manquement lors de la livraison du colis.\n\nMerci,\nJumla Shipping` },
 };
 
 function SectionWaTemplates() {
@@ -810,8 +811,9 @@ function SectionWaTemplates() {
   const [templates, setTemplates] = useState(() =>
     Object.fromEntries(Object.entries(WA_TMPL_DEFS).map(([k, v]) => [k, { label: v.label, body: v.body }]))
   );
-  const [saving, setSaving] = useState(false);
-  const [saved,  setSaved]  = useState(false);
+  const [saving,   setSaving]   = useState(false);
+  const [saved,    setSaved]    = useState(false);
+  const [saveErr,  setSaveErr]  = useState(null);
 
   useEffect(() => {
     fetch('/api/settings').then(r => r.json()).then(d => {
@@ -837,16 +839,26 @@ function SectionWaTemplates() {
 
   async function handleSave() {
     setSaving(true);
-    const payload = {};
-    for (const [id, tmplEntry] of Object.entries(templates)) {
-      payload[`wa_tmpl_${id}_label`] = tmplEntry.label;
-      payload[`wa_tmpl_${id}_body`]  = tmplEntry.body;
+    setSaved(false);
+    setSaveErr(null);
+    try {
+      const payload = {};
+      for (const [id, tmplEntry] of Object.entries(templates)) {
+        payload[`wa_tmpl_${id}_label`] = tmplEntry.label;
+        payload[`wa_tmpl_${id}_body`]  = tmplEntry.body;
+      }
+      const res = await fetch('/api/settings', {
+        method: 'PUT', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      if (!res.ok) throw new Error(`Erreur serveur (${res.status})`);
+      setSaved(true);
+      setTimeout(() => setSaved(false), 3000);
+    } catch (e) {
+      setSaveErr(e?.message ?? 'Erreur lors de la sauvegarde');
+    } finally {
+      setSaving(false);
     }
-    await fetch('/api/settings', {
-      method: 'PUT', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-    });
-    setSaving(false); setSaved(true); setTimeout(() => setSaved(false), 3000);
   }
 
   const switchGroup = (g) => {
@@ -863,7 +875,7 @@ function SectionWaTemplates() {
       {/* Group selector */}
       <div style={{ display: 'flex', gap: 4, marginBottom: 14, background: 'var(--bg-soft)', padding: 4, borderRadius: 8, width: 'fit-content' }}>
         {/* TODO i18n: Envoi manuel / Automatiques */}
-        {[{ id: 'manual', l: 'Envoi manuel (5)' }, { id: 'auto', l: 'Automatiques (5)' }].map(g => (
+        {[{ id: 'manual', l: 'Envoi manuel (5)' }, { id: 'auto', l: 'Automatiques (6)' }].map(g => (
           <button key={g.id} onClick={() => switchGroup(g.id)}
             className="btn btn--sm"
             style={{ background: group === g.id ? 'white' : 'transparent', boxShadow: group === g.id ? '0 1px 3px rgba(0,0,0,.08)' : 'none', color: group === g.id ? 'var(--ink-900)' : 'var(--ink-400)', fontWeight: group === g.id ? 700 : 400, border: 'none' }}>
@@ -911,8 +923,9 @@ function SectionWaTemplates() {
       </div>
 
       <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, alignItems: 'center' }}>
-        {saved && <span style={{ fontSize: 12, color: 'var(--ok-700)', fontWeight: 600 }}>✓ {/* TODO i18n */}Sauvegardé</span>}
-        <button className="btn btn--ghost btn--sm" onClick={reset}>{/* TODO i18n: Réinitialiser */}Réinitialiser</button>
+        {saveErr && <span style={{ fontSize: 12, color: 'var(--bad-600)', fontWeight: 600 }}>⚠ {saveErr}</span>}
+        {saved   && <span style={{ fontSize: 12, color: 'var(--ok-700)',  fontWeight: 600 }}>✓ Sauvegardé</span>}
+        <button className="btn btn--ghost btn--sm" onClick={reset}>Réinitialiser</button>
         <button className="btn btn--brand btn--sm" disabled={saving} onClick={handleSave}>
           <I.Check />{saving ? t.common.saving : t.common.save}
         </button>

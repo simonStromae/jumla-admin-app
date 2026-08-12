@@ -2,6 +2,8 @@ export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/src/lib/prisma';
 import { requireAdmin } from '@/src/lib/api-auth';
+import { sendWhatsappNotification } from '@/src/lib/twilio';
+import { renderWaTemplate } from '@/src/lib/wa-template';
 
 export async function GET(req: NextRequest) {
   const { error } = await requireAdmin();
@@ -60,7 +62,10 @@ export async function POST(req: NextRequest) {
   const { parcelId, description, weightKg, nbPieces, notes, items } = await req.json();
   if (!parcelId) return NextResponse.json({ error: 'parcelId requis' }, { status: 400 });
 
-  const parcel = await prisma.parcel.findUnique({ where: { id: parcelId }, select: { trackingCode: true } });
+  const parcel = await prisma.parcel.findUnique({
+    where: { id: parcelId },
+    select: { trackingCode: true, client: { select: { name: true, phone: true } } },
+  });
   if (!parcel) return NextResponse.json({ error: 'Colis introuvable' }, { status: 404 });
 
   const existing = await prisma.bordereau.count({ where: { parcelId } });
@@ -77,5 +82,15 @@ export async function POST(req: NextRequest) {
       items:       Array.isArray(items) ? items : [],
     } as any,
   });
+
+  // Notify client to attest the bordereau
+  if (parcel.client?.phone) {
+    const firstName = (parcel.client.name ?? 'Client').split(' ')[0];
+    const vars = { first_name: firstName, bordereau_code: code, parcel_code: parcel.trackingCode };
+    renderWaTemplate('auto_bordereau_invite', vars)
+      .then(msg => sendWhatsappNotification(parcel.client!.phone!, msg, bordereau.id, 'auto_bordereau_invite', vars))
+      .catch(() => {});
+  }
+
   return NextResponse.json({ ok: true, bordereau: { ...bordereau, items: (bordereau as any).items ?? [] } });
 }
