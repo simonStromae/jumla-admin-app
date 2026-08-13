@@ -64,10 +64,13 @@ export default function AgentParcelPage() {
   const [newStatus, setNewStatus] = useState('');
   const [note,      setNote]      = useState('');
   const [location,  setLocation]  = useState('');
-  const [showStatus,  setShowStatus]  = useState(false);
-  const [drivers,     setDrivers]     = useState([]);
-  const [driverId,    setDriverId]    = useState('');
+  const [showStatus,   setShowStatus]   = useState(false);
+  const [drivers,      setDrivers]      = useState([]);
+  const [driverId,     setDriverId]     = useState('');
   const [savingDriver, setSavingDriver] = useState(false);
+  const [blBusy,       setBlBusy]       = useState({});
+  const [blEcartOpen,  setBlEcartOpen]  = useState({});
+  const [blEcartNote,  setBlEcartNote]  = useState({});
 
   useEffect(() => {
     fetch(`/api/parcels/${id}`)
@@ -109,6 +112,28 @@ export default function AgentParcelPage() {
       setSuccess(newDriverId ? `Livreur assigné : ${driverName}` : 'Livreur désassigné');
     } catch { setError('Erreur réseau'); }
     finally { setSavingDriver(false); }
+  };
+
+  const handleVerifyBl = async (blId, status, noteText) => {
+    setBlBusy(prev => ({ ...prev, [blId]: true }));
+    setError(''); setSuccess('');
+    try {
+      const res = await fetch(`/api/bordereaux/${blId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status, ...(noteText ? { notes: noteText } : {}) }),
+      });
+      if (!res.ok) { const d = await res.json(); setError(d.error || 'Erreur'); return; }
+      setParcel(p => ({
+        ...p,
+        bordereaux: (p.bordereaux ?? []).map(b =>
+          b.id === blId ? { ...b, status, ...(noteText ? { notes: noteText } : {}) } : b
+        ),
+      }));
+      setSuccess(status === 'verifie' ? 'Bordereau vérifié ✓' : 'Écart signalé');
+      setBlEcartOpen(prev => ({ ...prev, [blId]: false }));
+    } catch { setError('Erreur réseau'); }
+    finally { setBlBusy(prev => ({ ...prev, [blId]: false })); }
   };
 
   const handleStatusUpdate = async () => {
@@ -249,17 +274,16 @@ export default function AgentParcelPage() {
           </div>
         )}
 
-        {/* Bordereaux — verification status */}
+        {/* Bordereaux — verification */}
         {(() => {
           const bls = parcel.bordereaux ?? [];
           if (bls.length === 0) return null;
 
           const hasEcart    = bls.some(b => b.status === 'ecart');
           const allVerified = bls.every(b => b.status === 'verifie' || b.status === 'ecart');
-          const anyPending  = bls.some(b => b.status === 'en_attente' || b.status === 'valide');
 
           const summary = hasEcart
-            ? { icon: '⚠️', text: `${bls.filter(b => b.status === 'ecart').length} écart(s) détecté(s) — vérifier avant sortie`, bg: '#FEF2F2', border: '#FECACA', color: '#DC2626' }
+            ? { icon: '⚠️', text: `${bls.filter(b => b.status === 'ecart').length} écart(s) — vérifier avant sortie`, bg: '#FEF2F2', border: '#FECACA', color: '#DC2626' }
             : allVerified
             ? { icon: '✅', text: 'Tout vérifié — OK pour sortie', bg: '#ECFDF5', border: '#A7F3D0', color: '#047857' }
             : { icon: '⏳', text: 'Vérification en cours', bg: '#F0F9FF', border: '#BAE6FD', color: '#0284C7' };
@@ -284,18 +308,25 @@ export default function AgentParcelPage() {
               </div>
 
               {/* List */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                 {bls.map((bl, i) => {
-                  const s = BL_STATUS[bl.status] ?? BL_STATUS.en_attente;
+                  const s       = BL_STATUS[bl.status] ?? BL_STATUS.en_attente;
+                  const canAct  = bl.status === 'en_attente' || bl.status === 'valide';
+                  const busy    = blBusy[bl.id];
+                  const ecartOpen = blEcartOpen[bl.id];
+
                   return (
-                    <div key={bl.id ?? i} style={{ padding: '10px 12px', borderRadius: 8, border: `1px solid ${bl.status === 'ecart' ? '#FECACA' : '#E5E7EB'}`, background: bl.status === 'ecart' ? '#FFF5F5' : '#FAFAFA' }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+                    <div key={bl.id ?? i} style={{ padding: '12px', borderRadius: 8, border: `1px solid ${bl.status === 'ecart' ? '#FECACA' : '#E5E7EB'}`, background: bl.status === 'ecart' ? '#FFF5F5' : '#FAFAFA' }}>
+                      {/* Header */}
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
                         <span style={{ fontFamily: 'monospace', fontSize: 13, fontWeight: 700, color: '#111827' }}>{bl.code}</span>
                         <span style={{ fontSize: 11, fontWeight: 700, padding: '2px 8px', borderRadius: 999, background: s.bg, color: s.color }}>
                           {s.label}
                         </span>
                       </div>
-                      <div style={{ display: 'flex', gap: 12, fontSize: 11.5, color: '#6B7280' }}>
+
+                      {/* Info */}
+                      <div style={{ display: 'flex', gap: 12, fontSize: 11.5, color: '#6B7280', flexWrap: 'wrap' }}>
                         {bl.description && <span>📦 {bl.description}</span>}
                         {bl.nbPieces > 0 && <span>{bl.nbPieces} pièce{bl.nbPieces > 1 ? 's' : ''}</span>}
                         {bl.weightKg && <span>{bl.weightKg} kg</span>}
@@ -303,6 +334,54 @@ export default function AgentParcelPage() {
                       {bl.notes && (
                         <div style={{ marginTop: 5, fontSize: 11.5, color: bl.status === 'ecart' ? '#DC2626' : '#6B7280', fontStyle: 'italic' }}>
                           📝 {bl.notes}
+                        </div>
+                      )}
+
+                      {/* Action buttons */}
+                      {canAct && !ecartOpen && (
+                        <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
+                          <button
+                            disabled={busy}
+                            onClick={() => handleVerifyBl(bl.id, 'verifie', null)}
+                            style={{ flex: 1, padding: '10px 6px', borderRadius: 8, border: 'none', background: '#ECFDF5', color: '#047857', fontSize: 12.5, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}
+                          >
+                            {busy ? '…' : '✓ Tout conforme'}
+                          </button>
+                          <button
+                            disabled={busy}
+                            onClick={() => setBlEcartOpen(prev => ({ ...prev, [bl.id]: true }))}
+                            style={{ flex: 1, padding: '10px 6px', borderRadius: 8, border: 'none', background: '#FEF2F2', color: '#DC2626', fontSize: 12.5, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}
+                          >
+                            ⚠ Signaler écart
+                          </button>
+                        </div>
+                      )}
+
+                      {/* Ecart note input */}
+                      {canAct && ecartOpen && (
+                        <div style={{ marginTop: 10 }}>
+                          <textarea
+                            rows={2}
+                            placeholder="Décrire l'écart (ex : article manquant, colis ouvert…)"
+                            value={blEcartNote[bl.id] ?? ''}
+                            onChange={e => setBlEcartNote(prev => ({ ...prev, [bl.id]: e.target.value }))}
+                            style={{ width: '100%', padding: '9px 10px', borderRadius: 8, border: '1.5px solid #FECACA', fontSize: 12.5, fontFamily: 'inherit', background: '#FFFBEB', outline: 'none', resize: 'none', color: '#1F2937', boxSizing: 'border-box' }}
+                          />
+                          <div style={{ display: 'flex', gap: 8, marginTop: 6 }}>
+                            <button
+                              onClick={() => setBlEcartOpen(prev => ({ ...prev, [bl.id]: false }))}
+                              style={{ flex: 1, padding: '9px', borderRadius: 8, border: '1px solid #E5E7EB', background: 'white', color: '#6B7280', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}
+                            >
+                              Annuler
+                            </button>
+                            <button
+                              disabled={busy}
+                              onClick={() => handleVerifyBl(bl.id, 'ecart', blEcartNote[bl.id] ?? null)}
+                              style={{ flex: 2, padding: '9px', borderRadius: 8, border: 'none', background: '#DC2626', color: 'white', fontSize: 12.5, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}
+                            >
+                              {busy ? '…' : 'Confirmer l\'écart'}
+                            </button>
+                          </div>
                         </div>
                       )}
                     </div>
