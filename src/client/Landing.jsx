@@ -4,6 +4,7 @@ import { useSession } from 'next-auth/react';
 import I from '../components/Icons.jsx';
 import { ITEM_CATEGORIES, calcPrice, routeFeesToCalcFees, DEFAULT_FEES } from '../lib/calcPrice.js';
 import { TopBar, SiteNav, SiteFooter } from './SiteLayout.jsx';
+import ChinaComingSoon from './ChinaComingSoon.jsx';
 import { useT, useLocale } from '@/src/lib/i18n';
 import '@/src/styles/client-omega.css';
 
@@ -1115,6 +1116,7 @@ export default function LandingPage({ onNav }) {
         }
       `}</style>
       <SiteNav onNav={onNav} onBook={onBook} mode="landing" />
+      <ChinaComingSoon onBook={onBook} />
       <JHero onBook={onBook} onNav={onNav} content={content} />
       <JEstimator onBook={onBook} content={content} />
       <JStoryCard onBook={onBook} onNav={onNav} content={content} />
