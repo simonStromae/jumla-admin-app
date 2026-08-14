@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import I from '../components/Icons.jsx';
 import { Bi, Avatar, Modal, Progress, Skel, useCan } from '../components/Shell.jsx';
 import { useAdminT } from '../lib/useAdminT.js';
+import { useCurrency } from '../lib/useCurrency.js';
 
 // TODO: i18n — module-level constants cannot use hooks; labels translated inline in components via t.payments.methods / t.paymentStatus
 const METHOD_LABELS = {
@@ -33,6 +34,7 @@ const PAY_STATUS = {
 
 function RecordPaymentModal({ preselectedClient, preselectedPaymentId, onClose, onSave }) {
   const t = useAdminT();
+  const { currency, fmt } = useCurrency();
   const [form, setForm]             = useState({ type: 'payment', amount: '', method: 'interac', reference: '', note: '' });
   const [clientQuery, setClientQuery] = useState(preselectedClient?.name || '');
   const [clients, setClients]       = useState([]);
@@ -202,13 +204,13 @@ function RecordPaymentModal({ preselectedClient, preselectedPaymentId, onClose, 
               <div>
                 <div style={{ fontSize: 10, color: 'var(--ink-400)', fontWeight: 700, textTransform: 'uppercase', marginBottom: 2 }}>{/* TODO: i18n — no translation key */}Total dû</div>
                 <div style={{ fontWeight: 800, fontSize: 15, color: balance.totalDue > 0 ? 'var(--bad-600)' : 'var(--ok-600)', fontFamily: 'var(--font-mono)' }}>
-                  {balance.totalDue.toLocaleString('fr')} <span style={{ fontSize: 10, fontWeight: 400 }}>CAD</span>
+                  {fmt(balance.totalDue, 'CAD')}
                 </div>
               </div>
               <div>
                 <div style={{ fontSize: 10, color: 'var(--ink-400)', fontWeight: 700, textTransform: 'uppercase', marginBottom: 2 }}>{/* TODO: i18n — no translation key */}Crédit disponible</div>
                 <div style={{ fontWeight: 800, fontSize: 15, color: balance.creditBalance > 0 ? 'var(--brand-600)' : 'var(--ink-400)', fontFamily: 'var(--font-mono)' }}>
-                  {balance.creditBalance.toLocaleString('fr')} <span style={{ fontSize: 10, fontWeight: 400 }}>CAD</span>
+                  {fmt(balance.creditBalance, 'CAD')}
                 </div>
               </div>
             </div>
@@ -229,7 +231,7 @@ function RecordPaymentModal({ preselectedClient, preselectedPaymentId, onClose, 
             <div style={{ position: 'relative' }}>
               <input className="input mono" type="number" min="0" value={form.amount}
                 onChange={e => upd('amount', e.target.value)} placeholder="0" style={{ paddingRight: 48 }} />
-              <span style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', fontSize: 12, color: 'var(--ink-400)', pointerEvents: 'none' }}>CAD</span>
+              <span style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', fontSize: 12, color: 'var(--ink-400)', pointerEvents: 'none' }}>{currency}</span>
             </div>
           </div>
 
@@ -327,7 +329,7 @@ function RecordPaymentModal({ preselectedClient, preselectedPaymentId, onClose, 
                         </div>
                         <div style={{ fontSize: 11, color: 'var(--ink-500)', marginTop: 1 }}>
                           {/* TODO: i18n — mixed dynamic/static content, no translation keys for "Cargaison", "supplément dû", "solde dû" */}
-                          Cargaison <strong>{inv.campaignCode}</strong> · {isSupp ? 'supplément dû' : 'solde dû'} : <strong style={{ color: isSupp ? 'var(--info-700)' : 'var(--bad-600)' }}>{inv.remaining.toLocaleString('fr')} CAD</strong>
+                          Cargaison <strong>{inv.campaignCode}</strong> · {isSupp ? 'supplément dû' : 'solde dû'} : <strong style={{ color: isSupp ? 'var(--info-700)' : 'var(--bad-600)' }}>{fmt(inv.remaining, 'CAD')}</strong>
                         </div>
                       </div>
                       {checked && (
@@ -336,7 +338,7 @@ function RecordPaymentModal({ preselectedClient, preselectedPaymentId, onClose, 
                             value={allocations[inv.id] || ''}
                             onChange={e => setAllocations(a => ({ ...a, [inv.id]: e.target.value }))}
                             style={{ width: 88, padding: '4px 8px', border: `1px solid ${isSupp ? 'var(--info-600)' : 'var(--brand-300)'}`, borderRadius: 6, fontFamily: 'var(--font-mono)', fontSize: 13, textAlign: 'right' }} />
-                          <span style={{ fontSize: 11, color: 'var(--ink-400)' }}>CAD</span>
+                          <span style={{ fontSize: 11, color: 'var(--ink-400)' }}>{currency}</span>
                         </div>
                       )}
                     </div>
@@ -356,7 +358,7 @@ function RecordPaymentModal({ preselectedClient, preselectedPaymentId, onClose, 
                     <div key={k.label}>
                       <div style={{ fontSize: 10, color: 'var(--ink-400)', fontWeight: 700, textTransform: 'uppercase', marginBottom: 3 }}>{k.label}</div>
                       <div style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: 15, color: k.color }}>
-                        {k.val.toLocaleString('fr')} <span style={{ fontSize: 10, fontWeight: 400, opacity: .7 }}>CAD</span>
+                        {fmt(k.val, 'CAD')}
                       </div>
                     </div>
                   ))}
@@ -365,7 +367,7 @@ function RecordPaymentModal({ preselectedClient, preselectedPaymentId, onClose, 
               {credit > 0 && totalAmount > 0 && (
                 <div style={{ marginTop: 8, fontSize: 12, color: 'var(--brand-700)', background: 'var(--brand-50)', padding: '8px 12px', borderRadius: 7, border: '1px solid var(--brand-100)' }}>
                   {/* TODO: i18n — no translation key */}
-                  💳 {credit.toLocaleString('fr')} CAD non alloués seront crédités sur le compte de {selectedClient?.name?.split(' ')[0]}
+                  💳 {fmt(credit, 'CAD')} non alloués seront crédités sur le compte de {selectedClient?.name?.split(' ')[0]}
                 </div>
               )}
             </>
@@ -380,6 +382,7 @@ function RecordPaymentModal({ preselectedClient, preselectedPaymentId, onClose, 
 
 function TransactionsTab({ onRecord, onNav }) {
   const t = useAdminT();
+  const { currency, fmt } = useCurrency();
   const [rows, setRows]     = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -469,9 +472,8 @@ function TransactionsTab({ onRecord, onNav }) {
                 </td>
                 <td style={{ textAlign: 'right' }}>
                   <span className="mono" style={{ fontWeight: 700, color: 'var(--ok-700)', fontSize: 13 }}>
-                    {r.amount.toLocaleString('fr')}
+                    {fmt(r.amount, 'CAD')}
                   </span>
-                  <span style={{ fontSize: 11, color: 'var(--ok-600)', marginLeft: 3 }}>CAD</span>
                 </td>
                 <td style={{ fontSize: 12, color: 'var(--ink-600)' }}>{t.payments.methods?.[r.method] ?? METHOD_LABELS[r.method] ?? r.method}</td>
                 <td className="mono" style={{ fontSize: 12, color: 'var(--ink-600)' }}>{r.reference ?? '—'}</td>
@@ -490,7 +492,7 @@ function TransactionsTab({ onRecord, onNav }) {
                 </td>
                 <td>
                   {credit > 0 ? (
-                    <span style={{ fontFamily: 'var(--font-mono)', fontSize: 12, fontWeight: 700, color: 'var(--brand-600)' }}>+{credit.toLocaleString('fr')} CAD</span>
+                    <span style={{ fontFamily: 'var(--font-mono)', fontSize: 12, fontWeight: 700, color: 'var(--brand-600)' }}>+{fmt(credit, 'CAD')}</span>
                   ) : (
                     <span style={{ color: 'var(--ink-300)' }}>—</span>
                   )}
@@ -532,6 +534,7 @@ function fmt(date) {
 
 function InvoicePreviewModal({ parcelId, onClose }) {
   const t = useAdminT();
+  const { currency, fmt: fmtCur } = useCurrency();
   const [data, setData]       = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError]     = useState('');
@@ -663,7 +666,7 @@ function InvoicePreviewModal({ parcelId, onClose }) {
                         </td>
                         <td style={{ padding: '12px', borderBottom: '1px solid #f3f4f6', color: '#9ca3af', fontFamily: 'monospace', fontSize: 13 }}>—</td>
                         <td style={{ padding: '12px', borderBottom: '1px solid #f3f4f6', textAlign: 'right', fontFamily: 'monospace', fontSize: 13, color: '#9ca3af', textDecoration: 'line-through' }}>
-                          {(data.priceXaf ?? 0).toLocaleString('fr')} CAD
+                          {fmtCur(data.priceXaf ?? 0, 'CAD')}
                         </td>
                       </tr>
                       <tr style={{ background: 'var(--info-50)' }}>
@@ -675,7 +678,7 @@ function InvoicePreviewModal({ parcelId, onClose }) {
                           {data.weightKg ? data.weightKg + ' kg' : '—'}
                         </td>
                         <td style={{ padding: '12px', borderBottom: '1px solid #f3f4f6', textAlign: 'right', fontFamily: 'monospace', fontSize: 14, fontWeight: 700, color: 'var(--info-700)' }}>
-                          +{supplement.toLocaleString('fr')} CAD
+                          +{fmtCur(supplement, 'CAD')}
                         </td>
                       </tr>
                     </>
@@ -694,7 +697,7 @@ function InvoicePreviewModal({ parcelId, onClose }) {
                         {data.weightKg ? data.weightKg + ' kg' : '—'}
                       </td>
                       <td style={{ padding: '12px', borderBottom: '1px solid #f3f4f6', textAlign: 'right', fontFamily: 'monospace', fontSize: 14, fontWeight: 700, color: '#111827' }}>
-                        {data.amount.toLocaleString('fr')} CAD
+                        {fmtCur(data.amount, 'CAD')}
                       </td>
                     </tr>
                   )}
@@ -707,7 +710,7 @@ function InvoicePreviewModal({ parcelId, onClose }) {
                   <div style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 14px', background: adjMode ? 'var(--info-700)' : '#1e3a5f', borderRadius: 8, color: 'white' }}>
                     <span style={{ fontWeight: 700 }}>{adjMode ? 'Supplément dû' : 'Total'}</span>
                     <span style={{ fontFamily: 'monospace', fontWeight: 800, fontSize: 16 }}>
-                      {adjMode ? supplement.toLocaleString('fr') : data.amount.toLocaleString('fr')} CAD
+                      {fmtCur(adjMode ? supplement : data.amount, 'CAD')}
                     </span>
                   </div>
                   {paid && data.payment?.paidAt && (
@@ -725,7 +728,7 @@ function InvoicePreviewModal({ parcelId, onClose }) {
                   <div style={{ fontWeight: 700, color: 'var(--info-700)', marginBottom: 5, fontSize: 13 }}>Modalités de paiement</div>
                   <div style={{ fontSize: 12, color: '#78350f', lineHeight: 1.6 }}>
                     Effectuez un virement Interac e-Transfert à <strong>{paymentEmail}</strong> pour le montant de{' '}
-                    <strong>{adjMode ? supplement.toLocaleString('fr') : data.amount.toLocaleString('fr')} CAD</strong>.
+                    <strong>{fmtCur(adjMode ? supplement : data.amount, 'CAD')}</strong>.
                     Indiquez le code <strong style={{ fontFamily: 'monospace' }}>{data.trackingCode}</strong> en message.
                   </div>
                 </div>
@@ -748,6 +751,7 @@ function InvoicePreviewModal({ parcelId, onClose }) {
 
 function InvoiceSettleModal({ invoice, onClose, onSave }) {
   const t = useAdminT();
+  const { currency, fmt } = useCurrency();
   const [balance, setBalance] = useState(null);
   const [mode, setMode]       = useState('full');
   const [form, setForm]       = useState({ method: 'interac', reference: '', note: '', amount: '' });
@@ -858,9 +862,8 @@ function InvoiceSettleModal({ invoice, onClose, onSave }) {
                     </div>
                     <div style={{ textAlign: 'right', flexShrink: 0 }}>
                       <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: 15, color: sup ? 'var(--info-700)' : 'var(--ink-900)' }}>
-                        {line.remaining.toLocaleString('fr')}
+                        {fmt(line.remaining, 'CAD')}
                       </span>
-                      <span style={{ fontSize: 11, color: 'var(--ink-400)', marginLeft: 3 }}>CAD</span>
                     </div>
                   </label>
                 );
@@ -874,7 +877,7 @@ function InvoiceSettleModal({ invoice, onClose, onSave }) {
             <div style={{ display: 'flex', gap: 8 }}>
               {/* TODO: i18n — no translation keys for 'Intégral', 'Acompte / Partiel', 'Montant à saisir' */}
               {[
-                { id: 'full',    label: 'Intégral',         sub: `${totalDue.toLocaleString('fr')} CAD` },
+                { id: 'full',    label: 'Intégral',         sub: fmt(totalDue, 'CAD') },
                 { id: 'partial', label: 'Acompte / Partiel', sub: 'Montant à saisir' },
               ].map(m => (
                 <button key={m.id} onClick={() => setMode(m.id)} style={{
@@ -897,7 +900,7 @@ function InvoiceSettleModal({ invoice, onClose, onSave }) {
                 <input className="input mono" type="number" min="0" max={totalDue}
                   value={form.amount} onChange={e => setForm(f => ({ ...f, amount: e.target.value }))}
                   placeholder="0" style={{ paddingRight: 48 }} />
-                <span style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', fontSize: 12, color: 'var(--ink-400)', pointerEvents: 'none' }}>CAD</span>
+                <span style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', fontSize: 12, color: 'var(--ink-400)', pointerEvents: 'none' }}>{currency}</span>
               </div>
             </div>
           )}
@@ -909,7 +912,7 @@ function InvoiceSettleModal({ invoice, onClose, onSave }) {
               {mode === 'full' ? 'Montant à enregistrer' : 'Versement'}
             </span>
             <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 800, fontSize: 16, color: 'var(--ink-900)' }}>
-              {(amount || 0).toLocaleString('fr')} <span style={{ fontSize: 12, fontWeight: 400, color: 'var(--ink-400)' }}>CAD</span>
+              {fmt(amount || 0, 'CAD')}
             </span>
           </div>
 
@@ -941,6 +944,7 @@ function InvoiceSettleModal({ invoice, onClose, onSave }) {
 function InvoicesTab({ onReload, onNav }) {
   const t = useAdminT();
   const can = useCan();
+  const { currency, fmt } = useCurrency();
   const [payments, setPayments]         = useState([]);
   const [loading, setLoading]           = useState(true);
   const [tab, setTab]                   = useState('all');
@@ -1072,8 +1076,7 @@ function InvoicesTab({ onReload, onNav }) {
                 <td className="mono" style={{ fontSize: 12, fontWeight: 600 }}>{p.parcel}</td>
                 <td style={{ textAlign: 'right' }}>
                   <div>
-                    <span className="mono" style={{ fontWeight: 700 }}>{(p.invoiced ?? p.due ?? 0).toLocaleString('fr')}</span>
-                    <span style={{ fontSize: 11, color: 'var(--ink-400)', marginLeft: 3 }}>CAD</span>
+                    <span className="mono" style={{ fontWeight: 700 }}>{fmt(p.invoiced ?? p.due ?? 0, 'CAD')}</span>
                   </div>
                   {p.status !== 'paid' && p.status !== 'cancelled' && (
                     <div style={{ fontSize: 11, marginTop: 2 }}>
@@ -1144,8 +1147,7 @@ function InvoicesTab({ onReload, onNav }) {
                 <td className="mono" style={{ fontSize: 12, color: 'var(--ink-400)' }}>{p.campaign}</td>
                 <td className="mono" style={{ fontSize: 12, color: 'var(--info-700)' }}>{p.parcel}</td>
                 <td style={{ textAlign: 'right' }}>
-                  <span className="mono" style={{ fontWeight: 700, color: 'var(--info-700)' }}>{suppAmt.toLocaleString('fr')}</span>
-                  <span style={{ fontSize: 11, color: 'var(--ink-400)', marginLeft: 3 }}>CAD</span>
+                  <span className="mono" style={{ fontWeight: 700, color: 'var(--info-700)' }}>{fmt(suppAmt, 'CAD')}</span>
                 </td>
                 <td><span className="badge badge--dot badge--warn">{t.paymentStatus.pending}</span></td>
                 <td style={{ color: 'var(--ink-300)', fontSize: 12 }}>—</td>
@@ -1178,8 +1180,7 @@ function InvoicesTab({ onReload, onNav }) {
                 <td className="mono" style={{ fontSize: 12, color: 'var(--ink-400)' }}>{p.campaign}</td>
                 <td className="mono" style={{ fontSize: 12, color: 'var(--ok-700)' }}>{p.parcel}</td>
                 <td style={{ textAlign: 'right' }}>
-                  <span className="mono" style={{ fontWeight: 700, color: 'var(--ok-700)' }}>{suppAmtPaid.toLocaleString('fr')}</span>
-                  <span style={{ fontSize: 11, color: 'var(--ink-400)', marginLeft: 3 }}>CAD</span>
+                  <span className="mono" style={{ fontWeight: 700, color: 'var(--ok-700)' }}>{fmt(suppAmtPaid, 'CAD')}</span>
                 </td>
                 <td><span className="badge badge--dot badge--ok">{t.paymentStatus.completed}</span></td>
                 <td style={{ color: 'var(--ink-300)', fontSize: 12 }}>—</td>
@@ -1208,6 +1209,7 @@ function InvoicesTab({ onReload, onNav }) {
 export default function PaymentsScreen({ onNav }) {
   const t = useAdminT();
   const can = useCan();
+  const { currency, fmt } = useCurrency();
   const [mainTab, setMainTab]   = useState('transactions');
   const [modal, setModal]       = useState(null);
   const [payments, setPayments] = useState([]);
@@ -1254,17 +1256,17 @@ export default function PaymentsScreen({ onNav }) {
         {/* TODO: i18n — KPI labels 'Facturé', 'Perçu', 'Impayés', 'Taux recouvrement' have no keys in t.payments or t.analytics.kpi */}
         <div className="kpi">
           <div className="kpi__label">Total facturé</div>
-          <div className="kpi__value">{facture.toLocaleString('fr')} <span style={{ fontSize: 14, color: 'var(--ink-400)' }}>CAD</span></div>
+          <div className="kpi__value">{fmt(facture, 'CAD')}</div>
           <div className="kpi__delta">{activePayments.length} facture{activePayments.length !== 1 ? 's' : ''} actives</div>
         </div>
         <div className="kpi" style={{ background: 'var(--ok-50)', borderColor: 'var(--ok-100)' }}>
           <div className="kpi__label" style={{ color: 'var(--ok-700)' }}>Total encaissé</div>
-          <div className="kpi__value" style={{ color: 'var(--ok-700)' }}>{percu.toLocaleString('fr')} <span style={{ fontSize: 14, opacity: .6 }}>CAD</span></div>
+          <div className="kpi__value" style={{ color: 'var(--ok-700)' }}>{fmt(percu, 'CAD')}</div>
           <Progress pct={taux} />
         </div>
         <div className="kpi" style={{ background: 'var(--warn-50)', borderColor: 'var(--warn-100)' }}>
           <div className="kpi__label" style={{ color: 'var(--warn-700)' }}>Restant à encaisser</div>
-          <div className="kpi__value" style={{ color: 'var(--warn-700)' }}>{impayes.toLocaleString('fr')} <span style={{ fontSize: 14, opacity: .6 }}>CAD</span></div>
+          <div className="kpi__value" style={{ color: 'var(--warn-700)' }}>{fmt(impayes, 'CAD')}</div>
           <div className="kpi__delta" style={{ color: 'var(--warn-600)' }}>
             {nbImpayes} facture{nbImpayes !== 1 ? 's' : ''} en attente
           </div>

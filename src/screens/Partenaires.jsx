@@ -1,19 +1,20 @@
 'use client';
 import { useState, useEffect, useMemo } from 'react';
 import I from '@/src/components/Icons';
+import { useCurrency } from '../lib/useCurrency.js';
 
 const TYPE_LABELS = {
   commercial: { label: 'Commercial', color: '#0284c7', bg: '#e0f2fe' },
   partenaire: { label: 'Partenaire', color: '#7c3aed', bg: '#f5f3ff' },
 };
 
-function fmt(n) { return new Intl.NumberFormat('fr-CA', { style: 'currency', currency: 'CAD' }).format(Number(n) || 0); }
 function fmtDate(d) {
   if (!d) return '—';
   return new Date(d).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' });
 }
 
 function PartnerRow({ p, onClick }) {
+  const { fmt } = useCurrency();
   const type = TYPE_LABELS[p.clientType] ?? TYPE_LABELS.commercial;
   const hasIssue = p.stats.pendingInvoices > 0 || p.stats.pendingAmount > 0;
 
@@ -93,6 +94,7 @@ function PartnerRow({ p, onClick }) {
 }
 
 export default function PartenairesScreen({ onNav }) {
+  const { fmt } = useCurrency();
   const [partners, setPartners] = useState([]);
   const [loading, setLoading]   = useState(true);
   const [search, setSearch]     = useState('');

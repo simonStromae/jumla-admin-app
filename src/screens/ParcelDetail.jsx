@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import I from '../components/Icons.jsx';
 import { Avatar, Modal } from '../components/Shell.jsx';
 import { useAdminT } from '../lib/useAdminT.js';
+import { useCurrency } from '../lib/useCurrency.js';
 
 // TODO: i18n — PARCEL_STATUS labels are French; replace with t.parcelStatus keys when mapping is extended
 const PARCEL_STATUS = {
@@ -54,6 +55,7 @@ const DRIVER_WARNINGS = {
 
 export default function ParcelDetailScreen({ id, onNav }) {
   const t = useAdminT();
+  const { currency, fmt } = useCurrency();
   const [parcel,        setParcel]        = useState(null);
   const [bordereaux,    setBordereaux]    = useState([]);
   const [loading,       setLoading]       = useState(true);
@@ -688,7 +690,7 @@ export default function ParcelDetailScreen({ id, onNav }) {
               {/* TODO: i18n — 'Total dû' has no direct key; using t.common.total as close match */}
               <span style={{ fontWeight: 700 }}>{t.common.total}</span>
               <span className="mono" style={{ fontSize: 22, fontWeight: 700 }}>
-                {(payment?.amount ?? parcel.priceXaf)?.toLocaleString('fr') ?? '—'} <span style={{ fontSize: 12, color: 'var(--ink-400)' }}>CAD</span>
+                {(payment?.amount ?? parcel.priceXaf) != null ? fmt(payment?.amount ?? parcel.priceXaf, 'CAD') : '—'}
               </span>
             </div>
 
@@ -726,7 +728,7 @@ export default function ParcelDetailScreen({ id, onNav }) {
                 {/* TODO: i18n — 'Estimation réservation' has no direct key */}
                 <span style={{ color: 'var(--ink-500)' }}>Estimation réservation</span>
                 <span className="mono" style={{ color: parcel.confirmedPriceXaf != null ? 'var(--ink-400)' : 'var(--ink-700)', fontWeight: 600, textDecoration: parcel.confirmedPriceXaf != null ? 'line-through' : 'none' }}>
-                  {parcel.priceXaf ? parcel.priceXaf.toLocaleString('fr') + ' CAD' : '—'}
+                  {parcel.priceXaf ? fmt(parcel.priceXaf, 'CAD') : '—'}
                 </span>
               </div>
 
@@ -736,7 +738,7 @@ export default function ParcelDetailScreen({ id, onNav }) {
                     {/* TODO: i18n — 'Prix réel (pesée)' has no direct key */}
                     <span style={{ color: 'var(--ink-700)', fontWeight: 600 }}>Prix réel (pesée)</span>
                     <span className="mono" style={{ fontWeight: 700, fontSize: 14, color: 'var(--ink-900)' }}>
-                      {parcel.confirmedPriceXaf.toLocaleString('fr')} CAD
+                      {fmt(parcel.confirmedPriceXaf, 'CAD')}
                     </span>
                   </div>
                   {(() => {
@@ -752,7 +754,7 @@ export default function ParcelDetailScreen({ id, onNav }) {
                           {diff > 0 ? '↑ Supplément' : '↓ Remise'}
                         </span>
                         <span className="mono" style={{ fontWeight: 700, color: diff > 0 ? 'var(--warn-700)' : 'var(--ok-700)' }}>
-                          {diff > 0 ? '+' : ''}{diff.toLocaleString('fr')} CAD
+                          {diff > 0 ? '+' : ''}{fmt(diff, 'CAD')}
                         </span>
                       </div>
                     );
@@ -790,14 +792,14 @@ export default function ParcelDetailScreen({ id, onNav }) {
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, padding: '6px 8px', background: 'var(--brand-50)', borderRadius: 5 }}>
                   {/* TODO: i18n — 'Valeur déclarée' has no direct key */}
                   <span style={{ color: 'var(--ink-600)' }}>Valeur déclarée</span>
-                  <span className="mono" style={{ fontWeight: 700, color: 'var(--ink-900)' }}>{parcel.declaredValue.toLocaleString('fr')} $ CAD</span>
+                  <span className="mono" style={{ fontWeight: 700, color: 'var(--ink-900)' }}>{fmt(parcel.declaredValue, 'CAD')}</span>
                 </div>
               )}
               {parcel.coverageFee > 0 && (
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, padding: '6px 8px', background: 'var(--brand-50)', borderRadius: 5 }}>
                   {/* TODO: i18n — 'Couverture (20 %)' has no direct key */}
                   <span style={{ color: 'var(--ink-600)' }}>Couverture (20 %)</span>
-                  <span className="mono" style={{ fontWeight: 700, color: 'var(--brand-700)' }}>+{parcel.coverageFee.toLocaleString('fr')} CAD</span>
+                  <span className="mono" style={{ fontWeight: 700, color: 'var(--brand-700)' }}>+{fmt(parcel.coverageFee, 'CAD')}</span>
                 </div>
               )}
               {/* Marchandises interdites */}
@@ -1058,6 +1060,7 @@ const BEER_FORMATS = [
 
 function WeightModal({ parcel, onClose, onSaved }) {
   const t = useAdminT();
+  const { currency, fmt } = useCurrency();
   const initItems = () => {
     if (Array.isArray(parcel.items) && parcel.items.length > 0) {
       return parcel.items.map(it => ({
@@ -1368,12 +1371,12 @@ function WeightModal({ parcel, onClose, onSaved }) {
                       <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, padding: '4px 8px', background: 'var(--bg-soft)', borderRadius: 4 }}>
                         {/* TODO: i18n — 'Estimation réservation' has no direct key */}
                         <span style={{ color: 'var(--ink-400)' }}>Estimation réservation</span>
-                        <span className="mono" style={{ color: 'var(--ink-400)', textDecoration: 'line-through' }}>{estimated.toLocaleString('fr')} CAD</span>
+                        <span className="mono" style={{ color: 'var(--ink-400)', textDecoration: 'line-through' }}>{fmt(estimated, 'CAD')}</span>
                       </div>
                       <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12.5, padding: '4px 8px', background: 'var(--brand-50)', borderRadius: 4 }}>
                         {/* TODO: i18n — 'Prix réel (pesée)' has no direct key */}
                         <span style={{ color: 'var(--ink-700)', fontWeight: 600 }}>Prix réel (pesée)</span>
-                        <span className="mono" style={{ fontWeight: 700, color: 'var(--ink-900)' }}>{real.toLocaleString('fr')} CAD</span>
+                        <span className="mono" style={{ fontWeight: 700, color: 'var(--ink-900)' }}>{fmt(real, 'CAD')}</span>
                       </div>
                       {diff === 0 ? (
                         // TODO: i18n — 'Identique à l\'estimation' has no direct key
@@ -1385,7 +1388,7 @@ function WeightModal({ parcel, onClose, onSaved }) {
                             {diff > 0 ? '↑ Supplément' : '↓ Remise'}
                           </span>
                           <span className="mono" style={{ fontWeight: 700, color: diff > 0 ? 'var(--warn-700)' : 'var(--ok-700)' }}>
-                            {diff > 0 ? '+' : ''}{diff.toLocaleString('fr')} CAD
+                            {diff > 0 ? '+' : ''}{fmt(diff, 'CAD')}
                           </span>
                         </div>
                       )}
@@ -1409,6 +1412,7 @@ function WeightModal({ parcel, onClose, onSaved }) {
 
 function InteracModal({ parcel, onClose }) {
   const t = useAdminT();
+  const { currency, fmt } = useCurrency();
   const payUrl = (typeof window !== 'undefined' ? window.location.origin : '') + '/payer/' + parcel.id;
   const [copied, setCopied]     = useState(false);
   const [sending, setSending]   = useState(false);
@@ -1433,12 +1437,13 @@ function InteracModal({ parcel, onClose }) {
     finally { setSending(false); }
   };
 
-  const amountLabel = (parcel.payment?.amount ?? parcel.priceXaf)?.toLocaleString('fr') ?? '—';
+  const rawAmount = parcel.payment?.amount ?? parcel.priceXaf;
+  const amountLabel = rawAmount != null ? fmt(rawAmount, 'CAD') : '—';
 
   return (
     <Modal width={640} onClose={onClose}
       title="Lien de paiement Interac"
-      sub={parcel.trackingCode + ' · ' + amountLabel + ' CAD dû'}
+      sub={`${parcel.trackingCode} · ${amountLabel} dû`}
       footer={<button className="btn btn--ghost" onClick={onClose}>{t.common.close}</button>}>
       <div style={{ display: 'grid', gap: 16 }}>
 
