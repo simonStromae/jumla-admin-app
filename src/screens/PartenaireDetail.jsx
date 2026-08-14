@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import I from '@/src/components/Icons';
 import { useCurrency } from '../lib/useCurrency.js';
 
@@ -26,6 +26,63 @@ const INVOICE_STATUS = {
   paid:    { label: 'Payée', color: 'var(--ok-700)', bg: 'var(--ok-50)' },
   overdue: { label: 'En retard', color: 'var(--bad-700)', bg: 'var(--bad-50)' },
 };
+
+// ─── Parcel Status Badge (inline picker) ──────────────────────────────────────
+function ParcelStatusBadge({ parcelId, status, onChange }) {
+  const [open, setOpen]     = useState(false);
+  const [saving, setSaving] = useState(false);
+  const ref = useRef(null);
+  const st  = STATUS_LABELS[status] ?? { label: status, color: 'var(--ink-500)', bg: 'var(--bg-soft)' };
+
+  useEffect(() => {
+    if (!open) return;
+    const close = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
+    document.addEventListener('mousedown', close);
+    return () => document.removeEventListener('mousedown', close);
+  }, [open]);
+
+  const handleSelect = async (newStatus) => {
+    setOpen(false);
+    if (newStatus === status) return;
+    setSaving(true);
+    await fetch('/api/parcels/' + parcelId, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status: newStatus }),
+    });
+    onChange(parcelId, newStatus);
+    setSaving(false);
+  };
+
+  return (
+    <div ref={ref} style={{ position: 'relative' }} onClick={e => e.stopPropagation()}>
+      <span
+        onClick={() => !saving && setOpen(o => !o)}
+        style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '3px 8px', borderRadius: 999, background: st.bg, color: st.color, fontSize: 11, fontWeight: 700, cursor: saving ? 'default' : 'pointer', opacity: saving ? 0.6 : 1, userSelect: 'none' }}
+      >
+        {saving ? '…' : st.label}
+        {!saving && <span style={{ fontSize: 9, opacity: 0.5 }}>▾</span>}
+      </span>
+      {open && (
+        <div style={{ position: 'absolute', top: 'calc(100% + 4px)', left: 0, zIndex: 200, background: 'white', border: '1px solid var(--border)', borderRadius: 10, boxShadow: '0 8px 24px rgba(0,0,0,.12)', padding: '4px 0', minWidth: 150 }}>
+          {Object.entries(STATUS_LABELS).map(([key, cfg]) => (
+            <div
+              key={key}
+              onClick={() => handleSelect(key)}
+              style={{ padding: '7px 12px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8, background: key === status ? 'var(--bg-soft)' : 'transparent' }}
+              onMouseEnter={e => e.currentTarget.style.background = 'var(--bg-soft)'}
+              onMouseLeave={e => e.currentTarget.style.background = key === status ? 'var(--bg-soft)' : 'transparent'}
+            >
+              <span style={{ width: 8, height: 8, borderRadius: '50%', background: cfg.color, flexShrink: 0, display: 'inline-block' }} />
+              <span style={{ fontSize: 12.5, fontWeight: key === status ? 700 : 400, color: 'var(--ink-800)' }}>{cfg.label}</span>
+              {key === status && <span style={{ marginLeft: 'auto', fontSize: 11, color: 'var(--ink-400)' }}>✓</span>}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
 
 // ─── Settlement Modal ──────────────────────────────────────────────────────────
 function SettlementModal({ partnerId, group, invoices, onClose, onSettled }) {
@@ -145,7 +202,7 @@ function SettlementModal({ partnerId, group, invoices, onClose, onSettled }) {
 }
 
 // ─── Campaign block ────────────────────────────────────────────────────────────
-function CampaignBlock({ group, invoices, onNavParcel, onSettle }) {
+function CampaignBlock({ group, invoices, onNavParcel, onSettle, onParcelStatusChange }) {
   const { fmt } = useCurrency();
   const [open, setOpen] = useState(false);
   const { campaign, parcels } = group;
@@ -206,19 +263,22 @@ function CampaignBlock({ group, invoices, onNavParcel, onSettle }) {
       {open && (
         <div>
           {parcels.map((p, i) => {
-            const st   = STATUS_LABELS[p.status] ?? { label: p.status, color: 'var(--ink-500)', bg: 'var(--bg-soft)' };
             const paid = p.payment?.status === 'completed';
             return (
               <div
                 key={p.id}
-                onClick={() => onNavParcel(p.id)}
-                style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 16px 10px 42px', borderBottom: i < parcels.length - 1 ? '1px solid var(--border-soft)' : 'none', cursor: 'pointer' }}
-                onMouseEnter={e => e.currentTarget.style.background = 'var(--bg-soft)'}
-                onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 16px 10px 42px', borderBottom: i < parcels.length - 1 ? '1px solid var(--border-soft)' : 'none' }}
               >
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                  <span style={{ display: 'inline-block', padding: '2px 8px', borderRadius: 999, background: st.bg, color: st.color, fontSize: 11, fontWeight: 700 }}>{st.label}</span>
-                  <div>
+                  <ParcelStatusBadge
+                    parcelId={p.id}
+                    status={p.status}
+                    onChange={onParcelStatusChange}
+                  />
+                  <div
+                    onClick={() => onNavParcel(p.id)}
+                    style={{ cursor: 'pointer' }}
+                  >
                     <div style={{ fontFamily: 'var(--font-mono)', fontSize: 13, fontWeight: 600, color: 'var(--ink-800)' }}>{p.trackingCode}</div>
                     {p.recipName && <div style={{ fontSize: 11.5, color: 'var(--ink-400)' }}>→ {p.recipName}{p.recipCity ? `, ${p.recipCity}` : ''}</div>}
                   </div>
@@ -410,6 +470,19 @@ export default function PartenaireDetailScreen({ id, onNav }) {
     setInvoices(prev => prev.filter(i => i.id !== invId));
   };
 
+  const handleParcelStatusChange = (parcelId, newStatus) => {
+    setData(prev => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        campaigns: prev.campaigns.map(g => ({
+          ...g,
+          parcels: g.parcels.map(p => p.id === parcelId ? { ...p, status: newStatus } : p),
+        })),
+      };
+    });
+  };
+
   const handleSettled = ({ invoice, updatedParcelIds }) => {
     setInvoices(prev => [invoice, ...prev]);
     if (updatedParcelIds?.length > 0) {
@@ -533,7 +606,7 @@ export default function PartenaireDetailScreen({ id, onNav }) {
           {activeCampaigns.length === 0
             ? <div style={{ padding: 40, textAlign: 'center', color: 'var(--ink-400)' }}>Aucune campagne en cours.</div>
             : activeCampaigns.map((g, i) => (
-                <CampaignBlock key={i} group={g} invoices={invoices} onNavParcel={pid => onNav('/admin/parcels/' + pid)} onSettle={setSettleGroup} />
+                <CampaignBlock key={i} group={g} invoices={invoices} onNavParcel={pid => onNav('/admin/parcels/' + pid)} onSettle={setSettleGroup} onParcelStatusChange={handleParcelStatusChange} />
               ))
           }
         </div>
@@ -544,7 +617,7 @@ export default function PartenaireDetailScreen({ id, onNav }) {
           {pastCampaigns.length === 0
             ? <div style={{ padding: 40, textAlign: 'center', color: 'var(--ink-400)' }}>Aucun historique.</div>
             : pastCampaigns.map((g, i) => (
-                <CampaignBlock key={i} group={g} invoices={invoices} onNavParcel={pid => onNav('/admin/parcels/' + pid)} onSettle={setSettleGroup} />
+                <CampaignBlock key={i} group={g} invoices={invoices} onNavParcel={pid => onNav('/admin/parcels/' + pid)} onSettle={setSettleGroup} onParcelStatusChange={handleParcelStatusChange} />
               ))
           }
         </div>
