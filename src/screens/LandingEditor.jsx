@@ -3,15 +3,17 @@ import I from '../components/Icons.jsx';
 import { useAdminT } from '../lib/useAdminT.js';
 
 const SECTION_DEFS = [
-  { key: 'china_coming_soon', label: '🇨🇳 Chine → Montréal', desc: 'Section "Bientôt disponible" avec carte animée et compte à rebours' },
-  { key: 'estimator',         label: '💰 Simulateur de prix', desc: 'Calculateur de tarif en ligne avec résultat instantané' },
-  { key: 'story_card',        label: '✈️ Notre histoire',     desc: 'Bloc photo + stats + bouton de suivi colis' },
-  { key: 'steps',             label: '📋 Comment ça marche',  desc: 'Les 4 étapes du processus d\'expédition' },
+  { key: 'china_coming_soon', label: '🇨🇳 Chine → Montréal',   desc: 'Section "Bientôt disponible" avec carte animée et compte à rebours' },
+  { key: 'hero',              label: '🏠 Héros principal',      desc: 'Section d\'accroche avec titre, sous-titre et statistiques' },
+  { key: 'estimator',         label: '💰 Simulateur de prix',   desc: 'Calculateur de tarif en ligne avec résultat instantané' },
+  { key: 'story_card',        label: '✈️ Notre histoire',       desc: 'Bloc photo + stats + bouton de suivi colis' },
+  { key: 'steps',             label: '📋 Comment ça marche',    desc: 'Les 4 étapes du processus d\'expédition' },
   { key: 'wide_photo',        label: '🖼️ Photo pleine largeur', desc: 'Section photo immersive avec CTA de réservation' },
 ];
 
 const DEFAULT_SECTIONS = {
   china_coming_soon: true,
+  hero:              true,
   estimator:         true,
   story_card:        true,
   steps:             true,
