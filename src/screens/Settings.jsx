@@ -1058,6 +1058,165 @@ function SectionCampaigns() {
   );
 }
 
+/* ── Devises & taux de change ────────────────────────────── */
+const SUPPORTED_CURRENCIES = [
+  { code: 'USD', label: 'Dollar américain',  flag: '🇺🇸', key: 'exchange_rate_USD_CAD' },
+  { code: 'EUR', label: 'Euro',              flag: '🇪🇺', key: 'exchange_rate_EUR_CAD' },
+  { code: 'XAF', label: 'Franc CFA',         flag: '🌍', key: 'exchange_rate_XAF_CAD' },
+  { code: 'CNY', label: 'Yuan chinois',      flag: '🇨🇳', key: 'exchange_rate_CNY_CAD' },
+];
+
+function SectionDevises({ routes }) {
+  const [rates, setRates]       = useState({});
+  const [saving, setSaving]     = useState({});
+  const [saved, setSaved]       = useState({});
+  const [err, setErr]           = useState({});
+  const [calcFrom, setCalcFrom] = useState('');
+  const [calcCur,  setCalcCur]  = useState('USD');
+
+  // Find which currencies are actually used across routes
+  const usedCurrencies = [...new Set((routes || []).map(r => r.currency).filter(c => c && c !== 'CAD'))];
+
+  useEffect(() => {
+    fetch('/api/settings').then(r => r.json()).then(d => {
+      const loaded = {};
+      for (const c of SUPPORTED_CURRENCIES) {
+        loaded[c.key] = d[c.key] ?? '';
+      }
+      setRates(loaded);
+    }).catch(() => {});
+  }, []);
+
+  async function saveRate(key) {
+    setSaving(s => ({ ...s, [key]: true }));
+    setErr(e => ({ ...e, [key]: '' }));
+    try {
+      const res = await fetch('/api/settings', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ [key]: rates[key] }),
+      });
+      if (!res.ok) throw new Error('Erreur serveur');
+      setSaved(s => ({ ...s, [key]: true }));
+      setTimeout(() => setSaved(s => ({ ...s, [key]: false })), 2500);
+    } catch (e) {
+      setErr(er => ({ ...er, [key]: e.message }));
+    } finally {
+      setSaving(s => ({ ...s, [key]: false }));
+    }
+  }
+
+  const calcRate = rates[`exchange_rate_${calcCur}_CAD`];
+  const calcResult = calcFrom && calcRate ? (parseFloat(calcFrom) * parseFloat(calcRate)).toFixed(2) : null;
+
+  return (
+    <>
+      <div className="card" style={{ padding: 20, marginBottom: 16 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6 }}>
+          <I.Coins style={{ width: 14, height: 14, color: 'var(--brand-600)' }} />
+          <span style={{ fontWeight: 700, fontSize: 14 }}>Taux de change → CAD</span>
+        </div>
+        <div style={{ fontSize: 12.5, color: 'var(--ink-400)', marginBottom: 18 }}>
+          Ces taux servent de valeur suggérée lors de la création d'une cargaison sur une route non-CAD.
+          Chaque cargaison verrouille son propre taux à la création.
+        </div>
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+          {SUPPORTED_CURRENCIES.map(c => {
+            const isUsed = usedCurrencies.includes(c.code);
+            return (
+              <div key={c.code} style={{
+                display: 'grid', gridTemplateColumns: '140px 1fr auto',
+                alignItems: 'center', gap: 14,
+                padding: '12px 16px',
+                border: '1px solid ' + (isUsed ? 'var(--brand-200)' : 'var(--border-soft)'),
+                borderRadius: 10,
+                background: isUsed ? 'var(--brand-50)' : 'var(--bg-soft)',
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <span style={{ fontSize: 20 }}>{c.flag}</span>
+                  <div>
+                    <div style={{ fontWeight: 700, fontSize: 13.5 }}>{c.code}</div>
+                    <div style={{ fontSize: 11, color: 'var(--ink-400)' }}>{c.label}</div>
+                    {isUsed && <div style={{ fontSize: 10, color: 'var(--brand-600)', fontWeight: 600, marginTop: 2 }}>✓ Utilisé</div>}
+                  </div>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <span style={{ fontSize: 12.5, color: 'var(--ink-500)', whiteSpace: 'nowrap' }}>1 {c.code} =</span>
+                  <input
+                    className="input mono"
+                    type="number"
+                    step="0.0001"
+                    min="0"
+                    value={rates[c.key] ?? ''}
+                    onChange={e => setRates(r => ({ ...r, [c.key]: e.target.value }))}
+                    placeholder="ex: 0.0019"
+                    style={{ flex: 1, maxWidth: 160 }}
+                  />
+                  <span style={{ fontSize: 12.5, color: 'var(--ink-500)' }}>CAD</span>
+                  {rates[c.key] && (
+                    <span style={{ fontSize: 11, color: 'var(--ink-400)', whiteSpace: 'nowrap' }}>
+                      = {(1 / parseFloat(rates[c.key])).toFixed(2)} {c.code}/CAD
+                    </span>
+                  )}
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  {err[c.key]  && <span style={{ fontSize: 11, color: 'var(--bad-600)' }}>⚠ {err[c.key]}</span>}
+                  {saved[c.key] && <span style={{ fontSize: 11, color: 'var(--ok-700)', fontWeight: 600 }}>✓ Sauvegardé</span>}
+                  <button
+                    className="btn btn--brand btn--sm"
+                    disabled={saving[c.key] || !rates[c.key]}
+                    onClick={() => saveRate(c.key)}
+                  >
+                    <I.Check />{saving[c.key] ? 'Sauvegarde…' : 'Sauvegarder'}
+                  </button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Calculateur */}
+      <div className="card" style={{ padding: 20 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
+          <I.Calculator style={{ width: 14, height: 14, color: 'var(--brand-600)' }} />
+          <span style={{ fontWeight: 700, fontSize: 14 }}>Calculateur de conversion</span>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+          <input
+            className="input mono"
+            type="number"
+            min="0"
+            value={calcFrom}
+            onChange={e => setCalcFrom(e.target.value)}
+            placeholder="Montant"
+            style={{ width: 140 }}
+          />
+          <select className="select" value={calcCur} onChange={e => setCalcCur(e.target.value)} style={{ width: 110 }}>
+            {SUPPORTED_CURRENCIES.map(c => (
+              <option key={c.code} value={c.code}>{c.code}</option>
+            ))}
+          </select>
+          <span style={{ fontSize: 14, color: 'var(--ink-500)' }}>→</span>
+          <div style={{ fontSize: 20, fontWeight: 700, color: 'var(--ink-900)', minWidth: 80 }}>
+            {calcResult !== null ? (
+              <><span className="mono">{parseFloat(calcResult).toLocaleString('fr')}</span> <span style={{ fontSize: 13, fontWeight: 500, color: 'var(--ink-400)' }}>CAD</span></>
+            ) : (
+              <span style={{ fontSize: 13, color: 'var(--ink-300)' }}>{calcFrom && !calcRate ? 'Taux non défini' : '—'}</span>
+            )}
+          </div>
+        </div>
+        {calcRate && calcFrom && (
+          <div style={{ fontSize: 11, color: 'var(--ink-400)', marginTop: 8 }}>
+            Taux utilisé : 1 {calcCur} = {calcRate} CAD
+          </div>
+        )}
+      </div>
+    </>
+  );
+}
+
 /* ── Codes & numérotation ────────────────────────────────── */
 function SectionCodes() {
   const t = useAdminT();
@@ -1317,7 +1476,11 @@ function RouteEditModal({ editRoute, onClose, onSaved }) {
             <div className="field">
               <label className="label">{t.common.currency}</label>
               <select className="select" value={currency} onChange={e => setCurrency(e.target.value)}>
-                <option value="CAD">CAD</option><option value="EUR">EUR</option><option value="XAF">XAF</option>
+                <option value="CAD">CAD — Dollar canadien</option>
+                <option value="USD">USD — Dollar américain</option>
+                <option value="EUR">EUR — Euro</option>
+                <option value="XAF">XAF — Franc CFA</option>
+                <option value="CNY">CNY — Yuan chinois</option>
               </select>
             </div>
           </div>
@@ -1628,6 +1791,7 @@ export default function SettingsScreen({ onNav }) {
               <SectionPricing routes={routes} onEdit={setEditRoute} />
             </>
           )}
+          {section === 'devises'   && <SectionDevises routes={routes} />}
           {section === 'whatsapp'  && <><SectionWhatsapp /><SectionPushSetup /><SectionWaTemplates /></>}
           {section === 'auto'      && <SectionAutoNotif />}
           {section === 'campaigns' && <SectionCampaigns />}

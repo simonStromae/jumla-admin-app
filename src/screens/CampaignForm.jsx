@@ -35,18 +35,40 @@ export default function CampaignFormPage({ mode = 'create', campaign, onNav }) {
     notes:            campaign?.notes       || '',
   });
 
+  const [defaultRates, setDefaultRates] = useState({});
+
   useEffect(() => {
     Promise.all([
       fetch('/api/routes').then(r => r.json()),
       fetch('/api/users').then(r => r.json()),
-    ]).then(([routeData, userData]) => {
+      fetch('/api/settings').then(r => r.json()),
+    ]).then(([routeData, userData, settings]) => {
       const activeRoutes = Array.isArray(routeData) ? routeData.filter(r => r.active) : [];
       const allAgents = Array.isArray(userData) ? userData : [];
       setRoutes(activeRoutes);
       setAgents(allAgents);
+      // Extract exchange rates from settings
+      const rates = {};
+      for (const [k, v] of Object.entries(settings || {})) {
+        if (k.startsWith('exchange_rate_') && k.endsWith('_CAD')) {
+          const cur = k.replace('exchange_rate_', '').replace('_CAD', '');
+          rates[cur] = v;
+        }
+      }
+      setDefaultRates(rates);
       if (!isEdit && activeRoutes.length > 0 && !data.routeId) {
         const first = activeRoutes[0];
-        setData(d => ({ ...d, routeId: first.id, code: autoCode(first) }));
+        const cur = first?.currency;
+        const defaultRate = cur && cur !== 'CAD' ? (rates[cur] ?? '') : '';
+        setData(d => ({ ...d, routeId: first.id, code: autoCode(first), exchangeRateToCAD: defaultRate }));
+      } else if (!isEdit && data.routeId) {
+        // Route already selected — pre-fill rate if available
+        const r = activeRoutes.find(x => x.id === data.routeId);
+        const cur = r?.currency;
+        if (cur && cur !== 'CAD' && !data.exchangeRateToCAD) {
+          const defaultRate = rates[cur] ?? '';
+          if (defaultRate) setData(d => ({ ...d, exchangeRateToCAD: defaultRate }));
+        }
       }
       setLoading(false);
     }).catch(() => setLoading(false));
@@ -57,7 +79,9 @@ export default function CampaignFormPage({ mode = 'create', campaign, onNav }) {
 
   function handleRouteChange(routeId) {
     const r = routes.find(x => x.id === routeId);
-    setData(d => ({ ...d, routeId, code: autoCode(r) }));
+    const cur = r?.currency;
+    const defaultRate = cur && cur !== 'CAD' ? (defaultRates[cur] ?? '') : '';
+    setData(d => ({ ...d, routeId, code: autoCode(r), exchangeRateToCAD: defaultRate }));
   }
 
   async function handleSubmit() {
