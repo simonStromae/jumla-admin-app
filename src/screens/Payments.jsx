@@ -1209,6 +1209,7 @@ function InvoicesTab({ onReload, onNav }) {
 export default function PaymentsScreen({ onNav }) {
   const t = useAdminT();
   const can = useCan();
+  const { currency, fmt } = useCurrency();
   const [mainTab, setMainTab]   = useState('transactions');
   const [modal, setModal]       = useState(null);
   const [payments, setPayments] = useState([]);
@@ -1255,17 +1256,17 @@ export default function PaymentsScreen({ onNav }) {
         {/* TODO: i18n — KPI labels 'Facturé', 'Perçu', 'Impayés', 'Taux recouvrement' have no keys in t.payments or t.analytics.kpi */}
         <div className="kpi">
           <div className="kpi__label">Total facturé</div>
-          <div className="kpi__value">{facture.toLocaleString('fr')} <span style={{ fontSize: 14, color: 'var(--ink-400)' }}>CAD</span></div>
+          <div className="kpi__value">{fmt(facture, 'CAD')}</div>
           <div className="kpi__delta">{activePayments.length} facture{activePayments.length !== 1 ? 's' : ''} actives</div>
         </div>
         <div className="kpi" style={{ background: 'var(--ok-50)', borderColor: 'var(--ok-100)' }}>
           <div className="kpi__label" style={{ color: 'var(--ok-700)' }}>Total encaissé</div>
-          <div className="kpi__value" style={{ color: 'var(--ok-700)' }}>{percu.toLocaleString('fr')} <span style={{ fontSize: 14, opacity: .6 }}>CAD</span></div>
+          <div className="kpi__value" style={{ color: 'var(--ok-700)' }}>{fmt(percu, 'CAD')}</div>
           <Progress pct={taux} />
         </div>
         <div className="kpi" style={{ background: 'var(--warn-50)', borderColor: 'var(--warn-100)' }}>
           <div className="kpi__label" style={{ color: 'var(--warn-700)' }}>Restant à encaisser</div>
-          <div className="kpi__value" style={{ color: 'var(--warn-700)' }}>{impayes.toLocaleString('fr')} <span style={{ fontSize: 14, opacity: .6 }}>CAD</span></div>
+          <div className="kpi__value" style={{ color: 'var(--warn-700)' }}>{fmt(impayes, 'CAD')}</div>
           <div className="kpi__delta" style={{ color: 'var(--warn-600)' }}>
             {nbImpayes} facture{nbImpayes !== 1 ? 's' : ''} en attente
           </div>
