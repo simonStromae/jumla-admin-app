@@ -24,7 +24,7 @@ export default function MessagingScreen({ onNav, campaignId }) {
   const [selected,        setSelected]        = useState([]);
   const [templates,       setTemplates]       = useState(() => makeTemplateDefaults('CAD'));
   const [template,        setTemplate]        = useState('arrival');
-  const [body,            setBody]            = useState(TEMPLATE_DEFAULTS[0].body);
+  const [body,            setBody]            = useState(() => makeTemplateDefaults('CAD')[0].body);
   const [parcels,         setParcels]         = useState([]);
   const [campaigns,       setCampaigns]       = useState([]);
   const [loading,         setLoading]         = useState(true);
