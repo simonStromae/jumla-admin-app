@@ -567,16 +567,18 @@ function RoutesBar({ routeStats }) {
             <RoutePill from={r.fromIATA} to={r.toIATA} />
             <span style={{ fontSize: 12.5, fontWeight: 600, flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.label}</span>
             <span className="mono" style={{ fontSize: 13, fontWeight: 700, color: 'var(--ink-900)', flexShrink: 0 }}>
-              {r.collected > 0 ? (r.collected / 1000).toFixed(1) + 'k' : '—'}
+              {r.collected > 0 ? (r.collected / 1000).toFixed(1) + 'k CAD' : '—'}
             </span>
           </div>
           <div style={{ height: 8, background: 'var(--ink-100)', borderRadius: 999, overflow: 'hidden' }}>
             <div style={{ height: '100%', width: (r.meter || 0) + '%', background: 'linear-gradient(90deg, var(--brand-300), var(--brand-500))', borderRadius: 999 }} />
           </div>
-          {/* TODO: no i18n key for "colis" (parcel count label) and "Facturé" */}
           <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 3, fontSize: 10.5, color: 'var(--ink-400)' }}>
             <span>{r.parcels} colis · {r.weightKg.toLocaleString('fr')} kg</span>
-            <span>Facturé {r.invoiced > 0 ? (r.invoiced / 1000).toFixed(1) + 'k CAD' : '—'}</span>
+            {r.currency && r.currency !== 'CAD'
+              ? <span>Facturé {r.invoicedNative > 0 ? (r.invoicedNative / 1000).toFixed(1) + `k ${r.currency}` : '—'} <span style={{ opacity: .6 }}>(≈{r.invoiced > 0 ? (r.invoiced / 1000).toFixed(1) + 'k CAD' : '—'})</span></span>
+              : <span>Facturé {r.invoiced > 0 ? (r.invoiced / 1000).toFixed(1) + 'k CAD' : '—'}</span>
+            }
           </div>
         </div>
       ))}

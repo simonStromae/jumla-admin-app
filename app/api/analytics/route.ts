@@ -99,6 +99,19 @@ export async function GET(req: NextRequest) {
     return Math.min(collected, parcelInvoiced(p));
   }
 
+  // ── Exchange rate map: campaignId → { rate: number; currency: string } ──────
+  const campaignRateMap: Record<string, { rate: number; currency: string }> = {};
+  for (const c of yearCampaigns) {
+    campaignRateMap[c.id] = {
+      rate:     (c as any).exchangeRateToCAD ?? 1,
+      currency: (c.route as any).currency ?? 'CAD',
+    };
+  }
+  function toCAD(amount: number, campaignId: string): number {
+    const { rate, currency } = campaignRateMap[campaignId] ?? { rate: 1, currency: 'CAD' };
+    return currency === 'CAD' ? amount : amount * rate;
+  }
+
   // ── Per-parcel aggregation ─────────────────────────────────────────────────
   let totalInvoiced  = 0;
   let totalCollected = 0;
@@ -107,10 +120,10 @@ export async function GET(req: NextRequest) {
   const monthlyInvoicedMap: number[] = new Array(12).fill(0);
 
   for (const p of parcels) {
-    const adjStatus      = (p as any).adjustmentStatus ?? 'none';
-    const confirmedPrice = (p as any).confirmedPriceXaf as number | null;
-    const invoiced  = parcelInvoiced(p);
-    const collected = parcelCollected(p);
+    const invoicedNative  = parcelInvoiced(p);
+    const collectedNative = parcelCollected(p);
+    const invoiced  = toCAD(invoicedNative,  p.campaignId);
+    const collected = toCAD(collectedNative, p.campaignId);
 
     totalInvoiced  += invoiced;
     totalCollected += collected;
@@ -127,10 +140,10 @@ export async function GET(req: NextRequest) {
     if (!clientRevMap[cid]) clientRevMap[cid] = { name: p.client.name, amount: 0, count: 0 };
     clientRevMap[cid].amount += collected;
     if (p.payment) clientRevMap[cid].count++;
-
   }
 
   // Monthly collected — from allocations (transaction dates)
+  // Allocations are always in CAD (they come from transactions which are CAD-denominated)
   for (const a of allocationsWithDates) {
     const d = new Date(a.createdAt);
     if (d.getFullYear() === year) monthlyRevMap[d.getMonth()] += Number(a.amount);
@@ -139,7 +152,7 @@ export async function GET(req: NextRequest) {
   for (const p of parcels) {
     if (p.payment?.status === 'completed' && !paymentsWithAllocations.has(p.payment.id)) {
       const d = new Date(p.payment.paidAt ?? p.payment.createdAt);
-      if (d.getFullYear() === year) monthlyRevMap[d.getMonth()] += p.payment.amount;
+      if (d.getFullYear() === year) monthlyRevMap[d.getMonth()] += toCAD(p.payment.amount, p.campaignId);
     }
     // Only add supplement to monthly when priceXaf is set — otherwise the full
     // confirmedPriceXaf is already counted in the base payment above.
@@ -148,7 +161,7 @@ export async function GET(req: NextRequest) {
       if (supp > 0) {
         const camp = yearCampaigns.find(c => c.id === p.campaignId);
         const d    = camp?.departureDate ? new Date(camp.departureDate) : new Date();
-        if (d.getFullYear() === year) monthlyRevMap[d.getMonth()] += supp;
+        if (d.getFullYear() === year) monthlyRevMap[d.getMonth()] += toCAD(supp, p.campaignId);
       }
     }
   }
@@ -177,23 +190,32 @@ export async function GET(req: NextRequest) {
     }));
 
   // ── Per-route stats ────────────────────────────────────────────────────────
-  interface RouteStat { label: string; fromIATA: string; toIATA: string; collected: number; invoiced: number; parcels: number; weightKg: number; }
+  interface RouteStat {
+    label: string; fromIATA: string; toIATA: string;
+    collected: number; invoiced: number; parcels: number; weightKg: number;
+    currency: string; collectedNative: number; invoicedNative: number;
+  }
   const routeRevMap: Record<string, RouteStat> = {};
   for (const c of yearCampaigns) {
-    const rid = c.routeId;
+    const rid      = c.routeId;
+    const currency = (c.route as any).currency ?? 'CAD';
     if (!routeRevMap[rid]) {
       routeRevMap[rid] = {
         label:    (c.route as any).label || `${(c.route as any).origin} → ${(c.route as any).destination}`,
         fromIATA: (c.route as any).origin,
         toIATA:   (c.route as any).destination,
+        currency,
         collected: 0, invoiced: 0, parcels: 0, weightKg: 0,
+        collectedNative: 0, invoicedNative: 0,
       };
     }
     for (const p of parcels.filter((p: any) => p.campaignId === c.id)) {
-      const inv  = parcelInvoiced(p);
-      const coll = parcelCollected(p);
-      routeRevMap[rid].collected += coll;
-      routeRevMap[rid].invoiced  += inv;
+      const invNative  = parcelInvoiced(p);
+      const collNative = parcelCollected(p);
+      routeRevMap[rid].collectedNative += collNative;
+      routeRevMap[rid].invoicedNative  += invNative;
+      routeRevMap[rid].collected += toCAD(collNative, c.id);
+      routeRevMap[rid].invoiced  += toCAD(invNative,  c.id);
       routeRevMap[rid].parcels   += 1;
       routeRevMap[rid].weightKg  += p.weightKg ?? 0;
     }
@@ -201,7 +223,13 @@ export async function GET(req: NextRequest) {
   const routeMax  = Math.max(...Object.values(routeRevMap).map(r => r.collected), 1);
   const routeStats = Object.values(routeRevMap)
     .sort((a, b) => b.collected - a.collected)
-    .map(r => ({ ...r, meter: Math.round(r.collected / routeMax * 100), weightKg: Math.round(r.weightKg * 10) / 10 }));
+    .map(r => ({
+      ...r,
+      meter:    Math.round(r.collected / routeMax * 100),
+      weightKg: Math.round(r.weightKg * 10) / 10,
+      collectedNative: Math.round(r.collectedNative),
+      invoicedNative:  Math.round(r.invoicedNative),
+    }));
 
   // ── Restant à encaisser — ALL-TIME (same scope as Dashboard + Payments) ──
   // Derived from all pending/partial payments, not filtered by year.

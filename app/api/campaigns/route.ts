@@ -125,10 +125,13 @@ export async function GET(req: NextRequest) {
         transport:   c.costs.transport,
         divers:      c.costs.divers,
       } : null,
-      capacityKg:    c.capacityKg,
-      departureDate: c.departureDate,
-      arrivalDate:   c.arrivalDate,
-      deletedAt:     (c as any).deletedAt,
+      capacityKg:        c.capacityKg,
+      departureDate:     c.departureDate,
+      arrivalDate:       c.arrivalDate,
+      deletedAt:         (c as any).deletedAt,
+      currency:          c.route.currency ?? 'CAD',
+      exchangeRateToCAD: (c as any).exchangeRateToCAD ?? null,
+      routeId:           c.routeId,
     };
   });
 
@@ -140,7 +143,7 @@ export async function POST(req: NextRequest) {
   if (error) return error;
 
   const body = await req.json();
-  const { code, routeId, departureDate, arrivalDate, capacityKg, status } = body;
+  const { code, routeId, departureDate, arrivalDate, capacityKg, status, exchangeRateToCAD } = body;
 
   if (!code || !routeId) {
     return NextResponse.json({ error: 'Code et route obligatoires' }, { status: 400 });
@@ -155,13 +158,14 @@ export async function POST(req: NextRequest) {
     data: {
       code,
       routeId,
-      departureDate: departureDate ? new Date(departureDate) : null,
-      arrivalDate:   arrivalDate   ? new Date(arrivalDate)   : null,
-      capacityKg:    capacityKg    ? Number(capacityKg)      : null,
-      status:        status ?? 'enr',
+      departureDate:    departureDate    ? new Date(departureDate) : null,
+      arrivalDate:      arrivalDate      ? new Date(arrivalDate)   : null,
+      capacityKg:       capacityKg       ? Number(capacityKg)      : null,
+      exchangeRateToCAD: exchangeRateToCAD ? Number(exchangeRateToCAD) : null,
+      status:           status ?? 'enr',
     },
     include: { route: true },
-  });
+  } as any);
 
   return NextResponse.json({ ok: true, campaign });
 }
