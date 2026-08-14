@@ -2,6 +2,22 @@ import { useState, useEffect } from 'react';
 import I from '../components/Icons.jsx';
 import { useAdminT } from '../lib/useAdminT.js';
 
+const SECTION_DEFS = [
+  { key: 'china_coming_soon', label: '🇨🇳 Chine → Montréal', desc: 'Section "Bientôt disponible" avec carte animée et compte à rebours' },
+  { key: 'estimator',         label: '💰 Simulateur de prix', desc: 'Calculateur de tarif en ligne avec résultat instantané' },
+  { key: 'story_card',        label: '✈️ Notre histoire',     desc: 'Bloc photo + stats + bouton de suivi colis' },
+  { key: 'steps',             label: '📋 Comment ça marche',  desc: 'Les 4 étapes du processus d\'expédition' },
+  { key: 'wide_photo',        label: '🖼️ Photo pleine largeur', desc: 'Section photo immersive avec CTA de réservation' },
+];
+
+const DEFAULT_SECTIONS = {
+  china_coming_soon: true,
+  estimator:         true,
+  story_card:        true,
+  steps:             true,
+  wide_photo:        true,
+};
+
 const DEFAULTS = {
   fr: {
     hero: {
@@ -144,12 +160,13 @@ function InfoBanner({ children }) {
 }
 
 export default function LandingEditor() {
-  const [content, setContent] = useState(DEFAULTS);
-  const [tab, setTab]         = useState('hero');
-  const [langTab, setLangTab] = useState('fr');
-  const [saving, setSaving]   = useState(false);
-  const [saved,  setSaved]    = useState(false);
-  const [loaded, setLoaded]   = useState(false);
+  const [content, setContent]   = useState(DEFAULTS);
+  const [sections, setSections] = useState(DEFAULT_SECTIONS);
+  const [tab, setTab]           = useState('hero');
+  const [langTab, setLangTab]   = useState('fr');
+  const [saving, setSaving]     = useState(false);
+  const [saved,  setSaved]      = useState(false);
+  const [loaded, setLoaded]     = useState(false);
   const t = useAdminT();
 
   useEffect(() => {
@@ -167,9 +184,16 @@ export default function LandingEditor() {
           }
         } catch {}
       }
+      if (d.section_visibility) {
+        try { setSections({ ...DEFAULT_SECTIONS, ...JSON.parse(d.section_visibility) }); } catch {}
+      }
       setLoaded(true);
     }).catch(() => setLoaded(true));
   }, []);
+
+  function toggleSection(key) {
+    setSections(prev => ({ ...prev, [key]: !prev[key] }));
+  }
 
   const set = (path, value) => {
     setContent(prev => {
@@ -192,7 +216,10 @@ export default function LandingEditor() {
     setSaving(true);
     await fetch('/api/settings', {
       method: 'PUT', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ landing_content: JSON.stringify({ fr: content.fr, en: content.en }) }),
+      body: JSON.stringify({
+        landing_content:    JSON.stringify({ fr: content.fr, en: content.en }),
+        section_visibility: JSON.stringify(sections),
+      }),
     });
     setSaving(false); setSaved(true);
     setTimeout(() => setSaved(false), 3000);
@@ -246,6 +273,48 @@ export default function LandingEditor() {
           <button className="btn btn--brand btn--sm" disabled={saving} onClick={handleSave}>
             <I.Check />{saving ? `${t.common.saving}…` : t.common.save}
           </button>
+        </div>
+      </div>
+
+      {/* Section visibility toggles */}
+      <div className="card" style={{ marginBottom: 14, padding: '16px 20px' }}>
+        <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--ink-700)', marginBottom: 14 }}>
+          Sections visibles sur la page d'accueil
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 10 }}>
+          {SECTION_DEFS.map(sec => (
+            <label
+              key={sec.key}
+              style={{
+                display: 'flex', alignItems: 'flex-start', gap: 10,
+                padding: '10px 12px', borderRadius: 8, cursor: 'pointer',
+                border: '1px solid',
+                borderColor: sections[sec.key] ? 'var(--brand-400)' : 'var(--border)',
+                background: sections[sec.key] ? 'var(--brand-50, #eff6ff)' : 'var(--bg-soft)',
+                transition: 'border-color .15s, background .15s',
+              }}
+            >
+              <div style={{ marginTop: 2, flexShrink: 0 }}>
+                <input
+                  type="checkbox"
+                  checked={!!sections[sec.key]}
+                  onChange={() => toggleSection(sec.key)}
+                  style={{ accentColor: 'var(--brand-500)', width: 15, height: 15, cursor: 'pointer' }}
+                />
+              </div>
+              <div>
+                <div style={{ fontSize: 12.5, fontWeight: 700, color: sections[sec.key] ? 'var(--brand-700)' : 'var(--ink-600)' }}>
+                  {sec.label}
+                </div>
+                <div style={{ fontSize: 11, color: 'var(--ink-400)', marginTop: 2, lineHeight: 1.4 }}>
+                  {sec.desc}
+                </div>
+              </div>
+            </label>
+          ))}
+        </div>
+        <div style={{ fontSize: 11, color: 'var(--ink-400)', marginTop: 10 }}>
+          Le héros et le pied de page sont toujours visibles. Sauvegardez pour appliquer les changements.
         </div>
       </div>
 

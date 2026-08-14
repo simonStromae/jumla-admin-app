@@ -193,21 +193,36 @@ function merge(base, override) {
   };
 }
 
+const DEFAULT_SECTIONS = {
+  china_coming_soon: true,
+  estimator:         true,
+  story_card:        true,
+  steps:             true,
+  wide_photo:        true,
+};
+
 function useLandingContent() {
   const { locale } = useLocale();
-  const [raw, setRaw] = useState(null);
+  const [raw, setRaw]           = useState(null);
+  const [sections, setSections] = useState(DEFAULT_SECTIONS);
 
   useEffect(() => {
     fetch('/api/public/config').then(r => r.json()).then(d => {
       if (d.landingContent) setRaw(d.landingContent);
+      if (d.sections) setSections({ ...DEFAULT_SECTIONS, ...d.sections });
     }).catch(() => {});
   }, []);
 
-  if (!raw) return DEFAULTS[locale] ?? DEFAULTS.fr;
-  // Bilingual structure { fr: {...}, en: {...} }
-  if (raw.fr || raw.en) return merge(DEFAULTS[locale] ?? DEFAULTS.fr, raw[locale] ?? raw.fr);
-  // Legacy single-language structure — treat as FR
-  return locale === 'fr' ? merge(DEFAULTS.fr, raw) : DEFAULTS.en;
+  let content;
+  if (!raw) {
+    content = DEFAULTS[locale] ?? DEFAULTS.fr;
+  } else if (raw.fr || raw.en) {
+    content = merge(DEFAULTS[locale] ?? DEFAULTS.fr, raw[locale] ?? raw.fr);
+  } else {
+    content = locale === 'fr' ? merge(DEFAULTS.fr, raw) : DEFAULTS.en;
+  }
+
+  return { ...content, sections };
 }
 
 const IMGS = {
@@ -1079,6 +1094,8 @@ export default function LandingPage({ onNav }) {
     }
   };
 
+  const { sections } = content;
+
   return (
     <div className="jpage">
       <style>{`
@@ -1116,12 +1133,12 @@ export default function LandingPage({ onNav }) {
         }
       `}</style>
       <SiteNav onNav={onNav} onBook={onBook} mode="landing" />
-      <ChinaComingSoon onBook={onBook} />
+      {sections.china_coming_soon && <ChinaComingSoon onBook={onBook} />}
       <JHero onBook={onBook} onNav={onNav} content={content} />
-      <JEstimator onBook={onBook} content={content} />
-      <JStoryCard onBook={onBook} onNav={onNav} content={content} />
-      <JSteps onBook={onBook} content={content} />
-      <JWidePhoto onBook={onBook} content={content} />
+      {sections.estimator  && <JEstimator onBook={onBook} content={content} />}
+      {sections.story_card && <JStoryCard onBook={onBook} onNav={onNav} content={content} />}
+      {sections.steps      && <JSteps onBook={onBook} content={content} />}
+      {sections.wide_photo && <JWidePhoto onBook={onBook} content={content} />}
       <SiteFooter content={content} />
       <JChatBot />
     </div>
