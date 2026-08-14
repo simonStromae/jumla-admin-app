@@ -3,21 +3,26 @@ import { useState, useEffect, useCallback } from 'react';
 import I from '../components/Icons.jsx';
 import { Bi, Avatar } from '../components/Shell.jsx';
 import { useAdminT } from '../lib/useAdminT.js';
+import { useCurrency } from '../lib/useCurrency.js';
 
-
-const TEMPLATE_DEFAULTS = [
-  { id: 'arrival',   l: "Avis d'arrivée",    body: `Bonjour {first_name} 👋\n\nVotre colis ({parcel_code}) est arrivé à Montréal.\n\n📦 Poids : {weight} kg\n💰 Montant dû : {amount} CAD\n\n📍 Retrait : {warehouse_address}\n📞 Contact : {agent_phone}\n\nMerci,\nJumla Shipping` },
-  { id: 'reminder',  l: 'Relance paiement',  body: `Bonjour {first_name},\n\nNous n'avons pas encore reçu votre paiement pour le colis {parcel_code} — montant dû : {amount} CAD.\n\nMerci de régulariser votre situation au plus vite.\n\nJumla Shipping` },
-  { id: 'delivery',  l: 'Livraison',         body: `Bonjour {first_name},\n\nVotre colis {parcel_code} a été livré. Merci de votre confiance !\n\nJumla Shipping` },
-  { id: 'invoice',   l: 'Facture',           body: `Bonjour {first_name},\n\nVoici le récapitulatif de votre colis {parcel_code} :\n• Poids : {weight} kg\n• Montant : {amount} CAD\n\nJumla Shipping` },
-  { id: 'broadcast', l: 'Annonce cargaison', body: `Bonjour {first_name} 👋\n\nNouvelle cargaison disponible — départ prévu le {arrival_date}.\n\nRéservez votre place dès maintenant.\n\nJumla Shipping` },
-];
 const VARIABLES = ['{first_name}', '{amount}', '{weight}', '{parcel_code}', '{arrival_date}', '{warehouse_address}', '{agent_phone}'];
+
+function makeTemplateDefaults(currency) {
+  return [
+    { id: 'arrival',   l: "Avis d'arrivée",    body: `Bonjour {first_name} 👋\n\nVotre colis ({parcel_code}) est arrivé à Montréal.\n\n📦 Poids : {weight} kg\n💰 Montant dû : {amount} ${currency}\n\n📍 Retrait : {warehouse_address}\n📞 Contact : {agent_phone}\n\nMerci,\nJumla Shipping` },
+    { id: 'reminder',  l: 'Relance paiement',  body: `Bonjour {first_name},\n\nNous n'avons pas encore reçu votre paiement pour le colis {parcel_code} — montant dû : {amount} ${currency}.\n\nMerci de régulariser votre situation au plus vite.\n\nJumla Shipping` },
+    { id: 'delivery',  l: 'Livraison',         body: `Bonjour {first_name},\n\nVotre colis {parcel_code} a été livré. Merci de votre confiance !\n\nJumla Shipping` },
+    { id: 'invoice',   l: 'Facture',           body: `Bonjour {first_name},\n\nVoici le récapitulatif de votre colis {parcel_code} :\n• Poids : {weight} kg\n• Montant : {amount} ${currency}\n\nJumla Shipping` },
+    { id: 'broadcast', l: 'Annonce cargaison', body: `Bonjour {first_name} 👋\n\nNouvelle cargaison disponible — départ prévu le {arrival_date}.\n\nRéservez votre place dès maintenant.\n\nJumla Shipping` },
+  ];
+}
 
 export default function MessagingScreen({ onNav, campaignId }) {
   const t = useAdminT();
+  const { currency, fmt } = useCurrency();
+  const templateDefaults = makeTemplateDefaults(currency);
   const [selected,        setSelected]        = useState([]);
-  const [templates,       setTemplates]       = useState(TEMPLATE_DEFAULTS);
+  const [templates,       setTemplates]       = useState(() => makeTemplateDefaults('CAD'));
   const [template,        setTemplate]        = useState('arrival');
   const [body,            setBody]            = useState(TEMPLATE_DEFAULTS[0].body);
   const [parcels,         setParcels]         = useState([]);
@@ -342,7 +347,7 @@ export default function MessagingScreen({ onNav, campaignId }) {
                     <div className="mono" style={{ fontSize: 11, color: 'var(--ink-400)' }}>{p.trackingCode} · {p.senderPhone}</div>
                   </div>
                   <div style={{ textAlign: 'right' }}>
-                    <div className="mono" style={{ fontSize: 12.5, fontWeight: 700 }}>{(p.amount ?? 0).toLocaleString('fr')} CAD</div>
+                    <div className="mono" style={{ fontSize: 12.5, fontWeight: 700 }}>{fmt(p.amount ?? 0, 'CAD')}</div>
                     <div style={{ fontSize: 10.5, color: isPaid ? 'var(--ok-600)' : 'var(--bad-600)', fontWeight: 600 }}>
                       {isPaid ? `✓ ${t.paymentStatus.completed}` : '○ En cours'}
                     </div>
