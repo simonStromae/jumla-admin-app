@@ -6,6 +6,7 @@ import { HelpTip } from '../components/HelpCenter.jsx';
 import { Pagination, ViewToggle } from '../components/Pagination.jsx';
 import ClientFormModal from './ClientForm.jsx';
 import { useAdminT } from '../lib/useAdminT.js';
+import { useCurrency } from '../lib/useCurrency.js';
 
 export default function ClientsScreen({ onNav }) {
   const can = useCan();
@@ -236,6 +237,7 @@ export default function ClientsScreen({ onNav }) {
 
 function ClientsGridView({ clients, setOpen }) {
   const t = useAdminT();
+  const { currency } = useCurrency();
   return (
     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 12, background: 'white', border: '1px solid var(--border)', borderTop: 0, padding: 14 }}>
       {clients.map(cl => (
@@ -270,7 +272,7 @@ function ClientsGridView({ clients, setOpen }) {
             <Mini label="Cargaisons" v={cl.campaigns} />
             <Mini label={t.common.weight} v={cl.weight + ' kg'} />
             {/* TODO: no i18n key for 'CA' (chiffre d'affaires) */}
-            <Mini label="CA" v={(cl.amount / 1000).toFixed(1) + 'k'} unit="CAD" />
+            <Mini label="CA" v={(cl.amount / 1000).toFixed(1) + 'k'} unit={currency} />
           </div>
 
           <div style={{ fontSize: 11.5, color: 'var(--ink-500)', display: 'flex', alignItems: 'center', gap: 6 }}>
@@ -286,6 +288,7 @@ function ClientsGridView({ clients, setOpen }) {
 
 function ClientsListView({ clients, setOpen, onToggleStatus, page, pageSize, selected = [], onSelect, onSelectAll }) {
   const t = useAdminT();
+  const { currency } = useCurrency();
   const paged = clients.slice((page - 1) * pageSize, page * pageSize);
   const pagedIds = paged.map(cl => cl.id);
   const allChecked = pagedIds.length > 0 && pagedIds.every(id => selected.includes(id));
@@ -356,7 +359,7 @@ function ClientsListView({ clients, setOpen, onToggleStatus, page, pageSize, sel
               <td className="mono" style={{ textAlign: 'right' }}>{cl.weight}<span style={{ fontSize: 10.5, color: 'var(--ink-400)', marginLeft: 2 }}>kg</span></td>
               <td style={{ textAlign: 'right' }}>
                 <span className="mono" style={{ fontWeight: 700 }}>{(cl.amount / 1000).toFixed(1)}k</span>
-                <span style={{ fontSize: 10.5, color: 'var(--ink-400)', marginLeft: 2 }}>CAD</span>
+                <span style={{ fontSize: 10.5, color: 'var(--ink-400)', marginLeft: 2 }}>{currency}</span>
               </td>
               <td className="mono" style={{ fontSize: 11.5, color: 'var(--ink-500)' }}>{cl.lastCampaign}</td>
               <td onClick={e => e.stopPropagation()}>
@@ -403,6 +406,7 @@ const CAMP_STATUS_LBL = {
 
 function ClientDrawer({ cl, onClose, onEdit, onNav, onStatusChange, onDeleted }) {
   const t = useAdminT();
+  const { fmt } = useCurrency();
   const [detail,  setDetail]  = useState(null);
   const [loading, setLoading] = useState(true);
   const [togglingStatus, setTogglingStatus] = useState(false);
@@ -587,9 +591,9 @@ function ClientDrawer({ cl, onClose, onEdit, onNav, onStatusChange, onDeleted })
           )) : [
             { label: 'Total colis', value: activeParcels.length },
             // TODO: no i18n key for 'CA total'; using analytics.kpi.revenue as closest match
-            { label: t.analytics.kpi.revenue,             value: totalAmt.toLocaleString('fr') + ' CAD', color: 'var(--ok-600)' },
+            { label: t.analytics.kpi.revenue,             value: fmt(totalAmt, 'CAD'), color: 'var(--ok-600)' },
             // TODO: no i18n key for 'Impayés'
-            { label: 'En cours',                          value: unpaidAmt > 0 ? unpaidAmt.toLocaleString('fr') + ' CAD' : '0 CAD', color: unpaidAmt > 0 ? 'var(--warn-700)' : 'var(--ink-400)' },
+            { label: 'En cours',                          value: unpaidAmt > 0 ? fmt(unpaidAmt, 'CAD') : fmt(0, 'CAD'), color: unpaidAmt > 0 ? 'var(--warn-700)' : 'var(--ink-400)' },
             { label: 'Annulés',                           value: cancelledCount, color: cancelledCount > 0 ? 'var(--warn-700)' : 'var(--ink-300)' },
           ].map(({ label, value, color }) => (
             <div key={label}>
@@ -804,7 +808,7 @@ function ClientDrawer({ cl, onClose, onEdit, onNav, onStatusChange, onDeleted })
                       {p.weightKg ? p.weightKg + ' kg' : '—'}
                     </td>
                     <td className="mono" style={{ textAlign: 'right', fontSize: 12, fontWeight: 600 }}>
-                      {(p.invoiced ?? p.amount) ? (p.invoiced ?? p.amount).toLocaleString('fr') + ' CAD' : '—'}
+                      {(p.invoiced ?? p.amount) ? fmt(p.invoiced ?? p.amount, 'CAD') : '—'}
                     </td>
                     <td>
                       {p.paid === 'ann' && (
