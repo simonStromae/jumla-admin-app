@@ -29,13 +29,13 @@ function arcPoint(t, W, H) {
 }
 
 function pad(n) { return String(n).padStart(2, '0'); }
-const LAUNCH = new Date('2026-08-31T00:00:00');
 
-function useCountdown() {
+function useCountdown(launchDate) {
   const [vals, setVals] = useState({ d: '--', h: '--', m: '--', s: '--' });
   useEffect(() => {
+    const target = new Date(launchDate + 'T00:00:00');
     function tick() {
-      const diff = LAUNCH - Date.now();
+      const diff = target - Date.now();
       if (diff <= 0) { setVals({ d: '00', h: '00', m: '00', s: '00' }); return; }
       setVals({
         d: pad(Math.floor(diff / 86400000)),
@@ -47,7 +47,7 @@ function useCountdown() {
     tick();
     const id = setInterval(tick, 1000);
     return () => clearInterval(id);
-  }, []);
+  }, [launchDate]);
   return vals;
 }
 
@@ -140,9 +140,23 @@ function WorldMapCanvas() {
   return <canvas ref={ref} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%' }} />;
 }
 
+const DEFAULTS = {
+  eyebrow:     'Bientôt disponible',
+  originFlag:  '🇨🇳',
+  destFlag:    '🇨🇦',
+  title:       'Chine → Montréal',
+  subtitle:    'Nouvelle route cargo directe · Guangzhou · Shenzhen · Shanghai → Canada',
+  launchDate:  '2026-08-31',
+  ctaTitle:    'Nos cargaisons Cameroun → Montréal sont ouvertes.',
+  ctaSubtitle: 'Expédiez dès aujourd\'hui avec Jumla Cargo.',
+  ctaButton:   'Réserver une expédition →',
+  launchLabel: 'Lancement prévu : 31 août 2026',
+};
+
 /* ── Coming soon section ── */
-export default function ChinaComingSoon({ onBook }) {
-  const { d, h, m, s } = useCountdown();
+export default function ChinaComingSoon({ onBook, content }) {
+  const c = { ...DEFAULTS, ...content };
+  const { d, h, m, s } = useCountdown(c.launchDate);
   const [blink, setBlink] = useState(true);
   useEffect(() => { const id = setInterval(() => setBlink(v => !v), 1000); return () => clearInterval(id); }, []);
 
@@ -192,12 +206,12 @@ export default function ChinaComingSoon({ onBook }) {
           borderRadius: 999, padding: '6px 16px',
         }}>
           <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#00B4D8', animation: 'cspin 2.2s ease-in-out infinite' }} />
-          Bientôt disponible
+          {c.eyebrow}
         </div>
 
         {/* Flags row */}
         <div style={{ fontSize: 'clamp(28px, 4vw, 40px)', marginBottom: 10, lineHeight: 1 }}>
-          🇨🇳&nbsp;&nbsp;<span style={{ color: '#00B4D8', fontSize: '.7em', verticalAlign: 'middle' }}>→</span>&nbsp;&nbsp;🇨🇦
+          {c.originFlag}&nbsp;&nbsp;<span style={{ color: '#00B4D8', fontSize: '.7em', verticalAlign: 'middle' }}>→</span>&nbsp;&nbsp;{c.destFlag}
         </div>
 
         {/* Headline */}
@@ -207,13 +221,11 @@ export default function ChinaComingSoon({ onBook }) {
           color: 'white', margin: '0 0 14px',
           whiteSpace: 'nowrap',
         }}>
-          Chine{' '}
-          <span style={{ color: '#00B4D8' }}>→</span>{' '}
-          Montréal
+          {c.title}
         </h2>
 
         <p style={{ fontSize: 15, color: 'rgba(255,255,255,.48)', margin: '0 0 52px', lineHeight: 1.65 }}>
-          Nouvelle route cargo directe · Guangzhou · Shenzhen · Shanghai → Canada
+          {c.subtitle}
         </p>
 
         {/* Countdown */}
@@ -260,11 +272,9 @@ export default function ChinaComingSoon({ onBook }) {
         {/* CTA block */}
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 18 }}>
           <p style={{ fontSize: 15, color: 'rgba(255,255,255,.55)', lineHeight: 1.6 }}>
-            <strong style={{ color: 'white', fontWeight: 700 }}>
-              Nos cargaisons Cameroun → Montréal sont ouvertes.
-            </strong>
+            <strong style={{ color: 'white', fontWeight: 700 }}>{c.ctaTitle}</strong>
             <br />
-            Expédiez dès aujourd'hui avec Jumla Cargo.
+            {c.ctaSubtitle}
           </p>
           <button
             onClick={onBook}
@@ -279,14 +289,14 @@ export default function ChinaComingSoon({ onBook }) {
             onMouseEnter={e => { e.currentTarget.style.opacity = '.88'; e.currentTarget.style.transform = 'translateY(-2px)'; }}
             onMouseLeave={e => { e.currentTarget.style.opacity = '1'; e.currentTarget.style.transform = 'none'; }}
           >
-            Réserver une expédition →
+            {c.ctaButton}
           </button>
           <span style={{
             fontSize: 11.5, color: 'rgba(255,255,255,.3)',
             border: '1px solid rgba(255,255,255,.1)', borderRadius: 6,
             padding: '4px 12px', letterSpacing: '.04em',
           }}>
-            Lancement prévu : 31 août 2026
+            {c.launchLabel}
           </span>
         </div>
       </div>
