@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import I from '../components/Icons.jsx';
 import { RoutePill, Avatar, Modal, useCan } from '../components/Shell.jsx';
 import { useAdminT } from '../lib/useAdminT.js';
+import { useCurrency } from '../lib/useCurrency.js';
 
 // Main linear flow (shown in timeline)
 // TODO: i18n — step labels are not covered by translation keys
@@ -208,7 +209,7 @@ function ParcelQuickPanel({ parcel: initial, onClose, onRefresh, onNav }) {
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: canPay ? 12 : 0 }}>
               <div>
                 <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--ink-900)', fontFamily: 'var(--ff-mono)' }}>
-                  {(parcel.payment.amount ?? 0).toLocaleString('fr')} CAD
+                  {fmt(parcel.payment.amount ?? 0)}
                   {payStatus === 'partial' && <span style={{ fontSize: 11, fontWeight: 400, color: 'var(--ink-400)', marginLeft: 6 }}>facturé</span>}
                 </div>
                 <div style={{ fontSize: 11.5, color: 'var(--ink-400)', marginTop: 2 }}>
@@ -231,7 +232,7 @@ function ParcelQuickPanel({ parcel: initial, onClose, onRefresh, onNav }) {
                 </div>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
                   <div>
-                    <div style={{ fontSize: 11, color: 'var(--ink-400)', marginBottom: 3 }}>Montant reçu (CAD)</div>
+                    <div style={{ fontSize: 11, color: 'var(--ink-400)', marginBottom: 3 }}>Montant reçu ({currency})</div>
                     <input
                       type="number"
                       min="1"
@@ -395,6 +396,7 @@ function ParcelQuickPanel({ parcel: initial, onClose, onRefresh, onNav }) {
 export default function CampaignDetailScreen({ id, onNav }) {
   const t = useAdminT();
   const can = useCan();
+  const { currency, fmt } = useCurrency();
   const [campaign,           setCampaign]           = useState(null);
   const [loading,            setLoading]            = useState(true);
   const [advancing,          setAdvancing]          = useState(false);
@@ -671,9 +673,9 @@ export default function CampaignDetailScreen({ id, onNav }) {
         {[
           { l: t.campaigns.kpi.parcels,              v: parcels.length,                  u: '' },
           { l: /* TODO: i18n */ 'Poids total',        v: totalWeight.toLocaleString('fr'), u: 'kg' },
-          { l: /* TODO: i18n */ 'Facturé',            v: invoiced.toLocaleString('fr'),    u: 'CAD' },
-          { l: /* TODO: i18n */ 'Perçu',              v: collected.toLocaleString('fr'),   u: 'CAD', col: 'var(--ok-600)' },
-          { l: /* TODO: i18n */ 'Reste à percevoir',  v: outstanding.toLocaleString('fr'), u: 'CAD', col: outstanding > 0 ? 'var(--bad-600)' : 'var(--ok-600)' },
+          { l: /* TODO: i18n */ 'Facturé',            v: fmt(invoiced),    u: '' },
+          { l: /* TODO: i18n */ 'Perçu',              v: fmt(collected),   u: '', col: 'var(--ok-600)' },
+          { l: /* TODO: i18n */ 'Reste à percevoir',  v: fmt(outstanding), u: '', col: outstanding > 0 ? 'var(--bad-600)' : 'var(--ok-600)' },
           { l: /* TODO: i18n */ 'Taux recouvrement',  v: pct,                              u: '%',   col: pct >= 95 ? 'var(--ok-600)' : 'var(--warn-700)' },
         ].map((k, i) => (
           <div key={i} style={{ padding: '14px 18px', borderRight: i < 5 ? '1px solid var(--border-soft)' : 'none' }}>
@@ -1016,7 +1018,7 @@ export default function CampaignDetailScreen({ id, onNav }) {
                     </span>
                     {p.payment?.status === 'partial' && p.payment?.amount != null && (
                       <div style={{ fontSize: 10.5, color: 'var(--ink-400)', marginTop: 2 }}>
-                        / {p.payment.amount.toLocaleString('fr')} CAD
+                        / {fmt(p.payment.amount)}
                       </div>
                     )}
                     {!p.payment && p.priceXaf != null && (

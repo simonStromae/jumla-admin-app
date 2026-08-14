@@ -150,6 +150,7 @@ export function Sidebar({ route, onNav }) {
     { id: 'company',   label: t.settingsTabs.company,   icon: I.Building },
     { id: 'landing',   label: t.settingsTabs.landing,   icon: I.Globe },
     { id: 'routes',    label: t.settingsTabs.routes,    icon: I.Route },
+    { id: 'devises',   label: t.settingsTabs.devises,   icon: I.Coins },
     { id: 'whatsapp',  label: t.settingsTabs.whatsapp,  icon: I.Chat },
     { id: 'auto',      label: t.settingsTabs.auto,      icon: I.Bell },
     { id: 'campaigns', label: t.settingsTabs.campaigns, icon: I.Plane },

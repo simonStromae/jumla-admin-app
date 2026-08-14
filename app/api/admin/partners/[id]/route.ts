@@ -40,7 +40,7 @@ export async function GET(_req: NextRequest, { params }: { params: { id: string 
               code: true,
               status: true,
               departureDate: true,
-              route: { select: { origin: true, destination: true } },
+              route: { select: { origin: true, destination: true, currency: true } },
             },
           },
           payment: { select: { status: true, amount: true, paidAt: true } },

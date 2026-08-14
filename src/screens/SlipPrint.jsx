@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import I from '../components/Icons.jsx';
 import { Skel } from '../components/Shell.jsx';
+import { useCurrency } from '../lib/useCurrency.js';
 
 const cell  = { padding: '7px 10px', borderBottom: '1px solid #E5E7EB', borderRight: '1px solid #E5E7EB', verticalAlign: 'top' };
 const cellH = (w, align) => ({ ...cell, fontSize: 9.5, fontWeight: 700, letterSpacing: '.04em', color: '#374151', textAlign: align || 'center', width: w || 'auto', borderBottom: '1px solid #D1D5DB' });
@@ -12,6 +13,7 @@ function fmt(date) {
 }
 
 export default function SlipPrintScreen({ code, onNav }) {
+  const { currency } = useCurrency();
   const [data,    setData]    = useState(null);
   const [loading, setLoading] = useState(true);
   const [error,   setError]   = useState('');
@@ -261,7 +263,7 @@ export default function SlipPrintScreen({ code, onNav }) {
                 <tr style={{ background: '#0F172A', color: 'white', fontWeight: 700 }}>
                   <td style={{ ...cell, color: 'white', fontSize: 12, borderColor: '#0F172A' }}>TOTAL DÛ</td>
                   <td style={{ ...cell, color: 'white', textAlign: 'right', fontFamily: 'monospace', fontSize: 14, borderColor: '#0F172A' }}>
-                    {(data.payment?.amount ?? data.parcel.priceXaf ?? 0).toLocaleString('fr')} CAD
+                    {(data.payment?.amount ?? data.parcel.priceXaf ?? 0).toLocaleString('fr')} {currency}
                   </td>
                 </tr>
                 <tr>
