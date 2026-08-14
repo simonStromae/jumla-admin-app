@@ -277,17 +277,6 @@ export default function AgentParcelPage() {
         {/* Bordereaux — verification */}
         {(() => {
           const bls = parcel.bordereaux ?? [];
-          if (bls.length === 0) return null;
-
-          const hasEcart    = bls.some(b => b.status === 'ecart');
-          const allVerified = bls.every(b => b.status === 'verifie' || b.status === 'ecart');
-
-          const summary = hasEcart
-            ? { icon: '⚠️', text: `${bls.filter(b => b.status === 'ecart').length} écart(s) — vérifier avant sortie`, bg: '#FEF2F2', border: '#FECACA', color: '#DC2626' }
-            : allVerified
-            ? { icon: '✅', text: 'Tout vérifié — OK pour sortie', bg: '#ECFDF5', border: '#A7F3D0', color: '#047857' }
-            : { icon: '⏳', text: 'Vérification en cours', bg: '#F0F9FF', border: '#BAE6FD', color: '#0284C7' };
-
           const BL_STATUS = {
             en_attente: { label: 'En attente', color: '#6B7280', bg: '#F9FAFB' },
             valide:     { label: 'Validé',     color: '#1B4FD8', bg: '#EFF6FF' },
@@ -295,91 +284,81 @@ export default function AgentParcelPage() {
             ecart:      { label: 'Écart ⚠',    color: '#DC2626', bg: '#FEF2F2' },
           };
 
+          if (bls.length === 0) return (
+            <div className="agent-card" style={{ padding: '14px', marginBottom: 12 }}>
+              <div style={{ fontSize: 11, fontWeight: 700, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '.05em', marginBottom: 8 }}>Bordereaux</div>
+              <div style={{ fontSize: 13, color: '#9CA3AF', textAlign: 'center', padding: '12px 0' }}>Aucun bordereau pour ce colis</div>
+            </div>
+          );
+
+          const hasEcart    = bls.some(b => b.status === 'ecart');
+          const allVerified = bls.every(b => b.status === 'verifie' || b.status === 'ecart');
+          const summary = hasEcart
+            ? { icon: '⚠️', text: `${bls.filter(b => b.status === 'ecart').length} écart(s) — vérifier avant sortie`, bg: '#FEF2F2', border: '#FECACA', color: '#DC2626' }
+            : allVerified
+            ? { icon: '✅', text: 'Tout vérifié — OK pour sortie', bg: '#ECFDF5', border: '#A7F3D0', color: '#047857' }
+            : { icon: '⏳', text: 'Vérification en cours', bg: '#F0F9FF', border: '#BAE6FD', color: '#0284C7' };
+
           return (
             <div className="agent-card" style={{ padding: '14px', marginBottom: 12 }}>
               <div style={{ fontSize: 11, fontWeight: 700, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '.05em', marginBottom: 10 }}>
                 Bordereaux ({bls.length})
               </div>
-
-              {/* Summary banner */}
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '9px 12px', borderRadius: 8, marginBottom: 12, background: summary.bg, border: `1px solid ${summary.border}` }}>
                 <span style={{ fontSize: 15 }}>{summary.icon}</span>
                 <span style={{ fontSize: 12.5, fontWeight: 700, color: summary.color }}>{summary.text}</span>
               </div>
 
-              {/* List */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                 {bls.map((bl, i) => {
-                  const s       = BL_STATUS[bl.status] ?? BL_STATUS.en_attente;
-                  const canAct  = bl.status === 'en_attente' || bl.status === 'valide';
-                  const busy    = blBusy[bl.id];
+                  const s         = BL_STATUS[bl.status] ?? BL_STATUS.en_attente;
+                  const canAct    = bl.status === 'en_attente' || bl.status === 'valide';
+                  const busy      = blBusy[bl.id];
                   const ecartOpen = blEcartOpen[bl.id];
 
                   return (
                     <div key={bl.id ?? i} style={{ padding: '12px', borderRadius: 8, border: `1px solid ${bl.status === 'ecart' ? '#FECACA' : '#E5E7EB'}`, background: bl.status === 'ecart' ? '#FFF5F5' : '#FAFAFA' }}>
-                      {/* Header */}
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
                         <span style={{ fontFamily: 'monospace', fontSize: 13, fontWeight: 700, color: '#111827' }}>{bl.code}</span>
-                        <span style={{ fontSize: 11, fontWeight: 700, padding: '2px 8px', borderRadius: 999, background: s.bg, color: s.color }}>
-                          {s.label}
-                        </span>
+                        <span style={{ fontSize: 11, fontWeight: 700, padding: '2px 8px', borderRadius: 999, background: s.bg, color: s.color }}>{s.label}</span>
                       </div>
-
-                      {/* Info */}
                       <div style={{ display: 'flex', gap: 12, fontSize: 11.5, color: '#6B7280', flexWrap: 'wrap' }}>
                         {bl.description && <span>📦 {bl.description}</span>}
                         {bl.nbPieces > 0 && <span>{bl.nbPieces} pièce{bl.nbPieces > 1 ? 's' : ''}</span>}
                         {bl.weightKg && <span>{bl.weightKg} kg</span>}
                       </div>
                       {bl.notes && (
-                        <div style={{ marginTop: 5, fontSize: 11.5, color: bl.status === 'ecart' ? '#DC2626' : '#6B7280', fontStyle: 'italic' }}>
-                          📝 {bl.notes}
-                        </div>
+                        <div style={{ marginTop: 5, fontSize: 11.5, color: bl.status === 'ecart' ? '#DC2626' : '#6B7280', fontStyle: 'italic' }}>📝 {bl.notes}</div>
                       )}
 
-                      {/* Action buttons */}
                       {canAct && !ecartOpen && (
                         <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
-                          <button
-                            disabled={busy}
-                            onClick={() => handleVerifyBl(bl.id, 'verifie', null)}
-                            style={{ flex: 1, padding: '10px 6px', borderRadius: 8, border: 'none', background: '#ECFDF5', color: '#047857', fontSize: 12.5, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}
-                          >
+                          <button disabled={busy} onClick={() => handleVerifyBl(bl.id, 'verifie', null)}
+                            style={{ flex: 1, padding: '10px 6px', borderRadius: 8, border: 'none', background: '#ECFDF5', color: '#047857', fontSize: 12.5, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
                             {busy ? '…' : '✓ Tout conforme'}
                           </button>
-                          <button
-                            disabled={busy}
-                            onClick={() => setBlEcartOpen(prev => ({ ...prev, [bl.id]: true }))}
-                            style={{ flex: 1, padding: '10px 6px', borderRadius: 8, border: 'none', background: '#FEF2F2', color: '#DC2626', fontSize: 12.5, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}
-                          >
+                          <button disabled={busy} onClick={() => setBlEcartOpen(prev => ({ ...prev, [bl.id]: true }))}
+                            style={{ flex: 1, padding: '10px 6px', borderRadius: 8, border: 'none', background: '#FEF2F2', color: '#DC2626', fontSize: 12.5, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
                             ⚠ Signaler écart
                           </button>
                         </div>
                       )}
 
-                      {/* Ecart note input */}
                       {canAct && ecartOpen && (
                         <div style={{ marginTop: 10 }}>
-                          <textarea
-                            rows={2}
-                            placeholder="Décrire l'écart (ex : article manquant, colis ouvert…)"
+                          <textarea rows={2} placeholder="Décrire l'écart (ex : article manquant, colis ouvert…)"
                             value={blEcartNote[bl.id] ?? ''}
                             onChange={e => setBlEcartNote(prev => ({ ...prev, [bl.id]: e.target.value }))}
                             style={{ width: '100%', padding: '9px 10px', borderRadius: 8, border: '1.5px solid #FECACA', fontSize: 12.5, fontFamily: 'inherit', background: '#FFFBEB', outline: 'none', resize: 'none', color: '#1F2937', boxSizing: 'border-box' }}
                           />
                           <div style={{ display: 'flex', gap: 8, marginTop: 6 }}>
-                            <button
-                              onClick={() => setBlEcartOpen(prev => ({ ...prev, [bl.id]: false }))}
-                              style={{ flex: 1, padding: '9px', borderRadius: 8, border: '1px solid #E5E7EB', background: 'white', color: '#6B7280', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}
-                            >
+                            <button onClick={() => setBlEcartOpen(prev => ({ ...prev, [bl.id]: false }))}
+                              style={{ flex: 1, padding: '9px', borderRadius: 8, border: '1px solid #E5E7EB', background: 'white', color: '#6B7280', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
                               Annuler
                             </button>
-                            <button
-                              disabled={busy}
-                              onClick={() => handleVerifyBl(bl.id, 'ecart', blEcartNote[bl.id] ?? null)}
-                              style={{ flex: 2, padding: '9px', borderRadius: 8, border: 'none', background: '#DC2626', color: 'white', fontSize: 12.5, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}
-                            >
-                              {busy ? '…' : 'Confirmer l\'écart'}
+                            <button disabled={busy} onClick={() => handleVerifyBl(bl.id, 'ecart', blEcartNote[bl.id] ?? null)}
+                              style={{ flex: 2, padding: '9px', borderRadius: 8, border: 'none', background: '#DC2626', color: 'white', fontSize: 12.5, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
+                              {busy ? '…' : "Confirmer l'écart"}
                             </button>
                           </div>
                         </div>
