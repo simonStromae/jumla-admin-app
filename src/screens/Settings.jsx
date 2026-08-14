@@ -1067,12 +1067,15 @@ const SUPPORTED_CURRENCIES = [
 ];
 
 function SectionDevises({ routes }) {
-  const [rates, setRates]       = useState({});
-  const [saving, setSaving]     = useState({});
-  const [saved, setSaved]       = useState({});
-  const [err, setErr]           = useState({});
-  const [calcFrom, setCalcFrom] = useState('');
-  const [calcCur,  setCalcCur]  = useState('USD');
+  const [rates, setRates]         = useState({});
+  const [saving, setSaving]       = useState({});
+  const [saved, setSaved]         = useState({});
+  const [err, setErr]             = useState({});
+  const [calcFrom, setCalcFrom]   = useState('');
+  const [calcCur,  setCalcCur]    = useState('USD');
+  const [fetching, setFetching]   = useState(false);
+  const [fetchMsg, setFetchMsg]   = useState('');
+  const [liveRates, setLiveRates] = useState(null); // { rates, updatedAt }
 
   // Find which currencies are actually used across routes
   const usedCurrencies = [...new Set((routes || []).map(r => r.currency).filter(c => c && c !== 'CAD'))];
@@ -1086,6 +1089,52 @@ function SectionDevises({ routes }) {
       setRates(loaded);
     }).catch(() => {});
   }, []);
+
+  async function fetchLiveRates() {
+    setFetching(true); setFetchMsg(''); setLiveRates(null);
+    try {
+      const res = await fetch('/api/exchange-rates');
+      const data = await res.json();
+      if (!res.ok || data.error) throw new Error(data.error || 'Erreur API');
+      setLiveRates(data);
+      // Pre-fill inputs with fetched rates (don't auto-save — user must confirm)
+      const updated = { ...rates };
+      for (const c of SUPPORTED_CURRENCIES) {
+        if (data.rates[c.code] !== undefined) {
+          updated[c.key] = String(data.rates[c.code]);
+        }
+      }
+      setRates(updated);
+      setFetchMsg(data.stale ? '⚠ Taux en cache (API indisponible)' : '✓ Taux récupérés — vérifiez et sauvegardez');
+    } catch (e) {
+      setFetchMsg('⚠ ' + (e.message || 'Impossible de récupérer les taux'));
+    } finally {
+      setFetching(false);
+    }
+  }
+
+  async function saveAllRates() {
+    setSaving(s => ({ ...s, __all: true }));
+    try {
+      const payload = {};
+      for (const c of SUPPORTED_CURRENCIES) {
+        if (rates[c.key]) payload[c.key] = rates[c.key];
+      }
+      const res = await fetch('/api/settings', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      if (!res.ok) throw new Error('Erreur serveur');
+      setSaved(s => ({ ...s, __all: true }));
+      setTimeout(() => setSaved(s => ({ ...s, __all: false })), 3000);
+      setFetchMsg('');
+    } catch (e) {
+      setFetchMsg('⚠ ' + e.message);
+    } finally {
+      setSaving(s => ({ ...s, __all: false }));
+    }
+  }
 
   async function saveRate(key) {
     setSaving(s => ({ ...s, [key]: true }));
@@ -1112,14 +1161,41 @@ function SectionDevises({ routes }) {
   return (
     <>
       <div className="card" style={{ padding: 20, marginBottom: 16 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6 }}>
-          <I.Coins style={{ width: 14, height: 14, color: 'var(--brand-600)' }} />
-          <span style={{ fontWeight: 700, fontSize: 14 }}>Taux de change → CAD</span>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <I.Coins style={{ width: 14, height: 14, color: 'var(--brand-600)' }} />
+            <span style={{ fontWeight: 700, fontSize: 14 }}>Taux de change → CAD</span>
+          </div>
+          <button className="btn btn--ghost btn--sm" onClick={fetchLiveRates} disabled={fetching}>
+            <I.Refresh style={{ width: 13, height: 13 }} />
+            {fetching ? 'Récupération…' : 'Taux en temps réel'}
+          </button>
         </div>
-        <div style={{ fontSize: 12.5, color: 'var(--ink-400)', marginBottom: 18 }}>
+        <div style={{ fontSize: 12.5, color: 'var(--ink-400)', marginBottom: fetchMsg ? 10 : 18 }}>
           Ces taux servent de valeur suggérée lors de la création d'une cargaison sur une route non-CAD.
           Chaque cargaison verrouille son propre taux à la création.
         </div>
+        {fetchMsg && (
+          <div style={{
+            padding: '8px 14px', borderRadius: 8, marginBottom: 14, fontSize: 12.5,
+            background: fetchMsg.startsWith('✓') ? 'var(--ok-50)' : 'var(--warn-50)',
+            color:      fetchMsg.startsWith('✓') ? 'var(--ok-700)' : 'var(--ink-700)',
+            border:     '1px solid ' + (fetchMsg.startsWith('✓') ? 'var(--ok-200)' : 'var(--warn-200)'),
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12,
+          }}>
+            <span>{fetchMsg}</span>
+            {fetchMsg.startsWith('✓') && (
+              <button className="btn btn--brand btn--sm" disabled={saving.__all} onClick={saveAllRates}>
+                <I.Check />{saving.__all ? 'Sauvegarde…' : saved.__all ? '✓ Sauvegardé' : 'Sauvegarder tout'}
+              </button>
+            )}
+          </div>
+        )}
+        {liveRates?.updatedAt && (
+          <div style={{ fontSize: 11, color: 'var(--ink-400)', marginBottom: 14 }}>
+            Source : open.er-api.com · Mis à jour le {liveRates.updatedAt}
+          </div>
+        )}
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
           {SUPPORTED_CURRENCIES.map(c => {
