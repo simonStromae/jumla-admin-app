@@ -24,14 +24,15 @@ export default function CampaignFormPage({ mode = 'create', campaign, onNav }) {
   const toInputDate = (d) => d ? new Date(d).toISOString().slice(0, 10) : '';
 
   const [data, setData] = useState({
-    routeId:     campaign?.routeId ?? campaign?.route?.id ?? '',
-    code:        campaign?.code        || '',
-    depDate:     toInputDate(campaign?.departureDate),
-    arrDate:     toInputDate(campaign?.arrivalDate),
-    capacityKg:  campaign?.capacityKg?.toString() ?? '',
-    agentOrigin: campaign?.agentOrigin || '',
-    agentDest:   campaign?.agentDest   || '',
-    notes:       campaign?.notes       || '',
+    routeId:          campaign?.routeId ?? campaign?.route?.id ?? '',
+    code:             campaign?.code        || '',
+    depDate:          toInputDate(campaign?.departureDate),
+    arrDate:          toInputDate(campaign?.arrivalDate),
+    capacityKg:       campaign?.capacityKg?.toString() ?? '',
+    exchangeRateToCAD: campaign?.exchangeRateToCAD?.toString() ?? '',
+    agentOrigin:      campaign?.agentOrigin || '',
+    agentDest:        campaign?.agentDest   || '',
+    notes:            campaign?.notes       || '',
   });
 
   useEffect(() => {
@@ -83,14 +84,23 @@ export default function CampaignFormPage({ mode = 'create', campaign, onNav }) {
       setErr(/* TODO: add i18n key for "La capacité doit être supérieure à 0" */ 'La capacité doit être supérieure à 0'); return;
     }
 
+    const needsRate = route && route.currency && route.currency !== 'CAD';
+    if (needsRate && !data.exchangeRateToCAD) {
+      setErr(`Veuillez saisir le taux de change ${route.currency} → CAD`); return;
+    }
+    if (needsRate && Number(data.exchangeRateToCAD) <= 0) {
+      setErr('Le taux de change doit être supérieur à 0'); return;
+    }
+
     setSaving(true); setErr('');
     try {
       const payload = {
-        code:          data.code.trim(),
-        routeId:       data.routeId,
-        departureDate: data.depDate || null,
-        arrivalDate:   data.arrDate || null,
-        capacityKg:    data.capacityKg ? Number(data.capacityKg) : null,
+        code:             data.code.trim(),
+        routeId:          data.routeId,
+        departureDate:    data.depDate || null,
+        arrivalDate:      data.arrDate || null,
+        capacityKg:       data.capacityKg ? Number(data.capacityKg) : null,
+        exchangeRateToCAD: needsRate && data.exchangeRateToCAD ? Number(data.exchangeRateToCAD) : null,
       };
 
       const res = await fetch(
@@ -209,6 +219,40 @@ export default function CampaignFormPage({ mode = 'create', campaign, onNav }) {
                   onChange={e => upd('capacityKg', e.target.value)} placeholder="ex: 500" />
               </div>
             </div>
+
+            {route?.currency && route.currency !== 'CAD' && (
+              <div className="field" style={{ marginTop: 16, marginBottom: 0, padding: '14px 16px', background: 'var(--info-50)', borderRadius: 8, border: '1px solid var(--info-200)' }}>
+                <label className="label" style={{ color: 'var(--info-700)' }}>
+                  Taux de change {route.currency} → CAD
+                  <HelpTip text={`Ce taux est fixé à la création de la cargaison et ne changera plus, pour garantir la cohérence des rapports financiers. 1 ${route.currency} = X CAD`} />
+                </label>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <span style={{ fontSize: 13, color: 'var(--info-700)', fontWeight: 600, whiteSpace: 'nowrap' }}>
+                    1 {route.currency} =
+                  </span>
+                  {isEdit ? (
+                    <span className="mono" style={{ flex: 1, fontSize: 15, fontWeight: 700, color: 'var(--info-800)' }}>
+                      {data.exchangeRateToCAD || '—'}
+                    </span>
+                  ) : (
+                    <input
+                      className="input mono"
+                      type="number"
+                      step="0.0001"
+                      min="0"
+                      value={data.exchangeRateToCAD}
+                      onChange={e => upd('exchangeRateToCAD', e.target.value)}
+                      placeholder="ex: 0.0019"
+                      style={{ flex: 1 }}
+                    />
+                  )}
+                  <span style={{ fontSize: 13, color: 'var(--info-700)', fontWeight: 600 }}>CAD</span>
+                </div>
+                <div style={{ fontSize: 11, color: 'var(--info-600)', marginTop: 6 }}>
+                  {isEdit ? '🔒 Taux verrouillé — défini à la création de la cargaison.' : 'Taux fixe — verrouillé à la création. Consultez xe.com pour le taux du jour.'}
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Dates */}
@@ -290,6 +334,10 @@ export default function CampaignFormPage({ mode = 'create', campaign, onNav }) {
                 { label: t.campaigns.fields.departure,                                                         value: data.depDate || '—' },
                 { label: t.campaigns.fields.arrival,                                                           value: data.arrDate || '—' },
                 { label: t.campaigns.wizard.fields.maxCapacity,                                                value: data.capacityKg ? `${data.capacityKg} kg` : '—' },
+                ...(route?.currency && route.currency !== 'CAD' ? [{
+                  label: `Devise / Taux`,
+                  value: data.exchangeRateToCAD ? `${route.currency} · 1 = ${data.exchangeRateToCAD} CAD` : `${route.currency} — taux requis`,
+                }] : []),
               ].map(({ label, value }) => (
                 <div key={label} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12 }}>
                   <span style={{ color: 'var(--ink-400)' }}>{label}</span>
