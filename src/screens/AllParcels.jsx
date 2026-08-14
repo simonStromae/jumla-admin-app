@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useAdminT } from '../lib/useAdminT.js';
+import { useCurrency } from '../lib/useCurrency.js';
 import { STATUS } from '../data.js';
 import I from '../components/Icons.jsx';
 import { Bi, Avatar, ParcelActionsMenu, Modal, useCan } from '../components/Shell.jsx';
@@ -8,6 +9,7 @@ import { Pagination } from '../components/Pagination.jsx';
 export default function AllParcelsScreen({ onNav, initialSearch = '' }) {
   const can = useCan();
   const t = useAdminT();
+  const { currency, fmt } = useCurrency();
   const [tab, setTab]                     = useState('all');
   const [campaignFilter, setCampaignFilter] = useState('all');
   const [search, setSearch]               = useState(initialSearch);
@@ -152,7 +154,7 @@ export default function AllParcelsScreen({ onNav, initialSearch = '' }) {
   function exportCSV(onlySelected = false) {
     const PAYMENT_LABEL = { paid: 'Payé', pending: 'En cours', unpaid: 'En cours' };
     const STATUS_LABEL  = { enr: 'Enregistré', rec: 'Reçu entrepôt', pre: 'Vérifié/Préparé', exp: 'Expédié', tra: 'En transit', apd: 'Arrivé pays dest.', dou: 'Aux douanes', ins: 'Inspection', ret: 'Retenu', lib: 'Libéré', ard: 'Entrepôt dest.', ver: 'Vérification', pdl: 'Prêt livraison', liv: 'En livraison', ok: 'Livré', adr: 'Adresse incompl.', tdl: 'Tentative livr.', rte: 'Retour entrepôt', dom: 'Endommagé', cla: 'Réclamation' };
-    const headers = ['Code', 'Cargaison', 'Expéditeur', 'Tél expéditeur', 'Destinataire', 'Ville', 'Poids (kg)', 'Montant (CAD)', 'Paiement', 'Statut', 'Date'];
+    const headers = ['Code', 'Cargaison', 'Expéditeur', 'Tél expéditeur', 'Destinataire', 'Ville', 'Poids (kg)', `Montant (${currency})`, 'Paiement', 'Statut', 'Date'];
     const data = onlySelected && selected.length > 0 ? filtered.filter(p => selected.includes(p.id)) : filtered;
     const rows = data.map(p => [
       p.code,
@@ -341,7 +343,7 @@ export default function AllParcelsScreen({ onNav, initialSearch = '' }) {
                   <>
                     <div>
                       <span className="mono" style={{ fontWeight: 700 }}>{p.confirmedPriceXaf.toLocaleString('fr')}</span>
-                      <span style={{ fontSize: 11, color: 'var(--ink-400)', marginLeft: 3 }}>CAD</span>
+                      <span style={{ fontSize: 11, color: 'var(--ink-400)', marginLeft: 3 }}>{currency}</span>
                     </div>
                     <div style={{ fontSize: 10.5, color: 'var(--ink-400)', textDecoration: 'line-through', fontFamily: 'var(--font-mono)' }}>
                       Est. {(p.priceXaf ?? p.amount ?? 0).toLocaleString('fr')}
@@ -350,7 +352,7 @@ export default function AllParcelsScreen({ onNav, initialSearch = '' }) {
                 ) : (
                   <>
                     <span className="mono" style={{ fontWeight: 700 }}>{(p.amount ?? p.priceXaf ?? 0).toLocaleString('fr')}</span>
-                    <span style={{ fontSize: 11, color: 'var(--ink-400)', marginLeft: 3 }}>CAD</span>
+                    <span style={{ fontSize: 11, color: 'var(--ink-400)', marginLeft: 3 }}>{currency}</span>
                   </>
                 )}
               </td>
@@ -466,7 +468,7 @@ export default function AllParcelsScreen({ onNav, initialSearch = '' }) {
                     {r.trackingCode}
                   </span>
                   <span style={{ flex: 1, color: r.ok ? 'var(--ok-700)' : 'var(--bad-600)' }}>
-                    {r.ok ? `✓ Paiement créé — ${r.amount?.toLocaleString('fr')} CAD` : `✗ ${r.message}`}
+                    {r.ok ? `✓ Paiement créé — ${fmt(r.amount ?? 0)}` : `✗ ${r.message}`}
                   </span>
                 </div>
               ))}

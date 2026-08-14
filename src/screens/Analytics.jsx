@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import I from '../components/Icons.jsx';
 import { Bi, RoutePill, Avatar, Progress, Skel } from '../components/Shell.jsx';
 import { useAdminT } from '../lib/useAdminT.js';
+import { useCurrency } from '../lib/useCurrency.js';
 
 export default function AnalyticsScreen({ onNav }) {
   const [year, setYear] = useState(2026);
@@ -20,6 +21,7 @@ export default function AnalyticsScreen({ onNav }) {
   const [paymentMethods, setPaymentMethods]     = useState([]);
   const [recentActivity, setRecentActivity]     = useState([]);
   const t = useAdminT();
+  const { currency, fmt } = useCurrency();
 
   useEffect(() => {
     const params = new URLSearchParams({ year: String(year) });
@@ -145,7 +147,7 @@ export default function AnalyticsScreen({ onNav }) {
 
       {/* ── KPIs principaux ── */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 12, marginBottom: 18 }}>
-        <KpiCard label={t.analytics.kpi.revenue} en="Revenue" value={(totalCollected/1000).toFixed(1)+'k'} unit="CAD" color="var(--ok-500)" big />
+        <KpiCard label={t.analytics.kpi.revenue} en="Revenue" value={(totalCollected/1000).toFixed(1)+'k'} unit={currency} color="var(--ok-500)" big />
         {/* TODO: no i18n key for "Taux recouvrement" */}
         <KpiCard label="Taux recouvrement" en="Recovery" value={recoveryRate} unit="%" progress={recoveryRate} color="var(--brand-500)" />
         <KpiCard label={t.analytics.kpi.parcels} en="Parcels" value={totalParcels.toLocaleString('fr')} unit="" color="var(--info-500)" />
@@ -155,7 +157,7 @@ export default function AnalyticsScreen({ onNav }) {
         <KpiCard
           label="Restant à encaisser"
           value={unpaidTotal > 0 ? (unpaidTotal/1000).toFixed(1)+'k' : '0'}
-          unit="CAD"
+          unit={currency}
           color={unpaidTotal > 0 ? 'var(--bad-600)' : 'var(--ok-600)'}
           sub={unpaidCount > 0 ? unpaidCount + ' paiement' + (unpaidCount > 1 ? 's' : '') + ' en attente' : 'Tout à jour'}
         />
@@ -164,10 +166,10 @@ export default function AnalyticsScreen({ onNav }) {
       {/* ── KPIs financiers ── */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 18 }}>
         {/* TODO: no i18n key for "Coûts opérationnels", "Coût moyen / kg", "Marge brute", "Marge / colis", "par kilogramme expédié", "Taux X%" */}
-        <KpiCard label="Coûts opérationnels" en="Op. Costs" value={(totalCosts/1000).toFixed(1)+'k'} unit="CAD" color="var(--bad-500)" />
-        <KpiCard label="Coût moyen / kg" en="Cost / kg" value={avgCostPerKg.toFixed(2)} unit="CAD/kg" color="var(--brand-500)" sub="par kilogramme expédié" />
-        <KpiCard label="Marge brute" en="Gross Margin" value={(grossMargin/1000).toFixed(1)+'k'} unit="CAD" color="var(--ok-500)" big />
-        <KpiCard label="Marge / colis" en="Per Parcel" value={marginPerParcel} unit="CAD" color="var(--ok-500)" sub={`Taux ${grossMarginPct}%`} />
+        <KpiCard label="Coûts opérationnels" en="Op. Costs" value={(totalCosts/1000).toFixed(1)+'k'} unit={currency} color="var(--bad-500)" />
+        <KpiCard label="Coût moyen / kg" en="Cost / kg" value={avgCostPerKg.toFixed(2)} unit={currency + '/kg'} color="var(--brand-500)" sub="par kilogramme expédié" />
+        <KpiCard label="Marge brute" en="Gross Margin" value={(grossMargin/1000).toFixed(1)+'k'} unit={currency} color="var(--ok-500)" big />
+        <KpiCard label="Marge / colis" en="Per Parcel" value={marginPerParcel} unit={currency} color="var(--ok-500)" sub={`Taux ${grossMarginPct}%`} />
       </div>
 
       {/* ── Revenus vs temps + Performance opérationnelle ── */}
@@ -176,8 +178,8 @@ export default function AnalyticsScreen({ onNav }) {
         <ChartCard title={t.analytics.charts.monthly} sub="CA facturé vs encaissé · par mois">
           <RevenueChart months={monthData.labels} revenue={monthData.invoiced} collected={monthData.revenue} />
           <div style={{ display: 'flex', alignItems: 'center', gap: 18, marginTop: 14, padding: '10px 0 0', borderTop: '1px solid var(--border-soft)' }}>
-            <LegendItem color="var(--brand-100)" label="Facturé" v={(totalInvoiced/1000).toFixed(1)+'k CAD'} />
-            <LegendItem color="var(--brand-500)" label="Encaissé" v={(totalCollected/1000).toFixed(1)+'k CAD'} />
+            <LegendItem color="var(--brand-100)" label="Facturé" v={(totalInvoiced/1000).toFixed(1)+'k ' + currency} />
+            <LegendItem color="var(--brand-500)" label="Encaissé" v={(totalCollected/1000).toFixed(1)+'k ' + currency} />
             <div style={{ flex: 1 }} />
           </div>
         </ChartCard>
@@ -203,12 +205,12 @@ export default function AnalyticsScreen({ onNav }) {
         <ChartCard title="Revenus vs Coûts" sub="CA encaissé · coûts opérationnels · marge brute — par mois">
           <RevsVsCostsChart months={monthData.labels} revenue={monthData.revenue} costs={monthData.costs} />
           <div style={{ display: 'flex', alignItems: 'center', gap: 18, marginTop: 14, padding: '10px 0 0', borderTop: '1px solid var(--border-soft)' }}>
-            <LegendItem color="var(--ok-400)" label="Marge brute" v={(grossMargin/1000).toFixed(1)+'k CAD'} />
-            <LegendItem color="var(--bad-300)" label="Coûts opérationnels" v={(totalCosts/1000).toFixed(1)+'k CAD'} />
+            <LegendItem color="var(--ok-400)" label="Marge brute" v={(grossMargin/1000).toFixed(1)+'k ' + currency} />
+            <LegendItem color="var(--bad-300)" label="Coûts opérationnels" v={(totalCosts/1000).toFixed(1)+'k ' + currency} />
             <div style={{ flex: 1 }} />
             <span style={{ fontSize: 11.5, color: 'var(--ink-400)' }}>
               Taux de marge <strong style={{ color: 'var(--ok-600)' }}>{grossMarginPct}%</strong>
-              <span style={{ marginLeft: 12 }}>Marge / colis <strong style={{ color: 'var(--ink-700)' }}>{marginPerParcel} CAD</strong></span>
+              <span style={{ marginLeft: 12 }}>Marge / colis <strong style={{ color: 'var(--ink-700)' }}>{marginPerParcel} {currency}</strong></span>
             </span>
           </div>
         </ChartCard>
@@ -226,7 +228,7 @@ export default function AnalyticsScreen({ onNav }) {
             <div style={{ fontSize: 28, fontWeight: 800, color: unpaidTotal > 0 ? 'var(--bad-600)' : 'var(--ok-600)', fontFamily: 'var(--ff-mono)' }}>
               {unpaidTotal > 0 ? unpaidTotal.toLocaleString('fr') : '0'}
             </div>
-            <div style={{ fontSize: 11, color: 'var(--ink-400)', marginBottom: 12 }}>CAD en attente</div>
+            <div style={{ fontSize: 11, color: 'var(--ink-400)', marginBottom: 12 }}>{currency} en attente</div>
           </div>
           {unpaid.slice(0, 4).map((p, i) => (
             <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '6px 0', borderTop: '1px solid var(--border-soft)', fontSize: 12 }}>
@@ -249,7 +251,7 @@ export default function AnalyticsScreen({ onNav }) {
           ) : (
             <Donut
               data={donutData}
-              center={{ value: (totalCollected / 1000).toFixed(1) + 'k', label: 'CAD' }}
+              center={{ value: (totalCollected / 1000).toFixed(1) + 'k', label: currency }}
             />
           )}
         </ChartCard>
@@ -307,12 +309,12 @@ export default function AnalyticsScreen({ onNav }) {
                       </div>
                     </td>
                     <td style={{ padding: '10px 16px 10px 0', fontSize: 13, fontFamily: 'var(--ff-mono)', fontWeight: 600, color: a.fretXaf > 0 ? 'var(--ink-900)' : 'var(--ink-300)' }}>
-                      {a.fretXaf > 0 ? a.fretXaf.toLocaleString('fr') + ' CAD' : '—'}
+                      {a.fretXaf > 0 ? fmt(a.fretXaf) : '—'}
                     </td>
                     <td style={{ padding: '10px 0' }}>
                       {a.fretPerKg > 0 ? (
                         <span className="badge" style={{ background: 'var(--ok-50)', color: 'var(--ok-700)', border: '1px solid var(--ok-100)', fontFamily: 'var(--ff-mono)', fontSize: 12 }}>
-                          {a.fretPerKg} CAD/kg
+                          {a.fretPerKg} {currency}/kg
                         </span>
                       ) : <span style={{ fontSize: 12, color: 'var(--ink-300)' }}>—</span>}
                     </td>
@@ -552,6 +554,7 @@ function Donut({ data, center }) {
 
 function RoutesBar({ routeStats }) {
   const t = useAdminT();
+  const { currency } = useCurrency();
   if (!routeStats || routeStats.length === 0) {
     return (
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px 0', color: 'var(--ink-300)', fontSize: 13 }}>
@@ -567,7 +570,7 @@ function RoutesBar({ routeStats }) {
             <RoutePill from={r.fromIATA} to={r.toIATA} />
             <span style={{ fontSize: 12.5, fontWeight: 600, flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.label}</span>
             <span className="mono" style={{ fontSize: 13, fontWeight: 700, color: 'var(--ink-900)', flexShrink: 0 }}>
-              {r.collected > 0 ? (r.collected / 1000).toFixed(1) + 'k CAD' : '—'}
+              {r.collected > 0 ? (r.collected / 1000).toFixed(1) + 'k ' + currency : '—'}
             </span>
           </div>
           <div style={{ height: 8, background: 'var(--ink-100)', borderRadius: 999, overflow: 'hidden' }}>
@@ -576,8 +579,8 @@ function RoutesBar({ routeStats }) {
           <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 3, fontSize: 10.5, color: 'var(--ink-400)' }}>
             <span>{r.parcels} colis · {r.weightKg.toLocaleString('fr')} kg</span>
             {r.currency && r.currency !== 'CAD'
-              ? <span>Facturé {r.invoicedNative > 0 ? (r.invoicedNative / 1000).toFixed(1) + `k ${r.currency}` : '—'} <span style={{ opacity: .6 }}>(≈{r.invoiced > 0 ? (r.invoiced / 1000).toFixed(1) + 'k CAD' : '—'})</span></span>
-              : <span>Facturé {r.invoiced > 0 ? (r.invoiced / 1000).toFixed(1) + 'k CAD' : '—'}</span>
+              ? <span>Facturé {r.invoicedNative > 0 ? (r.invoicedNative / 1000).toFixed(1) + `k ${r.currency}` : '—'} <span style={{ opacity: .6 }}>(≈{r.invoiced > 0 ? (r.invoiced / 1000).toFixed(1) + 'k ' + currency : '—'})</span></span>
+              : <span>Facturé {r.invoiced > 0 ? (r.invoiced / 1000).toFixed(1) + 'k ' + currency : '—'}</span>
             }
           </div>
         </div>

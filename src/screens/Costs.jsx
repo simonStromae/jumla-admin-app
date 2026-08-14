@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import I from '../components/Icons.jsx';
 import { Bi, RoutePill, useCan } from '../components/Shell.jsx';
 import { useAdminT } from '../lib/useAdminT.js';
+import { useCurrency } from '../lib/useCurrency.js';
 
 // TODO: i18n - COST_FIELDS labels and hints need specific translation keys not yet available in admin-i18n.js
 // t.costs.categories only covers 4 generic types (transport, customs, handling, other) which cannot
@@ -29,8 +30,8 @@ function hasCosts(cd) {
 // ── Modal de saisie des coûts ──────────────────────────────────────
 function CostModal({ campaign, currentCosts, onSave, onClose }) {
   const t = useAdminT();
+  const { currency } = useCurrency();
   const route = { fromIATA: campaign.from, toIATA: campaign.to };
-  const currency = 'CAD';
   const [draft, setDraft] = useState(
     Object.fromEntries(COST_FIELDS.map(f => [f.key, currentCosts?.[f.key] || '']))
   );
@@ -250,6 +251,7 @@ function CostModal({ campaign, currentCosts, onSave, onClose }) {
 export default function CostsScreen({ onNav }) {
   const t = useAdminT();
   const can = useCan();
+  const { currency, fmt } = useCurrency();
   const [campaigns, setCampaigns]     = useState([]);
   const [costsData, setCostsData]     = useState({});
   const [modal, setModal]             = useState(null);
@@ -325,10 +327,10 @@ export default function CostsScreen({ onNav }) {
       {/* KPIs */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 12, marginBottom: 18 }}>
         {/* TODO: i18n - KPI labels below (Marge brute, Taux de marge, Coût moyen / kg, Meilleure marge) have no matching translation keys */}
-        <CostKpi icon="📉" label={t.common.total}              value={(allCosts / 1000).toFixed(1) + 'k'}  unit="CAD" color="var(--bad-500)" />
-        <CostKpi icon="📈" label="Marge brute"                value={(allMargin / 1000).toFixed(1) + 'k'} unit="CAD" color="var(--ok-500)" />
+        <CostKpi icon="📉" label={t.common.total}              value={(allCosts / 1000).toFixed(1) + 'k'}  unit={currency} color="var(--bad-500)" />
+        <CostKpi icon="📈" label="Marge brute"                value={(allMargin / 1000).toFixed(1) + 'k'} unit={currency} color="var(--ok-500)" />
         <CostKpi icon="%" label="Taux de marge"               value={allPct}  unit="%" color={allPct >= 55 ? 'var(--ok-500)' : 'var(--warn-500)'} progress={allPct} />
-        <CostKpi icon="⚖️" label="Coût moyen / kg"           value={costPerKg} unit="CAD/kg" color="var(--brand-500)" />
+        <CostKpi icon="⚖️" label="Coût moyen / kg"           value={costPerKg} unit={`${currency}/kg`} color="var(--brand-500)" />
         <CostKpi icon="🏆" label="Meilleure marge"            value={best ? marginPct(best) + '%' : '—'} unit="" color="var(--ok-600)" sub={best?.code} />
       </div>
 
@@ -371,14 +373,14 @@ export default function CostsScreen({ onNav }) {
 
                   <td style={{ textAlign: 'right' }}>
                     <span className="mono" style={{ fontWeight: 700 }}>{(c.collected ?? 0).toLocaleString('fr')}</span>
-                    <span style={{ fontSize: 10.5, color: 'var(--ink-400)', marginLeft: 3 }}>CAD</span>
+                    <span style={{ fontSize: 10.5, color: 'var(--ink-400)', marginLeft: 3 }}>{currency}</span>
                   </td>
 
                   <td style={{ textAlign: 'right' }}>
                     {renseigné ? (
                       <>
                         <span className="mono" style={{ fontWeight: 700, color: 'var(--ink-800)' }}>{tc.toLocaleString('fr')}</span>
-                        <span style={{ fontSize: 10.5, color: 'var(--ink-400)', marginLeft: 3 }}>CAD</span>
+                        <span style={{ fontSize: 10.5, color: 'var(--ink-400)', marginLeft: 3 }}>{currency}</span>
                       </>
                     ) : (
                       /* TODO: i18n - no translation key for 'Non renseigné' */
@@ -390,7 +392,7 @@ export default function CostsScreen({ onNav }) {
                     {renseigné ? (
                       <>
                         <span className="mono" style={{ fontWeight: 700, color: mg >= 0 ? 'var(--ok-600)' : 'var(--bad-500)' }}>{mg.toLocaleString('fr')}</span>
-                        <span style={{ fontSize: 10.5, color: 'var(--ink-400)', marginLeft: 3 }}>CAD</span>
+                        <span style={{ fontSize: 10.5, color: 'var(--ink-400)', marginLeft: 3 }}>{currency}</span>
                       </>
                     ) : (
                       <span style={{ fontSize: 12, color: 'var(--ink-300)', fontStyle: 'italic' }}>—</span>
@@ -430,15 +432,15 @@ export default function CostsScreen({ onNav }) {
               <td><span style={{ fontSize: 12, fontWeight: 700, color: 'var(--ink-600)' }}>Total · {campaigns.length} cargaisons</span></td>
               <td style={{ textAlign: 'right' }}>
                 <span className="mono" style={{ fontWeight: 800 }}>{allCollected.toLocaleString('fr')}</span>
-                <span style={{ fontSize: 10.5, color: 'var(--ink-400)', marginLeft: 3 }}>CAD</span>
+                <span style={{ fontSize: 10.5, color: 'var(--ink-400)', marginLeft: 3 }}>{currency}</span>
               </td>
               <td style={{ textAlign: 'right' }}>
                 <span className="mono" style={{ fontWeight: 800, color: 'var(--ink-900)' }}>{allCosts.toLocaleString('fr')}</span>
-                <span style={{ fontSize: 10.5, color: 'var(--ink-400)', marginLeft: 3 }}>CAD</span>
+                <span style={{ fontSize: 10.5, color: 'var(--ink-400)', marginLeft: 3 }}>{currency}</span>
               </td>
               <td style={{ textAlign: 'right' }}>
                 <span className="mono" style={{ fontWeight: 800, color: 'var(--ok-600)' }}>{allMargin.toLocaleString('fr')}</span>
-                <span style={{ fontSize: 10.5, color: 'var(--ink-400)', marginLeft: 3 }}>CAD</span>
+                <span style={{ fontSize: 10.5, color: 'var(--ink-400)', marginLeft: 3 }}>{currency}</span>
               </td>
               <td style={{ textAlign: 'center' }}>
                 <span className={'badge badge--' + marginKind(allPct)} style={{ fontWeight: 800 }}>{allPct}%</span>

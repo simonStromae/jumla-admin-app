@@ -1,11 +1,13 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { useAdminT } from '../lib/useAdminT.js';
+import { useCurrency } from '../lib/useCurrency.js';
 import '@/src/styles/tokens.css';
 import '@/src/styles/payment.css';
 
 export default function PaymentScreen({ token }) {
   const t = useAdminT();
+  const { currency } = useCurrency();
   const [data, setData]       = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError]     = useState('');
@@ -186,7 +188,7 @@ function PaymentView({ data, onConfirm }) {
           <div className="pay-summary__total">
             <span className="pay-summary__total-label">{t.common.total}</span>
             <span className="pay-summary__total-amount">
-              {data.amount.toLocaleString('fr')} <span style={{ fontSize: 14, color: 'var(--ink-400)', fontWeight: 500 }}>CAD</span>
+              {data.amount.toLocaleString('fr')} <span style={{ fontSize: 14, color: 'var(--ink-400)', fontWeight: 500 }}>{currency}</span>
             </span>
           </div>
         </div>

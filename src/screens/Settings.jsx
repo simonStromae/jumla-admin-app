@@ -4,6 +4,7 @@ import { invalidateCompanyAssets } from '../lib/useCompanyAssets.js';
 import { RoutePill, Drawer } from '../components/Shell.jsx';
 import LandingEditor from './LandingEditor.jsx';
 import { useAdminT } from '../lib/useAdminT.js';
+import { useCurrency } from '../lib/useCurrency.js';
 import PhoneInput from '../components/PhoneInput.jsx';
 
 // Grille tarifaire par défaut (miroir de DEFAULT_ROUTE_FEES dans pricing.ts)
@@ -1002,6 +1003,7 @@ function SectionAutoNotif() {
 /* ── Paramètres cargaisons ───────────────────────────────── */
 function SectionCampaigns() {
   const t = useAdminT();
+  const { setCurrency } = useCurrency();
   const [fields, setFields] = useState({ default_transit_days: '14', default_currency: 'CAD', weight_rounding: '0.5' });
   const [saving, setSaving] = useState(false);
   const [saved,  setSaved]  = useState(false);
@@ -1021,6 +1023,7 @@ function SectionCampaigns() {
   async function handleSave() {
     setSaving(true);
     await fetch('/api/settings', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(fields) });
+    setCurrency(fields.default_currency);
     setSaving(false); setSaved(true); setTimeout(() => setSaved(false), 3000);
   }
 
