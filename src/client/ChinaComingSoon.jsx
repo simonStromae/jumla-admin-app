@@ -195,15 +195,21 @@ export default function ChinaComingSoon({ onBook }) {
           Bientôt disponible
         </div>
 
+        {/* Flags row */}
+        <div style={{ fontSize: 'clamp(28px, 4vw, 40px)', marginBottom: 10, lineHeight: 1 }}>
+          🇨🇳&nbsp;&nbsp;<span style={{ color: '#00B4D8', fontSize: '.7em', verticalAlign: 'middle' }}>→</span>&nbsp;&nbsp;🇨🇦
+        </div>
+
         {/* Headline */}
         <h2 style={{
           fontSize: 'clamp(34px, 6.5vw, 64px)',
           fontWeight: 800, lineHeight: 1.06, letterSpacing: '-.03em',
           color: 'white', margin: '0 0 14px',
+          whiteSpace: 'nowrap',
         }}>
-          🇨🇳 Chine{' '}
+          Chine{' '}
           <span style={{ color: '#00B4D8' }}>→</span>{' '}
-          Montréal 🇨🇦
+          Montréal
         </h2>
 
         <p style={{ fontSize: 15, color: 'rgba(255,255,255,.48)', margin: '0 0 52px', lineHeight: 1.65 }}>
@@ -242,13 +248,13 @@ export default function ChinaComingSoon({ onBook }) {
 
         {/* Divider */}
         <div style={{
-          display: 'flex', alignItems: 'center', gap: 14, marginBottom: 40,
+          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 14, marginBottom: 40,
           color: 'rgba(255,255,255,.25)',
           fontSize: 11, letterSpacing: '.12em', textTransform: 'uppercase', fontWeight: 600,
         }}>
-          <span style={{ flex: 1, height: 1, background: 'rgba(255,255,255,.1)', maxWidth: 120 }} />
+          <span style={{ width: 100, height: 1, background: 'rgba(255,255,255,.12)', flexShrink: 0 }} />
           En attendant
-          <span style={{ flex: 1, height: 1, background: 'rgba(255,255,255,.1)', maxWidth: 120 }} />
+          <span style={{ width: 100, height: 1, background: 'rgba(255,255,255,.12)', flexShrink: 0 }} />
         </div>
 
         {/* CTA block */}

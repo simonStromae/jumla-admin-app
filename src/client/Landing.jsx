@@ -195,6 +195,7 @@ function merge(base, override) {
 
 const DEFAULT_SECTIONS = {
   china_coming_soon: true,
+  hero:              true,
   estimator:         true,
   story_card:        true,
   steps:             true,
@@ -1134,7 +1135,7 @@ export default function LandingPage({ onNav }) {
       `}</style>
       <SiteNav onNav={onNav} onBook={onBook} mode="landing" />
       {sections.china_coming_soon && <ChinaComingSoon onBook={onBook} />}
-      <JHero onBook={onBook} onNav={onNav} content={content} />
+      {sections.hero && <JHero onBook={onBook} onNav={onNav} content={content} />}
       {sections.estimator  && <JEstimator onBook={onBook} content={content} />}
       {sections.story_card && <JStoryCard onBook={onBook} onNav={onNav} content={content} />}
       {sections.steps      && <JSteps onBook={onBook} content={content} />}
