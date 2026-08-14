@@ -88,6 +88,7 @@ function PanelSection({ title, accent, children }) {
 }
 
 function ParcelQuickPanel({ parcel: initial, onClose, onRefresh, onNav }) {
+  const { fmt } = useCurrency();
   const [parcel,           setParcel]           = useState(initial);
   const [newStatus,        setNewStatus]        = useState(initial.status);
   const [statusNote,       setStatusNote]       = useState('');
