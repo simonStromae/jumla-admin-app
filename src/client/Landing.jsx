@@ -211,6 +211,7 @@ function merge(base, override) {
       faq:       mergeObj(base.sectionTitles.faq,       override.sectionTitles.faq),
       steps:     mergeObj(base.sectionTitles.steps,     override.sectionTitles.steps),
     } : base.sectionTitles,
+    comingSoon:    mergeObj(base.comingSoon, override.comingSoon),
     trackingCard:  mergeObj(base.trackingCard, override.trackingCard),
     footer:        mergeObj(base.footer, override.footer),
     loginSlides:   override.loginSlides ?? base.loginSlides,
