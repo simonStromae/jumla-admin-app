@@ -52,6 +52,18 @@ const DEFAULTS = {
       description:    "Rejoignez 2 500+ clients qui nous font confiance pour leurs envois entre l'Afrique et le Canada. Sécurité, transparence et notification WhatsApp à chaque étape.",
       button:         'Réserver un envoi',
     },
+    comingSoon: {
+      eyebrow:     'Bientôt disponible',
+      originFlag:  '🇨🇳',
+      destFlag:    '🇨🇦',
+      title:       'Chine → Montréal',
+      subtitle:    'Nouvelle route cargo directe · Guangzhou · Shenzhen · Shanghai → Canada',
+      launchDate:  '2026-08-31',
+      ctaTitle:    'Nos cargaisons Cameroun → Montréal sont ouvertes.',
+      ctaSubtitle: 'Expédiez dès aujourd\'hui avec Jumla Cargo.',
+      ctaButton:   'Réserver une expédition →',
+      launchLabel: 'Lancement prévu : 31 août 2026',
+    },
     sectionTitles: {
       estimator: { eyebrow: 'Simulateur de prix', title: 'Combien coûte mon envoi ?', subtitle: 'Calculez en quelques secondes. Sans inscription, sans engagement.' },
       steps:     { eyebrow: 'Comment ça marche', title: 'Simple comme ', titleHighlight: '4 étapes', subtitle: "De Douala à Montréal — on s'occupe de tout, vous suivez en temps réel.", button: 'Créer une nouvelle expédition →' },
@@ -100,6 +112,18 @@ const DEFAULTS = {
       titleHighlight: 'in 14 days max.',
       description:    'Join 2,500+ customers who trust Jumla Shipping for their shipments between Africa and Canada. Security, transparency and WhatsApp notifications at every step.',
       button:         'Book a shipment',
+    },
+    comingSoon: {
+      eyebrow:     'Coming soon',
+      originFlag:  '🇨🇳',
+      destFlag:    '🇨🇦',
+      title:       'China → Montréal',
+      subtitle:    'New direct cargo route · Guangzhou · Shenzhen · Shanghai → Canada',
+      launchDate:  '2026-08-31',
+      ctaTitle:    'Our Cameroon → Montréal shipments are open.',
+      ctaSubtitle: 'Ship today with Jumla Cargo.',
+      ctaButton:   'Book a shipment →',
+      launchLabel: 'Launch date: August 31, 2026',
     },
     sectionTitles: {
       estimator: { eyebrow: 'Price simulator', title: 'How much does my shipment cost?', subtitle: 'Calculate in seconds. No registration, no commitment.' },
@@ -239,7 +263,8 @@ export default function LandingEditor() {
 
   // TODO: i18n — tab labels below have no matching keys in admin-i18n.js
   const TABS = [
-    { id: 'hero',      label: 'Héro',            icon: I.Plane },
+    { id: 'chine',     label: '🇨🇳 Chine',        icon: I.Plane },
+    { id: 'hero',      label: 'Héro',             icon: I.Plane },
     { id: 'story',     label: 'Notre histoire',   icon: I.Globe },
     { id: 'steps',     label: '4 étapes',         icon: I.ArrowRight },
     { id: 'widephoto', label: 'Section photo',    icon: I.Map },
@@ -362,6 +387,61 @@ export default function LandingEditor() {
           </button>
         ))}
       </div>
+
+      {/* ── Chine coming soon ── */}
+      {tab === 'chine' && (
+        <>
+          <InfoBanner>
+            Section "Bientôt disponible" affichée en premier sur la page d'accueil. Modifiez les textes, les drapeaux, la date de lancement et le CTA.
+          </InfoBanner>
+
+          <EditorCard title="Annonce route" icon={I.Plane}>
+            <Field label="Texte de l'eyebrow" hint="petit badge en haut">
+              <input className="input" value={c.comingSoon.eyebrow} onChange={e => set('comingSoon.eyebrow', e.target.value)} />
+            </Field>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+              <Field label="Emoji pays d'origine">
+                <input className="input" value={c.comingSoon.originFlag} onChange={e => set('comingSoon.originFlag', e.target.value)} style={{ fontSize: 22, textAlign: 'center' }} />
+              </Field>
+              <Field label="Emoji pays de destination">
+                <input className="input" value={c.comingSoon.destFlag} onChange={e => set('comingSoon.destFlag', e.target.value)} style={{ fontSize: 22, textAlign: 'center' }} />
+              </Field>
+            </div>
+            <Field label="Titre de la route" hint="ex : Chine → Montréal">
+              <input className="input" value={c.comingSoon.title} onChange={e => set('comingSoon.title', e.target.value)} />
+            </Field>
+            <Field label="Sous-titre" hint="description courte sous le titre">
+              <input className="input" value={c.comingSoon.subtitle} onChange={e => set('comingSoon.subtitle', e.target.value)} />
+            </Field>
+          </EditorCard>
+
+          <EditorCard title="Compte à rebours" icon={I.Activity}>
+            <Field label="Date de lancement" hint="format AAAA-MM-JJ">
+              <input
+                className="input"
+                type="date"
+                value={c.comingSoon.launchDate}
+                onChange={e => set('comingSoon.launchDate', e.target.value)}
+              />
+            </Field>
+            <Field label="Libellé date" hint="texte affiché sous le bouton">
+              <input className="input" value={c.comingSoon.launchLabel} onChange={e => set('comingSoon.launchLabel', e.target.value)} />
+            </Field>
+          </EditorCard>
+
+          <EditorCard title="Appel à l'action (CTA)" icon={I.ArrowRight}>
+            <Field label="Titre CTA">
+              <input className="input" value={c.comingSoon.ctaTitle} onChange={e => set('comingSoon.ctaTitle', e.target.value)} />
+            </Field>
+            <Field label="Sous-titre CTA">
+              <input className="input" value={c.comingSoon.ctaSubtitle} onChange={e => set('comingSoon.ctaSubtitle', e.target.value)} />
+            </Field>
+            <Field label="Texte du bouton">
+              <input className="input" value={c.comingSoon.ctaButton} onChange={e => set('comingSoon.ctaButton', e.target.value)} />
+            </Field>
+          </EditorCard>
+        </>
+      )}
 
       {/* ── Héro ── */}
       {tab === 'hero' && (

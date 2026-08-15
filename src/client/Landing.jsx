@@ -41,6 +41,18 @@ const DEFAULT_CONTENT_FR = {
     { question: 'Comment mon destinataire récupère-t-il le colis ?', answer: "Au choix : livraison à domicile partout au Québec (créneau sur rendez-vous, signature requise) ou retrait à notre entrepôt de Montréal. Paiement à la livraison — Interac, virement, espèces ou Mobile Money." },
     { question: "Peut-on envoyer depuis d'autres villes ?", answer: "Nous opérons principalement depuis Douala. Nous avons également des routes depuis Lagos (Nigeria) et vers Bruxelles. Contactez-nous pour un devis personnalisé sur d'autres origines." },
   ],
+  comingSoon: {
+    eyebrow:     'Bientôt disponible',
+    originFlag:  '🇨🇳',
+    destFlag:    '🇨🇦',
+    title:       'Chine → Montréal',
+    subtitle:    'Nouvelle route cargo directe · Guangzhou · Shenzhen · Shanghai → Canada',
+    launchDate:  '2026-08-31',
+    ctaTitle:    'Nos cargaisons Cameroun → Montréal sont ouvertes.',
+    ctaSubtitle: 'Expédiez dès aujourd\'hui avec Jumla Cargo.',
+    ctaButton:   'Réserver une expédition →',
+    launchLabel: 'Lancement prévu : 31 août 2026',
+  },
   cta: {
     line1:    'Envoyez votre',
     line2:    'premier colis',
@@ -120,6 +132,18 @@ const DEFAULT_CONTENT_EN = {
     { question: 'How does my recipient collect the parcel?', answer: 'Choose: home delivery anywhere in Quebec (appointment-based, signature required) or pickup at our Montréal warehouse. Payment on delivery — Interac, bank transfer, cash or Mobile Money.' },
     { question: 'Can I send from other cities?', answer: 'We primarily operate from Douala. We also have routes from Lagos (Nigeria) and to Brussels. Contact us for a custom quote from other origins.' },
   ],
+  comingSoon: {
+    eyebrow:     'Coming soon',
+    originFlag:  '🇨🇳',
+    destFlag:    '🇨🇦',
+    title:       'China → Montréal',
+    subtitle:    'New direct cargo route · Guangzhou · Shenzhen · Shanghai → Canada',
+    launchDate:  '2026-08-31',
+    ctaTitle:    'Our Cameroon → Montréal shipments are open.',
+    ctaSubtitle: 'Ship today with Jumla Cargo.',
+    ctaButton:   'Book a shipment →',
+    launchLabel: 'Launch date: August 31, 2026',
+  },
   cta: {
     line1:    'Send your',
     line2:    'first parcel',
@@ -1134,7 +1158,7 @@ export default function LandingPage({ onNav }) {
         }
       `}</style>
       <SiteNav onNav={onNav} onBook={onBook} mode="landing" />
-      {sections.china_coming_soon && <ChinaComingSoon onBook={onBook} />}
+      {sections.china_coming_soon && <ChinaComingSoon onBook={onBook} content={content.comingSoon} />}
       {sections.hero && <JHero onBook={onBook} onNav={onNav} content={content} />}
       {sections.estimator  && <JEstimator onBook={onBook} content={content} />}
       {sections.story_card && <JStoryCard onBook={onBook} onNav={onNav} content={content} />}
