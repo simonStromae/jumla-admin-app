@@ -310,7 +310,6 @@ export default function WorldExpansion({ content }) {
     <section style={{
       position: 'relative',
       minHeight: '95vh',
-      display: 'flex', flexDirection: 'column', justifyContent: 'flex-end',
       background: '#0B1220',
       fontFamily: "'Inter', system-ui, sans-serif",
       overflow: 'hidden',
@@ -318,22 +317,22 @@ export default function WorldExpansion({ content }) {
       {/* ── Full-section canvas background ── */}
       <WorldMapCanvas />
 
-      {/* Top vignette so top content is readable */}
+      {/* Top vignette */}
       <div style={{
-        position: 'absolute', top: 0, left: 0, right: 0, height: '55%', pointerEvents: 'none',
-        background: 'linear-gradient(to bottom, #0B1220 0%, rgba(11,18,32,.85) 50%, transparent 100%)',
+        position: 'absolute', top: 0, left: 0, right: 0, height: '40%', pointerEvents: 'none',
+        background: 'linear-gradient(to bottom, rgba(11,18,32,.5) 0%, transparent 100%)',
       }} />
-      {/* Bottom vignette */}
+      {/* Bottom vignette — makes text readable */}
       <div style={{
-        position: 'absolute', bottom: 0, left: 0, right: 0, height: '35%', pointerEvents: 'none',
-        background: 'linear-gradient(to top, #0B1220 0%, transparent 100%)',
+        position: 'absolute', bottom: 0, left: 0, right: 0, height: '65%', pointerEvents: 'none',
+        background: 'linear-gradient(to top, #0B1220 30%, rgba(11,18,32,.85) 65%, transparent 100%)',
       }} />
 
-      {/* ── Content overlay ── */}
+      {/* ── Content anchored to bottom of section ── */}
       <div style={{
-        position: 'relative', zIndex: 10,
-        maxWidth: 1400, width: '100%', margin: '0 auto',
-        padding: 'clamp(48px, 8vh, 96px) clamp(20px, 5vw, 72px) clamp(56px, 7vh, 88px)',
+        position: 'absolute', bottom: 0, left: 0, right: 0, zIndex: 10,
+        maxWidth: 1400, margin: '0 auto',
+        padding: '0 clamp(20px, 5vw, 72px) clamp(48px, 6vh, 80px)',
         display: 'flex', flexDirection: 'column', gap: 0,
       }}>
         {/* Eyebrow */}
