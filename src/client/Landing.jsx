@@ -5,6 +5,7 @@ import I from '../components/Icons.jsx';
 import { ITEM_CATEGORIES, calcPrice, routeFeesToCalcFees, DEFAULT_FEES } from '../lib/calcPrice.js';
 import { TopBar, SiteNav, SiteFooter } from './SiteLayout.jsx';
 import ChinaComingSoon from './ChinaComingSoon.jsx';
+import WorldExpansion from './WorldExpansion.jsx';
 import { useT, useLocale } from '@/src/lib/i18n';
 import '@/src/styles/client-omega.css';
 
@@ -52,6 +53,16 @@ const DEFAULT_CONTENT_FR = {
     ctaSubtitle: 'Expédiez dès aujourd\'hui avec Jumla Cargo.',
     ctaButton:   'Réserver une expédition →',
     launchLabel: 'Lancement prévu : 31 août 2026',
+  },
+  worldExpansion: {
+    eyebrow:  'Expansion mondiale',
+    title:    'Jumla s\'ouvre au monde',
+    subtitle: 'Nos nouvelles routes cargo connectent l\'Asie, l\'Afrique et le Canada.',
+    routes: [
+      { from: 'Chine',   to: 'Montréal', status: 'Bientôt disponible', detail: 'Guangzhou · Shenzhen · Shanghai' },
+      { from: 'Chine',   to: 'Cameroun', status: 'Bientôt disponible', detail: 'Douala · Yaoundé' },
+      { from: 'Nigeria', to: 'Montréal', status: 'Bientôt disponible', detail: 'Lagos · Abuja' },
+    ],
   },
   cta: {
     line1:    'Envoyez votre',
@@ -144,6 +155,16 @@ const DEFAULT_CONTENT_EN = {
     ctaButton:   'Book a shipment →',
     launchLabel: 'Launch date: August 31, 2026',
   },
+  worldExpansion: {
+    eyebrow:  'Global expansion',
+    title:    'Jumla goes global',
+    subtitle: 'Our new cargo routes connect Asia, Africa and Canada.',
+    routes: [
+      { from: 'China',   to: 'Montréal', status: 'Coming soon', detail: 'Guangzhou · Shenzhen · Shanghai' },
+      { from: 'China',   to: 'Cameroon', status: 'Coming soon', detail: 'Douala · Yaoundé' },
+      { from: 'Nigeria', to: 'Montréal', status: 'Coming soon', detail: 'Lagos · Abuja' },
+    ],
+  },
   cta: {
     line1:    'Send your',
     line2:    'first parcel',
@@ -211,7 +232,10 @@ function merge(base, override) {
       faq:       mergeObj(base.sectionTitles.faq,       override.sectionTitles.faq),
       steps:     mergeObj(base.sectionTitles.steps,     override.sectionTitles.steps),
     } : base.sectionTitles,
-    comingSoon:    mergeObj(base.comingSoon, override.comingSoon),
+    comingSoon:     mergeObj(base.comingSoon, override.comingSoon),
+    worldExpansion: override.worldExpansion
+      ? { ...base.worldExpansion, ...override.worldExpansion, routes: override.worldExpansion.routes ?? base.worldExpansion.routes }
+      : base.worldExpansion,
     trackingCard:  mergeObj(base.trackingCard, override.trackingCard),
     footer:        mergeObj(base.footer, override.footer),
     loginSlides:   override.loginSlides ?? base.loginSlides,
@@ -222,6 +246,7 @@ const DEFAULT_SECTIONS = {
   china_coming_soon: true,
   hero:              true,
   estimator:         true,
+  world_expansion:   true,
   story_card:        true,
   steps:             true,
   wide_photo:        true,
@@ -1161,7 +1186,8 @@ export default function LandingPage({ onNav }) {
       <SiteNav onNav={onNav} onBook={onBook} mode="landing" />
       {sections.china_coming_soon && <ChinaComingSoon onBook={onBook} content={content.comingSoon} />}
       {sections.hero && <JHero onBook={onBook} onNav={onNav} content={content} />}
-      {sections.estimator  && <JEstimator onBook={onBook} content={content} />}
+      {sections.estimator      && <JEstimator onBook={onBook} content={content} />}
+      {sections.world_expansion && <WorldExpansion content={content.worldExpansion} />}
       {sections.story_card && <JStoryCard onBook={onBook} onNav={onNav} content={content} />}
       {sections.steps      && <JSteps onBook={onBook} content={content} />}
       {sections.wide_photo && <JWidePhoto onBook={onBook} content={content} />}

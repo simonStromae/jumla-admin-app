@@ -18,6 +18,7 @@ const DEFAULT_SECTIONS = {
   china_coming_soon: true,
   hero:              true,
   estimator:         true,
+  world_expansion:   true,
   story_card:        true,
   steps:             true,
   wide_photo:        true,

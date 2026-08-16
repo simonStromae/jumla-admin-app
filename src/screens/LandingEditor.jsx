@@ -9,6 +9,7 @@ const SECTION_DEFS = [
   { key: 'story_card',        label: '✈️ Notre histoire',       desc: 'Bloc photo + stats + bouton de suivi colis' },
   { key: 'steps',             label: '📋 Comment ça marche',    desc: 'Les 4 étapes du processus d\'expédition' },
   { key: 'wide_photo',        label: '🖼️ Photo pleine largeur', desc: 'Section photo immersive avec CTA de réservation' },
+  { key: 'world_expansion', label: '🌍 Expansion mondiale', desc: 'Carte monde animée avec les nouvelles routes cargo' },
 ];
 
 const DEFAULT_SECTIONS = {
@@ -18,6 +19,7 @@ const DEFAULT_SECTIONS = {
   story_card:        true,
   steps:             true,
   wide_photo:        true,
+  world_expansion:   true,
 };
 
 const DEFAULTS = {
@@ -63,6 +65,16 @@ const DEFAULTS = {
       ctaSubtitle: 'Expédiez dès aujourd\'hui avec Jumla Cargo.',
       ctaButton:   'Réserver une expédition →',
       launchLabel: 'Lancement prévu : 31 août 2026',
+    },
+    worldExpansion: {
+      eyebrow:  'Expansion mondiale',
+      title:    "Jumla s'ouvre au monde",
+      subtitle: 'Nos nouvelles routes cargo connectent l\'Asie, l\'Afrique et le Canada.',
+      routes: [
+        { from: 'Chine',   to: 'Montréal', status: 'Bientôt disponible', detail: 'Guangzhou · Shenzhen · Shanghai' },
+        { from: 'Chine',   to: 'Cameroun', status: 'Bientôt disponible', detail: 'Douala · Yaoundé' },
+        { from: 'Nigeria', to: 'Montréal', status: 'Bientôt disponible', detail: 'Lagos · Abuja' },
+      ],
     },
     sectionTitles: {
       estimator: { eyebrow: 'Simulateur de prix', title: 'Combien coûte mon envoi ?', subtitle: 'Calculez en quelques secondes. Sans inscription, sans engagement.' },
@@ -124,6 +136,16 @@ const DEFAULTS = {
       ctaSubtitle: 'Ship today with Jumla Cargo.',
       ctaButton:   'Book a shipment →',
       launchLabel: 'Launch date: August 31, 2026',
+    },
+    worldExpansion: {
+      eyebrow:  'Global expansion',
+      title:    'Jumla goes global',
+      subtitle: 'Our new cargo routes connect Asia, Africa and Canada.',
+      routes: [
+        { from: 'China',   to: 'Montréal', status: 'Coming soon', detail: 'Guangzhou · Shenzhen · Shanghai' },
+        { from: 'China',   to: 'Cameroon', status: 'Coming soon', detail: 'Douala · Yaoundé' },
+        { from: 'Nigeria', to: 'Montréal', status: 'Coming soon', detail: 'Lagos · Abuja' },
+      ],
     },
     sectionTitles: {
       estimator: { eyebrow: 'Price simulator', title: 'How much does my shipment cost?', subtitle: 'Calculate in seconds. No registration, no commitment.' },
@@ -264,6 +286,7 @@ export default function LandingEditor() {
   // TODO: i18n — tab labels below have no matching keys in admin-i18n.js
   const TABS = [
     { id: 'chine',     label: '🇨🇳 Chine',        icon: I.Plane },
+    { id: 'expansion', label: '🌍 Expansion', icon: I.Globe },
     { id: 'hero',      label: 'Héro',             icon: I.Plane },
     { id: 'story',     label: 'Notre histoire',   icon: I.Globe },
     { id: 'steps',     label: '4 étapes',         icon: I.ArrowRight },
@@ -439,6 +462,47 @@ export default function LandingEditor() {
             <Field label="Texte du bouton">
               <input className="input" value={c.comingSoon.ctaButton} onChange={e => set('comingSoon.ctaButton', e.target.value)} />
             </Field>
+          </EditorCard>
+        </>
+      )}
+
+      {/* ── World expansion ── */}
+      {tab === 'expansion' && (
+        <>
+          <InfoBanner>
+            Section "Expansion mondiale" avec carte animée. Modifiez les textes et les 3 routes affichées.
+          </InfoBanner>
+          <EditorCard title="Textes principaux" icon={I.Globe}>
+            <Field label="Eyebrow">
+              <input className="input" value={c.worldExpansion.eyebrow} onChange={e => set('worldExpansion.eyebrow', e.target.value)} />
+            </Field>
+            <Field label="Titre">
+              <input className="input" value={c.worldExpansion.title} onChange={e => set('worldExpansion.title', e.target.value)} />
+            </Field>
+            <Field label="Sous-titre">
+              <textarea className="input" rows={2} value={c.worldExpansion.subtitle} onChange={e => set('worldExpansion.subtitle', e.target.value)} style={{ resize: 'vertical' }} />
+            </Field>
+          </EditorCard>
+          <EditorCard title="Routes" icon={I.ArrowRight}>
+            <div style={{ fontSize: 12, color: 'var(--ink-400)', marginBottom: 14 }}>
+              Les arcs sur la carte sont géographiques (fixes). Seuls les textes sont éditables.
+            </div>
+            {(c.worldExpansion.routes ?? []).map((route, i) => (
+              <div key={i} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: 10, marginBottom: 14, padding: '12px 14px', background: 'var(--bg-soft)', borderRadius: 8 }}>
+                <Field label={`Route ${i + 1} — Origine`}>
+                  <input className="input" value={route.from} onChange={e => set(`worldExpansion.routes.${i}.from`, e.target.value)} />
+                </Field>
+                <Field label="Destination">
+                  <input className="input" value={route.to} onChange={e => set(`worldExpansion.routes.${i}.to`, e.target.value)} />
+                </Field>
+                <Field label="Statut">
+                  <input className="input" value={route.status} onChange={e => set(`worldExpansion.routes.${i}.status`, e.target.value)} />
+                </Field>
+                <Field label="Détail" hint="villes, optionnel">
+                  <input className="input" value={route.detail ?? ''} onChange={e => set(`worldExpansion.routes.${i}.detail`, e.target.value)} />
+                </Field>
+              </div>
+            ))}
           </EditorCard>
         </>
       )}
