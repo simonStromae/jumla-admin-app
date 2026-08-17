@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import I from '../components/Icons.jsx';
-import { ITEM_CATEGORIES, calcPrice, routeFeesToCalcFees, DEFAULT_FEES } from '../lib/calcPrice.js';
+import { ITEM_CATEGORIES, calcPrice, calcSeaPrice, calcCbm, routeFeesToCalcFees, DEFAULT_FEES, DEFAULT_SEA_FEES } from '../lib/calcPrice.js';
 import { TopBar, SiteNav, SiteFooter } from './SiteLayout.jsx';
 import ChinaComingSoon from './ChinaComingSoon.jsx';
 import WorldExpansion from './WorldExpansion.jsx';
@@ -779,7 +779,7 @@ function JEstimator({ onBook, content }) {
   const cats = ITEM_CATEGORIES;
   const [liveRoutes, setLiveRoutes] = useState([]);
   const [routeId, setRouteId] = useState('');
-  const [lines, setLines] = useState([{ id: 1, cat: 'standard', weight: 12 }]);
+  const [lines, setLines] = useState([{ id: 1, cat: 'standard', weight: 12, lengthCm: '', widthCm: '', heightCm: '' }]);
 
   useEffect(() => {
     fetch('/api/public/routes')
@@ -793,38 +793,66 @@ function JEstimator({ onBook, content }) {
   }, []);
 
   const currentRoute = liveRoutes.find(r => r.id === routeId) || liveRoutes[0];
-  const fees = currentRoute ? routeFeesToCalcFees(currentRoute.fees) : DEFAULT_FEES;
+  const isSea = currentRoute?.fees?.transportMode === 'sea';
+  const fees = currentRoute
+    ? routeFeesToCalcFees(currentRoute.fees)
+    : (isSea ? DEFAULT_SEA_FEES : DEFAULT_FEES);
 
+  // ── Air calculation ──
   const totalWeight = lines.reduce((a, l) => a + (parseFloat(l.weight) || 0), 0);
-  const allItems = lines.map(l => ({ cat: l.cat, kg: parseFloat(l.weight) || 0 }));
-  // Calculate once for all items combined — uses the correct tier based on total weight
-  const combined = totalWeight > 0 ? calcPrice(allItems, fees, {}, 'expedition', null) : null;
+  const allAirItems = lines.map(l => ({ cat: l.cat, kg: parseFloat(l.weight) || 0 }));
+  const airCombined = (!isSea && totalWeight > 0) ? calcPrice(allAirItems, fees, {}, 'expedition', null) : null;
 
-  const calcLine = (ln) => {
+  const calcAirLine = (ln) => {
     const kg = parseFloat(ln.weight) || 0;
-    if (!combined || !combined.tier) return { transport: 0, extras: 0, rateLabel: '—' };
-    const tier = combined.tier;
+    if (!airCombined || !airCombined.tier) return { transport: 0, extras: 0, rateLabel: '—' };
+    const tier = airCombined.tier;
     const transport = tier.transportFlat !== undefined
-      ? (totalWeight > 0 ? combined.transport * (kg / totalWeight) : 0)
+      ? (totalWeight > 0 ? airCombined.transport * (kg / totalWeight) : 0)
       : (tier.transportPerKg || 0) * kg;
     const suppRates = fees.supplements || DEFAULT_FEES.supplements;
     const catDef = ITEM_CATEGORIES.find(c => c.id === ln.cat);
     const catRate = suppRates[ln.cat] ?? catDef?.extraPerKg ?? 0;
     const catSurcharge = catRate * kg;
-    const sharedExtras = combined.douane + combined.formalites + combined.manutention;
+    const sharedExtras = airCombined.douane + airCombined.formalites + airCombined.manutention;
     const extras = catSurcharge + (totalWeight > 0 ? sharedExtras * (kg / totalWeight) : 0);
     const rateLabel = tier.transportPerKg
       ? tier.transportPerKg + ' CAD/kg'
-      : tier.transportFlat
-        ? tier.transportFlat + ' CAD forfait'
-        : '—';
+      : tier.transportFlat ? tier.transportFlat + ' CAD forfait' : '—';
     return { transport, extras, rateLabel };
   };
 
-  const computed = lines.map(calcLine);
-  const grandTotal = Math.round(combined?.prixClient ?? 0);
+  // ── Sea calculation ──
+  const allSeaItems = lines.map(l => ({
+    cat: l.cat, kg: parseFloat(l.weight) || 0,
+    lengthCm: l.lengthCm, widthCm: l.widthCm, heightCm: l.heightCm,
+  }));
+  const seaCombined = (isSea && lines.some(l => (parseFloat(l.weight) || 0) > 0))
+    ? calcSeaPrice(allSeaItems, fees) : null;
 
-  const addLine = () => setLines([...lines, { id: Date.now(), cat: 'standard', weight: 5 }]);
+  const calcSeaLine = (ln, i) => {
+    const detail = seaCombined?.itemDetails?.[i];
+    if (!seaCombined || !detail) return { transport: 0, extras: 0, rateLabel: '—', cbm: 0, chargeableKg: 0, isBulky: false };
+    const tier = seaCombined.tier;
+    const chargeableKg = detail.chargeableKg;
+    const totalCK = seaCombined.totalChargeableKg;
+    const transport = tier.transportFlat !== undefined
+      ? (totalCK > 0 ? seaCombined.transport * (chargeableKg / totalCK) : 0)
+      : (tier.transportPerKg || 0) * chargeableKg;
+    const sharedExtras = seaCombined.douane + seaCombined.formalites + seaCombined.manutention;
+    const extras = (totalCK > 0 ? sharedExtras * (chargeableKg / totalCK) : 0)
+      + (detail.isBulky ? detail.cbm * (fees.bulkyPerCbm ?? 800) : 0);
+    const rateLabel = tier.transportPerKg ? tier.transportPerKg + ' CAD/kg' : tier.transportFlat + ' CAD forfait';
+    return { transport, extras, rateLabel, cbm: detail.cbm, chargeableKg, isBulky: detail.isBulky };
+  };
+
+  const computed = lines.map((ln, i) => isSea ? calcSeaLine(ln, i) : calcAirLine(ln));
+  const grandTotal = Math.round(isSea ? (seaCombined?.prixClient ?? 0) : (airCombined?.prixClient ?? 0));
+  const transitLabel = isSea
+    ? `${currentRoute?.transitDays ?? 45}–60 jours`
+    : `max ${currentRoute?.transitDays ?? 10} jrs`;
+
+  const addLine = () => setLines([...lines, { id: Date.now(), cat: 'standard', weight: 5, lengthCm: '', widthCm: '', heightCm: '' }]);
   const removeLine = (id) => setLines(lines.length > 1 ? lines.filter(l => l.id !== id) : lines);
   const updLine = (id, k, v) => setLines(lines.map(l => l.id === id ? { ...l, [k]: v } : l));
 
@@ -846,6 +874,11 @@ function JEstimator({ onBook, content }) {
           <div className="jest__head">
             <I.Calculator style={{ width: 16, height: 16, color: 'var(--brand-400)' }} />
             <span className="jest__title">Simulateur de prix</span>
+            {isSea && (
+              <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: '.08em', textTransform: 'uppercase', color: '#0369a1', background: '#e0f2fe', borderRadius: 999, padding: '3px 10px' }}>
+                🚢 Fret maritime
+              </span>
+            )}
             <div style={{ marginLeft: 'auto' }}>
               {liveRoutes.length > 1 ? (
                 <select
@@ -867,11 +900,20 @@ function JEstimator({ onBook, content }) {
             </div>
           </div>
 
+          {/* ── Sea CBM info banner ── */}
+          {isSea && (
+            <div style={{ padding: '10px 16px', background: '#f0f9ff', borderBottom: '1px solid #bae6fd', fontSize: 12.5, color: '#0369a1', lineHeight: 1.5 }}>
+              <strong>Fret maritime :</strong> le poids facturé est le plus élevé entre le poids réel et le poids volumétrique (L×W×H / 1 000 000 × 500).
+              Les articles volumineux (poids vol. &gt; poids réel) sont majorés à <strong>{fees.bulkyPerCbm ?? 800} CAD/m³</strong>.
+            </div>
+          )}
+
           {/* ── Lines ── */}
           <div className="jest__lines">
-            <div className="jest__lhead">
+            <div className="jest__lhead" style={{ gridTemplateColumns: isSea ? '2fr 1fr 2fr 1fr 1fr 28px' : '2fr 1fr 1fr 1fr 28px' }}>
               <span>Catégorie</span>
               <span>Poids (kg)</span>
+              {isSea && <span style={{ color: '#0369a1' }}>Dimensions cm (L×W×H)</span>}
               <span style={{ textAlign: 'right' }}>Transport</span>
               <span style={{ textAlign: 'right' }}>Autres frais</span>
               <span />
@@ -879,7 +921,7 @@ function JEstimator({ onBook, content }) {
             {lines.map((ln, i) => {
               const c = computed[i];
               return (
-                <div className="jest__line" key={ln.id}>
+                <div className="jest__line" key={ln.id} style={{ gridTemplateColumns: isSea ? '2fr 1fr 2fr 1fr 1fr 28px' : '2fr 1fr 1fr 1fr 28px' }}>
                   {/* Category */}
                   <div className="jest__f">
                     <select value={ln.cat} onChange={e => updLine(ln.id, 'cat', e.target.value)}>
@@ -890,15 +932,34 @@ function JEstimator({ onBook, content }) {
                   <div className="jest__f">
                     <input type="number" min="0.5" step="0.5" value={ln.weight} onChange={e => updLine(ln.id, 'weight', e.target.value)} />
                   </div>
+                  {/* Dimensions (sea only) */}
+                  {isSea && (
+                    <div className="jest__f" style={{ display: 'flex', gap: 4 }}>
+                      <input type="number" min="0" step="1" placeholder="L" title="Longueur (cm)"
+                        value={ln.lengthCm} onChange={e => updLine(ln.id, 'lengthCm', e.target.value)}
+                        style={{ width: 52 }} />
+                      <input type="number" min="0" step="1" placeholder="W" title="Largeur (cm)"
+                        value={ln.widthCm} onChange={e => updLine(ln.id, 'widthCm', e.target.value)}
+                        style={{ width: 52 }} />
+                      <input type="number" min="0" step="1" placeholder="H" title="Hauteur (cm)"
+                        value={ln.heightCm} onChange={e => updLine(ln.id, 'heightCm', e.target.value)}
+                        style={{ width: 52 }} />
+                      {c.cbm > 0 && (
+                        <span style={{ fontSize: 11, color: c.isBulky ? '#b45309' : 'var(--ink-400)', alignSelf: 'center', whiteSpace: 'nowrap' }}>
+                          {c.cbm.toFixed(3)} m³{c.isBulky ? ' ⚠' : ''}
+                        </span>
+                      )}
+                    </div>
+                  )}
                   {/* Transport */}
                   <div className="jest__cell" style={{ textAlign: 'right' }}>
                     <div>{Math.round(c.transport)} <span className="jest__cur">CAD</span></div>
                     <div className="jest__tier">{c.rateLabel}</div>
                   </div>
-                  {/* Autres frais (douane + formalités + manutention + suppléments) */}
+                  {/* Autres frais */}
                   <div className="jest__cell" style={{ textAlign: 'right', color: c.extras > 0 ? 'var(--brand-600)' : c.extras < 0 ? '#059669' : 'var(--ink-300)' }}>
                     <div>{c.extras !== 0 ? (c.extras > 0 ? '+' : '') + Math.round(c.extras) + ' ' : '—'}{c.extras !== 0 && <span className="jest__cur">CAD</span>}</div>
-                    <div className="jest__tier">douane · formalités · manut.</div>
+                    <div className="jest__tier">{isSea ? 'douane · manut. · vol.' : 'douane · formalités · manut.'}</div>
                   </div>
                   {/* Delete */}
                   <button className="jest__del" onClick={() => removeLine(ln.id)} disabled={lines.length <= 1}>
@@ -916,12 +977,14 @@ function JEstimator({ onBook, content }) {
           <div className="jest__res">
             <div>
               <div className="jest__total-label">
-                {lines.length} article{lines.length > 1 ? 's' : ''} · {totalWeight} kg
+                {lines.length} article{lines.length > 1 ? 's' : ''} · {isSea
+                  ? `${seaCombined?.totalChargeableKg ?? 0} kg facturables${seaCombined?.totalCbm > 0 ? ` · ${seaCombined.totalCbm.toFixed(3)} m³` : ''}`
+                  : `${totalWeight} kg`}
               </div>
               <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, flexWrap: 'wrap' }}>
                 <span className="jest__total-n">{grandTotal}</span>
                 <span className="jest__total-cur">CAD</span>
-                <span className="jest__transit">· max 10 jrs</span>
+                <span className="jest__transit">· {transitLabel}</span>
               </div>
             </div>
             <button className="jbtn-nav jbtn-nav--lg" style={{ marginLeft: 'auto' }} onClick={() => {

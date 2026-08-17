@@ -1364,6 +1364,16 @@ function SectionTitle({ children }) {
   return <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '.08em', textTransform: 'uppercase', color: 'var(--ink-400)', marginBottom: 10, marginTop: 4 }}>{children}</div>;
 }
 
+const DEFAULT_SEA_TIERS_EDITOR = [
+  { id:1, from:'1',      to:'10',    transportType:'flat',  transportValue:'100', cartonType:'flat',    cartonValue:'0',   manutentionType:'flat', manutentionValue:'0',  manutentionMin:'', douaneType:'flat',  douaneValue:'10',  formalitesType:'flat',  formalitesValue:'10'  },
+  { id:2, from:'10.5',   to:'50',    transportType:'perKg', transportValue:'9.5', cartonType:'perUnit', cartonValue:'1.5', manutentionType:'flat', manutentionValue:'15', manutentionMin:'', douaneType:'perKg', douaneValue:'2',   formalitesType:'perKg', formalitesValue:'1.5' },
+  { id:3, from:'50.5',   to:'100',   transportType:'perKg', transportValue:'8',   cartonType:'perUnit', cartonValue:'1.5', manutentionType:'flat', manutentionValue:'20', manutentionMin:'', douaneType:'perKg', douaneValue:'1.5', formalitesType:'perKg', formalitesValue:'1'   },
+  { id:4, from:'100.5',  to:'200',   transportType:'perKg', transportValue:'6.5', cartonType:'perUnit', cartonValue:'1.5', manutentionType:'flat', manutentionValue:'30', manutentionMin:'', douaneType:'perKg', douaneValue:'1.5', formalitesType:'perKg', formalitesValue:'1'   },
+  { id:5, from:'200.5',  to:'300',   transportType:'perKg', transportValue:'5.5', cartonType:'perUnit', cartonValue:'1.5', manutentionType:'flat', manutentionValue:'40', manutentionMin:'', douaneType:'perKg', douaneValue:'1',   formalitesType:'perKg', formalitesValue:'0.75'},
+  { id:6, from:'300.5',  to:'1000',  transportType:'perKg', transportValue:'4.5', cartonType:'perUnit', cartonValue:'1.5', manutentionType:'flat', manutentionValue:'60', manutentionMin:'', douaneType:'perKg', douaneValue:'1',   formalitesType:'perKg', formalitesValue:'0.75'},
+  { id:7, from:'1000.5', to:'',      transportType:'perKg', transportValue:'3.5', cartonType:'perUnit', cartonValue:'1.5', manutentionType:'flat', manutentionValue:'80', manutentionMin:'', douaneType:'perKg', douaneValue:'0.75',formalitesType:'perKg', formalitesValue:'0.5' },
+];
+
 const DEFAULT_TIERS_EDITOR = [
   { id:1, from:'0.5', to:'3',     transportType:'flat',  transportValue:'50',  cartonType:'flat',    cartonValue:'1',   manutentionType:'flat',    manutentionValue:'4',   manutentionMin:'',   douaneType:'flat',  douaneValue:'5',   formalitesType:'flat',  formalitesValue:'5'  },
   { id:2, from:'3.5', to:'9.5',   transportType:'perKg', transportValue:'13',  cartonType:'perUnit', cartonValue:'1.5', manutentionType:'flat',    manutentionValue:'5',   manutentionMin:'',   douaneType:'perKg', douaneValue:'3',   formalitesType:'perKg', formalitesValue:'2'  },
@@ -1433,8 +1443,16 @@ function RouteEditModal({ editRoute, onClose, onSaved }) {
   const [currency, setCurrency]       = useState(r?.currency ?? 'CAD');
   const [active, setActive]           = useState(r?.active ?? true);
 
+  // Mode de transport
+  const [transportMode, setTransportMode] = useState(r?.fees?.transportMode ?? 'air');
+
   // Paliers
   const [tiers, setTiers] = useState(() => initTiers(r?.fees));
+
+  // Sea-specific supplements
+  const [bulkyPerCbm,         setBulkyPerCbm]         = useState(String(r?.fees?.bulkyPerCbm         ?? 800));
+  const [highValueThreshold,  setHighValueThreshold]  = useState(String(r?.fees?.highValueThreshold  ?? 500));
+  const [highValuePct,        setHighValuePct]        = useState(String(r?.fees?.highValuePct        ?? 2));
 
   // Emballages & conditionnement
   const [bagSmall,   setBagSmall]   = useState(String(r?.fees?.bags?.small    ?? 5));
@@ -1482,16 +1500,29 @@ function RouteEditModal({ editRoute, onClose, onSaved }) {
     formalitesType: 'perKg', formalitesValue: '',
   }]);
 
+  const switchMode = (mode) => {
+    setTransportMode(mode);
+    if (isNew || tiers === null) {
+      setTiers((mode === 'sea' ? DEFAULT_SEA_TIERS_EDITOR : DEFAULT_TIERS_EDITOR).map(t => ({ ...t })));
+    }
+  };
+
   const handleSave = async () => {
     if (!origin.trim() || !destination.trim()) { setErr(/* TODO i18n */ 'Codes IATA obligatoires'); return; }
     setSaving(true); setErr('');
     try {
       const fees = {
+        transportMode,
         tiers:       tiers.map(tierToApi),
         bags:        { small: parseFloat(bagSmall)||5, medium: parseFloat(bagMedium)||7.5, large: parseFloat(bagLarge)||10 },
         plastic:     parseFloat(plastic) || 0.6,
         saq:         { casier24x65: parseFloat(saq24x65)||24.5, casier24x33: parseFloat(saq24x33)||35.83, casier12x50: parseFloat(saq12x50)||21.34 },
         supplements: { vetements: parseFloat(suppVetements)||2, cosmetique: parseFloat(suppCosmetique)||3, biere: parseFloat(suppBiere)||6, electronique: parseFloat(suppElectronique)||5, documents: parseFloat(suppDocuments)||-2 },
+        ...(transportMode === 'sea' ? {
+          bulkyPerCbm:        parseFloat(bulkyPerCbm)        || 800,
+          highValueThreshold: parseFloat(highValueThreshold) || 500,
+          highValuePct:       parseFloat(highValuePct)       || 2,
+        } : {}),
         marginPct:   parseFloat(marginPct) || 0,
         deliveryFee: parseFloat(deliveryFeeIle) || 25,
         dropoff: {
@@ -1575,8 +1606,44 @@ function RouteEditModal({ editRoute, onClose, onSaved }) {
           )}
         </div>
 
+        {/* Section 1b — Mode de transport */}
+        <SectionTitle>Mode de transport</SectionTitle>
+        <div className="card" style={{ padding: 20, marginBottom: 20 }}>
+          <div style={{ display: 'flex', gap: 12, marginBottom: transportMode === 'sea' ? 20 : 0 }}>
+            {[{ v: 'air', label: '✈️  Fret aérien' }, { v: 'sea', label: '🚢  Fret maritime' }].map(opt => (
+              <button
+                key={opt.v}
+                type="button"
+                onClick={() => switchMode(opt.v)}
+                style={{
+                  padding: '10px 22px', borderRadius: 8, fontSize: 14, fontWeight: 600, cursor: 'pointer', transition: 'all .15s',
+                  border: transportMode === opt.v ? '2px solid var(--brand-500)' : '2px solid var(--border)',
+                  background: transportMode === opt.v ? 'var(--brand-50)' : 'var(--bg-soft)',
+                  color: transportMode === opt.v ? 'var(--brand-700)' : 'var(--ink-500)',
+                }}
+              >{opt.label}</button>
+            ))}
+          </div>
+          {transportMode === 'sea' && (
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 12 }}>
+              <div className="field" style={{ marginBottom: 0 }}>
+                <label className="label">Volumineux ($/m³)</label>
+                <input className="input mono" type="number" step="10" value={bulkyPerCbm} onChange={e => setBulkyPerCbm(e.target.value)} />
+              </div>
+              <div className="field" style={{ marginBottom: 0 }}>
+                <label className="label">Seuil haute valeur ($)</label>
+                <input className="input mono" type="number" step="50" value={highValueThreshold} onChange={e => setHighValueThreshold(e.target.value)} />
+              </div>
+              <div className="field" style={{ marginBottom: 0 }}>
+                <label className="label">Supplément haute valeur (%)</label>
+                <input className="input mono" type="number" step="0.5" value={highValuePct} onChange={e => setHighValuePct(e.target.value)} />
+              </div>
+            </div>
+          )}
+        </div>
+
         {/* Section 2 — Paliers de poids */}
-        <SectionTitle>{/* TODO i18n: Paliers de poids */}Paliers de poids</SectionTitle>
+        <SectionTitle>{transportMode === 'sea' ? 'Paliers de poids (poids facturable)' : 'Paliers de poids'}</SectionTitle>
         <div className="card" style={{ padding: 20, marginBottom: 20 }}>
           <p style={{ fontSize: 12, color: 'var(--ink-400)', marginBottom: 14 }}>
             {/* TODO i18n: tier selection description */}
