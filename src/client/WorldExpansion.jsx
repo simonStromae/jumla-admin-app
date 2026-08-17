@@ -191,13 +191,7 @@ export default function WorldExpansion({ content }) {
         </div>
 
         {/* Headline | Subtitle */}
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'clamp(280px, 45%, 540px) 1fr',
-          gap: 'clamp(32px, 6vw, 96px)',
-          alignItems: 'end',
-          marginBottom: 40,
-        }}>
+        <div className="we-head-grid">
           <h2 style={{
             fontSize: 'clamp(32px, 4.5vw, 56px)',
             fontWeight: 800, lineHeight: 1.07, letterSpacing: '-.03em',
@@ -214,7 +208,7 @@ export default function WorldExpansion({ content }) {
         <div style={{ height: 1, background: 'rgba(255,255,255,.08)', marginBottom: 36 }} />
 
         {/* Route items */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 'clamp(20px, 4vw, 56px)', paddingBottom: 'clamp(40px, 5vh, 64px)' }}>
+        <div className="we-routes-grid">
           {c.routes.map((route, i) => <RouteItem key={i} route={route} index={i} />)}
         </div>
       </div>
@@ -250,8 +244,33 @@ export default function WorldExpansion({ content }) {
           0%, 100% { opacity: 1; transform: scale(1); }
           50%       { opacity: .3; transform: scale(.6); }
         }
-        @media (max-width: 640px) {
-          .we-routes { grid-template-columns: 1fr !important; }
+        .we-head-grid {
+          display: grid;
+          grid-template-columns: clamp(280px, 45%, 540px) 1fr;
+          gap: clamp(32px, 6vw, 96px);
+          align-items: end;
+          margin-bottom: 40px;
+        }
+        .we-routes-grid {
+          display: grid;
+          grid-template-columns: repeat(3, 1fr);
+          gap: clamp(20px, 4vw, 56px);
+          padding-bottom: clamp(40px, 5vh, 64px);
+        }
+        @media (max-width: 768px) {
+          .we-head-grid {
+            grid-template-columns: 1fr;
+            gap: 20px;
+          }
+          .we-routes-grid {
+            grid-template-columns: 1fr;
+            gap: 28px;
+          }
+        }
+        @media (min-width: 769px) and (max-width: 1024px) {
+          .we-routes-grid {
+            grid-template-columns: repeat(2, 1fr);
+          }
         }
       `}</style>
     </section>
