@@ -848,6 +848,7 @@ function JEstimator({ onBook, content }) {
 
   const computed = lines.map((ln, i) => isSea ? calcSeaLine(ln, i) : calcAirLine(ln));
   const grandTotal = Math.round(isSea ? (seaCombined?.prixClient ?? 0) : (airCombined?.prixClient ?? 0));
+  const currency = currentRoute?.currency ?? 'CAD';
   const transitLabel = isSea
     ? `${currentRoute?.transitDays ?? 45}–60 jours`
     : `max ${currentRoute?.transitDays ?? 10} jrs`;
@@ -870,41 +871,84 @@ function JEstimator({ onBook, content }) {
         </div>
 
         <div className="jest" data-reveal data-delay="1">
-          {/* ── Header: title + route selector ── */}
+          {/* ── Header title ── */}
           <div className="jest__head">
             <I.Calculator style={{ width: 16, height: 16, color: 'var(--brand-400)' }} />
             <span className="jest__title">Simulateur de prix</span>
-            {isSea && (
-              <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: '.08em', textTransform: 'uppercase', color: '#0369a1', background: '#e0f2fe', borderRadius: 999, padding: '3px 10px' }}>
-                🚢 Fret maritime
-              </span>
-            )}
-            <div style={{ marginLeft: 'auto' }}>
-              {liveRoutes.length > 1 ? (
-                <select
-                  value={routeId}
-                  onChange={e => setRouteId(e.target.value)}
-                  className="jest__route-select"
-                >
-                  {liveRoutes.map(rr => (
-                    <option key={rr.id} value={rr.id}>
-                      {rr.label ?? `${rr.origin} → ${rr.destination}`}
-                    </option>
-                  ))}
-                </select>
-              ) : (
-                <span className="jest__route-pill">
-                  {currentRoute?.label ?? `${currentRoute?.origin} → ${currentRoute?.destination}`}
-                </span>
-              )}
-            </div>
           </div>
+
+          {/* ── Route radio cards ── */}
+          {liveRoutes.length > 0 && (
+            <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border-soft, #f0f0f0)', display: 'flex', flexDirection: 'column', gap: 10 }}>
+              {liveRoutes.length > 1 && (
+                <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '.09em', textTransform: 'uppercase', color: 'var(--ink-400)', marginBottom: 2 }}>
+                  Choisir votre route
+                </div>
+              )}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                {liveRoutes.map(rr => {
+                  const isSelected = (routeId ? routeId === rr.id : liveRoutes[0].id === rr.id);
+                  const sea = rr.fees?.transportMode === 'sea';
+                  return (
+                    <label
+                      key={rr.id}
+                      onClick={() => setRouteId(rr.id)}
+                      style={{
+                        display: 'flex', alignItems: 'center', gap: 14,
+                        padding: '12px 16px', borderRadius: 10, cursor: 'pointer',
+                        border: isSelected ? '2px solid var(--brand-400, #00B4D8)' : '2px solid var(--border, #e5e7eb)',
+                        background: isSelected ? 'rgba(0,180,216,.04)' : 'var(--bg-soft, #fafafa)',
+                        transition: 'border-color .15s, background .15s',
+                        userSelect: 'none',
+                      }}
+                    >
+                      {/* Radio dot */}
+                      <div style={{
+                        width: 18, height: 18, borderRadius: '50%', flexShrink: 0,
+                        border: isSelected ? '5px solid var(--brand-400, #00B4D8)' : '2px solid var(--border, #d1d5db)',
+                        background: 'white', transition: 'border .15s',
+                      }} />
+                      {/* Mode icon */}
+                      <div style={{
+                        width: 38, height: 38, borderRadius: 9, flexShrink: 0,
+                        background: isSelected
+                          ? (sea ? 'rgba(3,105,161,.1)' : 'rgba(0,180,216,.1)')
+                          : 'var(--bg-soft, #f3f4f6)',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18,
+                      }}>
+                        {sea ? '🚢' : '✈️'}
+                      </div>
+                      {/* Label + meta */}
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontWeight: 700, fontSize: 14, color: 'var(--ink-900)', lineHeight: 1.3 }}>
+                          {rr.label ?? `${rr.fromIATA} → ${rr.toIATA}`}
+                        </div>
+                        <div style={{ fontSize: 12, color: 'var(--ink-400)', marginTop: 2, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                          <span>{sea ? '🚢 Fret maritime' : '✈️ Fret aérien'}</span>
+                          <span>·</span>
+                          <span>Transit {sea ? `${rr.transitDays ?? 45}–60` : `max ${rr.transitDays ?? 14}`} jours</span>
+                          <span>·</span>
+                          <span>{rr.currency ?? 'CAD'}</span>
+                        </div>
+                      </div>
+                      {isSelected && (
+                        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style={{ flexShrink: 0 }}>
+                          <circle cx="8" cy="8" r="8" fill="var(--brand-400,#00B4D8)" />
+                          <path d="M4.5 8l2.5 2.5 4-4" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+                        </svg>
+                      )}
+                    </label>
+                  );
+                })}
+              </div>
+            </div>
+          )}
 
           {/* ── Sea CBM info banner ── */}
           {isSea && (
             <div style={{ padding: '10px 16px', background: '#f0f9ff', borderBottom: '1px solid #bae6fd', fontSize: 12.5, color: '#0369a1', lineHeight: 1.5 }}>
               <strong>Fret maritime :</strong> le poids facturé est le plus élevé entre le poids réel et le poids volumétrique (L×W×H / 1 000 000 × 500).
-              Les articles volumineux (poids vol. &gt; poids réel) sont majorés à <strong>{fees.bulkyPerCbm ?? 800} CAD/m³</strong>.
+              Les articles volumineux (poids vol. &gt; poids réel) sont majorés à <strong>{fees.bulkyPerCbm ?? 800} {currency}/m³</strong>.
             </div>
           )}
 
@@ -934,18 +978,18 @@ function JEstimator({ onBook, content }) {
                   </div>
                   {/* Dimensions (sea only) */}
                   {isSea && (
-                    <div className="jest__f" style={{ display: 'flex', gap: 4 }}>
+                    <div style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', gap: 4, padding: '0 8px' }}>
                       <input type="number" min="0" step="1" placeholder="L" title="Longueur (cm)"
                         value={ln.lengthCm} onChange={e => updLine(ln.id, 'lengthCm', e.target.value)}
-                        style={{ width: 52 }} />
+                        className="jest__dim-input" />
                       <input type="number" min="0" step="1" placeholder="W" title="Largeur (cm)"
                         value={ln.widthCm} onChange={e => updLine(ln.id, 'widthCm', e.target.value)}
-                        style={{ width: 52 }} />
+                        className="jest__dim-input" />
                       <input type="number" min="0" step="1" placeholder="H" title="Hauteur (cm)"
                         value={ln.heightCm} onChange={e => updLine(ln.id, 'heightCm', e.target.value)}
-                        style={{ width: 52 }} />
+                        className="jest__dim-input" />
                       {c.cbm > 0 && (
-                        <span style={{ fontSize: 11, color: c.isBulky ? '#b45309' : 'var(--ink-400)', alignSelf: 'center', whiteSpace: 'nowrap' }}>
+                        <span style={{ fontSize: 11, color: c.isBulky ? '#b45309' : 'var(--ink-400)', whiteSpace: 'nowrap' }}>
                           {c.cbm.toFixed(3)} m³{c.isBulky ? ' ⚠' : ''}
                         </span>
                       )}
@@ -953,12 +997,12 @@ function JEstimator({ onBook, content }) {
                   )}
                   {/* Transport */}
                   <div className="jest__cell" style={{ textAlign: 'right' }}>
-                    <div>{Math.round(c.transport)} <span className="jest__cur">CAD</span></div>
+                    <div>{Math.round(c.transport)} <span className="jest__cur">{currency}</span></div>
                     <div className="jest__tier">{c.rateLabel}</div>
                   </div>
                   {/* Autres frais */}
                   <div className="jest__cell" style={{ textAlign: 'right', color: c.extras > 0 ? 'var(--brand-600)' : c.extras < 0 ? '#059669' : 'var(--ink-300)' }}>
-                    <div>{c.extras !== 0 ? (c.extras > 0 ? '+' : '') + Math.round(c.extras) + ' ' : '—'}{c.extras !== 0 && <span className="jest__cur">CAD</span>}</div>
+                    <div>{c.extras !== 0 ? (c.extras > 0 ? '+' : '') + Math.round(c.extras) + ' ' : '—'}{c.extras !== 0 && <span className="jest__cur">{currency}</span>}</div>
                     <div className="jest__tier">{isSea ? 'douane · manut. · vol.' : 'douane · formalités · manut.'}</div>
                   </div>
                   {/* Delete */}
@@ -983,7 +1027,7 @@ function JEstimator({ onBook, content }) {
               </div>
               <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, flexWrap: 'wrap' }}>
                 <span className="jest__total-n">{grandTotal}</span>
-                <span className="jest__total-cur">CAD</span>
+                <span className="jest__total-cur">{currency}</span>
                 <span className="jest__transit">· {transitLabel}</span>
               </div>
             </div>
