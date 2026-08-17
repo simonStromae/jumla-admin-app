@@ -263,7 +263,7 @@ export default function WorldExpansion({ content }) {
             gap: 20px;
           }
           .we-routes-grid {
-            grid-template-columns: 1fr;
+            grid-template-columns: 1fr 1fr;
             gap: 28px;
           }
         }
