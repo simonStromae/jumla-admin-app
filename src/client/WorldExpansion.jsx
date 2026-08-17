@@ -105,8 +105,12 @@ function isCanada(lat, lng)   { return lat > 43  && lat < 84 && lng > -141 && ln
 function isCameroon(lat, lng) { return lat > 2   && lat < 13 && lng > 8   && lng < 16.5; }
 function isNigeria(lat, lng)  { return lat > 4   && lat < 14 && lng > 2.5 && lng < 15; }
 
+const LAT_MAX = 82, LAT_MIN = -55;
 function project(lat, lng, W, H) {
-  return { x: ((lng + 180) / 360) * W, y: ((90 - lat) / 180) * H };
+  return {
+    x: ((lng + 180) / 360) * W,
+    y: ((LAT_MAX - lat) / (LAT_MAX - LAT_MIN)) * H,
+  };
 }
 function bezier(t, a, b, c) {
   const mt = 1 - t;
@@ -177,7 +181,7 @@ function WorldMapCanvas() {
           const y = r * GAP * 0.866;
           if (x > W + GAP) continue;
           const lng = (x / W) * 360 - 180;
-          const lat = 90 - (y / H) * 180;
+          const lat = LAT_MAX - (y / H) * (LAT_MAX - LAT_MIN);
           if (!isLand(lat, lng)) continue;
           ctx.fillStyle = dotColor(lat, lng);
           ctx.beginPath();
