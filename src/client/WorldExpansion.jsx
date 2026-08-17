@@ -180,22 +180,15 @@ export default function WorldExpansion({ content }) {
       fontFamily: "'Inter', system-ui, sans-serif",
       overflow: 'hidden',
     }}>
-      {/* ── World map image (high-quality dots from EPS) ── */}
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
-        src="/world-dots.png"
-        alt=""
-        aria-hidden="true"
-        style={{
-          position: 'absolute', inset: 0,
-          width: '100%', height: '100%',
-          objectFit: 'cover',
-          objectPosition: 'center 30%',
-          opacity: 0.13,
-          pointerEvents: 'none',
-          userSelect: 'none',
-        }}
-      />
+      {/* ── World map image — stretched to fill exact section bounds ── */}
+      <div style={{
+        position: 'absolute', inset: 0,
+        backgroundImage: 'url(/world-dots.png)',
+        backgroundSize: '100% 100%',
+        backgroundRepeat: 'no-repeat',
+        opacity: 0.14,
+        pointerEvents: 'none',
+      }} />
 
       {/* ── Animated arcs + packets canvas ── */}
       <ArcCanvas />
