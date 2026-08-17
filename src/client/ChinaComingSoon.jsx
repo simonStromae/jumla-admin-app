@@ -1,32 +1,5 @@
 'use client';
-import { useEffect, useRef, useState } from 'react';
-
-/* ── Land test — approximate continental bounding boxes ── */
-function isLand(lat, lng) {
-  if (lat > 7  && lat < 84  && lng > -168 && lng < -52)  return true; // North America
-  if (lat > -56 && lat < 13  && lng > -82  && lng < -34)  return true; // South America
-  if (lat > 36  && lat < 72  && lng > -10  && lng < 40)   return true; // Europe
-  if (lat > -35 && lat < 37  && lng > -18  && lng < 52)   return true; // Africa
-  if (lat > 50  && lat < 78  && lng > 40   && lng < 180)  return true; // Russia / N Asia
-  if (lat > 18  && lat < 55  && lng > 72   && lng < 145)  return true; // China / E Asia
-  if (lat > 5   && lat < 37  && lng > 60   && lng < 100)  return true; // South Asia
-  if (lat > -10 && lat < 22  && lng > 95   && lng < 145)  return true; // SE Asia
-  if (lat > -45 && lat < -10 && lng > 113  && lng < 155)  return true; // Australia
-  if (lat > 59  && lat < 84  && lng > -54  && lng < -15)  return true; // Greenland
-  if (lat > 30  && lat < 46  && lng > 129  && lng < 146)  return true; // Japan
-  if (lat > 55  && lat < 72  && lng > 4    && lng < 32)   return true; // Scandinavia
-  return false;
-}
-function isChina(lat, lng) { return lat > 18 && lat < 42 && lng > 100 && lng < 125; }
-function isCanada(lat, lng) { return lat > 42 && lat < 84 && lng > -141 && lng < -52; }
-
-function bezier(t, a, b, c) { const mt = 1 - t; return mt * mt * a + 2 * mt * t * b + t * t * c; }
-function project(lat, lng, W, H) { return { x: ((lng + 180) / 360) * W, y: ((90 - lat) / 180) * H }; }
-
-const ARC = { p0: { lat: 23, lng: 113.3 }, p1: { lat: 78, lng: -40 }, p2: { lat: 45.5, lng: -73.6 } };
-function arcPoint(t, W, H) {
-  return project(bezier(t, ARC.p0.lat, ARC.p1.lat, ARC.p2.lat), bezier(t, ARC.p0.lng, ARC.p1.lng, ARC.p2.lng), W, H);
-}
+import { useEffect, useState } from 'react';
 
 function pad(n) { return String(n).padStart(2, '0'); }
 
@@ -51,95 +24,6 @@ function useCountdown(launchDate) {
   return vals;
 }
 
-/* ── Animated canvas world map ── */
-function WorldMapCanvas() {
-  const ref = useRef(null);
-  const raf = useRef(null);
-  const pkts = useRef([0.05, 0.30, 0.55, 0.80].map(t => ({ t, speed: 0.0014 + Math.random() * 0.0008 })));
-
-  useEffect(() => {
-    const canvas = ref.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d');
-
-    function resize() { canvas.width = canvas.offsetWidth; canvas.height = canvas.offsetHeight; }
-
-    function draw() {
-      const W = canvas.width, H = canvas.height;
-      if (!W || !H) { raf.current = requestAnimationFrame(draw); return; }
-      ctx.clearRect(0, 0, W, H);
-
-      const GAP = Math.max(8, Math.min(12, W / 110));
-      const DOT = GAP * 0.21;
-      const rows = Math.ceil(H / (GAP * 0.866)) + 1;
-      const cols = Math.ceil(W / GAP) + 2;
-
-      for (let r = 0; r < rows; r++) {
-        for (let c = 0; c < cols; c++) {
-          const x = c * GAP + (r % 2 === 0 ? 0 : GAP / 2);
-          const y = r * GAP * 0.866;
-          if (x > W + GAP) continue;
-          const lng = (x / W) * 360 - 180;
-          const lat = 90 - (y / H) * 180;
-          if (!isLand(lat, lng)) continue;
-          ctx.fillStyle = isChina(lat, lng)
-            ? 'rgba(0,180,216,0.75)'
-            : isCanada(lat, lng)
-            ? 'rgba(0,180,216,0.5)'
-            : 'rgba(255,255,255,0.09)';
-          ctx.beginPath();
-          ctx.arc(x, y, DOT, 0, Math.PI * 2);
-          ctx.fill();
-        }
-      }
-
-      // Arc (dashed)
-      ctx.save();
-      ctx.setLineDash([3, 8]);
-      ctx.lineWidth = 1.5;
-      ctx.strokeStyle = 'rgba(0,180,216,0.25)';
-      ctx.beginPath();
-      const s = arcPoint(0, W, H);
-      ctx.moveTo(s.x, s.y);
-      for (let t = 0.02; t <= 1; t += 0.02) { const p = arcPoint(t, W, H); ctx.lineTo(p.x, p.y); }
-      ctx.stroke();
-      ctx.restore();
-
-      // Animated packets
-      for (const pkt of pkts.current) {
-        const pt = arcPoint(pkt.t, W, H);
-        const g = ctx.createRadialGradient(pt.x, pt.y, 0, pt.x, pt.y, 8);
-        g.addColorStop(0, 'rgba(0,180,216,.8)');
-        g.addColorStop(1, 'rgba(0,180,216,0)');
-        ctx.fillStyle = g;
-        ctx.beginPath(); ctx.arc(pt.x, pt.y, 8, 0, Math.PI * 2); ctx.fill();
-        ctx.fillStyle = '#00B4D8';
-        ctx.beginPath(); ctx.arc(pt.x, pt.y, 2.5, 0, Math.PI * 2); ctx.fill();
-        pkt.t += pkt.speed;
-        if (pkt.t > 1) pkt.t = 0;
-      }
-
-      // Origin / destination dots
-      ctx.shadowColor = '#00B4D8'; ctx.shadowBlur = 14;
-      ctx.fillStyle = '#00B4D8';
-      [arcPoint(0, W, H), arcPoint(1, W, H)].forEach(pt => {
-        ctx.beginPath(); ctx.arc(pt.x, pt.y, 5, 0, Math.PI * 2); ctx.fill();
-      });
-      ctx.shadowBlur = 0;
-
-      raf.current = requestAnimationFrame(draw);
-    }
-
-    resize();
-    draw();
-    const ro = new ResizeObserver(resize);
-    ro.observe(canvas);
-    return () => { cancelAnimationFrame(raf.current); ro.disconnect(); };
-  }, []);
-
-  return <canvas ref={ref} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%' }} />;
-}
-
 const DEFAULTS = {
   eyebrow:     'Bientôt disponible',
   originFlag:  '🇨🇳',
@@ -151,160 +35,240 @@ const DEFAULTS = {
   ctaSubtitle: 'Expédiez dès aujourd\'hui avec Jumla Cargo.',
   ctaButton:   'Réserver une expédition →',
   launchLabel: 'Lancement prévu : 31 août 2026',
+  bgImage:     '',
 };
 
-/* ── Coming soon section ── */
+const CD_LABELS = ['Jours', 'Heures', 'Min', 'Sec'];
+
 export default function ChinaComingSoon({ onBook, content }) {
   const c = { ...DEFAULTS, ...content };
   const { d, h, m, s } = useCountdown(c.launchDate);
   const [blink, setBlink] = useState(true);
-  useEffect(() => { const id = setInterval(() => setBlink(v => !v), 1000); return () => clearInterval(id); }, []);
+  useEffect(() => {
+    const id = setInterval(() => setBlink(v => !v), 1000);
+    return () => clearInterval(id);
+  }, []);
 
-  const CD_UNITS = [
-    { val: d, label: 'Jours' },
-    { val: h, label: 'Heures' },
-    { val: m, label: 'Minutes' },
-    { val: s, label: 'Secondes' },
-  ];
+  const cdVals = [d, h, m, s];
 
   return (
     <section style={{
       position: 'relative',
       minHeight: '100vh',
-      display: 'flex', flexDirection: 'column',
-      alignItems: 'center', justifyContent: 'center',
+      display: 'flex',
+      flexDirection: 'column',
+      justifyContent: 'flex-end',
       overflow: 'hidden',
-      background: '#0B1220',
       fontFamily: "'Inter', system-ui, sans-serif",
+      background: '#060c18',
     }}>
-      <WorldMapCanvas />
 
-      {/* Radial + edge vignette */}
+      {/* ── Background ── */}
+      {c.bgImage ? (
+        /* eslint-disable-next-line @next/next/no-img-element */
+        <img
+          src={c.bgImage}
+          alt=""
+          aria-hidden="true"
+          style={{
+            position: 'absolute', inset: 0,
+            width: '100%', height: '100%',
+            objectFit: 'cover', objectPosition: 'center',
+            pointerEvents: 'none',
+          }}
+        />
+      ) : (
+        /* Default: layered gradient that evokes depth */
+        <div style={{
+          position: 'absolute', inset: 0,
+          background: `
+            radial-gradient(ellipse 80% 60% at 70% 30%, rgba(0,50,80,.55) 0%, transparent 65%),
+            radial-gradient(ellipse 60% 50% at 20% 70%, rgba(27,79,216,.18) 0%, transparent 60%),
+            linear-gradient(160deg, #0d1a2e 0%, #060c18 60%)
+          `,
+        }} />
+      )}
+
+      {/* ── Dark overlay — heavier at bottom where text lives ── */}
       <div style={{
         position: 'absolute', inset: 0, pointerEvents: 'none',
-        background: `
-          radial-gradient(ellipse 70% 50% at 50% 50%, transparent 15%, rgba(11,18,32,.92) 100%),
-          linear-gradient(to bottom, #0B1220 0%, transparent 14%, transparent 82%, #0B1220 100%)
-        `,
+        background: c.bgImage
+          ? 'linear-gradient(to top, rgba(6,12,24,.96) 0%, rgba(6,12,24,.75) 45%, rgba(6,12,24,.35) 100%)'
+          : 'linear-gradient(to top, rgba(6,12,24,.85) 0%, transparent 60%)',
       }} />
 
-      {/* Content — follows .jc max-width convention */}
+      {/* ── Subtle top vignette ── */}
+      <div style={{
+        position: 'absolute', top: 0, left: 0, right: 0, height: '30%', pointerEvents: 'none',
+        background: 'linear-gradient(to bottom, rgba(6,12,24,.5) 0%, transparent 100%)',
+      }} />
+
+      {/* ── Content — bottom-left layout ── */}
       <div style={{
         position: 'relative', zIndex: 10,
-        textAlign: 'center',
-        padding: '88px clamp(20px, 5vw, 72px) 104px',
-        maxWidth: 760, width: '100%', margin: '0 auto',
+        width: '100%',
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'flex-end',
+        gap: 40,
+        padding: 'clamp(32px,5vh,64px) clamp(24px,5vw,72px) clamp(48px,7vh,88px)',
+        flexWrap: 'wrap',
       }}>
 
-        {/* Eyebrow chip */}
-        <div style={{
-          display: 'inline-flex', alignItems: 'center', gap: 8, marginBottom: 36,
-          fontSize: 11, fontWeight: 700, letterSpacing: '.12em', textTransform: 'uppercase',
-          color: '#00B4D8',
-          background: 'rgba(0,180,216,.1)',
-          border: '1px solid rgba(0,180,216,.22)',
-          borderRadius: 999, padding: '6px 16px',
-        }}>
-          <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#00B4D8', animation: 'cspin 2.2s ease-in-out infinite' }} />
-          {c.eyebrow}
-        </div>
+        {/* ── Left block ── */}
+        <div style={{ flex: '1 1 380px', maxWidth: 580 }}>
 
-        {/* Flags row */}
-        <div style={{ fontSize: 'clamp(28px, 4vw, 40px)', marginBottom: 10, lineHeight: 1 }}>
-          {c.originFlag}&nbsp;&nbsp;<span style={{ color: '#00B4D8', fontSize: '.7em', verticalAlign: 'middle' }}>→</span>&nbsp;&nbsp;{c.destFlag}
-        </div>
-
-        {/* Headline */}
-        <h2 style={{
-          fontSize: 'clamp(34px, 6.5vw, 64px)',
-          fontWeight: 800, lineHeight: 1.06, letterSpacing: '-.03em',
-          color: 'white', margin: '0 0 14px',
-          whiteSpace: 'nowrap',
-        }}>
-          {c.title}
-        </h2>
-
-        <p style={{ fontSize: 15, color: 'rgba(255,255,255,.48)', margin: '0 0 52px', lineHeight: 1.65 }}>
-          {c.subtitle}
-        </p>
-
-        {/* Countdown */}
-        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'center', marginBottom: 64 }}>
-          {CD_UNITS.map((unit, i) => (
-            <div key={unit.label} style={{ display: 'flex', alignItems: 'flex-start' }}>
-              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', minWidth: 'clamp(58px, 11vw, 96px)' }}>
-                <span style={{
-                  fontSize: 'clamp(40px, 8.5vw, 80px)', fontWeight: 800,
-                  lineHeight: 1, letterSpacing: '-.04em',
-                  fontVariantNumeric: 'tabular-nums', color: 'white',
-                }}>
-                  {unit.val}
-                </span>
-                <span style={{
-                  fontSize: 9, letterSpacing: '.16em', textTransform: 'uppercase',
-                  color: 'rgba(255,255,255,.35)', fontWeight: 600, marginTop: 8,
-                }}>
-                  {unit.label}
-                </span>
-              </div>
-              {i < 3 && (
-                <span style={{
-                  fontSize: 'clamp(32px, 7vw, 64px)', fontWeight: 300,
-                  color: '#00B4D8', lineHeight: 1, padding: '0 3px',
-                  opacity: blink ? 1 : 0.12, transition: 'none',
-                }}>:</span>
-              )}
-            </div>
-          ))}
-        </div>
-
-        {/* Divider */}
-        <div style={{
-          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 14, marginBottom: 40,
-          color: 'rgba(255,255,255,.25)',
-          fontSize: 11, letterSpacing: '.12em', textTransform: 'uppercase', fontWeight: 600,
-        }}>
-          <span style={{ width: 100, height: 1, background: 'rgba(255,255,255,.12)', flexShrink: 0 }} />
-          En attendant
-          <span style={{ width: 100, height: 1, background: 'rgba(255,255,255,.12)', flexShrink: 0 }} />
-        </div>
-
-        {/* CTA block */}
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 18 }}>
-          <p style={{ fontSize: 15, color: 'rgba(255,255,255,.55)', lineHeight: 1.6 }}>
-            <strong style={{ color: 'white', fontWeight: 700 }}>{c.ctaTitle}</strong>
-            <br />
-            {c.ctaSubtitle}
-          </p>
-          <button
-            onClick={onBook}
-            style={{
-              display: 'inline-flex', alignItems: 'center', gap: 10,
-              background: 'linear-gradient(90deg, #00B4D8, #1B4FD8)',
-              color: 'white', fontWeight: 700, fontSize: 14.5,
-              padding: '13px 28px', borderRadius: 8,
-              border: 'none', cursor: 'pointer', letterSpacing: '.01em',
-              transition: 'opacity .18s, transform .18s',
-            }}
-            onMouseEnter={e => { e.currentTarget.style.opacity = '.88'; e.currentTarget.style.transform = 'translateY(-2px)'; }}
-            onMouseLeave={e => { e.currentTarget.style.opacity = '1'; e.currentTarget.style.transform = 'none'; }}
-          >
-            {c.ctaButton}
-          </button>
-          <span style={{
-            fontSize: 11.5, color: 'rgba(255,255,255,.3)',
-            border: '1px solid rgba(255,255,255,.1)', borderRadius: 6,
-            padding: '4px 12px', letterSpacing: '.04em',
+          {/* Eyebrow badge */}
+          <div style={{
+            display: 'inline-flex', alignItems: 'center', gap: 8, marginBottom: 28,
+            fontSize: 11, fontWeight: 700, letterSpacing: '.12em', textTransform: 'uppercase',
+            color: '#00B4D8',
+            background: 'rgba(0,180,216,.10)',
+            border: '1px solid rgba(0,180,216,.22)',
+            borderRadius: 999, padding: '6px 16px',
           }}>
-            {c.launchLabel}
-          </span>
+            <span style={{
+              width: 6, height: 6, borderRadius: '50%', background: '#00B4D8',
+              animation: 'cs-pulse 2.2s ease-in-out infinite',
+            }} />
+            {c.eyebrow}
+          </div>
+
+          {/* Flag row */}
+          <div style={{ fontSize: 'clamp(22px,3vw,32px)', marginBottom: 14, lineHeight: 1 }}>
+            {c.originFlag}&nbsp;&nbsp;
+            <span style={{ color: '#00B4D8', fontSize: '.75em', verticalAlign: 'middle' }}>→</span>
+            &nbsp;&nbsp;{c.destFlag}
+          </div>
+
+          {/* Headline */}
+          <h2 style={{
+            fontSize: 'clamp(36px,5.5vw,72px)',
+            fontWeight: 800, lineHeight: 1.05, letterSpacing: '-.03em',
+            color: 'white', margin: '0 0 14px',
+            whiteSpace: 'nowrap',
+          }}>
+            {c.title}
+          </h2>
+
+          {/* Subtitle */}
+          <p style={{
+            fontSize: 14, color: 'rgba(255,255,255,.45)',
+            lineHeight: 1.65, margin: '0 0 36px',
+            maxWidth: 460,
+          }}>
+            {c.subtitle}
+          </p>
+
+          {/* Countdown */}
+          <div style={{ display: 'flex', alignItems: 'flex-start', gap: 4, marginBottom: 36 }}>
+            {cdVals.map((val, i) => (
+              <div key={CD_LABELS[i]} style={{ display: 'flex', alignItems: 'flex-start' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', minWidth: 'clamp(52px,8vw,76px)' }}>
+                  <span style={{
+                    fontSize: 'clamp(32px,5vw,56px)', fontWeight: 800,
+                    lineHeight: 1, letterSpacing: '-.04em',
+                    fontVariantNumeric: 'tabular-nums', color: 'white',
+                  }}>
+                    {val}
+                  </span>
+                  <span style={{
+                    fontSize: 9, letterSpacing: '.14em', textTransform: 'uppercase',
+                    color: 'rgba(255,255,255,.32)', fontWeight: 600, marginTop: 6,
+                  }}>
+                    {CD_LABELS[i]}
+                  </span>
+                </div>
+                {i < 3 && (
+                  <span style={{
+                    fontSize: 'clamp(26px,4vw,46px)', fontWeight: 300,
+                    color: '#00B4D8', lineHeight: 1, padding: '0 2px',
+                    opacity: blink ? 1 : 0.15, transition: 'none',
+                  }}>:</span>
+                )}
+              </div>
+            ))}
+          </div>
+
+          {/* Primary CTA */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <button
+              onClick={onBook}
+              style={{
+                display: 'inline-flex', alignItems: 'center', gap: 8,
+                background: 'linear-gradient(90deg, #00B4D8, #1B4FD8)',
+                color: 'white', fontWeight: 700, fontSize: 14,
+                padding: '13px 26px', borderRadius: 999,
+                border: 'none', cursor: 'pointer', letterSpacing: '.01em',
+                transition: 'opacity .18s, transform .18s',
+              }}
+              onMouseEnter={e => { e.currentTarget.style.opacity = '.85'; e.currentTarget.style.transform = 'translateY(-2px)'; }}
+              onMouseLeave={e => { e.currentTarget.style.opacity = '1'; e.currentTarget.style.transform = 'none'; }}
+            >
+              {c.ctaButton}
+            </button>
+            <span style={{
+              fontSize: 11, color: 'rgba(255,255,255,.28)',
+              border: '1px solid rgba(255,255,255,.1)', borderRadius: 999,
+              padding: '5px 14px', letterSpacing: '.04em', whiteSpace: 'nowrap',
+            }}>
+              {c.launchLabel}
+            </span>
+          </div>
         </div>
+
+        {/* ── Right block — "En attendant" ── */}
+        <div style={{
+          flex: '0 1 300px',
+          display: 'flex', flexDirection: 'column', gap: 16,
+          paddingBottom: 4,
+        }}>
+          <div style={{
+            padding: '20px 24px',
+            background: 'rgba(255,255,255,.04)',
+            backdropFilter: 'blur(12px)',
+            border: '1px solid rgba(255,255,255,.08)',
+            borderRadius: 16,
+          }}>
+            <div style={{
+              fontSize: 10, fontWeight: 700, letterSpacing: '.12em', textTransform: 'uppercase',
+              color: 'rgba(255,255,255,.35)', marginBottom: 12,
+            }}>
+              En attendant
+            </div>
+            <p style={{ fontSize: 14, color: 'white', fontWeight: 600, lineHeight: 1.5, margin: '0 0 6px' }}>
+              {c.ctaTitle}
+            </p>
+            <p style={{ fontSize: 13, color: 'rgba(255,255,255,.45)', lineHeight: 1.55, margin: '0 0 16px' }}>
+              {c.ctaSubtitle}
+            </p>
+            <button
+              onClick={onBook}
+              style={{
+                display: 'inline-flex', alignItems: 'center', gap: 6,
+                background: 'rgba(0,180,216,.12)',
+                border: '1px solid rgba(0,180,216,.3)',
+                color: '#00B4D8', fontWeight: 600, fontSize: 13,
+                padding: '9px 18px', borderRadius: 8,
+                cursor: 'pointer', transition: 'background .18s',
+              }}
+              onMouseEnter={e => { e.currentTarget.style.background = 'rgba(0,180,216,.2)'; }}
+              onMouseLeave={e => { e.currentTarget.style.background = 'rgba(0,180,216,.12)'; }}
+            >
+              Réserver maintenant →
+            </button>
+          </div>
+        </div>
+
       </div>
 
       <style>{`
-        @keyframes cspin {
+        @keyframes cs-pulse {
           0%, 100% { opacity: 1; transform: scale(1); }
           50%       { opacity: .3; transform: scale(.6); }
+        }
+        @media (max-width: 768px) {
+          .cs-right { display: none; }
         }
       `}</style>
     </section>

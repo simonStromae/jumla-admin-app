@@ -65,6 +65,7 @@ const DEFAULTS = {
       ctaSubtitle: 'Expédiez dès aujourd\'hui avec Jumla Cargo.',
       ctaButton:   'Réserver une expédition →',
       launchLabel: 'Lancement prévu : 31 août 2026',
+      bgImage:     '',
     },
     worldExpansion: {
       eyebrow:  'Expansion mondiale',
@@ -136,6 +137,7 @@ const DEFAULTS = {
       ctaSubtitle: 'Ship today with Jumla Cargo.',
       ctaButton:   'Book a shipment →',
       launchLabel: 'Launch date: August 31, 2026',
+      bgImage:     '',
     },
     worldExpansion: {
       eyebrow:  'Global expansion',
@@ -417,6 +419,18 @@ export default function LandingEditor() {
           <InfoBanner>
             Section "Bientôt disponible" affichée en premier sur la page d'accueil. Modifiez les textes, les drapeaux, la date de lancement et le CTA.
           </InfoBanner>
+
+          <EditorCard title="Visuel de fond" icon={I.Map}>
+            <Field label="URL de l'image de fond" hint="laisser vide pour le fond dégradé par défaut">
+              <input className="input" placeholder="https://..." value={c.comingSoon.bgImage || ''} onChange={e => set('comingSoon.bgImage', e.target.value)} />
+            </Field>
+            {c.comingSoon.bgImage && (
+              <div style={{ borderRadius: 8, overflow: 'hidden', height: 120 }}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={c.comingSoon.bgImage} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              </div>
+            )}
+          </EditorCard>
 
           <EditorCard title="Annonce route" icon={I.Plane}>
             <Field label="Texte de l'eyebrow" hint="petit badge en haut">
