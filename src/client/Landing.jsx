@@ -923,12 +923,8 @@ function JEstimator({ onBook, content }) {
                         <div style={{ fontWeight: 700, fontSize: 14, color: 'var(--ink-900)', lineHeight: 1.3 }}>
                           {rr.label ?? `${rr.fromIATA} → ${rr.toIATA}`}
                         </div>
-                        <div style={{ fontSize: 12, color: 'var(--ink-400)', marginTop: 2, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                          <span>{sea ? '🚢 Fret maritime' : '✈️ Fret aérien'}</span>
-                          <span>·</span>
-                          <span>Transit {sea ? `${rr.transitDays ?? 45}–60` : `max ${rr.transitDays ?? 14}`} jours</span>
-                          <span>·</span>
-                          <span>{rr.currency ?? 'CAD'}</span>
+                        <div style={{ fontSize: 12, color: 'var(--ink-400)', marginTop: 2, lineHeight: 1.4 }}>
+                          {sea ? '🚢 Fret maritime' : '✈️ Fret aérien'} · Transit {sea ? `${rr.transitDays ?? 45}–60` : `max ${rr.transitDays ?? 14}`} jours · {rr.currency ?? 'CAD'}
                         </div>
                       </div>
                       {isSelected && (
@@ -953,8 +949,8 @@ function JEstimator({ onBook, content }) {
           )}
 
           {/* ── Lines ── */}
-          <div className="jest__lines">
-            <div className="jest__lhead" style={{ gridTemplateColumns: isSea ? '2fr 1fr 2fr 1fr 1fr 28px' : '2fr 1fr 1fr 1fr 28px' }}>
+          <div className={`jest__lines${isSea ? ' jest__lines--sea' : ''}`}>
+            <div className={`jest__lhead${isSea ? ' jest__lhead--sea' : ''}`}>
               <span>Catégorie</span>
               <span>Poids (kg)</span>
               {isSea && <span style={{ color: '#0369a1' }}>Dimensions cm (L×W×H)</span>}
@@ -965,7 +961,7 @@ function JEstimator({ onBook, content }) {
             {lines.map((ln, i) => {
               const c = computed[i];
               return (
-                <div className="jest__line" key={ln.id} style={{ gridTemplateColumns: isSea ? '2fr 1fr 2fr 1fr 1fr 28px' : '2fr 1fr 1fr 1fr 28px' }}>
+                <div className={`jest__line${isSea ? ' jest__line--sea' : ''}`} key={ln.id}>
                   {/* Category */}
                   <div className="jest__f">
                     <select value={ln.cat} onChange={e => updLine(ln.id, 'cat', e.target.value)}>
@@ -978,7 +974,7 @@ function JEstimator({ onBook, content }) {
                   </div>
                   {/* Dimensions (sea only) */}
                   {isSea && (
-                    <div style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', gap: 4, padding: '0 8px' }}>
+                    <div className="jest__dims">
                       <input type="number" min="0" step="1" placeholder="L" title="Longueur (cm)"
                         value={ln.lengthCm} onChange={e => updLine(ln.id, 'lengthCm', e.target.value)}
                         className="jest__dim-input" />
@@ -989,7 +985,7 @@ function JEstimator({ onBook, content }) {
                         value={ln.heightCm} onChange={e => updLine(ln.id, 'heightCm', e.target.value)}
                         className="jest__dim-input" />
                       {c.cbm > 0 && (
-                        <span style={{ fontSize: 11, color: c.isBulky ? '#b45309' : 'var(--ink-400)', whiteSpace: 'nowrap' }}>
+                        <span className="jest__cbm-tag" style={{ color: c.isBulky ? '#b45309' : 'var(--ink-400)' }}>
                           {c.cbm.toFixed(3)} m³{c.isBulky ? ' ⚠' : ''}
                         </span>
                       )}
