@@ -135,7 +135,7 @@ export default function ChinaComingSoon({ onBook, content }) {
           </div>
 
           {/* Flag row */}
-          <div style={{ fontSize: 'clamp(22px,3vw,32px)', marginBottom: 14, lineHeight: 1 }}>
+          <div style={{ fontSize: 'clamp(22px,3vw,32px)', marginBottom: 14, lineHeight: 1, color: 'white' }}>
             {c.originFlag}&nbsp;&nbsp;
             <span style={{ color: '#00B4D8', fontSize: '.75em', verticalAlign: 'middle' }}>→</span>
             &nbsp;&nbsp;{c.destFlag}
@@ -191,7 +191,14 @@ export default function ChinaComingSoon({ onBook, content }) {
           </div>
 
           {/* Primary CTA */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 12 }}>
+            <span style={{
+              fontSize: 11, color: 'rgba(255,255,255,.38)',
+              border: '1px solid rgba(255,255,255,.1)', borderRadius: 999,
+              padding: '5px 14px', letterSpacing: '.04em',
+            }}>
+              {c.launchLabel}
+            </span>
             <button
               onClick={onBook}
               style={{
@@ -207,13 +214,6 @@ export default function ChinaComingSoon({ onBook, content }) {
             >
               {c.ctaButton}
             </button>
-            <span style={{
-              fontSize: 11, color: 'rgba(255,255,255,.28)',
-              border: '1px solid rgba(255,255,255,.1)', borderRadius: 999,
-              padding: '5px 14px', letterSpacing: '.04em', whiteSpace: 'nowrap',
-            }}>
-              {c.launchLabel}
-            </span>
           </div>
         </div>
 
