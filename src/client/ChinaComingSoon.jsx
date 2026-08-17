@@ -205,7 +205,7 @@ export default function ChinaComingSoon({ onBook, content }) {
                 display: 'inline-flex', alignItems: 'center', gap: 8,
                 background: 'linear-gradient(90deg, #00B4D8, #1B4FD8)',
                 color: 'white', fontWeight: 700, fontSize: 14,
-                padding: '13px 26px', borderRadius: 999,
+                padding: '13px 26px', borderRadius: 12,
                 border: 'none', cursor: 'pointer', letterSpacing: '.01em',
                 transition: 'opacity .18s, transform .18s',
               }}
