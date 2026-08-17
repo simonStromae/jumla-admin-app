@@ -86,6 +86,120 @@ export function routeFeesToCalcFees(storedFees) {
   };
 }
 
+/* ─── Sea freight ─── */
+
+export const DEFAULT_SEA_TIERS = [
+  { from: 1,      to: 10,    transportFlat: 100,                         douaneFlat: 10,    formalitesFlat: 10   },
+  { from: 10.5,   to: 50,    transportPerKg: 9.5,  manutentionFlat: 15, douanePerKg: 2,    formalitesPerKg: 1.5 },
+  { from: 50.5,   to: 100,   transportPerKg: 8,    manutentionFlat: 20, douanePerKg: 1.5,  formalitesPerKg: 1   },
+  { from: 100.5,  to: 200,   transportPerKg: 6.5,  manutentionFlat: 30, douanePerKg: 1.5,  formalitesPerKg: 1   },
+  { from: 200.5,  to: 300,   transportPerKg: 5.5,  manutentionFlat: 40, douanePerKg: 1,    formalitesPerKg: 0.75},
+  { from: 300.5,  to: 1000,  transportPerKg: 4.5,  manutentionFlat: 60, douanePerKg: 1,    formalitesPerKg: 0.75},
+  { from: 1000.5, to: 99999, transportPerKg: 3.5,  manutentionFlat: 80, douanePerKg: 0.75, formalitesPerKg: 0.5 },
+];
+
+export const DEFAULT_SEA_FEES = {
+  ...DEFAULT_FEES,
+  tiers: DEFAULT_SEA_TIERS,
+  transportMode: 'sea',
+  bulkyPerCbm: 800,
+  highValueThreshold: 500,
+  highValuePct: 2,
+};
+
+// L × W × H in cm → cubic metres
+export function calcCbm(lengthCm, widthCm, heightCm) {
+  return (parseFloat(lengthCm) * parseFloat(widthCm) * parseFloat(heightCm)) / 1_000_000;
+}
+
+// Sea freight pricing: chargeable weight = max(actual kg, CBM × 500)
+// items: [{ cat, kg, lengthCm?, widthCm?, heightCm?, declaredValue? }]
+export function calcSeaPrice(items, fees) {
+  const f = fees || DEFAULT_SEA_FEES;
+  const tiers = f.tiers?.length ? f.tiers : DEFAULT_SEA_TIERS;
+  const CBM_TO_KG = 500;
+  const bulkyPerCbm = f.bulkyPerCbm ?? 800;
+
+  let totalChargeableKg = 0;
+  let totalCbm = 0;
+  let bulkyCharge = 0;
+
+  const itemDetails = items.map(item => {
+    const kg = parseFloat(item.kg) || 0;
+    const l = parseFloat(item.lengthCm) || 0;
+    const w = parseFloat(item.widthCm)  || 0;
+    const h = parseFloat(item.heightCm) || 0;
+    const cbm       = (l && w && h) ? r2(l * w * h / 1_000_000) : 0;
+    const volWeight = r2(cbm * CBM_TO_KG);
+    const chargeableKg = cbm > 0 ? Math.max(kg, volWeight) : kg;
+    const isBulky   = cbm > 0 && volWeight > kg;
+    totalChargeableKg += chargeableKg;
+    totalCbm          += cbm;
+    if (isBulky) bulkyCharge = r2(bulkyCharge + cbm * bulkyPerCbm);
+    return { ...item, kg, cbm, volWeight, chargeableKg, isBulky };
+  });
+
+  totalChargeableKg = r2(totalChargeableKg);
+  totalCbm          = r2(totalCbm);
+  if (totalChargeableKg <= 0) return null;
+
+  const tier = findTier(tiers, totalChargeableKg);
+  if (!tier) return null;
+
+  let transport = 0;
+  if (tier.transportFlat !== undefined)       transport = tier.transportFlat;
+  else if (tier.transportPerKg !== undefined) transport = r2(tier.transportPerKg * totalChargeableKg);
+
+  const suppRates = f.supplements || DEFAULT_FEES.supplements;
+  const catKgMap = {};
+  itemDetails.forEach(item => {
+    if (item.chargeableKg <= 0) return;
+    const cat = item.cat || 'standard';
+    catKgMap[cat] = (catKgMap[cat] || 0) + item.chargeableKg;
+  });
+  const catSurchargeLines = Object.entries(catKgMap).map(([catId, kg]) => {
+    const def  = ITEM_CATEGORIES.find(c => c.id === catId);
+    const rate = suppRates[catId] ?? def?.extraPerKg ?? 0;
+    return { catId, label: def?.label || catId, kg, rate, amount: r2(kg * rate) };
+  }).filter(l => l.rate !== 0);
+  const catSurchargeTotal = r2(catSurchargeLines.reduce((s, l) => s + l.amount, 0));
+
+  let manutention = 0;
+  if (tier.manutentionFlat !== undefined) manutention = tier.manutentionFlat;
+  else if (tier.manutentionPerUnit !== undefined) {
+    manutention = r2(Math.max(tier.manutentionMin || 0, tier.manutentionPerUnit * items.length));
+  }
+
+  let douane = 0;
+  if (tier.douaneFlat !== undefined)       douane = tier.douaneFlat;
+  else if (tier.douanePerKg !== undefined) douane = r2(tier.douanePerKg * totalChargeableKg);
+
+  let formalites = 0;
+  if (tier.formalitesFlat !== undefined)       formalites = tier.formalitesFlat;
+  else if (tier.formalitesPerKg !== undefined) formalites = r2(tier.formalitesPerKg * totalChargeableKg);
+
+  const highValueThreshold = f.highValueThreshold ?? 500;
+  const highValuePct       = f.highValuePct ?? 2;
+  const totalDeclared      = itemDetails.reduce((s, i) => s + (parseFloat(i.declaredValue) || 0), 0);
+  const highValueSurcharge = totalDeclared > highValueThreshold ? r2(totalDeclared * highValuePct / 100) : 0;
+
+  const sousTotal  = r2(transport + catSurchargeTotal + manutention + douane + formalites + bulkyCharge + highValueSurcharge);
+  const marginPct  = f.marginPct ?? DEFAULT_FEES.marginPct;
+  const marge      = r2(sousTotal * (marginPct / 100));
+  const prixClient = r2(sousTotal + marge);
+
+  return {
+    totalChargeableKg, totalCbm, tier,
+    transport, catSurchargeLines, catSurchargeTotal,
+    bulkyCharge, highValueSurcharge, totalDeclared,
+    manutention, douane, formalites,
+    sousTotal, marginPct, marge, prixClient, total: prixClient,
+    itemDetails,
+  };
+}
+
+/* ─── Air freight ─── */
+
 export function calcPrice(items, fees, addons = {}, delivery = 'expedition', cityZone = null) {
   const totalKg = r2(items.reduce((s, i) => s + (parseFloat(i.kg) || 0), 0));
   if (totalKg <= 0) return null;
