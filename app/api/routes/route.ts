@@ -71,6 +71,13 @@ export async function POST(req: Request) {
         { status: 500 }
       );
     }
+    // Unique constraint on (origin, destination) — two routes with same IATA pair
+    if (e?.code === '23505' || e?.message?.toLowerCase().includes('unique') || e?.message?.toLowerCase().includes('duplicate')) {
+      return NextResponse.json(
+        { error: `Une route ${org} → ${dest} existe déjà. Pour créer une route maritime avec le même trajet, ajoutez un suffixe au code d'origine (ex: ${org}M pour maritime) et précisez le mode dans le libellé.` },
+        { status: 409 }
+      );
+    }
     return NextResponse.json({ error: e?.message ?? 'Erreur serveur' }, { status: 500 });
   }
 

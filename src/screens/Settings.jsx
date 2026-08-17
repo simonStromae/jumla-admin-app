@@ -438,13 +438,16 @@ function SectionRoutes({ routes, onEdit, onDetail }) {
           <div key={r.id} className="card" style={{ padding: 16, cursor: 'pointer', borderColor: r.active ? 'var(--border)' : 'var(--border-soft)' }} onClick={() => onDetail(r)}>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: 16, alignItems: 'center' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-                <div style={{ width: 44, height: 44, borderRadius: 10, background: r.active ? 'var(--brand-50)' : 'var(--bg-soft)', color: r.active ? 'var(--brand-700)' : 'var(--ink-400)', display: 'grid', placeItems: 'center' }}>
-                  <I.Plane style={{ width: 20, height: 20 }} />
+                <div style={{ width: 44, height: 44, borderRadius: 10, background: r.active ? 'var(--brand-50)' : 'var(--bg-soft)', color: r.active ? 'var(--brand-700)' : 'var(--ink-400)', display: 'grid', placeItems: 'center', fontSize: 20 }}>
+                  {r.fees?.transportMode === 'sea' ? '🚢' : <I.Plane style={{ width: 20, height: 20 }} />}
                 </div>
                 <div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 3 }}>
                     <span style={{ fontSize: 15, fontWeight: 700 }}>{r.label || r.code}</span>
                     <RoutePill from={r.fromIATA} to={r.toIATA} />
+                    {r.fees?.transportMode === 'sea'
+                      ? <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: '.08em', textTransform: 'uppercase', color: '#0369a1', background: '#e0f2fe', borderRadius: 999, padding: '2px 8px' }}>Maritime</span>
+                      : <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: '.08em', textTransform: 'uppercase', color: 'var(--brand-700)', background: 'var(--brand-50)', borderRadius: 999, padding: '2px 8px' }}>Aérien</span>}
                     {r.active
                       ? <span className="badge badge--dot badge--ok">{t.common.active}</span>
                       : <span className="badge badge--dot badge--neutral">{t.common.archived}</span>}
@@ -1571,9 +1574,20 @@ function RouteEditModal({ editRoute, onClose, onSaved }) {
         <SectionTitle>{/* TODO i18n: Informations de base */}Informations de base</SectionTitle>
         <div className="card" style={{ padding: 20, marginBottom: 20 }}>
           <div className="field-row field-row--2">
-            <div className="field"><label className="label">{t.settings.routes.modal.iataOrigin}</label><input className="input mono" value={origin} onChange={e => setOrigin(e.target.value.toUpperCase())} placeholder="DLA" maxLength={3} /></div>
-            <div className="field"><label className="label">{t.settings.routes.modal.iataDest}</label><input className="input mono" value={destination} onChange={e => setDestination(e.target.value.toUpperCase())} placeholder="YUL" maxLength={3} /></div>
+            <div className="field">
+              <label className="label">{t.settings.routes.modal.iataOrigin}</label>
+              <input className="input mono" value={origin} onChange={e => setOrigin(e.target.value.toUpperCase())} placeholder="DLA" maxLength={6} />
+            </div>
+            <div className="field">
+              <label className="label">{t.settings.routes.modal.iataDest}</label>
+              <input className="input mono" value={destination} onChange={e => setDestination(e.target.value.toUpperCase())} placeholder="YUL" maxLength={6} />
+            </div>
           </div>
+          {transportMode === 'sea' && isNew && (
+            <div style={{ fontSize: 12, color: '#0369a1', background: '#e0f2fe', border: '1px solid #bae6fd', borderRadius: 8, padding: '10px 14px', lineHeight: 1.55 }}>
+              <strong>Route maritime :</strong> si une route aérienne avec les mêmes codes existe déjà, ajoutez un suffixe pour les différencier — ex&nbsp;: <code>DLAM</code> pour Douala Maritime, <code>SHGM</code> pour Shanghai Maritime.
+            </div>
+          )}
           <div className="field">
             <label className="label">{/* TODO i18n: Libellé */}Libellé <span className="opt">/ {t.common.optional}</span></label>
             <input className="input" value={label} onChange={e => setLabel(e.target.value)} placeholder="ex: Douala → Montréal" />
