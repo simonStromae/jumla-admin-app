@@ -135,7 +135,7 @@ export default function ChinaComingSoon({ onBook, content }) {
           </div>
 
           {/* Flag row */}
-          <div style={{ fontSize: 'clamp(22px,3vw,32px)', marginBottom: 14, lineHeight: 1 }}>
+          <div style={{ fontSize: 'clamp(22px,3vw,32px)', marginBottom: 14, lineHeight: 1, color: 'white' }}>
             {c.originFlag}&nbsp;&nbsp;
             <span style={{ color: '#00B4D8', fontSize: '.75em', verticalAlign: 'middle' }}>→</span>
             &nbsp;&nbsp;{c.destFlag}
