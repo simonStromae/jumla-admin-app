@@ -243,7 +243,7 @@ export default function ChinaComingSoon({ onBook, content }) {
               {c.ctaSubtitle}
             </p>
             <button
-              onClick={onBook}
+              onClick={() => document.getElementById('jest')?.scrollIntoView({ behavior: 'smooth' })}
               style={{
                 display: 'inline-flex', alignItems: 'center', gap: 6,
                 background: 'rgba(0,180,216,.12)',
@@ -255,7 +255,7 @@ export default function ChinaComingSoon({ onBook, content }) {
               onMouseEnter={e => { e.currentTarget.style.background = 'rgba(0,180,216,.2)'; }}
               onMouseLeave={e => { e.currentTarget.style.background = 'rgba(0,180,216,.12)'; }}
             >
-              Réserver maintenant →
+              Estimer mon envoi →
             </button>
           </div>
         </div>
