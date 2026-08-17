@@ -848,6 +848,7 @@ function JEstimator({ onBook, content }) {
 
   const computed = lines.map((ln, i) => isSea ? calcSeaLine(ln, i) : calcAirLine(ln));
   const grandTotal = Math.round(isSea ? (seaCombined?.prixClient ?? 0) : (airCombined?.prixClient ?? 0));
+  const currency = currentRoute?.currency ?? 'CAD';
   const transitLabel = isSea
     ? `${currentRoute?.transitDays ?? 45}–60 jours`
     : `max ${currentRoute?.transitDays ?? 10} jrs`;
@@ -947,7 +948,7 @@ function JEstimator({ onBook, content }) {
           {isSea && (
             <div style={{ padding: '10px 16px', background: '#f0f9ff', borderBottom: '1px solid #bae6fd', fontSize: 12.5, color: '#0369a1', lineHeight: 1.5 }}>
               <strong>Fret maritime :</strong> le poids facturé est le plus élevé entre le poids réel et le poids volumétrique (L×W×H / 1 000 000 × 500).
-              Les articles volumineux (poids vol. &gt; poids réel) sont majorés à <strong>{fees.bulkyPerCbm ?? 800} CAD/m³</strong>.
+              Les articles volumineux (poids vol. &gt; poids réel) sont majorés à <strong>{fees.bulkyPerCbm ?? 800} {currency}/m³</strong>.
             </div>
           )}
 
@@ -977,18 +978,18 @@ function JEstimator({ onBook, content }) {
                   </div>
                   {/* Dimensions (sea only) */}
                   {isSea && (
-                    <div className="jest__f" style={{ display: 'flex', gap: 4 }}>
+                    <div style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', gap: 4, padding: '0 8px' }}>
                       <input type="number" min="0" step="1" placeholder="L" title="Longueur (cm)"
                         value={ln.lengthCm} onChange={e => updLine(ln.id, 'lengthCm', e.target.value)}
-                        style={{ width: 52 }} />
+                        className="jest__dim-input" />
                       <input type="number" min="0" step="1" placeholder="W" title="Largeur (cm)"
                         value={ln.widthCm} onChange={e => updLine(ln.id, 'widthCm', e.target.value)}
-                        style={{ width: 52 }} />
+                        className="jest__dim-input" />
                       <input type="number" min="0" step="1" placeholder="H" title="Hauteur (cm)"
                         value={ln.heightCm} onChange={e => updLine(ln.id, 'heightCm', e.target.value)}
-                        style={{ width: 52 }} />
+                        className="jest__dim-input" />
                       {c.cbm > 0 && (
-                        <span style={{ fontSize: 11, color: c.isBulky ? '#b45309' : 'var(--ink-400)', alignSelf: 'center', whiteSpace: 'nowrap' }}>
+                        <span style={{ fontSize: 11, color: c.isBulky ? '#b45309' : 'var(--ink-400)', whiteSpace: 'nowrap' }}>
                           {c.cbm.toFixed(3)} m³{c.isBulky ? ' ⚠' : ''}
                         </span>
                       )}
@@ -996,12 +997,12 @@ function JEstimator({ onBook, content }) {
                   )}
                   {/* Transport */}
                   <div className="jest__cell" style={{ textAlign: 'right' }}>
-                    <div>{Math.round(c.transport)} <span className="jest__cur">CAD</span></div>
+                    <div>{Math.round(c.transport)} <span className="jest__cur">{currency}</span></div>
                     <div className="jest__tier">{c.rateLabel}</div>
                   </div>
                   {/* Autres frais */}
                   <div className="jest__cell" style={{ textAlign: 'right', color: c.extras > 0 ? 'var(--brand-600)' : c.extras < 0 ? '#059669' : 'var(--ink-300)' }}>
-                    <div>{c.extras !== 0 ? (c.extras > 0 ? '+' : '') + Math.round(c.extras) + ' ' : '—'}{c.extras !== 0 && <span className="jest__cur">CAD</span>}</div>
+                    <div>{c.extras !== 0 ? (c.extras > 0 ? '+' : '') + Math.round(c.extras) + ' ' : '—'}{c.extras !== 0 && <span className="jest__cur">{currency}</span>}</div>
                     <div className="jest__tier">{isSea ? 'douane · manut. · vol.' : 'douane · formalités · manut.'}</div>
                   </div>
                   {/* Delete */}
@@ -1026,7 +1027,7 @@ function JEstimator({ onBook, content }) {
               </div>
               <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, flexWrap: 'wrap' }}>
                 <span className="jest__total-n">{grandTotal}</span>
-                <span className="jest__total-cur">CAD</span>
+                <span className="jest__total-cur">{currency}</span>
                 <span className="jest__transit">· {transitLabel}</span>
               </div>
             </div>
