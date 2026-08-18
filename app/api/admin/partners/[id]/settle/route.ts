@@ -60,22 +60,17 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
 
     for (const p of parcels) {
       const amount = p.confirmedPriceXaf ?? p.priceXaf ?? 0;
-      if (p.payment?.id) {
-        await (prisma.payment.update as any)({
-          where: { id: p.payment.id },
-          data: { status: 'completed', paidAt: new Date() },
-        });
-      } else {
-        await (prisma.payment.create as any)({
-          data: {
-            parcelId: p.id,
-            clientId: params.id,
-            amount,
-            status: 'completed',
-            paidAt: new Date(),
-          },
-        });
-      }
+      await (prisma.payment.upsert as any)({
+        where: { parcelId: p.id },
+        update: { status: 'completed', paidAt: new Date() },
+        create: {
+          parcelId: p.id,
+          clientId: params.id,
+          amount,
+          status: 'completed',
+          paidAt: new Date(),
+        },
+      });
       updatedParcelIds.push(p.id);
     }
   }
