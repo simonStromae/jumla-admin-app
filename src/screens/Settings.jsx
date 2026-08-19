@@ -1954,9 +1954,13 @@ function SectionPaymentGateway() {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(fields),
       });
-      const json = await res.json();
+      let json;
+      try { json = await res.json(); }
+      catch { json = { ok: false, error: `Erreur serveur (HTTP ${res.status})` }; }
       setTestResult(json);
-    } catch { setTestResult({ ok: false, error: 'Erreur réseau' }); }
+    } catch (e) {
+      setTestResult({ ok: false, error: e?.message ?? 'Impossible de joindre le serveur' });
+    }
     finally { setTesting(false); }
   }
 
@@ -1985,9 +1989,14 @@ function SectionPaymentGateway() {
           : <span style={{ fontSize: 12, fontWeight: 700, padding: '4px 10px', borderRadius: 99, background: 'var(--bad-100)', color: 'var(--bad-700)' }}>Non configuré</span>
         }
         {testResult && (
-          <span style={{ fontSize: 12, fontWeight: 700, padding: '4px 10px', borderRadius: 99, background: testResult.ok ? 'var(--ok-100)' : 'var(--bad-100)', color: testResult.ok ? 'var(--ok-700)' : 'var(--bad-700)' }}>
-            {testResult.ok ? '✓ Connexion Authorize.net OK' : `✗ ${testResult.error}`}
-          </span>
+          <div style={{ fontSize: 12, padding: '6px 12px', borderRadius: 8, background: testResult.ok ? 'var(--ok-100)' : 'var(--bad-50)', color: testResult.ok ? 'var(--ok-700)' : 'var(--bad-700)', border: `1px solid ${testResult.ok ? 'var(--ok-200)' : 'var(--bad-200)'}`, lineHeight: 1.6 }}>
+            <div style={{ fontWeight: 700 }}>{testResult.ok ? '✓ Connexion Authorize.net OK' : `✗ ${testResult.error}`}</div>
+            {testResult.debug && !testResult.ok && (
+              <div style={{ fontFamily: 'ui-monospace, monospace', fontSize: 11, marginTop: 3, opacity: .8 }}>
+                Login ID testé : {testResult.debug.loginId} · TX Key : {testResult.debug.txKeyLength} chars · Env : {testResult.debug.environment}
+              </div>
+            )}
+          </div>
         )}
       </div>
 
