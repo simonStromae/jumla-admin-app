@@ -12,6 +12,7 @@
     "@neondatabase/serverless": "^1.1.0",
     "@prisma/adapter-neon": "^7.8.0",
     "@prisma/client": "^7.8.0",
+    "authorizenet": "^1.0.10",
     "bcryptjs": "^3.0.3",
     "cloudinary": "^2.10.0",
     "html5-qrcode": "^2.3.8",

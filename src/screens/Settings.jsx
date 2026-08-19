@@ -1909,6 +1909,129 @@ function RouteEditModal({ editRoute, onClose, onSaved }) {
   );
 }
 
+/* ── Paiement par carte (Authorize.net) ──────────────────── */
+function SectionPaymentGateway() {
+  const FIELDS_DEFAULT = { authnet_login_id: '', authnet_client_key: '', authnet_transaction_key: '', authnet_environment: 'sandbox' };
+  const [fields, setFields]   = useState(FIELDS_DEFAULT);
+  const [saving, setSaving]   = useState(false);
+  const [saved,  setSaved]    = useState(false);
+  const [err,    setErr]      = useState('');
+  const [showTx, setShowTx]   = useState(false);
+
+  useEffect(() => {
+    fetch('/api/settings').then(r => r.json()).then(d => {
+      setFields(prev => ({
+        authnet_login_id:        d.authnet_login_id        ?? prev.authnet_login_id,
+        authnet_client_key:      d.authnet_client_key      ?? prev.authnet_client_key,
+        authnet_transaction_key: d.authnet_transaction_key ?? prev.authnet_transaction_key,
+        authnet_environment:     d.authnet_environment     ?? prev.authnet_environment,
+      }));
+    }).catch(() => {});
+  }, []);
+
+  const set = k => e => setFields(f => ({ ...f, [k]: e.target.value }));
+
+  async function handleSave() {
+    setSaving(true); setSaved(false); setErr('');
+    try {
+      const res = await fetch('/api/settings', {
+        method: 'PUT', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(fields),
+      });
+      if (!res.ok) throw new Error(`Erreur ${res.status}`);
+      setSaved(true);
+      setTimeout(() => setSaved(false), 3000);
+    } catch (e) { setErr(e?.message ?? 'Erreur'); }
+    finally { setSaving(false); }
+  }
+
+  const env = fields.authnet_environment;
+  const configured = !!(fields.authnet_login_id && fields.authnet_client_key && fields.authnet_transaction_key);
+
+  return (
+    <SettingsCard
+      title="Paiement par carte"
+      sub="Connectez votre compte Authorize.net pour accepter Visa, Mastercard et Amex directement depuis l'espace client."
+      actions={
+        <button className="btn btn--brand btn--sm" onClick={handleSave} disabled={saving}>
+          {saving ? 'Sauvegarde…' : saved ? '✓ Sauvegardé' : 'Enregistrer'}
+        </button>
+      }>
+
+      {/* Status badge */}
+      <div style={{ marginBottom: 20 }}>
+        {configured
+          ? <span style={{ fontSize: 12, fontWeight: 700, padding: '4px 10px', borderRadius: 99, background: 'var(--ok-100)', color: 'var(--ok-700)' }}>✓ Configuré · {env === 'production' ? 'Production' : 'Sandbox'}</span>
+          : <span style={{ fontSize: 12, fontWeight: 700, padding: '4px 10px', borderRadius: 99, background: 'var(--bad-100)', color: 'var(--bad-700)' }}>Non configuré</span>
+        }
+      </div>
+
+      {/* Environment toggle */}
+      <div className="field">
+        <label className="label">Environnement</label>
+        <div style={{ display: 'flex', gap: 6, marginTop: 4 }}>
+          {['sandbox', 'production'].map(e => (
+            <button key={e}
+              className={'btn btn--sm ' + (env === e ? 'btn--brand' : 'btn--ghost')}
+              onClick={() => setFields(f => ({ ...f, authnet_environment: e }))}>
+              {e === 'sandbox' ? '🧪 Sandbox' : '🚀 Production'}
+            </button>
+          ))}
+        </div>
+        {env === 'sandbox' && (
+          <div style={{ fontSize: 12, color: 'var(--ink-400)', marginTop: 6 }}>
+            Mode test — aucun vrai débit. Basculez en Production quand vous êtes prêt.
+          </div>
+        )}
+      </div>
+
+      {/* API Login ID */}
+      <div className="field">
+        <label className="label">API Login ID</label>
+        <input className="input mono" value={fields.authnet_login_id} onChange={set('authnet_login_id')} placeholder="Votre API Login ID Authorize.net" />
+      </div>
+
+      {/* Public Client Key */}
+      <div className="field">
+        <label className="label">Public Client Key</label>
+        <input className="input mono" value={fields.authnet_client_key} onChange={set('authnet_client_key')} placeholder="Clé publique Accept.js (Compte Authorize.net → Sécurité → Manage Public Client Key)" />
+        <div style={{ fontSize: 11.5, color: 'var(--ink-400)', marginTop: 4 }}>
+          Sécurité → Manage Public Client Key dans votre tableau de bord Authorize.net.
+        </div>
+      </div>
+
+      {/* Transaction Key — masked */}
+      <div className="field">
+        <label className="label">
+          Transaction Key
+          <button onClick={() => setShowTx(v => !v)}
+            style={{ marginLeft: 8, fontSize: 11, color: 'var(--brand-600)', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 600 }}>
+            {showTx ? 'Masquer' : 'Afficher'}
+          </button>
+        </label>
+        <input
+          className="input mono"
+          type={showTx ? 'text' : 'password'}
+          value={fields.authnet_transaction_key}
+          onChange={set('authnet_transaction_key')}
+          placeholder="Clé de transaction (confidentielle — jamais exposée au client)"
+          autoComplete="off"
+        />
+        <div style={{ fontSize: 11.5, color: 'var(--ink-400)', marginTop: 4 }}>
+          Compte Authorize.net → Sécurité → API Credentials & Keys.
+        </div>
+      </div>
+
+      {err && <div style={{ fontSize: 13, color: 'var(--bad-700)', background: 'var(--bad-50)', borderRadius: 8, padding: '10px 12px' }}>{err}</div>}
+
+      <div style={{ fontSize: 12.5, color: 'var(--ink-400)', borderTop: '1px solid var(--border-soft)', paddingTop: 14, lineHeight: 1.65 }}>
+        La Transaction Key n'est jamais transmise au navigateur client — elle reste côté serveur uniquement.<br />
+        Les numéros de carte sont tokenisés directement par Authorize.net (scope PCI SAQ A).
+      </div>
+    </SettingsCard>
+  );
+}
+
 /* ── Main screen ──────────────────────────────────────────── */
 export default function SettingsScreen({ onNav }) {
   const t = useAdminT();
@@ -1956,6 +2079,7 @@ export default function SettingsScreen({ onNav }) {
           {section === 'auto'      && <SectionAutoNotif />}
           {section === 'campaigns' && <SectionCampaigns />}
           {section === 'codes'     && <SectionCodes />}
+          {section === 'payment'   && <SectionPaymentGateway />}
         </div>
       </div>
 
