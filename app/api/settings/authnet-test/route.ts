@@ -40,5 +40,13 @@ export async function POST(req: NextRequest) {
     result = { ok: false, error: e?.message ?? 'Erreur serveur' };
   }
 
-  return NextResponse.json(result, { status: result.ok ? 200 : 400 });
+  return NextResponse.json({
+    ...result,
+    // Partial preview to help diagnose which credentials were actually tested
+    debug: {
+      loginId:     loginId ? loginId.slice(0, 4) + '****' : '(vide)',
+      txKeyLength: transactionKey ? transactionKey.length : 0,
+      environment: environment === 'production' ? 'production' : 'sandbox',
+    },
+  }, { status: result.ok ? 200 : 400 });
 }
