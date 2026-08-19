@@ -1442,24 +1442,25 @@ function InteracModal({ parcel, onClose }) {
 
   return (
     <Modal width={640} onClose={onClose}
-      title="Lien de paiement Interac"
+      title="Lien de paiement"
       sub={`${parcel.trackingCode} · ${amountLabel} dû`}
       footer={<button className="btn btn--ghost" onClick={onClose}>{t.common.close}</button>}>
       <div style={{ display: 'grid', gap: 16 }}>
 
         {/* URL + copy */}
         <div>
-          {/* TODO: i18n — 'Lien de paiement' section label has no direct key */}
-          <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.06em', color: 'var(--ink-400)', marginBottom: 8 }}>Lien de paiement</div>
+          <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.06em', color: 'var(--ink-400)', marginBottom: 8 }}>Lien de paiement (carte ou Interac)</div>
           <div style={{ display: 'flex', gap: 8 }}>
             <div className="mono" style={{ flex: 1, padding: '8px 12px', background: 'var(--bg-soft)', border: '1px solid var(--border)', fontSize: 11.5, color: 'var(--ink-600)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', borderRadius: 6 }}>{payUrl}</div>
-            {/* TODO: i18n — 'Copier' / '✓ Copié' have no direct keys in t.common */}
             <button className="btn btn--ghost btn--sm" onClick={handleCopy} style={{ minWidth: 70 }}>{copied ? '✓ Copié' : 'Copier'}</button>
+          </div>
+          <div style={{ fontSize: 11.5, color: 'var(--ink-400)', marginTop: 6, lineHeight: 1.5 }}>
+            Le client atterrit sur une page sécurisée où il peut payer par carte (Visa, Mastercard, Amex) ou confirmer un virement Interac.
           </div>
         </div>
 
         {/* Client info */}
-        <div style={{ padding: '10px 14px', background: 'var(--warn-50)', border: '1px solid var(--warn-100)', borderRadius: 8, fontSize: 12.5, color: 'var(--ink-700)', lineHeight: 1.7 }}>
+        <div style={{ padding: '10px 14px', background: 'var(--bg-soft)', border: '1px solid var(--border)', borderRadius: 8, fontSize: 12.5, color: 'var(--ink-700)', lineHeight: 1.7 }}>
           <strong>{parcel.client?.name}</strong><br />
           {parcel.client?.phone && <span>📱 {parcel.client.phone}</span>}
           {parcel.client?.email && <><br /><span>✉️ {parcel.client.email}</span></>}
@@ -1467,22 +1468,19 @@ function InteracModal({ parcel, onClose }) {
 
         {/* WhatsApp send */}
         <div style={{ borderTop: '1px solid var(--border-soft)', paddingTop: 14 }}>
-          {/* TODO: i18n — 'Envoyer au client' has no direct key */}
           <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.06em', color: 'var(--ink-400)', marginBottom: 10 }}>Envoyer au client</div>
           {sent ? (
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 14px', background: 'var(--ok-50)', border: '1px solid var(--ok-200)', borderRadius: 8, fontSize: 13, color: 'var(--ok-700)' }}>
-              {/* TODO: i18n — '✓ Message envoyé via WhatsApp à' has no direct key */}
-              ✓ Message envoyé via WhatsApp à {parcel.client?.phone || parcel.client?.email}
+              ✓ Lien envoyé par WhatsApp à {parcel.client?.phone || parcel.client?.email}
             </div>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
               <button className="btn btn--brand" style={{ justifyContent: 'center' }} onClick={handleSendWA} disabled={sending}>
-                <I.Chat />{sending ? t.common.sending : 'Envoyer par WhatsApp'}
+                <I.Chat />{sending ? t.common.sending : 'Envoyer le lien par WhatsApp'}
               </button>
               {sendError && <div style={{ fontSize: 12, color: 'var(--bad-600)', padding: '6px 10px', background: 'var(--bad-50)', borderRadius: 6, border: '1px solid var(--bad-200)' }}>{sendError}</div>}
               <div style={{ fontSize: 11.5, color: 'var(--ink-400)', lineHeight: 1.5 }}>
-                {/* TODO: i18n — payment instructions sentence has no direct key */}
-                Le client recevra les instructions de paiement Interac avec le lien sécurisé.
+                Le client recevra un lien pour payer directement par carte ou par Interac.
               </div>
             </div>
           )}

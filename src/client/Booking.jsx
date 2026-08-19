@@ -1,6 +1,7 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, lazy, Suspense } from 'react';
 import { useSession } from 'next-auth/react';
+const CardPaymentModal = lazy(() => import('./CardPaymentModal.jsx'));
 import { TopBar, SiteNav, SiteFooter } from './SiteLayout.jsx';
 import { useT, useLocale } from '@/src/lib/i18n';
 import '@/src/styles/client-omega.css';
@@ -822,6 +823,9 @@ export default function BookingScreen({ onNav, embedded = false, prefillId = nul
   const [bookingErr, setBookingErr] = useState('');
   const [dropoffInfo, setDropoffInfo] = useState(null);
   const [paymentEmail, setPaymentEmail] = useState('incjumla@gmail.com');
+  const [bookedParcelId, setBookedParcelId] = useState(null);
+  const [showCardModal, setShowCardModal] = useState(false);
+  const [cardEnabled, setCardEnabled]     = useState(false);
   const [user, setUser] = useState(() => {
     try { return JSON.parse(localStorage.getItem('jumla_user')); } catch { return null; }
   });
@@ -831,6 +835,9 @@ export default function BookingScreen({ onNav, embedded = false, prefillId = nul
   useEffect(() => {
     fetch('/api/public/config').then(r => r.json()).then(d => {
       if (d.paymentEmail) setPaymentEmail(d.paymentEmail);
+    }).catch(() => {});
+    fetch('/api/public/payment-gateway').then(r => r.json()).then(d => {
+      if (d.enabled) setCardEnabled(true);
     }).catch(() => {});
   }, []);
 
@@ -1035,6 +1042,7 @@ export default function BookingScreen({ onNav, embedded = false, prefillId = nul
         return;
       }
       setBookingRef(json.trackingCode);
+      setBookedParcelId(json.parcelId ?? null);
       setDropoffInfo(json.dropoff ?? null);
       if (typeof window !== 'undefined' && typeof window.fbq === 'function') {
         window.fbq('track', 'AddToCart');
@@ -1052,6 +1060,17 @@ export default function BookingScreen({ onNav, embedded = false, prefillId = nul
 
   return (
     <div className={embedded ? '' : 'co-wrap'}>
+      {showCardModal && bookedParcelId && (
+        <Suspense fallback={null}>
+          <CardPaymentModal
+            amountCad={price?.total ?? 0}
+            parcelId={bookedParcelId}
+            type="booking"
+            onSuccess={() => { setShowCardModal(false); }}
+            onClose={() => setShowCardModal(false)}
+          />
+        </Suspense>
+      )}
       {!embedded && <TopBar />}
       {!embedded && <SiteNav onNav={onNav} onBook={() => {}} mode="booking" />}
 
@@ -1126,6 +1145,26 @@ export default function BookingScreen({ onNav, embedded = false, prefillId = nul
                 <div style={{ background: 'white', border: '2px solid var(--brand-200)', borderRadius: 'var(--radius)', padding: '14px 24px', marginBottom: 16, textAlign: 'center', width: '100%', maxWidth: 380 }}>
                   <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.08em', color: 'var(--ink-400)', marginBottom: 4 }}>{t('booking.confirm.trackingNumber')}</div>
                   <div style={{ fontSize: 22, fontWeight: 800, fontFamily: 'ui-monospace, monospace', color: 'var(--ink-900)', letterSpacing: '.04em' }}>{refCode}</div>
+                </div>
+              )}
+
+              {/* Card payment button — shown when gateway is configured */}
+              {cardEnabled && bookedParcelId && price?.total && (
+                <div style={{ width: '100%', maxWidth: 420, marginBottom: 14 }}>
+                  <button
+                    onClick={() => setShowCardModal(true)}
+                    style={{
+                      width: '100%', padding: '13px 0', borderRadius: 12,
+                      background: 'linear-gradient(90deg,#00B4D8,#1B4FD8)',
+                      color: 'white', fontWeight: 700, fontSize: 15,
+                      border: 'none', cursor: 'pointer',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
+                    }}>
+                    💳 Payer {price.total.toFixed(0)} {route?.currency ?? 'CAD'} par carte
+                  </button>
+                  <div style={{ textAlign: 'center', fontSize: 12, color: 'var(--ink-400)', marginTop: 8 }}>
+                    — ou par virement Interac ci-dessous —
+                  </div>
                 </div>
               )}
 
