@@ -155,6 +155,7 @@ export function Sidebar({ route, onNav }) {
     { id: 'auto',      label: t.settingsTabs.auto,      icon: I.Bell },
     { id: 'campaigns', label: t.settingsTabs.campaigns, icon: I.Plane },
     { id: 'codes',     label: t.settingsTabs.codes,     icon: I.Tag },
+    { id: 'payment',   label: t.settingsTabs.payment,   icon: I.Wallet },
   ];
 
   return (
