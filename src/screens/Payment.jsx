@@ -239,8 +239,8 @@ export default function PaymentScreen({ token }) {
           </div>
           <div style={{ fontSize: 14, color: '#6b7280', lineHeight: 1.7, marginBottom: 16 }}>
             {paidResult.method === 'card'
-              ? <>Votre paiement par carte pour <strong>{data?.trackingCode}</strong> a été traité avec succès.</>
-              : <>Merci ! Nous avons enregistré votre confirmation de virement pour <strong>{data?.trackingCode}</strong>. Notre équipe vérifiera sous 24h.</>
+              ? <span>Votre paiement par carte pour <strong>{data?.trackingCode}</strong> a été traité avec succès.</span>
+              : <span>Merci ! Nous avons enregistré votre confirmation de virement pour <strong>{data?.trackingCode}</strong>. Notre équipe vérifiera sous 24h.</span>
             }
           </div>
         )}
