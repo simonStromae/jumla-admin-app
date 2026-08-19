@@ -1,6 +1,10 @@
 import ApiContracts from 'authorizenet/lib/apicontracts.js';
 import ApiControllers from 'authorizenet/lib/apicontrollers.js';
-import Constants from 'authorizenet/lib/constants.js';
+
+const AUTHNET_ENDPOINT = {
+  sandbox:    'https://apitest.authorize.net/xml/v1/request.api',
+  production: 'https://api2.authorize.net/xml/v1/request.api',
+};
 
 export interface AuthNetCredentials {
   loginId:        string;
@@ -41,8 +45,8 @@ export async function testCredentials(creds: AuthNetCredentials): Promise<{ ok: 
       const controller = new ApiControllers.AuthenticateTestController(request.getJSON());
       controller.setEnvironment(
         creds.environment === 'production'
-          ? Constants.endpoint.production
-          : Constants.endpoint.sandbox
+          ? AUTHNET_ENDPOINT.production
+          : AUTHNET_ENDPOINT.sandbox
       );
 
       controller.execute(() => {
@@ -109,8 +113,8 @@ export async function chargeOpaqueData(
     const controller = new ApiControllers.CreateTransactionController(request.getJSON());
     controller.setEnvironment(
       creds.environment === 'production'
-        ? Constants.endpoint.production
-        : Constants.endpoint.sandbox
+        ? AUTHNET_ENDPOINT.production
+        : AUTHNET_ENDPOINT.sandbox
     );
 
     controller.execute(() => {
