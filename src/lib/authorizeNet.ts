@@ -27,6 +27,40 @@ export interface BillTo {
   country:   string;
 }
 
+// Lightweight credentials check — calls getSettledBatchList with a 1-minute window
+export async function testCredentials(creds: AuthNetCredentials): Promise<{ ok: boolean; error?: string }> {
+  return new Promise((resolve) => {
+    const merchantAuth = new ApiContracts.MerchantAuthenticationType();
+    merchantAuth.setName(creds.loginId);
+    merchantAuth.setTransactionKey(creds.transactionKey);
+
+    const request = new ApiContracts.GetMerchantDetailsRequest();
+    request.setMerchantAuthentication(merchantAuth);
+
+    const controller = new ApiControllers.GetMerchantDetailsController(request.getJSON());
+    controller.setEnvironment(
+      creds.environment === 'production'
+        ? Constants.endpoint.production
+        : Constants.endpoint.sandbox
+    );
+
+    controller.execute(() => {
+      try {
+        const apiResponse = controller.getResponse();
+        const response = new ApiContracts.GetMerchantDetailsResponse(apiResponse);
+        if (!response || response.getMessages().getResultCode() !== ApiContracts.MessageTypeEnum.OK) {
+          const msg = response?.getMessages()?.getMessage?.()?.[0];
+          resolve({ ok: false, error: msg?.getText?.() ?? 'Identifiants invalides' });
+          return;
+        }
+        resolve({ ok: true });
+      } catch (e: any) {
+        resolve({ ok: false, error: e?.message ?? 'Erreur serveur' });
+      }
+    });
+  });
+}
+
 export async function chargeOpaqueData(
   creds:       AuthNetCredentials,
   opaqueData:  { dataDescriptor: string; dataValue: string },
@@ -81,15 +115,18 @@ export async function chargeOpaqueData(
         const response = new ApiContracts.CreateTransactionResponse(apiResponse);
 
         if (!response || response.getMessages().getResultCode() !== ApiContracts.MessageTypeEnum.OK) {
-          const err = response?.getTransactionResponse()?.getErrors()?.getError()?.[0];
-          resolve({ success: false, error: err?.getErrorText() ?? 'Transaction refusée' });
+          // Auth errors are in messages, not in transactionResponse.errors
+          const msgErr = response?.getMessages()?.getMessage?.()?.[0];
+          const txErr  = response?.getTransactionResponse()?.getErrors()?.getError()?.[0];
+          resolve({ success: false, error: txErr?.getErrorText() ?? msgErr?.getText?.() ?? 'Transaction refusée' });
           return;
         }
 
         const txResponse = response.getTransactionResponse();
         if (!txResponse || txResponse.getResponseCode() !== '1') {
-          const err = txResponse?.getErrors()?.getError()?.[0];
-          resolve({ success: false, error: err?.getErrorText() ?? 'Transaction refusée' });
+          const txErr  = txResponse?.getErrors()?.getError()?.[0];
+          const msgErr = response?.getMessages()?.getMessage?.()?.[0];
+          resolve({ success: false, error: txErr?.getErrorText() ?? msgErr?.getText?.() ?? 'Transaction refusée' });
           return;
         }
 
