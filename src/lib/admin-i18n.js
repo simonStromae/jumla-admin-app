@@ -63,6 +63,7 @@ const fr = {
     auto: 'Auto-notifications',
     campaigns: 'Cargaisons',
     codes: 'Codes',
+    payment: 'Paiement par carte',
   },
 
   // Shared status labels
@@ -373,6 +374,7 @@ const en = {
     auto: 'Auto-notifications',
     campaigns: 'Shipments',
     codes: 'Codes',
+    payment: 'Card payments',
   },
 
   campaignStatus: {
