@@ -29,11 +29,16 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: false, error: 'Clés API non configurées' }, { status: 400 });
   }
 
-  const result = await testCredentials({
-    loginId,
-    transactionKey,
-    environment: environment === 'production' ? 'production' : 'sandbox',
-  });
+  let result: { ok: boolean; error?: string };
+  try {
+    result = await testCredentials({
+      loginId,
+      transactionKey,
+      environment: environment === 'production' ? 'production' : 'sandbox',
+    });
+  } catch (e: any) {
+    result = { ok: false, error: e?.message ?? 'Erreur serveur' };
+  }
 
   return NextResponse.json(result, { status: result.ok ? 200 : 400 });
 }

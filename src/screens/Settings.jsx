@@ -1954,9 +1954,13 @@ function SectionPaymentGateway() {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(fields),
       });
-      const json = await res.json();
+      let json;
+      try { json = await res.json(); }
+      catch { json = { ok: false, error: `Erreur serveur (HTTP ${res.status})` }; }
       setTestResult(json);
-    } catch { setTestResult({ ok: false, error: 'Erreur réseau' }); }
+    } catch (e) {
+      setTestResult({ ok: false, error: e?.message ?? 'Impossible de joindre le serveur' });
+    }
     finally { setTesting(false); }
   }
 

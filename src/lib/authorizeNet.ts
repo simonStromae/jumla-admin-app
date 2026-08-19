@@ -27,37 +27,41 @@ export interface BillTo {
   country:   string;
 }
 
-// Lightweight credentials check — calls getSettledBatchList with a 1-minute window
+// Credential check using the dedicated AuthenticateTest endpoint
 export async function testCredentials(creds: AuthNetCredentials): Promise<{ ok: boolean; error?: string }> {
   return new Promise((resolve) => {
-    const merchantAuth = new ApiContracts.MerchantAuthenticationType();
-    merchantAuth.setName(creds.loginId);
-    merchantAuth.setTransactionKey(creds.transactionKey);
+    try {
+      const merchantAuth = new ApiContracts.MerchantAuthenticationType();
+      merchantAuth.setName(creds.loginId);
+      merchantAuth.setTransactionKey(creds.transactionKey);
 
-    const request = new ApiContracts.GetMerchantDetailsRequest();
-    request.setMerchantAuthentication(merchantAuth);
+      const request = new ApiContracts.AuthenticateTestRequest();
+      request.setMerchantAuthentication(merchantAuth);
 
-    const controller = new ApiControllers.GetMerchantDetailsController(request.getJSON());
-    controller.setEnvironment(
-      creds.environment === 'production'
-        ? Constants.endpoint.production
-        : Constants.endpoint.sandbox
-    );
+      const controller = new ApiControllers.AuthenticateTestController(request.getJSON());
+      controller.setEnvironment(
+        creds.environment === 'production'
+          ? Constants.endpoint.production
+          : Constants.endpoint.sandbox
+      );
 
-    controller.execute(() => {
-      try {
-        const apiResponse = controller.getResponse();
-        const response = new ApiContracts.GetMerchantDetailsResponse(apiResponse);
-        if (!response || response.getMessages().getResultCode() !== ApiContracts.MessageTypeEnum.OK) {
-          const msg = response?.getMessages()?.getMessage?.()?.[0];
-          resolve({ ok: false, error: msg?.getText?.() ?? 'Identifiants invalides' });
-          return;
+      controller.execute(() => {
+        try {
+          const apiResponse = controller.getResponse();
+          const response = new ApiContracts.AuthenticateTestResponse(apiResponse);
+          if (!response || response.getMessages().getResultCode() !== ApiContracts.MessageTypeEnum.OK) {
+            const msg = response?.getMessages()?.getMessage?.()?.[0];
+            resolve({ ok: false, error: msg?.getText?.() ?? 'Identifiants invalides' });
+            return;
+          }
+          resolve({ ok: true });
+        } catch (e: any) {
+          resolve({ ok: false, error: e?.message ?? 'Erreur lors de la réponse' });
         }
-        resolve({ ok: true });
-      } catch (e: any) {
-        resolve({ ok: false, error: e?.message ?? 'Erreur serveur' });
-      }
-    });
+      });
+    } catch (e: any) {
+      resolve({ ok: false, error: e?.message ?? 'Erreur initialisation' });
+    }
   });
 }
 
