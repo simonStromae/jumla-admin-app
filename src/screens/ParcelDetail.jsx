@@ -1464,27 +1464,14 @@ function InteracModal({ parcel, onClose }) {
 
         {/* Token URL + expiry + regenerate */}
         <div>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
-            <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.06em', color: 'var(--ink-400)' }}>Lien sécurisé (carte ou Interac)</div>
-            <button className="btn btn--ghost btn--sm" onClick={generateToken} disabled={generating}>
-              {generating ? '…' : '↻ Régénérer'}
-            </button>
+          <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.06em', color: 'var(--ink-400)', marginBottom: 8 }}>Lien de paiement (carte ou Interac)</div>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <div className="mono" style={{ flex: 1, padding: '8px 12px', background: 'var(--bg-soft)', border: '1px solid var(--border)', fontSize: 11.5, color: 'var(--ink-600)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', borderRadius: 6 }}>{payUrl}</div>
+            <button className="btn btn--ghost btn--sm" onClick={handleCopy} style={{ minWidth: 70 }}>{copied ? '✓ Copié' : 'Copier'}</button>
           </div>
-          {payUrl ? (
-            <>
-              <div style={{ display: 'flex', gap: 8, marginBottom: 4 }}>
-                <div className="mono" style={{ flex: 1, padding: '8px 12px', background: 'var(--bg-soft)', border: '1px solid var(--border)', fontSize: 11.5, color: 'var(--ink-600)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', borderRadius: 6 }}>{payUrl}</div>
-                <button className="btn btn--ghost btn--sm" onClick={handleCopy} style={{ minWidth: 70 }}>{copied ? '✓ Copié' : 'Copier'}</button>
-              </div>
-              {expiresAt && (
-                <div style={{ fontSize: 11, color: 'var(--ink-400)' }}>
-                  ⏱ Expire à <strong>{expiresAt}</strong> · Valide 2h · Le client doit être connecté à son compte Jumla
-                </div>
-              )}
-            </>
-          ) : (
-            <div style={{ fontSize: 13, color: 'var(--ink-400)', padding: '8px 0' }}>Génération du lien…</div>
-          )}
+          <div style={{ fontSize: 11.5, color: 'var(--ink-400)', marginTop: 6, lineHeight: 1.5 }}>
+            Le client atterrit sur une page sécurisée où il peut payer par carte (Visa, Mastercard, Amex) ou confirmer un virement Interac.
+          </div>
         </div>
 
         {/* Client info */}
@@ -1503,12 +1490,12 @@ function InteracModal({ parcel, onClose }) {
             </div>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-              <button className="btn btn--brand" style={{ justifyContent: 'center' }} onClick={handleSendWA} disabled={sending || !payUrl}>
+              <button className="btn btn--brand" style={{ justifyContent: 'center' }} onClick={handleSendWA} disabled={sending}>
                 <I.Chat />{sending ? t.common.sending : 'Envoyer le lien par WhatsApp'}
               </button>
               {sendError && <div style={{ fontSize: 12, color: 'var(--bad-600)', padding: '6px 10px', background: 'var(--bad-50)', borderRadius: 6, border: '1px solid var(--bad-200)' }}>{sendError}</div>}
               <div style={{ fontSize: 11.5, color: 'var(--ink-400)', lineHeight: 1.5 }}>
-                Le client recevra un lien sécurisé (valide 2h) pour payer par carte ou Interac.
+                Le client recevra un lien pour payer directement par carte ou par Interac.
               </div>
             </div>
           )}
