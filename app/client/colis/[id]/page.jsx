@@ -1,7 +1,8 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, lazy, Suspense } from 'react';
 import { useRouter } from 'next/navigation';
 import { useT, useLocale } from '@/src/lib/i18n';
+const CardPaymentModal = lazy(() => import('@/src/client/CardPaymentModal.jsx'));
 
 const PRODUCT_TYPES = [
   { id: 'standard',     labelKey: 'productTypes.standard' },
@@ -69,6 +70,8 @@ export default function ParcelDetailPage({ params }) {
   const [cancelReason,      setCancelReason]      = useState('');
   const [cancelCustom,      setCancelCustom]      = useState('');
   const [cancelledId,       setCancelledId]       = useState(null);
+  const [cardModal,         setCardModal]         = useState(null); // { amountCad, type }
+  const [cardEnabled,       setCardEnabled]       = useState(false);
 
   const fmt = (date, opts) => {
     if (!date) return '—';
@@ -90,6 +93,9 @@ export default function ParcelDetailPage({ params }) {
   useEffect(() => {
     fetch('/api/public/config').then(r => r.json()).then(d => {
       if (d.paymentEmail) setPaymentEmail(d.paymentEmail);
+    }).catch(() => {});
+    fetch('/api/public/payment-gateway').then(r => r.json()).then(d => {
+      if (d.enabled) setCardEnabled(true);
     }).catch(() => {});
   }, []);
 
@@ -210,8 +216,24 @@ export default function ParcelDetailPage({ params }) {
     ? t('parcel.delivery.ship')
     : t('parcel.delivery.warehouse');
 
+  const reloadParcel = () =>
+    fetch('/api/me/parcels/' + params.id).then(r => r.ok ? r.json() : null).then(d => { if (d) setParcel(d); }).catch(() => {});
+
   return (
     <div>
+      {/* Card payment modal */}
+      {cardModal && (
+        <Suspense fallback={null}>
+          <CardPaymentModal
+            amountCad={cardModal.amountCad}
+            parcelId={parcel.id}
+            type={cardModal.type}
+            onSuccess={() => { setCardModal(null); reloadParcel(); }}
+            onClose={() => setCardModal(null)}
+          />
+        </Suspense>
+      )}
+
       {/* Back */}
       <button onClick={() => router.push('/client/dashboard')} style={{
         display: 'flex', alignItems: 'center', gap: 6, marginBottom: 16,
@@ -533,15 +555,29 @@ export default function ParcelDetailPage({ params }) {
                 </div>
               </div>
               {isPending && supplement > 0 && (
-                <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12, padding: '12px 16px', background: 'white', border: '1px solid var(--border)', borderLeft: '3px solid var(--brand-400)', borderRadius: 10 }}>
-                  <span style={{ fontSize: 18, flexShrink: 0, marginTop: 1 }}>💸</span>
-                  <div style={{ fontSize: 12.5, color: '#374151', lineHeight: 1.6 }}>
-                    {t('parcel.adjustment.interacInfo')
-                      .replace('{email}', paymentEmail)
-                      .replace('{amount}', supplement.toLocaleString(locale === 'fr' ? 'fr-FR' : 'en-CA'))
-                      .replace('{code}', parcel.trackingCode)}
+                <>
+                  {cardEnabled && (
+                    <button
+                      onClick={() => setCardModal({ amountCad: supplement, type: 'supplement' })}
+                      style={{
+                        width: '100%', marginBottom: 10, padding: '11px 0',
+                        background: 'linear-gradient(90deg,#00B4D8,#1B4FD8)',
+                        color: 'white', fontWeight: 700, fontSize: 14,
+                        border: 'none', borderRadius: 10, cursor: 'pointer',
+                      }}>
+                      💳 Payer le supplément {supplement.toLocaleString(locale === 'fr' ? 'fr-FR' : 'en-CA')} CAD par carte
+                    </button>
+                  )}
+                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12, padding: '12px 16px', background: 'white', border: '1px solid var(--border)', borderLeft: '3px solid var(--brand-400)', borderRadius: 10 }}>
+                    <span style={{ fontSize: 18, flexShrink: 0, marginTop: 1 }}>💸</span>
+                    <div style={{ fontSize: 12.5, color: '#374151', lineHeight: 1.6 }}>
+                      {t('parcel.adjustment.interacInfo')
+                        .replace('{email}', paymentEmail)
+                        .replace('{amount}', supplement.toLocaleString(locale === 'fr' ? 'fr-FR' : 'en-CA'))
+                        .replace('{code}', parcel.trackingCode)}
+                    </div>
                   </div>
-                </div>
+                </>
               )}
             </Section>
           );
@@ -605,11 +641,25 @@ export default function ParcelDetailPage({ params }) {
                         <div style={{ fontSize: 12.5, color: '#6b7280' }}>{t('parcel.payment.paidOn').replace('{date}', fmt(parcel.payment.paidAt))}</div>
                       )}
                       {!paid && (
-                        <div style={{ padding: '10px 14px', borderRadius: 8, background: 'var(--info-50)', border: '1px solid var(--info-100)', fontSize: 12.5, color: 'var(--info-700)', marginTop: 8 }}>
-                          {t('parcel.payment.interac')
-                            .replace('{amount}', parcel.payment.remaining.toLocaleString(locale === 'fr' ? 'fr-FR' : 'en-CA'))
-                            .replace('{code}', parcel.trackingCode)}
-                        </div>
+                        <>
+                          {cardEnabled && (
+                            <button
+                              onClick={() => setCardModal({ amountCad: parcel.payment.remaining, type: 'invoice' })}
+                              style={{
+                                width: '100%', marginTop: 12, padding: '11px 0',
+                                background: 'linear-gradient(90deg,#00B4D8,#1B4FD8)',
+                                color: 'white', fontWeight: 700, fontSize: 14,
+                                border: 'none', borderRadius: 10, cursor: 'pointer',
+                              }}>
+                              💳 Payer {parcel.payment.remaining.toLocaleString(locale === 'fr' ? 'fr-FR' : 'en-CA')} CAD par carte
+                            </button>
+                          )}
+                          <div style={{ padding: '10px 14px', borderRadius: 8, background: 'var(--info-50)', border: '1px solid var(--info-100)', fontSize: 12.5, color: 'var(--info-700)', marginTop: 8 }}>
+                            {t('parcel.payment.interac')
+                              .replace('{amount}', parcel.payment.remaining.toLocaleString(locale === 'fr' ? 'fr-FR' : 'en-CA'))
+                              .replace('{code}', parcel.trackingCode)}
+                          </div>
+                        </>
                       )}
                     </>
                   )}
