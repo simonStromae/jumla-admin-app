@@ -232,6 +232,7 @@ export default function PaymentScreen({ token }) {
 
 function PaymentView({ data, token, onConfirm, onCardPaid }) {
   const t = useAdminT();
+  const { currency } = useCurrency();
   const [acknowledged, setAcknowledged] = useState(false);
   const [paymentEmail, setPaymentEmail] = useState('incjumla@gmail.com');
   useEffect(() => {
