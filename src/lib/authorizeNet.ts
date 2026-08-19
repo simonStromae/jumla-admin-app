@@ -17,11 +17,22 @@ export interface ChargeResult {
   error?:         string;
 }
 
+export interface BillTo {
+  firstName: string;
+  lastName:  string;
+  address:   string;
+  city:      string;
+  state:     string;
+  zip:       string;
+  country:   string;
+}
+
 export async function chargeOpaqueData(
   creds:       AuthNetCredentials,
   opaqueData:  { dataDescriptor: string; dataValue: string },
   amountCad:   number,
   description: string,
+  billTo?:     BillTo,
 ): Promise<ChargeResult> {
   return new Promise((resolve) => {
     const merchantAuth = new ApiContracts.MerchantAuthenticationType();
@@ -40,6 +51,18 @@ export async function chargeOpaqueData(
     txRequest.setAmount(amountCad.toFixed(2));
     txRequest.setPayment(payment);
     txRequest.setDescription(description.substring(0, 255));
+
+    if (billTo) {
+      const customerAddress = new ApiContracts.CustomerAddressType();
+      customerAddress.setFirstName(billTo.firstName);
+      customerAddress.setLastName(billTo.lastName);
+      customerAddress.setAddress(billTo.address);
+      customerAddress.setCity(billTo.city);
+      customerAddress.setState(billTo.state);
+      customerAddress.setZip(billTo.zip);
+      customerAddress.setCountry(billTo.country);
+      txRequest.setBillTo(customerAddress);
+    }
 
     const request = new ApiContracts.CreateTransactionRequest();
     request.setMerchantAuthentication(merchantAuth);

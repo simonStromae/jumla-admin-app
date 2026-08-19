@@ -10,7 +10,7 @@ export async function POST(req: NextRequest) {
   const clientId = (session!.user as any).id as string;
 
   const body = await req.json();
-  const { opaqueData, amountCad, parcelId, type } = body;
+  const { opaqueData, amountCad, parcelId, type, billTo } = body;
   // type: 'booking' | 'supplement' | 'invoice'
 
   if (!opaqueData?.dataDescriptor || !opaqueData?.dataValue) {
@@ -50,7 +50,7 @@ export async function POST(req: NextRequest) {
   };
 
   const description = `Jumla Cargo — ${parcel.trackingCode} (${type ?? 'paiement'})`;
-  const result = await chargeOpaqueData(creds, opaqueData, Number(amountCad), description);
+  const result = await chargeOpaqueData(creds, opaqueData, Number(amountCad), description, billTo ?? undefined);
 
   if (!result.success) {
     return NextResponse.json({ error: result.error ?? 'Paiement refusé' }, { status: 402 });
