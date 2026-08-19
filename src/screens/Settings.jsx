@@ -1917,6 +1917,8 @@ function SectionPaymentGateway() {
   const [saved,  setSaved]    = useState(false);
   const [err,    setErr]      = useState('');
   const [showTx, setShowTx]   = useState(false);
+  const [testing, setTesting] = useState(false);
+  const [testResult, setTestResult] = useState(null); // null | { ok, error }
 
   useEffect(() => {
     fetch('/api/settings').then(r => r.json()).then(d => {
@@ -1932,7 +1934,7 @@ function SectionPaymentGateway() {
   const set = k => e => setFields(f => ({ ...f, [k]: e.target.value }));
 
   async function handleSave() {
-    setSaving(true); setSaved(false); setErr('');
+    setSaving(true); setSaved(false); setErr(''); setTestResult(null);
     try {
       const res = await fetch('/api/settings', {
         method: 'PUT', headers: { 'Content-Type': 'application/json' },
@@ -1945,6 +1947,19 @@ function SectionPaymentGateway() {
     finally { setSaving(false); }
   }
 
+  async function handleTest() {
+    setTesting(true); setTestResult(null); setErr('');
+    try {
+      const res = await fetch('/api/settings/authnet-test', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(fields),
+      });
+      const json = await res.json();
+      setTestResult(json);
+    } catch { setTestResult({ ok: false, error: 'Erreur réseau' }); }
+    finally { setTesting(false); }
+  }
+
   const env = fields.authnet_environment;
   const configured = !!(fields.authnet_login_id && fields.authnet_client_key && fields.authnet_transaction_key);
 
@@ -1953,17 +1968,27 @@ function SectionPaymentGateway() {
       title="Paiement par carte"
       sub="Connectez votre compte Authorize.net pour accepter Visa, Mastercard et Amex directement depuis l'espace client."
       actions={
-        <button className="btn btn--brand btn--sm" onClick={handleSave} disabled={saving}>
-          {saving ? 'Sauvegarde…' : saved ? '✓ Sauvegardé' : 'Enregistrer'}
-        </button>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <button className="btn btn--ghost btn--sm" onClick={handleTest} disabled={testing || saving}>
+            {testing ? 'Test…' : '⚡ Tester'}
+          </button>
+          <button className="btn btn--brand btn--sm" onClick={handleSave} disabled={saving}>
+            {saving ? 'Sauvegarde…' : saved ? '✓ Sauvegardé' : 'Enregistrer'}
+          </button>
+        </div>
       }>
 
-      {/* Status badge */}
-      <div style={{ marginBottom: 20 }}>
+      {/* Status badge + test result */}
+      <div style={{ marginBottom: 20, display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center' }}>
         {configured
           ? <span style={{ fontSize: 12, fontWeight: 700, padding: '4px 10px', borderRadius: 99, background: 'var(--ok-100)', color: 'var(--ok-700)' }}>✓ Configuré · {env === 'production' ? 'Production' : 'Sandbox'}</span>
           : <span style={{ fontSize: 12, fontWeight: 700, padding: '4px 10px', borderRadius: 99, background: 'var(--bad-100)', color: 'var(--bad-700)' }}>Non configuré</span>
         }
+        {testResult && (
+          <span style={{ fontSize: 12, fontWeight: 700, padding: '4px 10px', borderRadius: 99, background: testResult.ok ? 'var(--ok-100)' : 'var(--bad-100)', color: testResult.ok ? 'var(--ok-700)' : 'var(--bad-700)' }}>
+            {testResult.ok ? '✓ Connexion Authorize.net OK' : `✗ ${testResult.error}`}
+          </span>
+        )}
       </div>
 
       {/* Environment toggle */}
