@@ -232,7 +232,7 @@ export default function ParcelDetailScreen({ id, onNav }) {
           <button className="btn btn--ghost" onClick={() => window.open('/client/invoice/' + id, '_blank')}><I.FileText />{t.parcels.detail.billing}</button>
           {/* TODO: i18n — 'Poids / Prix' has no direct key (composite weight+price) */}
           <button className="btn btn--ghost" onClick={() => setShowWeightModal(true)}><I.Edit />Poids / Prix</button>
-          <button className="btn btn--ghost" onClick={() => setShowPayModal(true)}><I.Send />{'Payer par Interac'}</button>
+          <button className="btn btn--ghost" onClick={() => setShowPayModal(true)}><I.Send />{'Envoyer lien de paiement'}</button>
           {['enr', 'rec'].includes(parcel.status) && (
             <button
               className="btn btn--ghost"
@@ -696,7 +696,7 @@ export default function ParcelDetailScreen({ id, onNav }) {
 
             {(!payment || payment.status !== 'completed') ? (
               <button className="btn btn--brand" style={{ justifyContent: 'center', width: '100%' }} onClick={() => setShowPayModal(true)}>
-                <I.Send />{'Payer par Interac'}
+                <I.Send />{'Envoyer lien de paiement'}
               </button>
             ) : (
               <div style={{ padding: 10, background: 'var(--ok-50)', border: '1px solid var(--ok-100)', fontSize: 11.5, color: 'var(--ok-700)', borderRadius: 6 }}>
@@ -1413,11 +1413,26 @@ function WeightModal({ parcel, onClose, onSaved }) {
 function InteracModal({ parcel, onClose }) {
   const t = useAdminT();
   const { currency, fmt } = useCurrency();
-  const payUrl = (typeof window !== 'undefined' ? window.location.origin : '') + '/payer/' + parcel.id;
-  const [copied, setCopied]     = useState(false);
-  const [sending, setSending]   = useState(false);
-  const [sent, setSent]         = useState(false);
-  const [sendError, setSendError] = useState('');
+  const [payUrl,     setPayUrl]     = useState('');
+  const [expiresAt,  setExpiresAt]  = useState('');
+  const [generating, setGenerating] = useState(false);
+  const [copied,     setCopied]     = useState(false);
+  const [sending,    setSending]    = useState(false);
+  const [sent,       setSent]       = useState(false);
+  const [sendError,  setSendError]  = useState('');
+
+  const generateToken = async () => {
+    setGenerating(true); setSent(false); setCopied(false);
+    const res  = await fetch(`/api/parcels/${parcel.id}/payment-token`, { method: 'POST' });
+    const json = await res.json();
+    if (json.url) {
+      setPayUrl(json.url);
+      setExpiresAt(json.expiresAt ? new Date(json.expiresAt).toLocaleTimeString('fr', { hour: '2-digit', minute: '2-digit' }) : '');
+    }
+    setGenerating(false);
+  };
+
+  useEffect(() => { generateToken(); }, []);  // auto-generate on open
 
   const handleCopy = () => {
     navigator.clipboard?.writeText(payUrl);
@@ -1447,16 +1462,29 @@ function InteracModal({ parcel, onClose }) {
       footer={<button className="btn btn--ghost" onClick={onClose}>{t.common.close}</button>}>
       <div style={{ display: 'grid', gap: 16 }}>
 
-        {/* URL + copy */}
+        {/* Token URL + expiry + regenerate */}
         <div>
-          <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.06em', color: 'var(--ink-400)', marginBottom: 8 }}>Lien de paiement (carte ou Interac)</div>
-          <div style={{ display: 'flex', gap: 8 }}>
-            <div className="mono" style={{ flex: 1, padding: '8px 12px', background: 'var(--bg-soft)', border: '1px solid var(--border)', fontSize: 11.5, color: 'var(--ink-600)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', borderRadius: 6 }}>{payUrl}</div>
-            <button className="btn btn--ghost btn--sm" onClick={handleCopy} style={{ minWidth: 70 }}>{copied ? '✓ Copié' : 'Copier'}</button>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+            <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.06em', color: 'var(--ink-400)' }}>Lien sécurisé (carte ou Interac)</div>
+            <button className="btn btn--ghost btn--sm" onClick={generateToken} disabled={generating}>
+              {generating ? '…' : '↻ Régénérer'}
+            </button>
           </div>
-          <div style={{ fontSize: 11.5, color: 'var(--ink-400)', marginTop: 6, lineHeight: 1.5 }}>
-            Le client atterrit sur une page sécurisée où il peut payer par carte (Visa, Mastercard, Amex) ou confirmer un virement Interac.
-          </div>
+          {payUrl ? (
+            <>
+              <div style={{ display: 'flex', gap: 8, marginBottom: 4 }}>
+                <div className="mono" style={{ flex: 1, padding: '8px 12px', background: 'var(--bg-soft)', border: '1px solid var(--border)', fontSize: 11.5, color: 'var(--ink-600)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', borderRadius: 6 }}>{payUrl}</div>
+                <button className="btn btn--ghost btn--sm" onClick={handleCopy} style={{ minWidth: 70 }}>{copied ? '✓ Copié' : 'Copier'}</button>
+              </div>
+              {expiresAt && (
+                <div style={{ fontSize: 11, color: 'var(--ink-400)' }}>
+                  ⏱ Expire à <strong>{expiresAt}</strong> · Valide 2h · Le client doit être connecté à son compte Jumla
+                </div>
+              )}
+            </>
+          ) : (
+            <div style={{ fontSize: 13, color: 'var(--ink-400)', padding: '8px 0' }}>Génération du lien…</div>
+          )}
         </div>
 
         {/* Client info */}
@@ -1475,12 +1503,12 @@ function InteracModal({ parcel, onClose }) {
             </div>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-              <button className="btn btn--brand" style={{ justifyContent: 'center' }} onClick={handleSendWA} disabled={sending}>
+              <button className="btn btn--brand" style={{ justifyContent: 'center' }} onClick={handleSendWA} disabled={sending || !payUrl}>
                 <I.Chat />{sending ? t.common.sending : 'Envoyer le lien par WhatsApp'}
               </button>
               {sendError && <div style={{ fontSize: 12, color: 'var(--bad-600)', padding: '6px 10px', background: 'var(--bad-50)', borderRadius: 6, border: '1px solid var(--bad-200)' }}>{sendError}</div>}
               <div style={{ fontSize: 11.5, color: 'var(--ink-400)', lineHeight: 1.5 }}>
-                Le client recevra un lien pour payer directement par carte ou par Interac.
+                Le client recevra un lien sécurisé (valide 2h) pour payer par carte ou Interac.
               </div>
             </div>
           )}

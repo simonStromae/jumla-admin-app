@@ -28,10 +28,20 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   const paymentEmailRow = await prisma.setting.findUnique({ where: { key: 'payment_email' } });
   const paymentEmail = paymentEmailRow?.value || 'paiement@jumla.cargo';
 
-  // Build payment URL from request origin
+  // Generate a short-lived payment token (2h TTL)
   const proto = req.headers.get('x-forwarded-proto') || 'https';
   const host  = req.headers.get('x-forwarded-host') || req.headers.get('host') || 'localhost:3000';
-  const paymentUrl = `${proto}://${host}/payer/${parcel.id}`;
+  const TTL_MS = 2 * 60 * 60 * 1000;
+  const token     = crypto.randomUUID();
+  const expiresAt = new Date(Date.now() + TTL_MS).toISOString();
+  await prisma.setting.deleteMany({ where: { key: { startsWith: `plink:parcel:${parcel.id}:` } } });
+  await prisma.setting.create({
+    data: {
+      key:   `plink:parcel:${parcel.id}:${token}`,
+      value: JSON.stringify({ parcelId: parcel.id, clientId: parcel.clientId, expiresAt }),
+    },
+  });
+  const paymentUrl = `${proto}://${host}/payer/${token}`;
 
   const firstName = parcel.client.name.split(' ')[0];
   const amount    = (parcel.payment?.amount ?? parcel.priceXaf ?? 0).toLocaleString('fr');
