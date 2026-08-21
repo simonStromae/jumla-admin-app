@@ -32,11 +32,9 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     ? new Date(campaign.departureDate).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })
     : 'à définir';
 
-  const CHINA_CODES = ['CHN', 'SHA', 'PVG', 'CAN', 'SZX', 'SHG', 'CTU', 'PEK', 'BJS'];
-  const isChina = CHINA_CODES.some(c =>
-    campaign.route.origin.toUpperCase().startsWith(c) ||
-    campaign.route.destination.toUpperCase().startsWith(c)
-  );
+  const isChina =
+    campaign.route.origin.toUpperCase().startsWith('CHN') ||
+    campaign.route.destination.toUpperCase().startsWith('CHN');
   const templateId = isChina ? 'broadcast_china' : 'broadcast';
   const routeLabel = `${campaign.route.origin} → ${campaign.route.destination}`;
 
