@@ -1043,9 +1043,15 @@ export default function CampaignDetailScreen({ id, onNav }) {
                     </div>
                   </td>
                   <td style={{ textAlign: 'right' }}>
-                    <span className="mono" style={{ fontWeight: 700, color: 'var(--ink-900)' }}>
-                      {(p.payment?.amount ?? p.priceXaf) != null ? (p.payment?.amount ?? p.priceXaf).toLocaleString('fr') : '—'}
-                    </span>
+                    {(() => {
+                      const rc = campaign.route?.currency ?? 'CAD';
+                      const raw = p.payment?.amount ?? p.priceXaf;
+                      return raw != null ? (
+                        <span className="mono" style={{ fontWeight: 700, color: 'var(--ink-900)' }}>
+                          {raw.toLocaleString('fr')} <span style={{ fontSize: 11, fontWeight: 500, color: 'var(--ink-400)' }}>{rc}</span>
+                        </span>
+                      ) : <span style={{ color: 'var(--ink-300)' }}>—</span>;
+                    })()}
                   </td>
                   <td>
                     <span className={`badge badge--dot badge--${payInfo.cls}`}>
@@ -1053,7 +1059,7 @@ export default function CampaignDetailScreen({ id, onNav }) {
                     </span>
                     {p.payment?.status === 'partial' && p.payment?.amount != null && (
                       <div style={{ fontSize: 10.5, color: 'var(--ink-400)', marginTop: 2 }}>
-                        / {fmt(p.payment.amount)}
+                        / {fmt(p.payment.amount, campaign.route?.currency ?? 'CAD')}
                       </div>
                     )}
                     {!p.payment && p.priceXaf != null && (
