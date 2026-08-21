@@ -236,10 +236,15 @@ export async function GET(req: NextRequest) {
   const unpaidRows = await prisma.$queryRawUnsafe<any[]>(
     `SELECT py.id, py.amount, py.status,
             p."trackingCode", u.name AS "clientName",
-            p."confirmedPriceXaf", p."adjustmentStatus"
+            p."confirmedPriceXaf", p."adjustmentStatus",
+            p."campaignId",
+            COALESCE(r.currency, 'CAD') AS "routeCurrency",
+            COALESCE(c."exchangeRateToCAD", 1)::float AS "exchangeRateToCAD"
      FROM payments py
      JOIN parcels p ON p.id = py."parcelId"
      JOIN users u ON u.id = py."clientId"
+     JOIN campaigns c ON c.id = p."campaignId"
+     JOIN routes r ON r.id = c."routeId"
      WHERE py.status IN ('pending','partial')
        AND p."deletedAt" IS NULL
        AND p.status != 'ann'
@@ -259,15 +264,18 @@ export async function GET(req: NextRequest) {
     for (const r of allocRows) unpaidAllocMap[r.paymentId] = Number(r.allocated);
   }
 
-  const unpaidItems: { id: string; clientName: string; trackingCode: string; amount: number; status: string }[] = [];
+  const unpaidItems: { id: string; clientName: string; trackingCode: string; amount: number; amountNative: number; currency: string; status: string }[] = [];
   for (const inv of unpaidRows) {
     const adj  = inv.adjustmentStatus ?? 'none';
     const conf = inv.confirmedPriceXaf != null ? Number(inv.confirmedPriceXaf) : null;
     const invoicedAmt = (adj === 'paid' || adj === 'discount') && conf != null ? conf : Number(inv.amount);
     const allocated   = unpaidAllocMap[inv.id] ?? 0;
-    const remaining   = Math.max(0, invoicedAmt - allocated);
-    if (remaining > 0) {
-      unpaidItems.push({ id: inv.id, clientName: inv.clientName, trackingCode: inv.trackingCode, amount: remaining, status: inv.status });
+    const remainingNative = Math.max(0, invoicedAmt - allocated);
+    if (remainingNative > 0) {
+      const rc   = inv.routeCurrency ?? 'CAD';
+      const rate = Number(inv.exchangeRateToCAD ?? 1);
+      const remainingCAD = rc === 'CAD' ? remainingNative : remainingNative * rate;
+      unpaidItems.push({ id: inv.id, clientName: inv.clientName, trackingCode: inv.trackingCode, amount: remainingCAD, amountNative: remainingNative, currency: rc, status: inv.status });
     }
   }
 
@@ -275,7 +283,7 @@ export async function GET(req: NextRequest) {
   const totalWeight    = parcels.reduce((s: number, p: any) => s + (p.weightKg ?? 0), 0);
   const totalParcels   = parcels.length;
   const totalCampaigns = yearCampaigns.length;
-  const totalCosts     = costs.reduce((s: number, c: any) => s + c.fret + c.manutention + c.douane + c.entrepot + c.transport + c.divers, 0);
+  const totalCosts     = costs.reduce((s: number, c: any) => s + toCAD(c.fret + c.manutention + c.douane + c.entrepot + c.transport + c.divers, c.campaignId), 0);
   const grossMargin    = totalCollected - totalCosts;
   const recoveryRate   = totalInvoiced > 0 ? Math.round(totalCollected / totalInvoiced * 100) : 0;
   const grossMarginPct = totalCollected > 0 ? Math.round(grossMargin / totalCollected * 100) : 0;
@@ -326,7 +334,7 @@ export async function GET(req: NextRequest) {
       .filter(c => c.departureDate && c.departureDate.getFullYear() === m.year && c.departureDate.getMonth() === m.month)
       .map(c => c.id);
     return costs.filter((c: any) => campIds.includes(c.campaignId))
-      .reduce((s: number, c: any) => s + c.fret + c.manutention + c.douane + c.entrepot + c.transport + c.divers, 0);
+      .reduce((s: number, c: any) => s + toCAD(c.fret + c.manutention + c.douane + c.entrepot + c.transport + c.divers, c.campaignId), 0);
   });
 
   // ── Top clients ───────────────────────────────────────────────────────────
@@ -336,7 +344,7 @@ export async function GET(req: NextRequest) {
     .slice(0, 5)
     .map((c, i, arr) => ({
       name:  c.name,
-      value: c.amount.toLocaleString('fr') + ' CAD',
+      value: Math.round(c.amount).toLocaleString('fr') + ' CAD',
       sub:   c.count + ' colis payé' + (c.count > 1 ? 's' : ''),
       meter: arr[0].amount > 0 ? Math.round(c.amount / arr[0].amount * 100) : 0,
       color: (i % 8) + 1,

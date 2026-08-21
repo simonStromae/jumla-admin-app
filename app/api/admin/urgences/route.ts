@@ -31,10 +31,14 @@ export async function GET() {
     const rows: any[] = await prisma.$queryRawUnsafe(
       `SELECT py.id, py.amount, py.status, py."createdAt",
               p."trackingCode", u.name as "clientName", p.id as "parcelId",
-              p."confirmedPriceXaf", p."adjustmentStatus"
+              p."confirmedPriceXaf", p."adjustmentStatus",
+              COALESCE(r.currency, 'CAD') AS "routeCurrency",
+              COALESCE(c."exchangeRateToCAD", 1)::float AS "exchangeRateToCAD"
        FROM payments py
        JOIN parcels p ON p.id = py."parcelId"
        JOIN users u ON u.id = py."clientId"
+       JOIN campaigns c ON c.id = p."campaignId"
+       JOIN routes r ON r.id = c."routeId"
        WHERE py.status IN ('pending','partial')
          AND p."deletedAt" IS NULL
          AND p.status != 'ann'
@@ -62,14 +66,15 @@ export async function GET() {
     unpaidInvoices = rows.map((inv: any) => {
       const adj  = inv.adjustmentStatus ?? 'none';
       const conf = inv.confirmedPriceXaf != null ? Number(inv.confirmedPriceXaf) : null;
-      // Same invoiced formula as analytics/campaigns
       const invoiced = (adj === 'paid' || adj === 'discount') && conf != null
         ? conf
         : Number(inv.amount);
-      // Remaining = what hasn't been paid yet
       const allocated = allocMap[inv.id] ?? 0;
-      const remaining = Math.max(0, invoiced - allocated);
-      return { ...inv, amount: Number(inv.amount), invoiced, allocated, remaining };
+      const remainingNative = Math.max(0, invoiced - allocated);
+      const rc   = inv.routeCurrency ?? 'CAD';
+      const rate = Number(inv.exchangeRateToCAD ?? 1);
+      const remainingCAD = rc === 'CAD' ? remainingNative : remainingNative * rate;
+      return { ...inv, amount: Number(inv.amount), invoiced, allocated, remaining: remainingNative, remainingCAD, currency: rc };
     });
   } catch {
     unpaidInvoices = [];

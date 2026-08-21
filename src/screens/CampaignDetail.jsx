@@ -421,6 +421,7 @@ export default function CampaignDetailScreen({ id, onNav }) {
   const [routeAlertPreview,  setRouteAlertPreview]  = useState(null); // { total, route }
   const [routeAlerting,      setRouteAlerting]      = useState(false);
   const [routeAlertResult,   setRouteAlertResult]   = useState(null);
+  const [routeAlertScope,    setRouteAlertScope]    = useState('route'); // 'route' | 'all'
   const [parcelTab,          setParcelTab]          = useState('active'); // 'active' | 'cancelled'
   const [deletingParcelId,   setDeletingParcelId]   = useState(null);
   const [deleteParcelErr,    setDeleteParcelErr]    = useState('');
@@ -643,7 +644,8 @@ export default function CampaignDetailScreen({ id, onNav }) {
           </button>
           <button onClick={() => {
             setRouteAlertResult(null);
-            fetch('/api/campaigns/' + campaign.id + '/route-alert')
+            setRouteAlertScope('route');
+            fetch('/api/campaigns/' + campaign.id + '/route-alert?scope=route')
               .then(r => r.json()).then(d => setRouteAlertPreview(d)).catch(() => {});
             setShowRouteAlert(true);
           }} style={{
@@ -904,6 +906,32 @@ export default function CampaignDetailScreen({ id, onNav }) {
             </div>
           ) : (
             <div>
+              {/* Scope selector */}
+              <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
+                {[
+                  { value: 'route', label: '🎯 Anciens clients du trajet', desc: 'Déjà envoyé sur ce trajet, pas encore inscrits ici' },
+                  { value: 'all',   label: '📢 Tous les clients',          desc: 'Tous les clients actifs du système avec un numéro' },
+                ].map(opt => (
+                  <button
+                    key={opt.value}
+                    onClick={() => {
+                      setRouteAlertScope(opt.value);
+                      setRouteAlertPreview(null);
+                      fetch('/api/campaigns/' + campaign.id + '/route-alert?scope=' + opt.value)
+                        .then(r => r.json()).then(d => setRouteAlertPreview(d)).catch(() => {});
+                    }}
+                    style={{
+                      flex: 1, textAlign: 'left', padding: '10px 12px', borderRadius: 8, cursor: 'pointer',
+                      border: routeAlertScope === opt.value ? '2px solid #8b5cf6' : '1px solid var(--border)',
+                      background: routeAlertScope === opt.value ? '#f5f3ff' : 'white',
+                    }}
+                  >
+                    <div style={{ fontSize: 12.5, fontWeight: 700, color: routeAlertScope === opt.value ? '#6d28d9' : 'var(--ink-800)' }}>{opt.label}</div>
+                    <div style={{ fontSize: 11, color: 'var(--ink-400)', marginTop: 2 }}>{opt.desc}</div>
+                  </button>
+                ))}
+              </div>
+
               <div style={{ background: 'var(--bg-soft)', borderRadius: 10, padding: '14px 16px', marginBottom: 16, fontSize: 13, color: 'var(--ink-600)', lineHeight: 1.6 }}>
                 <strong>Message qui sera envoyé :</strong>
                 <pre style={{ marginTop: 8, fontFamily: 'inherit', whiteSpace: 'pre-wrap', color: 'var(--ink-700)' }}>{`Bonjour [Prénom] 👋\n\nBonne nouvelle ! Une nouvelle cargaison est disponible sur votre trajet habituel :\n📦 ${routeAlertPreview?.route ?? '…'}\n🗓 Départ prévu : ${campaign.departureDate ? new Date(campaign.departureDate).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' }) : 'à définir'}\n\nRéservez votre place dès maintenant sur jumla.app\n\nJumla Shipping`}</pre>
@@ -912,9 +940,11 @@ export default function CampaignDetailScreen({ id, onNav }) {
                 <span style={{ fontSize: 20 }}>🎯</span>
                 <div>
                   <strong style={{ color: '#6d28d9' }}>
-                    {routeAlertPreview ? routeAlertPreview.total : '…'} ancien{routeAlertPreview?.total !== 1 ? 's' : ''} client{routeAlertPreview?.total !== 1 ? 's' : ''} du trajet
+                    {routeAlertPreview ? routeAlertPreview.total : '…'} client{routeAlertPreview?.total !== 1 ? 's' : ''} ciblé{routeAlertPreview?.total !== 1 ? 's' : ''}
                   </strong>
-                  <div style={{ color: '#7c3aed', fontSize: 12 }}>Clients ayant déjà envoyé sur ce trajet, non encore inscrits à cette cargaison</div>
+                  <div style={{ color: '#7c3aed', fontSize: 12 }}>
+                    {routeAlertScope === 'all' ? 'Tous les clients actifs avec un numéro WhatsApp' : 'Clients ayant déjà envoyé sur ce trajet, non encore inscrits'}
+                  </div>
                 </div>
               </div>
               <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
@@ -924,7 +954,11 @@ export default function CampaignDetailScreen({ id, onNav }) {
                   disabled={routeAlerting || !routeAlertPreview}
                   onClick={async () => {
                     setRouteAlerting(true);
-                    const res = await fetch('/api/campaigns/' + campaign.id + '/route-alert', { method: 'POST' });
+                    const res = await fetch('/api/campaigns/' + campaign.id + '/route-alert', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ scope: routeAlertScope }),
+                    });
                     const json = await res.json();
                     setRouteAlerting(false);
                     setRouteAlertResult(json);
@@ -1054,11 +1088,21 @@ export default function CampaignDetailScreen({ id, onNav }) {
                     {(() => {
                       const rc = campaign.route?.currency ?? 'CAD';
                       const raw = p.payment?.amount ?? p.priceXaf;
-                      return raw != null ? (
-                        <span className="mono" style={{ fontWeight: 700, color: 'var(--ink-900)' }}>
-                          {raw.toLocaleString('fr')} <span style={{ fontSize: 11, fontWeight: 500, color: 'var(--ink-400)' }}>{rc}</span>
-                        </span>
-                      ) : <span style={{ color: 'var(--ink-300)' }}>—</span>;
+                      if (raw == null) return <span style={{ color: 'var(--ink-300)' }}>—</span>;
+                      const cadRate = rc !== 'CAD' ? (rates[rc] ?? null) : null;
+                      const cadAmt = cadRate ? Math.round(raw * cadRate) : null;
+                      return (
+                        <div>
+                          <span className="mono" style={{ fontWeight: 700, color: 'var(--ink-900)' }}>
+                            {raw.toLocaleString('fr')} <span style={{ fontSize: 11, fontWeight: 500, color: 'var(--ink-400)' }}>{rc}</span>
+                          </span>
+                          {cadAmt != null && (
+                            <div style={{ fontSize: 10.5, color: 'var(--ink-400)', marginTop: 1 }}>
+                              ≈ {cadAmt.toLocaleString('fr')} CAD
+                            </div>
+                          )}
+                        </div>
+                      );
                     })()}
                   </td>
                   <td>
