@@ -687,12 +687,23 @@ export default function ParcelDetailScreen({ id, onNav }) {
               <span className={'badge badge--dot badge--' + payStatus.cls}>{payStatus.label}</span>
             </div>
 
-            <div style={{ padding: '12px 0', borderTop: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 14 }}>
+            <div style={{ padding: '12px 0', borderTop: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 14 }}>
               {/* TODO: i18n — 'Total dû' has no direct key; using t.common.total as close match */}
               <span style={{ fontWeight: 700 }}>{t.common.total}</span>
-              <span className="mono" style={{ fontSize: 22, fontWeight: 700 }}>
-                {(payment?.amount ?? parcel.priceXaf) != null ? fmt(payment?.amount ?? parcel.priceXaf, routeCurrency) : '—'}
-              </span>
+              {(() => {
+                const raw = payment?.amount ?? parcel.priceXaf;
+                if (raw == null) return <span className="mono" style={{ fontSize: 22, fontWeight: 700 }}>—</span>;
+                return (
+                  <div style={{ textAlign: 'right' }}>
+                    <div className="mono" style={{ fontSize: 22, fontWeight: 700 }}>{fmt(raw, routeCurrency)}</div>
+                    {routeCurrency !== currency && (
+                      <div style={{ fontSize: 12, color: 'var(--ink-400)', fontVariantNumeric: 'tabular-nums' }}>
+                        {raw.toLocaleString('fr')} {routeCurrency}
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
             </div>
 
             {(!payment || payment.status !== 'completed') ? (
@@ -725,22 +736,32 @@ export default function ParcelDetailScreen({ id, onNav }) {
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, padding: '5px 8px', background: 'var(--bg-soft)', borderRadius: 5 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, padding: '5px 8px', background: 'var(--bg-soft)', borderRadius: 5, alignItems: 'flex-end' }}>
                 {/* TODO: i18n — 'Estimation réservation' has no direct key */}
                 <span style={{ color: 'var(--ink-500)' }}>Estimation réservation</span>
-                <span className="mono" style={{ color: parcel.confirmedPriceXaf != null ? 'var(--ink-400)' : 'var(--ink-700)', fontWeight: 600, textDecoration: parcel.confirmedPriceXaf != null ? 'line-through' : 'none' }}>
-                  {parcel.priceXaf ? fmt(parcel.priceXaf, routeCurrency) : '—'}
-                </span>
+                <div style={{ textAlign: 'right' }}>
+                  <span className="mono" style={{ color: parcel.confirmedPriceXaf != null ? 'var(--ink-400)' : 'var(--ink-700)', fontWeight: 600, textDecoration: parcel.confirmedPriceXaf != null ? 'line-through' : 'none' }}>
+                    {parcel.priceXaf ? fmt(parcel.priceXaf, routeCurrency) : '—'}
+                  </span>
+                  {routeCurrency !== currency && parcel.priceXaf != null && (
+                    <div style={{ fontSize: 11, color: 'var(--ink-400)' }}>{parcel.priceXaf.toLocaleString('fr')} {routeCurrency}</div>
+                  )}
+                </div>
               </div>
 
               {parcel.confirmedPriceXaf != null ? (
                 <>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, padding: '5px 8px', background: 'var(--brand-50)', borderRadius: 5 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, padding: '5px 8px', background: 'var(--brand-50)', borderRadius: 5, alignItems: 'flex-end' }}>
                     {/* TODO: i18n — 'Prix réel (pesée)' has no direct key */}
                     <span style={{ color: 'var(--ink-700)', fontWeight: 600 }}>Prix réel (pesée)</span>
-                    <span className="mono" style={{ fontWeight: 700, fontSize: 14, color: 'var(--ink-900)' }}>
-                      {fmt(parcel.confirmedPriceXaf, routeCurrency)}
-                    </span>
+                    <div style={{ textAlign: 'right' }}>
+                      <span className="mono" style={{ fontWeight: 700, fontSize: 14, color: 'var(--ink-900)' }}>
+                        {fmt(parcel.confirmedPriceXaf, routeCurrency)}
+                      </span>
+                      {routeCurrency !== currency && (
+                        <div style={{ fontSize: 11, color: 'var(--ink-500)' }}>{parcel.confirmedPriceXaf.toLocaleString('fr')} {routeCurrency}</div>
+                      )}
+                    </div>
                   </div>
                   {(() => {
                     const diff = parcel.confirmedPriceXaf - (parcel.priceXaf ?? 0);

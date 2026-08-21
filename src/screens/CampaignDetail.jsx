@@ -209,9 +209,16 @@ function ParcelQuickPanel({ parcel: initial, routeCurrency = 'CAD', onClose, onR
             {/* Résumé facture */}
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: canPay ? 12 : 0 }}>
               <div>
-                <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--ink-900)', fontFamily: 'var(--ff-mono)' }}>
-                  {(parcel.payment.amount ?? 0).toLocaleString('fr')} <span style={{ fontSize: 11, fontWeight: 500, color: 'var(--ink-400)' }}>{routeCurrency}</span>
-                  {payStatus === 'partial' && <span style={{ fontSize: 11, fontWeight: 400, color: 'var(--ink-400)', marginLeft: 6 }}>facturé</span>}
+                <div>
+                  <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--ink-900)', fontFamily: 'var(--ff-mono)' }}>
+                    {fmt(parcel.payment.amount ?? 0, routeCurrency)}
+                    {payStatus === 'partial' && <span style={{ fontSize: 11, fontWeight: 400, color: 'var(--ink-400)', marginLeft: 6 }}>facturé</span>}
+                  </div>
+                  {routeCurrency !== currency && (
+                    <div style={{ fontSize: 11, color: 'var(--ink-400)', marginTop: 1 }}>
+                      {(parcel.payment.amount ?? 0).toLocaleString('fr')} {routeCurrency}
+                    </div>
+                  )}
                 </div>
                 <div style={{ fontSize: 11.5, color: 'var(--ink-400)', marginTop: 2 }}>
                   {payInfo.label}
