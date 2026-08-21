@@ -1054,11 +1054,21 @@ export default function CampaignDetailScreen({ id, onNav }) {
                     {(() => {
                       const rc = campaign.route?.currency ?? 'CAD';
                       const raw = p.payment?.amount ?? p.priceXaf;
-                      return raw != null ? (
-                        <span className="mono" style={{ fontWeight: 700, color: 'var(--ink-900)' }}>
-                          {raw.toLocaleString('fr')} <span style={{ fontSize: 11, fontWeight: 500, color: 'var(--ink-400)' }}>{rc}</span>
-                        </span>
-                      ) : <span style={{ color: 'var(--ink-300)' }}>—</span>;
+                      if (raw == null) return <span style={{ color: 'var(--ink-300)' }}>—</span>;
+                      const cadRate = rc !== 'CAD' ? (rates[rc] ?? null) : null;
+                      const cadAmt = cadRate ? Math.round(raw * cadRate) : null;
+                      return (
+                        <div>
+                          <span className="mono" style={{ fontWeight: 700, color: 'var(--ink-900)' }}>
+                            {raw.toLocaleString('fr')} <span style={{ fontSize: 11, fontWeight: 500, color: 'var(--ink-400)' }}>{rc}</span>
+                          </span>
+                          {cadAmt != null && (
+                            <div style={{ fontSize: 10.5, color: 'var(--ink-400)', marginTop: 1 }}>
+                              ≈ {cadAmt.toLocaleString('fr')} CAD
+                            </div>
+                          )}
+                        </div>
+                      );
                     })()}
                   </td>
                   <td>
