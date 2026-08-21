@@ -25,7 +25,7 @@ export async function POST(req: NextRequest) {
   for (const trackingCode of codes) {
     const parcel = await (prisma.parcel.findFirst as any)({
       where: { trackingCode },
-      include: { payment: true },
+      include: { payment: true, campaign: { include: { route: { select: { currency: true } } } } },
     });
 
     if (!parcel) {
@@ -54,7 +54,7 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    results.push({ trackingCode, ok: true, paymentId: payment.id, amount });
+    results.push({ trackingCode, ok: true, paymentId: payment.id, amount, routeCurrency: parcel.campaign?.route?.currency ?? null });
   }
 
   return NextResponse.json({ results });

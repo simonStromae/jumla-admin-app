@@ -98,6 +98,7 @@ export async function GET(_: NextRequest, { params }: { params: { campaignId: st
       departureDate: campaign.departureDate,
       arrivalDate:   campaign.arrivalDate,
       status:        campaign.status,
+      currency:      campaign.route?.currency ?? 'CAD',
     },
     client: {
       name:  client.name,

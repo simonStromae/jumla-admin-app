@@ -98,6 +98,7 @@ export async function GET(_: NextRequest, { params }: { params: { parcelId: stri
       to:            parcel.campaign.route.destination,
       departureDate: parcel.campaign.departureDate,
       arrivalDate:   parcel.campaign.arrivalDate,
+      currency:      parcel.campaign.route.currency ?? 'CAD',
     },
     payment: parcel.payment ? {
       status:       parcel.payment.status,

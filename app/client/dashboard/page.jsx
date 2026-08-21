@@ -92,9 +92,15 @@ function ParcelCard({ parcel, onClick, onRebook }) {
             </div>
           </div>
           <div style={{ textAlign: 'right', flexShrink: 0 }}>
-            <div style={{ fontSize: 13.5, fontWeight: 700, color: '#111827' }}>
-              {(parcel.payment?.amount ?? parcel.priceXaf)?.toLocaleString('fr') ?? '—'} <span style={{ fontSize: 11, fontWeight: 400, color: '#9ca3af' }}>CAD</span>
-            </div>
+            {(() => {
+              const cur = parcel.campaign?.currency ?? 'CAD';
+              const raw = parcel.payment?.amount ?? parcel.priceXaf;
+              return (
+                <div style={{ fontSize: 13.5, fontWeight: 700, color: '#111827' }}>
+                  {raw?.toLocaleString('fr') ?? '—'} <span style={{ fontSize: 11, fontWeight: 400, color: '#9ca3af' }}>{cur}</span>
+                </div>
+              );
+            })()}
             <div style={{ fontSize: 11.5, fontWeight: 600, marginTop: 1, color: paid ? 'var(--ok-600)' : 'var(--bad-600)' }}>
               {paid ? `✓ ${t('dashboard.payment.paid')}` : partial ? t('dashboard.payment.partial') : t('dashboard.payment.pending')}
             </div>
@@ -200,14 +206,19 @@ function CampaignCard({ campaignId, campaign, parcels, router }) {
                 )}
               </div>
             </div>
-            <div style={{ textAlign: 'right', flexShrink: 0 }}>
-              <div style={{ fontSize: 15, fontWeight: 800, color: '#111827' }}>
-                {totalAmount.toLocaleString('fr')} <span style={{ fontSize: 11, fontWeight: 400, color: '#9ca3af' }}>CAD</span>
-              </div>
-              <div style={{ fontSize: 11.5, fontWeight: 600, marginTop: 1, color: allPaid ? 'var(--ok-600)' : 'var(--bad-600)' }}>
-                {allPaid ? '✓ Tout soldé' : anyPartial ? `${allocated.toLocaleString('fr')} reçu · ${remaining.toLocaleString('fr')} restant` : 'En attente de paiement'}
-              </div>
-            </div>
+            {(() => {
+              const cur = campaign?.currency ?? 'CAD';
+              return (
+                <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                  <div style={{ fontSize: 15, fontWeight: 800, color: '#111827' }}>
+                    {totalAmount.toLocaleString('fr')} <span style={{ fontSize: 11, fontWeight: 400, color: '#9ca3af' }}>{cur}</span>
+                  </div>
+                  <div style={{ fontSize: 11.5, fontWeight: 600, marginTop: 1, color: allPaid ? 'var(--ok-600)' : 'var(--bad-600)' }}>
+                    {allPaid ? '✓ Tout soldé' : anyPartial ? `${allocated.toLocaleString('fr')} reçu · ${remaining.toLocaleString('fr')} ${cur} restant` : 'En attente de paiement'}
+                  </div>
+                </div>
+              );
+            })()}
           </div>
 
           {/* Status + progress */}
@@ -280,7 +291,7 @@ function CampaignCard({ campaignId, campaign, parcels, router }) {
                 </div>
                 <div style={{ textAlign: 'right', flexShrink: 0 }}>
                   <div style={{ fontSize: 13, fontWeight: 700, color: '#111827' }}>
-                    {(p.payment?.amount ?? p.priceXaf ?? 0).toLocaleString('fr')} <span style={{ fontSize: 10, color: '#9ca3af' }}>CAD</span>
+                    {(p.payment?.amount ?? p.priceXaf ?? 0).toLocaleString('fr')} <span style={{ fontSize: 10, color: '#9ca3af' }}>{campaign?.currency ?? 'CAD'}</span>
                   </div>
                   <div style={{ fontSize: 11, fontWeight: 600, color: paid ? 'var(--ok-600)' : 'var(--bad-600)' }}>
                     {paid ? '✓ Soldé' : p.payment?.status === 'partial' ? 'Partiel' : 'En attente'}
