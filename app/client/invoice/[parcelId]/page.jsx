@@ -45,6 +45,7 @@ function InvoiceContent({ params }) {
     </div>
   );
 
+  const cur         = data.campaign?.currency ?? 'CAD';
   const paid        = data.payment?.status === 'completed';
   const hasAdj      = data.confirmedPriceXaf != null && data.adjustmentStatus !== 'none';
   const supplement  = hasAdj ? (data.confirmedPriceXaf - (data.priceXaf ?? 0)) : 0;
@@ -130,7 +131,7 @@ function InvoiceContent({ params }) {
 
             {/* Context notice */}
             <div style={{ background: '#fff7ed', border: '1px solid #fed7aa', borderRadius: 8, padding: '12px 16px', marginBottom: 20, fontSize: 13, color: '#92400e' }}>
-              Cette facture de supplément correspond à l&apos;écart entre l&apos;estimation initiale (<strong>{(data.priceXaf ?? data.amount).toLocaleString('fr')} CAD</strong>) et le prix final après pesée en entrepôt (<strong>{data.confirmedPriceXaf.toLocaleString('fr')} CAD</strong>).
+              Cette facture de supplément correspond à l&apos;écart entre l&apos;estimation initiale (<strong>{(data.priceXaf ?? data.amount).toLocaleString('fr')} {cur}</strong>) et le prix final après pesée en entrepôt (<strong>{data.confirmedPriceXaf.toLocaleString('fr')} {cur}</strong>).
             </div>
 
             {/* Supplement table */}
@@ -151,7 +152,7 @@ function InvoiceContent({ params }) {
                   </td>
                   <td style={{ padding: '14px', borderBottom: '1px solid #f3f4f6', color: '#b45309', fontFamily: 'monospace', fontSize: 14 }}>—</td>
                   <td style={{ padding: '14px', borderBottom: '1px solid #f3f4f6', textAlign: 'right', fontFamily: 'monospace', fontSize: 14, fontWeight: 700, color: '#92400e' }}>
-                    {supplement.toLocaleString('fr')} CAD
+                    {supplement.toLocaleString('fr')} {cur}
                   </td>
                 </tr>
               </tbody>
@@ -162,7 +163,7 @@ function InvoiceContent({ params }) {
               <div style={{ minWidth: 280 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', padding: '12px 16px', background: '#92400e', borderRadius: 8, color: 'white' }}>
                   <span style={{ fontWeight: 700 }}>Supplément dû</span>
-                  <span style={{ fontFamily: 'monospace', fontWeight: 800, fontSize: 18 }}>{supplement.toLocaleString('fr')} CAD</span>
+                  <span style={{ fontFamily: 'monospace', fontWeight: 800, fontSize: 18 }}>{supplement.toLocaleString('fr')} {cur}</span>
                 </div>
                 {supPaid && (
                   <div style={{ textAlign: 'right', fontSize: 12, color: '#16a34a', marginTop: 6, fontWeight: 600 }}>
@@ -177,7 +178,7 @@ function InvoiceContent({ params }) {
               <div style={{ background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 8, padding: '16px 20px', marginBottom: 24 }}>
                 <div style={{ fontWeight: 700, color: '#92400e', marginBottom: 6 }}>Modalités de paiement du supplément</div>
                 <div style={{ fontSize: 13, color: '#78350f', lineHeight: 1.6 }}>
-                  Effectuez un virement Interac e-Transfert à <strong>{paymentEmail}</strong> pour le montant de <strong>{supplement.toLocaleString('fr')} CAD</strong>.{' '}
+                  Effectuez un virement Interac e-Transfert à <strong>{paymentEmail}</strong> pour le montant de <strong>{supplement.toLocaleString('fr')} {cur}</strong>.{' '}
                   Indiquez le code <strong style={{ fontFamily: 'monospace' }}>{data.trackingCode}</strong> en message.
                 </div>
               </div>
@@ -300,7 +301,7 @@ function InvoiceContent({ params }) {
                   {data.weightKg ? data.weightKg + ' kg' : '—'}
                 </td>
                 <td style={{ padding: '14px', borderBottom: '1px solid #f3f4f6', textAlign: 'right', fontFamily: 'monospace', fontSize: 14, fontWeight: 700, color: hasAdj ? '#9ca3af' : '#111827', textDecoration: hasAdj ? 'line-through' : 'none' }}>
-                  {(shippingAmt ?? data.priceXaf ?? data.amount).toLocaleString('fr')} CAD
+                  {(shippingAmt ?? data.priceXaf ?? data.amount).toLocaleString('fr')} {cur}
                 </td>
               </tr>
               {coverageFee > 0 && (
@@ -308,12 +309,12 @@ function InvoiceContent({ params }) {
                   <td style={{ padding: '14px', borderBottom: '1px solid #f3f4f6', color: '#1e40af', fontSize: 14 }}>
                     <div style={{ fontWeight: 600 }}>Couverture objets de valeur</div>
                     <div style={{ fontSize: 12, color: '#3b82f6', marginTop: 2 }}>
-                      20 % × {data.declaredValue?.toLocaleString('fr')} $ CAD déclarés
+                      20 % × {data.declaredValue?.toLocaleString('fr')} $ {cur} déclarés
                     </div>
                   </td>
                   <td style={{ padding: '14px', borderBottom: '1px solid #f3f4f6', color: '#3b82f6', fontFamily: 'monospace', fontSize: 14 }}>—</td>
                   <td style={{ padding: '14px', borderBottom: '1px solid #f3f4f6', textAlign: 'right', fontFamily: 'monospace', fontSize: 14, fontWeight: 700, color: '#1e40af' }}>
-                    +{coverageFee.toLocaleString('fr')} CAD
+                    +{coverageFee.toLocaleString('fr')} {cur}
                   </td>
                 </tr>
               )}
@@ -325,7 +326,7 @@ function InvoiceContent({ params }) {
                   </td>
                   <td style={{ padding: '14px', borderBottom: '1px solid #f3f4f6', color: '#b45309', fontFamily: 'monospace', fontSize: 14 }}>—</td>
                   <td style={{ padding: '14px', borderBottom: '1px solid #f3f4f6', textAlign: 'right', fontFamily: 'monospace', fontSize: 14, fontWeight: 700, color: '#92400e' }}>
-                    +{supplement.toLocaleString('fr')} CAD
+                    +{supplement.toLocaleString('fr')} {cur}
                   </td>
                 </tr>
               )}
@@ -344,20 +345,20 @@ function InvoiceContent({ params }) {
                 <div style={{ minWidth: 280 }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', padding: '12px 16px', background: '#1e3a5f', borderRadius: 8, color: 'white' }}>
                     <span style={{ fontWeight: 700 }}>Total{hasAdj ? ' ajusté' : ''}</span>
-                    <span style={{ fontFamily: 'monospace', fontWeight: 800, fontSize: 18 }}>{totalAmt.toLocaleString('fr')} CAD</span>
+                    <span style={{ fontFamily: 'monospace', fontWeight: 800, fontSize: 18 }}>{totalAmt.toLocaleString('fr')} {cur}</span>
                   </div>
                   {showBreakdown && (
                     <>
                       {txs.map((tx, i) => (
                         <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', fontSize: 12, color: '#6b7280', borderTop: i === 0 ? '1px solid #e5e7eb' : 'none', marginTop: i === 0 ? 8 : 0 }}>
                           <span>✓ Versement reçu · {new Date(tx.date).toLocaleDateString('fr-FR')}{tx.ref ? ` · ${tx.ref}` : ''}</span>
-                          <span style={{ fontFamily: 'monospace', fontWeight: 600, color: '#374151' }}>−{Number(tx.amount).toLocaleString('fr')} CAD</span>
+                          <span style={{ fontFamily: 'monospace', fontWeight: 600, color: '#374151' }}>−{Number(tx.amount).toLocaleString('fr')} {cur}</span>
                         </div>
                       ))}
                       {partial ? (
                         <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 12px', background: '#fef3c7', borderRadius: 6, marginTop: 8, fontSize: 13, fontWeight: 700 }}>
                           <span style={{ color: '#92400e' }}>Reste à régler</span>
-                          <span style={{ fontFamily: 'monospace', color: '#92400e' }}>{remaining.toLocaleString('fr')} CAD</span>
+                          <span style={{ fontFamily: 'monospace', color: '#92400e' }}>{remaining.toLocaleString('fr')} {cur}</span>
                         </div>
                       ) : (
                         <div style={{ textAlign: 'right', fontSize: 12, color: '#16a34a', marginTop: 6, fontWeight: 600 }}>
@@ -383,8 +384,8 @@ function InvoiceContent({ params }) {
               <div style={{ fontWeight: 700, color: '#92400e', marginBottom: 6 }}>Modalités de paiement</div>
               <div style={{ fontSize: 13, color: '#78350f', lineHeight: 1.6 }}>
                 {data.payment?.status === 'partial' && data.payment.remaining > 0
-                  ? <>Solde restant : <strong>{data.payment.remaining.toLocaleString('fr')} CAD</strong>. Effectuez le virement Interac à <strong>{paymentEmail}</strong>.</>
-                  : <>Effectuez un virement Interac e-Transfert à <strong>{paymentEmail}</strong> pour le montant de <strong>{totalAmt.toLocaleString('fr')} CAD</strong>.</>
+                  ? <>Solde restant : <strong>{data.payment.remaining.toLocaleString('fr')} {cur}</strong>. Effectuez le virement Interac à <strong>{paymentEmail}</strong>.</>
+                  : <>Effectuez un virement Interac e-Transfert à <strong>{paymentEmail}</strong> pour le montant de <strong>{totalAmt.toLocaleString('fr')} {cur}</strong>.</>
                 }
                 {' '}Indiquez le code <strong style={{ fontFamily: 'monospace' }}>{data.trackingCode}</strong> en message.
               </div>

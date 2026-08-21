@@ -18,7 +18,7 @@ export async function GET(req: NextRequest) {
     orderBy: { createdAt: 'desc' as const },
     include: {
       client:         { select: { id: true, name: true, email: true, phone: true, city: true } },
-      campaign:       { select: { id: true, code: true } },
+      campaign:       { select: { id: true, code: true, route: { select: { currency: true } } } },
       payment:        true,
       trackingEvents: { orderBy: { createdAt: 'desc' as const }, take: 1 },
     },
@@ -61,6 +61,7 @@ export async function GET(req: NextRequest) {
     code:         p.trackingCode,
     trackingCode: p.trackingCode,
     campaign:     p.campaign.code,
+    routeCurrency: p.campaign.route?.currency ?? null,
     campaignId:   p.campaignId,
     clientId:     p.clientId,
     senderName:   p.client.name,

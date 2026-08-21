@@ -55,6 +55,7 @@ export async function GET() {
         to:            p.campaign.route.destination,
         departureDate: p.campaign.departureDate,
         arrivalDate:   p.campaign.arrivalDate,
+        currency:      p.campaign.route.currency ?? 'CAD',
       },
       payment: p.payment ? {
         id:         p.payment.id,

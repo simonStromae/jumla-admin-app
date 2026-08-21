@@ -9,7 +9,7 @@ import { Pagination } from '../components/Pagination.jsx';
 export default function AllParcelsScreen({ onNav, initialSearch = '' }) {
   const can = useCan();
   const t = useAdminT();
-  const { currency, fmt } = useCurrency();
+  const { currency, fmt, convert } = useCurrency();
   const [tab, setTab]                     = useState('all');
   const [campaignFilter, setCampaignFilter] = useState('all');
   const [search, setSearch]               = useState(initialSearch);
@@ -339,22 +339,40 @@ export default function AllParcelsScreen({ onNav, initialSearch = '' }) {
                 </div>
               </td>
               <td style={{ textAlign: 'right' }}>
-                {p.confirmedPriceXaf != null && p.adjustmentStatus !== 'none' ? (
-                  <>
-                    <div>
-                      <span className="mono" style={{ fontWeight: 700 }}>{p.confirmedPriceXaf.toLocaleString('fr')}</span>
-                      <span style={{ fontSize: 11, color: 'var(--ink-400)', marginLeft: 3 }}>{currency}</span>
-                    </div>
-                    <div style={{ fontSize: 10.5, color: 'var(--ink-400)', textDecoration: 'line-through', fontFamily: 'var(--font-mono)' }}>
-                      Est. {(p.priceXaf ?? p.amount ?? 0).toLocaleString('fr')}
-                    </div>
-                  </>
-                ) : (
-                  <>
-                    <span className="mono" style={{ fontWeight: 700 }}>{(p.amount ?? p.priceXaf ?? 0).toLocaleString('fr')}</span>
-                    <span style={{ fontSize: 11, color: 'var(--ink-400)', marginLeft: 3 }}>{currency}</span>
-                  </>
-                )}
+                {(() => {
+                  const rc = p.routeCurrency ?? currency;
+                  const showConv = rc !== currency;
+                  if (p.confirmedPriceXaf != null && p.adjustmentStatus !== 'none') {
+                    return (
+                      <>
+                        <div>
+                          <span className="mono" style={{ fontWeight: 700 }}>{p.confirmedPriceXaf.toLocaleString('fr')}</span>
+                          <span style={{ fontSize: 11, color: 'var(--ink-400)', marginLeft: 3 }}>{rc}</span>
+                        </div>
+                        {showConv && (
+                          <div style={{ fontSize: 10.5, color: 'var(--ink-400)', fontFamily: 'var(--font-mono)' }}>
+                            ≈ {Math.round(convert(p.confirmedPriceXaf, rc)).toLocaleString('fr')} {currency}
+                          </div>
+                        )}
+                        <div style={{ fontSize: 10.5, color: 'var(--ink-400)', textDecoration: 'line-through', fontFamily: 'var(--font-mono)' }}>
+                          Est. {(p.priceXaf ?? p.amount ?? 0).toLocaleString('fr')}
+                        </div>
+                      </>
+                    );
+                  }
+                  const amt = p.amount ?? p.priceXaf ?? 0;
+                  return (
+                    <>
+                      <span className="mono" style={{ fontWeight: 700 }}>{amt.toLocaleString('fr')}</span>
+                      <span style={{ fontSize: 11, color: 'var(--ink-400)', marginLeft: 3 }}>{rc}</span>
+                      {showConv && (
+                        <div style={{ fontSize: 10.5, color: 'var(--ink-400)', fontFamily: 'var(--font-mono)' }}>
+                          ≈ {Math.round(convert(amt, rc)).toLocaleString('fr')} {currency}
+                        </div>
+                      )}
+                    </>
+                  );
+                })()}
               </td>
               <td>
                 {(() => {
@@ -468,7 +486,9 @@ export default function AllParcelsScreen({ onNav, initialSearch = '' }) {
                     {r.trackingCode}
                   </span>
                   <span style={{ flex: 1, color: r.ok ? 'var(--ok-700)' : 'var(--bad-600)' }}>
-                    {r.ok ? `✓ Paiement créé — ${fmt(r.amount ?? 0)}` : `✗ ${r.message}`}
+                    {r.ok
+                      ? `✓ Paiement créé — ${(r.amount ?? 0).toLocaleString('fr')} ${r.routeCurrency ?? currency}${r.routeCurrency && r.routeCurrency !== currency ? ` (≈ ${Math.round(convert(r.amount ?? 0, r.routeCurrency)).toLocaleString('fr')} ${currency})` : ''}`
+                      : `✗ ${r.message}`}
                   </span>
                 </div>
               ))}

@@ -21,6 +21,7 @@ export default function CampaignInvoicePage() {
   if (error)   return <div style={{ padding: 40, textAlign: 'center', color: 'red' }}>{error}</div>;
 
   const { campaign, client, items, totalInvoiced, totalAllocated, totalRemaining, totalWeight, allPaid, invoiceNumber, issueDate } = data;
+  const cur = campaign?.currency ?? 'CAD';
 
   const STATUS_LABEL = {
     completed: { label: 'Soldé',       color: '#047857', bg: '#ecfdf5' },
@@ -65,7 +66,7 @@ export default function CampaignInvoicePage() {
                 background: allPaid ? 'rgba(255,255,255,.25)' : 'rgba(255,100,100,.35)',
                 fontSize: 12, fontWeight: 700,
               }}>
-                {allPaid ? '✓ Tout soldé' : `${totalRemaining.toLocaleString('fr')} CAD restant`}
+                {allPaid ? '✓ Tout soldé' : `${totalRemaining.toLocaleString('fr')} ${cur} restant`}
               </div>
             </div>
           </div>
@@ -104,7 +105,7 @@ export default function CampaignInvoicePage() {
           {[
             { label: 'Total colis', value: items.length, mono: false },
             { label: 'Poids total', value: `${totalWeight} kg`, mono: true },
-            { label: 'Montant total', value: `${totalInvoiced.toLocaleString('fr')} CAD`, mono: true },
+            { label: 'Montant total', value: `${totalInvoiced.toLocaleString('fr')} ${cur}`, mono: true },
           ].map((stat, i) => (
             <div key={stat.label} style={{ padding: '16px 24px', borderRight: i < 2 ? '1px solid #e5e7eb' : 'none' }}>
               <div style={{ fontSize: 10.5, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.08em', color: '#9ca3af', marginBottom: 6 }}>{stat.label}</div>
@@ -138,7 +139,7 @@ export default function CampaignInvoicePage() {
                       {item.weightKg ? `${item.weightKg} kg` : '—'}
                     </td>
                     <td style={{ padding: '12px 16px', textAlign: 'right', fontFamily: 'monospace', fontWeight: 700, fontSize: 13.5, color: '#111827' }}>
-                      {item.invoiced.toLocaleString('fr')} <span style={{ fontSize: 10, color: '#9ca3af', fontWeight: 400 }}>CAD</span>
+                      {item.invoiced.toLocaleString('fr')} <span style={{ fontSize: 10, color: '#9ca3af', fontWeight: 400 }}>{cur}</span>
                     </td>
                     <td style={{ padding: '12px 16px', textAlign: 'right' }}>
                       <span style={{ display: 'inline-block', padding: '3px 10px', borderRadius: 99, background: ps.bg, color: ps.color, fontSize: 11.5, fontWeight: 600 }}>
@@ -163,7 +164,7 @@ export default function CampaignInvoicePage() {
               <div key={row.label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '6px 0', borderBottom: row.bold ? 'none' : '1px solid #e5e7eb' }}>
                 <span style={{ fontSize: row.bold ? 15 : 13, fontWeight: row.bold ? 800 : 500, color: '#374151' }}>{row.label}</span>
                 <span style={{ fontFamily: 'monospace', fontSize: row.bold ? 18 : 14, fontWeight: row.bold ? 800 : 600, color: row.color ?? '#111827' }}>
-                  {row.value.toLocaleString('fr')} CAD
+                  {row.value.toLocaleString('fr')} {cur}
                 </span>
               </div>
             ))}
