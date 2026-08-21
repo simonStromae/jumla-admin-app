@@ -26,7 +26,7 @@ const inp = {
 const inpMono = { ...inp, fontFamily: 'ui-monospace, monospace', fontSize: 15 };
 const lbl = { display: 'block', fontSize: 11, fontWeight: 600, color: '#374151', marginBottom: 4, letterSpacing: '.02em' };
 
-export default function CardPaymentModal({ amountCad, parcelId, type = 'booking', onSuccess, onClose }) {
+export default function CardPaymentModal({ amountCad, currency = 'CAD', amountOriginal, exchangeRate, parcelId, type = 'booking', onSuccess, onClose }) {
   const [gateway,    setGateway]    = useState(null);
   const [loading,    setLoading]    = useState(true);
   const [processing, setProcessing] = useState(false);
@@ -141,7 +141,15 @@ export default function CardPaymentModal({ amountCad, parcelId, type = 'booking'
           <div>
             <div style={{ fontSize: 17, fontWeight: 700, color: '#111827' }}>Payer par carte</div>
             <div style={{ fontSize: 13, color: '#6b7280', marginTop: 3 }}>
-              Montant : <strong style={{ color: '#111827' }}>{Number(amountCad).toFixed(2)} CAD</strong>
+              Montant :{' '}
+              {currency !== 'CAD' && amountOriginal != null ? (
+                <>
+                  <strong style={{ color: '#111827' }}>{Number(amountOriginal).toFixed(2)} {currency}</strong>
+                  <span style={{ color: '#9ca3af', fontSize: 12 }}>{' '}(≈ {Number(amountCad).toFixed(2)} CAD)</span>
+                </>
+              ) : (
+                <strong style={{ color: '#111827' }}>{Number(amountCad).toFixed(2)} CAD</strong>
+              )}
             </div>
           </div>
           <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 22, color: '#9ca3af', lineHeight: 1, padding: 2 }}>×</button>
@@ -249,7 +257,11 @@ export default function CardPaymentModal({ amountCad, parcelId, type = 'booking'
               disabled={processing}
               style={{ width: '100%', padding: '13px 0', background: processing ? '#d1d5db' : 'linear-gradient(90deg,#00B4D8,#1B4FD8)', color: 'white', fontWeight: 700, fontSize: 15, border: 'none', borderRadius: 12, cursor: processing ? 'not-allowed' : 'pointer', transition: 'opacity .15s' }}
             >
-              {processing ? 'Traitement…' : `Payer ${Number(amountCad).toFixed(2)} CAD`}
+              {processing ? 'Traitement…' : (
+                currency !== 'CAD' && amountOriginal != null
+                  ? `Payer ${Number(amountOriginal).toFixed(2)} ${currency} (${Number(amountCad).toFixed(2)} CAD)`
+                  : `Payer ${Number(amountCad).toFixed(2)} CAD`
+              )}
             </button>
 
             <div style={{ fontSize: 11, color: '#9ca3af', textAlign: 'center', marginTop: 12, lineHeight: 1.5 }}>

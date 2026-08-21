@@ -1,6 +1,7 @@
 export const dynamic = 'force-dynamic';
 import { NextResponse } from 'next/server';
 import { prisma } from '@/src/lib/prisma';
+import { getExchangeRatesToCAD, rateForCurrency } from '@/src/lib/exchangeRates';
 
 export async function GET() {
   let rows: any[];
@@ -13,14 +14,20 @@ export async function GET() {
     rows = routes;
   }
 
-  return NextResponse.json(rows.map(r => ({
-    id:          r.id,
-    origin:      r.origin,
-    destination: r.destination,
-    label:       r.label ?? `${r.origin} → ${r.destination}`,
-    code:        `${r.origin} → ${r.destination}`,
-    transitDays: r.transitDays ?? 14,
-    currency:    r.currency ?? 'CAD',
-    fees:        r.fees ?? null,
-  })));
+  const rates = await getExchangeRatesToCAD();
+
+  return NextResponse.json(rows.map(r => {
+    const currency = r.currency ?? 'CAD';
+    return {
+      id:               r.id,
+      origin:           r.origin,
+      destination:      r.destination,
+      label:            r.label ?? `${r.origin} → ${r.destination}`,
+      code:             `${r.origin} → ${r.destination}`,
+      transitDays:      r.transitDays ?? 14,
+      currency,
+      exchangeRateToCad: rateForCurrency(rates, currency),
+      fees:             r.fees ?? null,
+    };
+  }));
 }
