@@ -1446,6 +1446,9 @@ function RouteEditModal({ editRoute, onClose, onSaved }) {
   const [currency, setCurrency]       = useState(r?.currency ?? 'CAD');
   const [active, setActive]           = useState(r?.active ?? true);
 
+  // Route africaine (sacs + bière activés uniquement pour les routes africaines)
+  const [africanRoute, setAfricanRoute] = useState(r?.fees?.africanRoute ?? !isNew);
+
   // Mode de transport
   const [transportMode, setTransportMode] = useState(r?.fees?.transportMode ?? 'air');
 
@@ -1516,11 +1519,12 @@ function RouteEditModal({ editRoute, onClose, onSaved }) {
     try {
       const fees = {
         transportMode,
+        africanRoute,
         tiers:       tiers.map(tierToApi),
-        bags:        { small: parseFloat(bagSmall)||5, medium: parseFloat(bagMedium)||7.5, large: parseFloat(bagLarge)||10 },
+        bags:        africanRoute ? { small: parseFloat(bagSmall)||5, medium: parseFloat(bagMedium)||7.5, large: parseFloat(bagLarge)||10 } : { small: 0, medium: 0, large: 0 },
         plastic:     parseFloat(plastic) || 0.6,
-        saq:         { casier24x65: parseFloat(saq24x65)||24.5, casier24x33: parseFloat(saq24x33)||35.83, casier12x50: parseFloat(saq12x50)||21.34 },
-        supplements: { vetements: parseFloat(suppVetements)||2, cosmetique: parseFloat(suppCosmetique)||3, biere: parseFloat(suppBiere)||6, electronique: parseFloat(suppElectronique)||5, documents: parseFloat(suppDocuments)||-2 },
+        saq:         africanRoute ? { casier24x65: parseFloat(saq24x65)||24.5, casier24x33: parseFloat(saq24x33)||35.83, casier12x50: parseFloat(saq12x50)||21.34 } : { casier24x65: 0, casier24x33: 0, casier12x50: 0 },
+        supplements: { vetements: parseFloat(suppVetements)||2, cosmetique: parseFloat(suppCosmetique)||3, biere: africanRoute ? (parseFloat(suppBiere)||6) : 0, electronique: parseFloat(suppElectronique)||5, documents: parseFloat(suppDocuments)||-2 },
         ...(transportMode === 'sea' ? {
           bulkyPerCbm:        parseFloat(bulkyPerCbm)        || 800,
           highValueThreshold: parseFloat(highValueThreshold) || 500,
@@ -1618,6 +1622,21 @@ function RouteEditModal({ editRoute, onClose, onSaved }) {
               </div>
             </div>
           )}
+          <div className="field" style={{ marginBottom: 0 }}>
+            <label className="label">Type de route</label>
+            <div style={{ display: 'flex', gap: 10, marginTop: 4 }}>
+              {[
+                { v: true,  label: '🌍  Route africaine', desc: 'Sacs, bière SAQ activés' },
+                { v: false, label: '🌐  Autre route',     desc: 'Sacs & bière désactivés' },
+              ].map(opt => (
+                <button key={String(opt.v)} type="button" onClick={() => setAfricanRoute(opt.v)}
+                  style={{ flex: 1, padding: '10px 14px', borderRadius: 8, cursor: 'pointer', textAlign: 'left', border: `2px solid ${africanRoute === opt.v ? 'var(--brand-500)' : 'var(--border)'}`, background: africanRoute === opt.v ? 'var(--brand-50)' : 'var(--bg-soft)' }}>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: africanRoute === opt.v ? 'var(--brand-700)' : 'var(--ink-600)' }}>{opt.label}</div>
+                  <div style={{ fontSize: 11, color: 'var(--ink-400)', marginTop: 2 }}>{opt.desc}</div>
+                </button>
+              ))}
+            </div>
+          </div>
         </div>
 
         {/* Section 1b — Mode de transport */}
@@ -1745,17 +1764,16 @@ function RouteEditModal({ editRoute, onClose, onSaved }) {
         </div>
 
         {/* Section 3 — Emballages & conditionnement */}
-        <SectionTitle>{/* TODO i18n: Emballages & conditionnement */}Emballages & conditionnement</SectionTitle>
+        <SectionTitle>Emballages & conditionnement</SectionTitle>
         <div className="card" style={{ padding: 20, marginBottom: 20 }}>
-          {/* TODO i18n: packaging labels (Carton, Petit sac, Moyen sac, Grand sac, Plastique) */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 12 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: `repeat(${africanRoute ? 5 : 2}, 1fr)`, gap: 12 }}>
             {[
-              { label: 'Carton', sub: '(1er palier : forfait)', val: '1', readOnly: true },
-              { label: 'Petit sac', val: bagSmall, set: setBagSmall },
-              { label: 'Moyen sac', val: bagMedium, set: setBagMedium },
-              { label: 'Grand sac', val: bagLarge, set: setBagLarge },
-              { label: 'Plastique', sub: '$/unité (conditionnement)', val: plastic, set: setPlastic },
-            ].map(f => (
+              { label: 'Carton', sub: '(1er palier : forfait)', val: '1', readOnly: true, always: true },
+              { label: 'Petit sac',  val: bagSmall,  set: setBagSmall,  african: true },
+              { label: 'Moyen sac', val: bagMedium, set: setBagMedium, african: true },
+              { label: 'Grand sac', val: bagLarge,  set: setBagLarge,  african: true },
+              { label: 'Plastique', sub: '$/unité', val: plastic, set: setPlastic, always: true },
+            ].filter(f => f.always || (f.african && africanRoute)).map(f => (
               <div key={f.label} className="field" style={{ marginBottom: 0 }}>
                 <label className="label">{f.label}{f.sub && <span className="opt"> {f.sub}</span>}</label>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
@@ -1766,43 +1784,46 @@ function RouteEditModal({ editRoute, onClose, onSaved }) {
             ))}
           </div>
           <div style={{ marginTop: 12, fontSize: 12, color: 'var(--ink-400)' }}>
-            {/* TODO i18n: carton tier description */}
             Le carton est configuré par palier (forfait sur le 1er palier, 1,50 {currency}/carton sur les suivants par défaut).
+            {!africanRoute && <span style={{ color: 'var(--ink-300)' }}> · Sacs non disponibles sur cette route.</span>}
           </div>
         </div>
 
-        {/* Section 4 — Frais SAQ */}
-        <SectionTitle>{/* TODO i18n: Frais SAQ (bière) */}Frais SAQ (bière)</SectionTitle>
-        <div className="card" style={{ padding: 20, marginBottom: 20 }}>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12 }}>
-            {[
-              { label: 'Casier 24 × 65cl', val: saq24x65, set: setSaq24x65 },
-              { label: 'Casier 24 × 33cl', val: saq24x33, set: setSaq24x33 },
-              { label: 'Casier 12 × 50cl', val: saq12x50, set: setSaq12x50 },
-            ].map(f => (
-              <div key={f.label} className="field" style={{ marginBottom: 0 }}>
-                <label className="label">{f.label}</label>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                  <input className="input mono" type="number" step="0.01" value={f.val} onChange={e => f.set(e.target.value)} style={{ flex: 1 }} />
-                  <span style={{ fontSize: 12, color: 'var(--ink-400)' }}>{currency}</span>
-                </div>
+        {/* Section 4 — Frais SAQ (routes africaines uniquement) */}
+        {africanRoute && (
+          <>
+            <SectionTitle>Frais SAQ (bière)</SectionTitle>
+            <div className="card" style={{ padding: 20, marginBottom: 20 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12 }}>
+                {[
+                  { label: 'Casier 24 × 65cl', val: saq24x65, set: setSaq24x65 },
+                  { label: 'Casier 24 × 33cl', val: saq24x33, set: setSaq24x33 },
+                  { label: 'Casier 12 × 50cl', val: saq12x50, set: setSaq12x50 },
+                ].map(f => (
+                  <div key={f.label} className="field" style={{ marginBottom: 0 }}>
+                    <label className="label">{f.label}</label>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                      <input className="input mono" type="number" step="0.01" value={f.val} onChange={e => f.set(e.target.value)} style={{ flex: 1 }} />
+                      <span style={{ fontSize: 12, color: 'var(--ink-400)' }}>{currency}</span>
+                    </div>
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
-        </div>
+            </div>
+          </>
+        )}
 
         {/* Section 5 — Suppléments */}
-        <SectionTitle>{/* TODO i18n: Suppléments par catégorie */}Suppléments par catégorie</SectionTitle>
+        <SectionTitle>Suppléments par catégorie</SectionTitle>
         <div className="card" style={{ padding: 20, marginBottom: 20 }}>
-          {/* TODO i18n: supplement category labels */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 12 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: `repeat(${africanRoute ? 5 : 4}, 1fr)`, gap: 12 }}>
             {[
-              { label: 'Vêtements',    icon: '👗', val: suppVetements,    set: setSuppVetements    },
-              { label: 'Cosmétiques',  icon: '💄', val: suppCosmetique,   set: setSuppCosmetique   },
-              { label: 'Bière',        icon: '🍺', val: suppBiere,        set: setSuppBiere        },
-              { label: 'Électronique', icon: '📱', val: suppElectronique, set: setSuppElectronique },
-              { label: 'Documents',    icon: '📄', val: suppDocuments,    set: setSuppDocuments    },
-            ].map(f => (
+              { label: 'Vêtements',    icon: '👗', val: suppVetements,    set: setSuppVetements,    always: true },
+              { label: 'Cosmétiques',  icon: '💄', val: suppCosmetique,   set: setSuppCosmetique,   always: true },
+              { label: 'Bière',        icon: '🍺', val: suppBiere,        set: setSuppBiere,        african: true },
+              { label: 'Électronique', icon: '📱', val: suppElectronique, set: setSuppElectronique, always: true },
+              { label: 'Documents',    icon: '📄', val: suppDocuments,    set: setSuppDocuments,    always: true },
+            ].filter(f => f.always || (f.african && africanRoute)).map(f => (
               <div key={f.label} className="field" style={{ marginBottom: 0 }}>
                 <label className="label">{f.icon} {f.label}</label>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
@@ -1813,7 +1834,6 @@ function RouteEditModal({ editRoute, onClose, onSaved }) {
             ))}
           </div>
           <div style={{ marginTop: 10, fontSize: 12, color: 'var(--ink-400)' }}>
-            {/* TODO i18n: supplement description */}
             Les suppléments s'ajoutent au transport pour chaque ligne de colis de cette catégorie. Un montant négatif est une réduction.
           </div>
         </div>
