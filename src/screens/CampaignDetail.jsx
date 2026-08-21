@@ -397,7 +397,7 @@ function ParcelQuickPanel({ parcel: initial, onClose, onRefresh, onNav }) {
 export default function CampaignDetailScreen({ id, onNav }) {
   const t = useAdminT();
   const can = useCan();
-  const { currency, fmt } = useCurrency();
+  const { currency, fmt, rates } = useCurrency();
   const [campaign,           setCampaign]           = useState(null);
   const [loading,            setLoading]            = useState(true);
   const [advancing,          setAdvancing]          = useState(false);
@@ -670,23 +670,39 @@ export default function CampaignDetailScreen({ id, onNav }) {
       </div>
 
       {/* KPI strip */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', background: 'white', border: '1px solid var(--border)', borderRadius: 12, overflow: 'hidden', marginBottom: 16 }}>
-        {[
-          { l: t.campaigns.kpi.parcels,              v: parcels.length,                  u: '' },
-          { l: /* TODO: i18n */ 'Poids total',        v: totalWeight.toLocaleString('fr'), u: 'kg' },
-          { l: /* TODO: i18n */ 'Facturé',            v: fmt(invoiced),    u: '' },
-          { l: /* TODO: i18n */ 'Perçu',              v: fmt(collected),   u: '', col: 'var(--ok-600)' },
-          { l: /* TODO: i18n */ 'Reste à percevoir',  v: fmt(outstanding), u: '', col: outstanding > 0 ? 'var(--bad-600)' : 'var(--ok-600)' },
-          { l: /* TODO: i18n */ 'Taux recouvrement',  v: pct,                              u: '%',   col: pct >= 95 ? 'var(--ok-600)' : 'var(--warn-700)' },
-        ].map((k, i) => (
-          <div key={i} style={{ padding: '14px 18px', borderRight: i < 5 ? '1px solid var(--border-soft)' : 'none' }}>
-            <div className="kpi__label" style={{ fontSize: 10.5, color: 'var(--ink-400)', textTransform: 'uppercase', letterSpacing: '.04em', fontWeight: 600, marginBottom: 4 }}>{k.l}</div>
-            <div className="kpi__value mono" style={{ fontSize: 18, fontWeight: 700, color: k.col || 'var(--ink-900)' }}>
-              {k.v}<span style={{ fontSize: 11, color: 'var(--ink-400)', fontWeight: 500, marginLeft: 4 }}>{k.u}</span>
+      {(() => {
+        const routeCurrency = campaign.route?.currency ?? 'CAD';
+        const rateToCAD = routeCurrency !== 'CAD' ? (rates[routeCurrency] ?? null) : null;
+        const fmtOrig = (amount) => `${Math.round(amount).toLocaleString('fr')} ${routeCurrency}`;
+        return (
+          <>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', background: 'white', border: '1px solid var(--border)', borderRadius: 12, overflow: 'hidden', marginBottom: rateToCAD ? 0 : 16, borderBottomLeftRadius: rateToCAD ? 0 : 12, borderBottomRightRadius: rateToCAD ? 0 : 12 }}>
+              {[
+                { l: t.campaigns.kpi.parcels,             v: parcels.length,                   u: '' },
+                { l: 'Poids total',                        v: totalWeight.toLocaleString('fr'),  u: 'kg' },
+                { l: 'Facturé',                            v: fmt(invoiced, routeCurrency),     u: '', sub: rateToCAD ? fmtOrig(invoiced) : null },
+                { l: 'Perçu',                              v: fmt(collected, routeCurrency),    u: '', col: 'var(--ok-600)', sub: rateToCAD ? fmtOrig(collected) : null },
+                { l: 'Reste à percevoir',                  v: fmt(outstanding, routeCurrency),  u: '', col: outstanding > 0 ? 'var(--bad-600)' : 'var(--ok-600)', sub: rateToCAD ? fmtOrig(outstanding) : null },
+                { l: 'Taux recouvrement',                  v: pct,                              u: '%', col: pct >= 95 ? 'var(--ok-600)' : 'var(--warn-700)' },
+              ].map((k, i) => (
+                <div key={i} style={{ padding: '14px 18px', borderRight: i < 5 ? '1px solid var(--border-soft)' : 'none' }}>
+                  <div className="kpi__label" style={{ fontSize: 10.5, color: 'var(--ink-400)', textTransform: 'uppercase', letterSpacing: '.04em', fontWeight: 600, marginBottom: 4 }}>{k.l}</div>
+                  <div className="kpi__value mono" style={{ fontSize: 18, fontWeight: 700, color: k.col || 'var(--ink-900)' }}>
+                    {k.v}<span style={{ fontSize: 11, color: 'var(--ink-400)', fontWeight: 500, marginLeft: 4 }}>{k.u}</span>
+                  </div>
+                  {k.sub && <div style={{ fontSize: 10.5, color: 'var(--ink-400)', marginTop: 2, fontVariantNumeric: 'tabular-nums' }}>{k.sub}</div>}
+                </div>
+              ))}
             </div>
-          </div>
-        ))}
-      </div>
+            {rateToCAD && (
+              <div style={{ background: 'var(--ink-50,#f9fafb)', border: '1px solid var(--border)', borderTop: 'none', borderBottomLeftRadius: 12, borderBottomRightRadius: 12, padding: '6px 18px', marginBottom: 16, fontSize: 11, color: 'var(--ink-400)', display: 'flex', alignItems: 'center', gap: 6 }}>
+                <span>💱</span>
+                <span>Taux Jumla appliqué : <strong style={{ color: 'var(--ink-600)' }}>1 {routeCurrency} = {rateToCAD.toFixed(4)} CAD</strong> — les montants en {currency} sont calculés avec ce taux.</span>
+              </div>
+            )}
+          </>
+        );
+      })()}
 
       {/* Status controls */}
       <div className="card" style={{ marginBottom: 16, padding: '14px 20px', display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
@@ -804,11 +820,30 @@ export default function CampaignDetailScreen({ id, onNav }) {
             </div>
           ) : (
             <div>
-              <div style={{ background: 'var(--bg-soft)', borderRadius: 10, padding: '14px 16px', marginBottom: 16, fontSize: 13, color: 'var(--ink-600)', lineHeight: 1.6 }}>
-                {/* TODO: i18n — "Message qui sera envoyé" has no translation key */}
-                <strong>Message qui sera envoyé :</strong>
-                <pre style={{ marginTop: 8, fontFamily: 'inherit', whiteSpace: 'pre-wrap', color: 'var(--ink-700)' }}>{`Bonjour [Prénom] 👋\n\nNouvelle cargaison disponible — départ prévu le ${campaign.departureDate ? new Date(campaign.departureDate).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' }) : 'à définir'}.\n\nRéservez votre place dès maintenant.\n\nJumla Shipping`}</pre>
-              </div>
+              {(() => {
+                const CHINA_CODES = ['SHA', 'PVG', 'CAN', 'SZX', 'SHG', 'CTU', 'PEK', 'BJS'];
+                const isChina = CHINA_CODES.some(c =>
+                  campaign.from?.toUpperCase().startsWith(c) || campaign.to?.toUpperCase().startsWith(c)
+                );
+                const depDate = campaign.departureDate
+                  ? new Date(campaign.departureDate).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })
+                  : 'à définir';
+                const arrDate = campaign.arrivalDate
+                  ? new Date(campaign.arrivalDate).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })
+                  : 'à définir';
+                const preview = isChina
+                  ? `Bonjour [Prénom] 👋\n\n🇨🇳➡️🇨🇦 *Nouvelle cargaison Chine → Canada !*\n\nJumla Shipping ouvre une nouvelle cargaison maritime sur la route *${campaign.from} → ${campaign.to}*.\n\n📦 Idéal pour : électronique, vêtements, articles généraux\n🚢 Départ de Chine : *${depDate}*\n🗓 Arrivée estimée au Canada : *${arrDate}*\n\nRéservez votre place dès maintenant sur jumla.app\n\nJumla Shipping`
+                  : `Bonjour [Prénom] 👋\n\nNouvelle cargaison disponible — départ prévu le ${depDate}.\n\nRéservez votre place dès maintenant.\n\nJumla Shipping`;
+                return (
+                  <div style={{ background: 'var(--bg-soft)', borderRadius: 10, padding: '14px 16px', marginBottom: 16, fontSize: 13, color: 'var(--ink-600)', lineHeight: 1.6 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                      <strong>Message qui sera envoyé :</strong>
+                      {isChina && <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: '.06em', textTransform: 'uppercase', color: '#0369a1', background: '#e0f2fe', borderRadius: 999, padding: '2px 8px' }}>🇨🇳 Route Chine</span>}
+                    </div>
+                    <pre style={{ margin: 0, fontFamily: 'inherit', whiteSpace: 'pre-wrap', color: 'var(--ink-700)' }}>{preview}</pre>
+                  </div>
+                );
+              })()}
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', background: 'var(--info-50)', border: '1px solid var(--info-100)', borderRadius: 8, marginBottom: 20, fontSize: 13 }}>
                 <span style={{ fontSize: 20 }}>👥</span>
                 <div>

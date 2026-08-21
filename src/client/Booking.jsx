@@ -1062,13 +1062,25 @@ export default function BookingScreen({ onNav, embedded = false, prefillId = nul
     <div className={embedded ? '' : 'co-wrap'}>
       {showCardModal && bookedParcelId && (
         <Suspense fallback={null}>
-          <CardPaymentModal
-            amountCad={price?.total ?? 0}
-            parcelId={bookedParcelId}
-            type="booking"
-            onSuccess={() => { setShowCardModal(false); }}
-            onClose={() => setShowCardModal(false)}
-          />
+          {(() => {
+            const routeCurrency = route?.currency ?? 'CAD';
+            const exchangeRate  = route?.exchangeRateToCad ?? 1;
+            const amountCad = routeCurrency === 'CAD'
+              ? (price?.total ?? 0)
+              : Math.round((price?.total ?? 0) * exchangeRate * 100) / 100;
+            return (
+              <CardPaymentModal
+                amountCad={amountCad}
+                currency={routeCurrency}
+                amountOriginal={routeCurrency !== 'CAD' ? (price?.total ?? 0) : undefined}
+                exchangeRate={routeCurrency !== 'CAD' ? exchangeRate : undefined}
+                parcelId={bookedParcelId}
+                type="booking"
+                onSuccess={() => { setShowCardModal(false); }}
+                onClose={() => setShowCardModal(false)}
+              />
+            );
+          })()}
         </Suspense>
       )}
       {!embedded && <TopBar />}
@@ -1160,7 +1172,13 @@ export default function BookingScreen({ onNav, embedded = false, prefillId = nul
                       border: 'none', cursor: 'pointer',
                       display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
                     }}>
-                    💳 Payer {price.total.toFixed(0)} {route?.currency ?? 'CAD'} par carte
+                    {(() => {
+                      const cur  = route?.currency ?? 'CAD';
+                      const rate = route?.exchangeRateToCad ?? 1;
+                      if (cur === 'CAD') return `💳 Payer ${price.total.toFixed(0)} CAD par carte`;
+                      const cad = Math.round(price.total * rate);
+                      return `💳 Payer ${price.total.toFixed(0)} ${cur} (≈ ${cad} CAD) par carte`;
+                    })()}
                   </button>
                   <div style={{ textAlign: 'center', fontSize: 12, color: 'var(--ink-400)', marginTop: 8 }}>
                     — ou par virement Interac ci-dessous —
@@ -1175,17 +1193,29 @@ export default function BookingScreen({ onNav, embedded = false, prefillId = nul
                   <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--ink-800)' }}>{t('booking.confirm.interacTitle')}</span>
                 </div>
                 <div style={{ background: 'var(--bg-soft)', border: '1.5px solid var(--border)', borderRadius: 'var(--radius)', overflow: 'hidden', marginBottom: 10 }}>
-                  {[
-                    [t('booking.confirm.sendTo'),    paymentEmail,                                                    false],
-                    [t('booking.confirm.from'),      effectiveUser?.email ?? '',                                       true ],
-                    [t('booking.confirm.amount'),    `${price?.total?.toFixed(0) ?? '—'} ${route?.currency ?? 'CAD'}`, false],
-                    [t('booking.confirm.reference'), refCode,                                                          false],
-                  ].map(([k, v, highlight], idx) => (
-                    <div key={k} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 14px', borderBottom: idx < 3 ? '1px solid var(--border-soft)' : 'none', background: highlight ? 'var(--brand-50)' : 'transparent' }}>
-                      <span style={{ fontSize: 12, color: 'var(--ink-400)', fontWeight: 500 }}>{k}</span>
-                      <span style={{ fontWeight: 700, color: highlight ? 'var(--brand-700)' : 'var(--ink-900)', fontFamily: 'ui-monospace, monospace', fontSize: 12.5 }}>{v}</span>
-                    </div>
-                  ))}
+                  {(() => {
+                    const cur  = route?.currency ?? 'CAD';
+                    const rate = route?.exchangeRateToCad ?? 1;
+                    const amtLabel = cur === 'CAD'
+                      ? `${price?.total?.toFixed(0) ?? '—'} CAD`
+                      : `${price?.total?.toFixed(0) ?? '—'} ${cur}`;
+                    const cadEquiv = cur !== 'CAD' && price?.total
+                      ? `≈ ${Math.round(price.total * rate).toLocaleString('fr')} CAD`
+                      : null;
+                    const rows = [
+                      [t('booking.confirm.sendTo'),    paymentEmail,      false],
+                      [t('booking.confirm.from'),      effectiveUser?.email ?? '', true],
+                      [t('booking.confirm.amount'),    amtLabel,          false],
+                      ...(cadEquiv ? [['Équivalent CAD (Interac)', cadEquiv, false]] : []),
+                      [t('booking.confirm.reference'), refCode,           false],
+                    ];
+                    return rows.map(([k, v, highlight], idx) => (
+                      <div key={k} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 14px', borderBottom: idx < rows.length - 1 ? '1px solid var(--border-soft)' : 'none', background: highlight ? 'var(--brand-50)' : 'transparent' }}>
+                        <span style={{ fontSize: 12, color: 'var(--ink-400)', fontWeight: 500 }}>{k}</span>
+                        <span style={{ fontWeight: 700, color: highlight ? 'var(--brand-700)' : 'var(--ink-900)', fontFamily: 'ui-monospace, monospace', fontSize: 12.5 }}>{v}</span>
+                      </div>
+                    ));
+                  })()}
                 </div>
                 <div style={{ background: 'var(--info-50)', border: '1px solid var(--info-100)', borderRadius: 'var(--radius)', padding: '12px 14px', fontSize: 12.5, color: 'var(--info-700)', lineHeight: 1.65 }}>
                   {t('booking.confirm.warning').replace('{code}', refCode)}

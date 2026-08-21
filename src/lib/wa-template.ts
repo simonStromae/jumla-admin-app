@@ -82,6 +82,24 @@ Réservez votre place dès maintenant.
 
 Jumla Shipping`,
   },
+  broadcast_china: {
+    label: 'Annonce cargaison — Route Chine',
+    vars:  ['{first_name}', '{route}', '{departure_date}', '{arrival_date}'],
+    body:
+`Bonjour {first_name} 👋
+
+🇨🇳➡️🇨🇦 *Nouvelle cargaison Chine → Canada !*
+
+Jumla Shipping ouvre une nouvelle cargaison maritime sur la route *{route}*.
+
+📦 Idéal pour : électronique, vêtements, articles généraux
+🚢 Départ de Chine : *{departure_date}*
+🗓 Arrivée estimée au Canada : *{arrival_date}*
+
+Réservez votre place dès maintenant sur jumla.app
+
+Jumla Shipping`,
+  },
   auto_new_campaign_route: {
     label:   'Nouvelle cargaison — anciens clients du trajet',
     trigger: "Déclenché manuellement depuis la fiche cargaison pour alerter les anciens clients du même trajet",

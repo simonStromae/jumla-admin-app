@@ -32,22 +32,30 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     ? new Date(campaign.departureDate).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })
     : 'à définir';
 
+  const CHINA_CODES = ['CHN', 'SHA', 'PVG', 'CAN', 'SZX', 'SHG', 'CTU', 'PEK', 'BJS'];
+  const isChina = CHINA_CODES.some(c =>
+    campaign.route.origin.toUpperCase().startsWith(c) ||
+    campaign.route.destination.toUpperCase().startsWith(c)
+  );
+  const templateId = isChina ? 'broadcast_china' : 'broadcast';
+  const routeLabel = `${campaign.route.origin} → ${campaign.route.destination}`;
+
   const results: { clientId: string; name: string; status: 'sent' | 'failed'; error?: string }[] = [];
 
   for (const client of clients) {
     const firstName = client.name.split(' ')[0];
-    const body = await renderWaTemplate('broadcast', {
-      first_name:   firstName,
-      arrival_date: depDate,
-    });
+    const vars = isChina
+      ? { first_name: firstName, route: routeLabel, departure_date: depDate, arrival_date: arrDate }
+      : { first_name: firstName, arrival_date: depDate };
+    const body = await renderWaTemplate(templateId, vars);
 
     try {
       await sendWhatsappNotification(
         client.phone!,
         body,
         null,
-        'broadcast',
-        { first_name: firstName, arrival_date: depDate },
+        templateId,
+        vars,
       );
       results.push({ clientId: client.id, name: client.name, status: 'sent' });
     } catch (e: any) {
