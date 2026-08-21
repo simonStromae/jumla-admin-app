@@ -1449,6 +1449,13 @@ function RouteEditModal({ editRoute, onClose, onSaved }) {
   // Route africaine (sacs + bière activés uniquement pour les routes africaines)
   const [africanRoute, setAfricanRoute] = useState(r?.fees?.africanRoute ?? !isNew);
 
+  // Catégories autorisées
+  const ALL_CATEGORY_IDS = ['standard','vetements','cosmetique','alimentaire','biere','manioc_huile','electronique','documents'];
+  const [allowedCategories, setAllowedCategories] = useState(r?.fees?.allowedCategories ?? ALL_CATEGORY_IDS);
+  const toggleCategory = id => setAllowedCategories(prev =>
+    prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
+  );
+
   // Mode de transport
   const [transportMode, setTransportMode] = useState(r?.fees?.transportMode ?? 'air');
 
@@ -1520,6 +1527,7 @@ function RouteEditModal({ editRoute, onClose, onSaved }) {
       const fees = {
         transportMode,
         africanRoute,
+        allowedCategories,
         tiers:       tiers.map(tierToApi),
         bags:        africanRoute ? { small: parseFloat(bagSmall)||5, medium: parseFloat(bagMedium)||7.5, large: parseFloat(bagLarge)||10 } : { small: 0, medium: 0, large: 0 },
         plastic:     parseFloat(plastic) || 0.6,
@@ -1835,6 +1843,53 @@ function RouteEditModal({ editRoute, onClose, onSaved }) {
           </div>
           <div style={{ marginTop: 10, fontSize: 12, color: 'var(--ink-400)' }}>
             Les suppléments s'ajoutent au transport pour chaque ligne de colis de cette catégorie. Un montant négatif est une réduction.
+          </div>
+        </div>
+
+        {/* Section 5b — Catégories d'articles autorisées */}
+        <SectionTitle>Catégories d'articles</SectionTitle>
+        <div className="card" style={{ padding: 20, marginBottom: 20 }}>
+          <div style={{ fontSize: 13, color: 'var(--ink-500)', marginBottom: 14 }}>
+            Choisissez les catégories disponibles lors de la saisie d'un colis sur cette route. Toutes sont activées par défaut.
+          </div>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+            {[
+              { id: 'standard',     label: 'Standard',                      icon: '📦' },
+              { id: 'vetements',    label: 'Vêtements / Chaussures / Sacs', icon: '👗' },
+              { id: 'cosmetique',   label: 'Cosmétiques / Compléments',     icon: '💄' },
+              { id: 'alimentaire',  label: 'Alimentaire / Épices',          icon: '🍱' },
+              { id: 'biere',        label: 'Bière',                         icon: '🍺' },
+              { id: 'manioc_huile', label: 'Bâton de manioc / Huile rouge', icon: '🪴' },
+              { id: 'electronique', label: 'Électronique',                  icon: '📱' },
+              { id: 'documents',    label: 'Documents',                     icon: '📄' },
+            ].map(cat => {
+              const on = allowedCategories.includes(cat.id);
+              return (
+                <button key={cat.id} type="button" onClick={() => toggleCategory(cat.id)}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: 6,
+                    padding: '7px 12px', borderRadius: 20, fontSize: 13, fontWeight: 600, cursor: 'pointer',
+                    border: `2px solid ${on ? 'var(--brand-400)' : 'var(--border)'}`,
+                    background: on ? 'var(--brand-50)' : 'var(--bg-soft)',
+                    color: on ? 'var(--brand-700)' : 'var(--ink-400)',
+                    transition: 'all .12s',
+                  }}>
+                  <span>{cat.icon}</span>
+                  <span>{cat.label}</span>
+                  {on && <span style={{ fontSize: 11, color: 'var(--brand-500)' }}>✓</span>}
+                </button>
+              );
+            })}
+          </div>
+          <div style={{ marginTop: 12, display: 'flex', gap: 8 }}>
+            <button type="button" className="btn btn--ghost btn--sm"
+              onClick={() => setAllowedCategories(ALL_CATEGORY_IDS)}>
+              Tout activer
+            </button>
+            <button type="button" className="btn btn--ghost btn--sm"
+              onClick={() => setAllowedCategories(['standard'])}>
+              Standard seulement
+            </button>
           </div>
         </div>
 

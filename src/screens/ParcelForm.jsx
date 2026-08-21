@@ -154,6 +154,10 @@ export default function ParcelFormPage({ mode = 'create', parcel, campaign, onNa
   }, [items, data.nbCartons, data.nbPetitsSacs, data.nbSacsMoyens, data.nbGrandsSacs, data.nbPlastiques, data.nbPlastiquesBiere, data.nbCasiers24x65, data.nbCasiers24x33, data.nbCasiers12x50, data.marginPct]);
 
   const activeCampaign = campaigns.find(c => c.id === data.campaignId) || campaign || null;
+  const allowedCategoryIds = activeCampaign?.routeFees?.allowedCategories ?? null;
+  const visibleProductTypes = allowedCategoryIds
+    ? PRODUCT_TYPES.filter(pt => allowedCategoryIds.includes(pt.id))
+    : PRODUCT_TYPES;
   const filteredClients = clients.filter(c =>
     !clientSearch || c.name?.toLowerCase().includes(clientSearch.toLowerCase()) || c.email?.toLowerCase().includes(clientSearch.toLowerCase())
   ).slice(0, 20);
@@ -359,7 +363,7 @@ export default function ParcelFormPage({ mode = 'create', parcel, campaign, onNa
                   placeholder="Ex: Vêtements, cosmétiques…" />
                 <select className="select" style={{ height: 32, padding: '0 8px', fontSize: 12 }}
                   value={item.productType} onChange={e => updItem(item.id, 'productType', e.target.value)}>
-                  {PRODUCT_TYPES.map(pt => <option key={pt.id} value={pt.id}>{pt.label}</option>)}
+                  {visibleProductTypes.map(pt => <option key={pt.id} value={pt.id}>{pt.label}</option>)}
                 </select>
                 <input className="input input--sm mono" type="number" min="0.1" step="0.1"
                   value={item.weightKg} onChange={e => updItem(item.id, 'weightKg', e.target.value)} placeholder="0" />
