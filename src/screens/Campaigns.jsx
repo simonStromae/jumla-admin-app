@@ -49,7 +49,7 @@ export function CampaignCard({ c, onClick }) {
           {[
             { l: t.campaigns.kpi.parcels,  v: c.parcels,                                          suffix: '' },
             { l: t.common.weight,          v: (c.weight ?? 0).toLocaleString('fr'),              suffix: ' kg' },
-            { l: 'Facturé',               v: ((c.invoiced ?? 0) / 1000).toFixed(1) + 'k',       suffix: ' CAD' },
+            { l: 'Facturé',               v: ((c.invoiced ?? 0) / 1000).toFixed(1) + 'k',       suffix: ' ' + (c.currency ?? 'CAD') },
           ].map(({ l, v, suffix }) => (
             <div key={l}>
               <div style={{ fontSize: 10.5, color: 'var(--ink-400)', textTransform: 'uppercase', letterSpacing: '.04em', fontWeight: 600 }}>{l}</div>
@@ -67,17 +67,23 @@ export function CampaignCard({ c, onClick }) {
           </div>
           <Progress pct={pct} kind={pct >= 95 ? null : pct >= 70 ? 'warn' : 'bad'} />
           {(() => {
-            const cur = c.currency ?? 'CAD';
+            const cur  = c.currency ?? 'CAD';
+            const rate = cur !== 'CAD' ? (c.exchangeRateToCAD ?? null) : null;
+            const toCAD = (amt) => rate ? `≈${Math.round(amt * rate).toLocaleString('fr')} CAD` : null;
+            const collectedCAD  = toCAD(c.collected ?? 0);
+            const outstandingCAD = outstanding > 0 ? toCAD(outstanding) : null;
             return (
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, marginTop: 5 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, marginTop: 5, alignItems: 'flex-end' }}>
                 <span>
                   <span className="mono" style={{ fontWeight: 600, color: 'var(--ok-600)' }}>{(c.collected ?? 0).toLocaleString('fr')}</span>
                   <span style={{ color: 'var(--ink-400)' }}> {cur} encaissé</span>
+                  {collectedCAD && <div style={{ fontSize: 10, color: 'var(--ink-300)', lineHeight: 1.2 }}>{collectedCAD}</div>}
                 </span>
                 {outstanding > 0 ? (
-                  <span>
+                  <span style={{ textAlign: 'right' }}>
                     <span className="mono" style={{ fontWeight: 600, color: 'var(--bad-600)' }}>{outstanding.toLocaleString('fr')}</span>
                     <span style={{ color: 'var(--ink-400)' }}> {cur} restant</span>
+                    {outstandingCAD && <div style={{ fontSize: 10, color: 'var(--ink-300)', lineHeight: 1.2 }}>{outstandingCAD}</div>}
                   </span>
                 ) : (
                   <span style={{ color: 'var(--ok-600)' }}>✓ Tout encaissé</span>
