@@ -13,6 +13,8 @@ const COUNTRIES = [
   { dial: '+243', label: '🇨🇩 RD Congo' },
   { dial: '+241', label: '🇬🇦 Gabon' },
   { dial: '+261', label: '🇲🇬 Madagascar' },
+  { dial: '+234', label: '🇳🇬 Nigeria' },
+  { dial: '+86',  label: '🇨🇳 Chine' },
 ];
 
 // Sort by length desc so +237 matches before +23
