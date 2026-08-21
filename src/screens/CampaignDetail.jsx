@@ -804,11 +804,30 @@ export default function CampaignDetailScreen({ id, onNav }) {
             </div>
           ) : (
             <div>
-              <div style={{ background: 'var(--bg-soft)', borderRadius: 10, padding: '14px 16px', marginBottom: 16, fontSize: 13, color: 'var(--ink-600)', lineHeight: 1.6 }}>
-                {/* TODO: i18n — "Message qui sera envoyé" has no translation key */}
-                <strong>Message qui sera envoyé :</strong>
-                <pre style={{ marginTop: 8, fontFamily: 'inherit', whiteSpace: 'pre-wrap', color: 'var(--ink-700)' }}>{`Bonjour [Prénom] 👋\n\nNouvelle cargaison disponible — départ prévu le ${campaign.departureDate ? new Date(campaign.departureDate).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' }) : 'à définir'}.\n\nRéservez votre place dès maintenant.\n\nJumla Shipping`}</pre>
-              </div>
+              {(() => {
+                const CHINA_CODES = ['SHA', 'PVG', 'CAN', 'SZX', 'SHG', 'CTU', 'PEK', 'BJS'];
+                const isChina = CHINA_CODES.some(c =>
+                  campaign.from?.toUpperCase().startsWith(c) || campaign.to?.toUpperCase().startsWith(c)
+                );
+                const depDate = campaign.departureDate
+                  ? new Date(campaign.departureDate).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })
+                  : 'à définir';
+                const arrDate = campaign.arrivalDate
+                  ? new Date(campaign.arrivalDate).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })
+                  : 'à définir';
+                const preview = isChina
+                  ? `Bonjour [Prénom] 👋\n\n🇨🇳➡️🇨🇦 *Nouvelle cargaison Chine → Canada !*\n\nJumla Shipping ouvre une nouvelle cargaison maritime sur la route *${campaign.from} → ${campaign.to}*.\n\n📦 Idéal pour : électronique, vêtements, articles généraux\n🚢 Départ de Chine : *${depDate}*\n🗓 Arrivée estimée au Canada : *${arrDate}*\n\nRéservez votre place dès maintenant sur jumla.app\n\nJumla Shipping`
+                  : `Bonjour [Prénom] 👋\n\nNouvelle cargaison disponible — départ prévu le ${depDate}.\n\nRéservez votre place dès maintenant.\n\nJumla Shipping`;
+                return (
+                  <div style={{ background: 'var(--bg-soft)', borderRadius: 10, padding: '14px 16px', marginBottom: 16, fontSize: 13, color: 'var(--ink-600)', lineHeight: 1.6 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                      <strong>Message qui sera envoyé :</strong>
+                      {isChina && <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: '.06em', textTransform: 'uppercase', color: '#0369a1', background: '#e0f2fe', borderRadius: 999, padding: '2px 8px' }}>🇨🇳 Route Chine</span>}
+                    </div>
+                    <pre style={{ margin: 0, fontFamily: 'inherit', whiteSpace: 'pre-wrap', color: 'var(--ink-700)' }}>{preview}</pre>
+                  </div>
+                );
+              })()}
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', background: 'var(--info-50)', border: '1px solid var(--info-100)', borderRadius: 8, marginBottom: 20, fontSize: 13 }}>
                 <span style={{ fontSize: 20 }}>👥</span>
                 <div>
