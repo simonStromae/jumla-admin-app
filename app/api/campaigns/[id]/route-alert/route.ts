@@ -7,8 +7,6 @@ import { renderWaTemplate } from '@/src/lib/wa-template';
 
 // Finds clients who previously shipped on the same route as this campaign (not mass broadcast)
 async function getPastRouteClients(campaignId: string, routeId: string) {
-  // Distinct clients with at least one non-cancelled parcel on the same route,
-  // excluding clients who already have a parcel in THIS campaign.
   const rows = await prisma.$queryRawUnsafe<{ id: string; name: string; phone: string }[]>(
     `
     SELECT DISTINCT u.id, u.name, u.phone
@@ -32,9 +30,19 @@ async function getPastRouteClients(campaignId: string, routeId: string) {
   return rows;
 }
 
-export async function GET(_: NextRequest, { params }: { params: { id: string } }) {
+// All active clients with a phone number
+async function getAllActiveClients() {
+  return prisma.user.findMany({
+    where: { phone: { not: null }, status: 'active', role: 'client' },
+    select: { id: true, name: true, phone: true },
+  }) as Promise<{ id: string; name: string; phone: string }[]>;
+}
+
+export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
   const { error } = await requireAdmin();
   if (error) return error;
+
+  const scope = req.nextUrl.searchParams.get('scope') ?? 'route';
 
   const campaign = await prisma.campaign.findUnique({
     where: { id: params.id },
@@ -42,13 +50,19 @@ export async function GET(_: NextRequest, { params }: { params: { id: string } }
   });
   if (!campaign) return NextResponse.json({ error: 'Cargaison introuvable' }, { status: 404 });
 
-  const clients = await getPastRouteClients(params.id, campaign.routeId);
+  const clients = scope === 'all'
+    ? await getAllActiveClients()
+    : await getPastRouteClients(params.id, campaign.routeId);
+
   return NextResponse.json({ total: clients.length, route: `${campaign.route.origin} → ${campaign.route.destination}` });
 }
 
-export async function POST(_: NextRequest, { params }: { params: { id: string } }) {
+export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
   const { error } = await requireAdmin();
   if (error) return error;
+
+  const body = await req.json().catch(() => ({}));
+  const scope = body.scope ?? 'route';
 
   const campaign = await prisma.campaign.findUnique({
     where: { id: params.id },
@@ -56,7 +70,9 @@ export async function POST(_: NextRequest, { params }: { params: { id: string } 
   });
   if (!campaign) return NextResponse.json({ error: 'Cargaison introuvable' }, { status: 404 });
 
-  const clients = await getPastRouteClients(params.id, campaign.routeId);
+  const clients = scope === 'all'
+    ? await getAllActiveClients()
+    : await getPastRouteClients(params.id, campaign.routeId);
 
   if (!clients.length) {
     return NextResponse.json({ ok: true, sent: 0, failed: 0, total: 0 });
