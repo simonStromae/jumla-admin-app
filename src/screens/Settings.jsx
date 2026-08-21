@@ -1463,6 +1463,7 @@ function RouteEditModal({ editRoute, onClose, onSaved }) {
   const [tiers, setTiers] = useState(() => initTiers(r?.fees));
 
   // Sea-specific supplements
+  const [pricePerCbm,         setPricePerCbm]         = useState(String(r?.fees?.pricePerCbm         ?? 500));
   const [bulkyPerCbm,         setBulkyPerCbm]         = useState(String(r?.fees?.bulkyPerCbm         ?? 800));
   const [highValueThreshold,  setHighValueThreshold]  = useState(String(r?.fees?.highValueThreshold  ?? 500));
   const [highValuePct,        setHighValuePct]        = useState(String(r?.fees?.highValuePct        ?? 2));
@@ -1534,6 +1535,7 @@ function RouteEditModal({ editRoute, onClose, onSaved }) {
         saq:         africanRoute ? { casier24x65: parseFloat(saq24x65)||24.5, casier24x33: parseFloat(saq24x33)||35.83, casier12x50: parseFloat(saq12x50)||21.34 } : { casier24x65: 0, casier24x33: 0, casier12x50: 0 },
         supplements: { vetements: parseFloat(suppVetements)||2, cosmetique: parseFloat(suppCosmetique)||3, biere: africanRoute ? (parseFloat(suppBiere)||6) : 0, electronique: parseFloat(suppElectronique)||5, documents: parseFloat(suppDocuments)||-2 },
         ...(transportMode === 'sea' ? {
+          pricePerCbm:        parseFloat(pricePerCbm)        || 500,
           bulkyPerCbm:        parseFloat(bulkyPerCbm)        || 800,
           highValueThreshold: parseFloat(highValueThreshold) || 500,
           highValuePct:       parseFloat(highValuePct)       || 2,
@@ -1666,20 +1668,29 @@ function RouteEditModal({ editRoute, onClose, onSaved }) {
             ))}
           </div>
           {transportMode === 'sea' && (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 12 }}>
-              <div className="field" style={{ marginBottom: 0 }}>
-                <label className="label">Volumineux ($/m³)</label>
-                <input className="input mono" type="number" step="10" value={bulkyPerCbm} onChange={e => setBulkyPerCbm(e.target.value)} />
+            <>
+              <div style={{ fontSize: 12, color: '#0369a1', background: '#e0f2fe', border: '1px solid #bae6fd', borderRadius: 8, padding: '10px 14px', marginBottom: 14, lineHeight: 1.6 }}>
+                <strong>Tarification au poids ou au CBM :</strong> pour chaque colis, le système calcule le prix selon la grille de poids ET selon le CBM. Le tarif le plus élevé est appliqué.
               </div>
-              <div className="field" style={{ marginBottom: 0 }}>
-                <label className="label">Seuil haute valeur ($)</label>
-                <input className="input mono" type="number" step="50" value={highValueThreshold} onChange={e => setHighValueThreshold(e.target.value)} />
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 12 }}>
+                <div className="field" style={{ marginBottom: 0 }}>
+                  <label className="label">Tarif CBM ($/m³)</label>
+                  <input className="input mono" type="number" step="10" value={pricePerCbm} onChange={e => setPricePerCbm(e.target.value)} />
+                </div>
+                <div className="field" style={{ marginBottom: 0 }}>
+                  <label className="label">Volumineux ($/m³)</label>
+                  <input className="input mono" type="number" step="10" value={bulkyPerCbm} onChange={e => setBulkyPerCbm(e.target.value)} />
+                </div>
+                <div className="field" style={{ marginBottom: 0 }}>
+                  <label className="label">Seuil haute valeur ($)</label>
+                  <input className="input mono" type="number" step="50" value={highValueThreshold} onChange={e => setHighValueThreshold(e.target.value)} />
+                </div>
+                <div className="field" style={{ marginBottom: 0 }}>
+                  <label className="label">Supplément haute valeur (%)</label>
+                  <input className="input mono" type="number" step="0.5" value={highValuePct} onChange={e => setHighValuePct(e.target.value)} />
+                </div>
               </div>
-              <div className="field" style={{ marginBottom: 0 }}>
-                <label className="label">Supplément haute valeur (%)</label>
-                <input className="input mono" type="number" step="0.5" value={highValuePct} onChange={e => setHighValuePct(e.target.value)} />
-              </div>
-            </div>
+            </>
           )}
         </div>
 

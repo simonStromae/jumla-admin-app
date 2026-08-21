@@ -104,6 +104,24 @@ export async function POST(req: NextRequest) {
     effectiveFees = mergeRouteFees(DEFAULT_ROUTE_FEES, partial);
   }
 
+  // ── CBM comparison setup (maritime routes only) ──────────────────────────
+  const cbmInput      = data.cbm ? Number(data.cbm) : 0;
+  const pricePerCbm   = rawRouteFees?.pricePerCbm ? Number(rawRouteFees.pricePerCbm) : 0;
+  const isSea         = rawRouteFees?.transportMode === 'sea';
+  const applyCbm      = isSea && cbmInput > 0 && pricePerCbm > 0;
+
+  function withCbmComparison(breakdown: ReturnType<typeof calculateFromFees>) {
+    if (!applyCbm) return breakdown;
+    const cbmPrice = cbmInput * pricePerCbm;
+    const cbmApplied = cbmPrice > breakdown.prixClient;
+    return {
+      ...breakdown,
+      cbmPrice,
+      cbmApplied,
+      prixClient: cbmApplied ? cbmPrice : breakdown.prixClient,
+    };
+  }
+
   // ── New API: items[] ─────────────────────────────────────────────────────
   if (Array.isArray(data.items) && data.items.length > 0) {
     const items = data.items as LineItem[];
@@ -116,7 +134,7 @@ export async function POST(req: NextRequest) {
       nbPlastiques: Number(addonsRaw.nbPlastiques ?? data.nbPlastiques ?? 0),
     };
     const breakdown = calculateFromFees(items, effectiveFees, addons, marginPctInput);
-    return NextResponse.json(breakdown);
+    return NextResponse.json(withCbmComparison(breakdown));
   }
 
   // ── Legacy API: weightKg + productType ───────────────────────────────────
@@ -157,7 +175,7 @@ export async function POST(req: NextRequest) {
   // If route fees were found, always use new engine
   if (rawRouteFees) {
     const breakdown = calculateFromFees([legacyItem], effectiveFees, addons, marginPctInput);
-    return NextResponse.json(breakdown);
+    return NextResponse.json(withCbmComparison(breakdown));
   }
 
   // Pure legacy fallback
