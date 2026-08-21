@@ -183,9 +183,10 @@ export default function ParcelDetailScreen({ id, onNav }) {
     </div>
   );
 
-  const client     = parcel.client     || {};
-  const campaign   = parcel.campaign   || {};
-  const payment    = parcel.payment;
+  const client        = parcel.client     || {};
+  const campaign      = parcel.campaign   || {};
+  const payment       = parcel.payment;
+  const routeCurrency = campaign.route?.currency ?? 'CAD';
   const PARCEL_FLOW = ['enr','rec','pre','exp','tra','apd','dou','ins','ret','lib','ard','ver','pdl','liv','ok'];
   const allEvents  = parcel.trackingEvents || [];
   const curFlowPos = PARCEL_FLOW.indexOf(parcel.status);
@@ -690,7 +691,7 @@ export default function ParcelDetailScreen({ id, onNav }) {
               {/* TODO: i18n — 'Total dû' has no direct key; using t.common.total as close match */}
               <span style={{ fontWeight: 700 }}>{t.common.total}</span>
               <span className="mono" style={{ fontSize: 22, fontWeight: 700 }}>
-                {(payment?.amount ?? parcel.priceXaf) != null ? fmt(payment?.amount ?? parcel.priceXaf, 'CAD') : '—'}
+                {(payment?.amount ?? parcel.priceXaf) != null ? fmt(payment?.amount ?? parcel.priceXaf, routeCurrency) : '—'}
               </span>
             </div>
 
@@ -728,7 +729,7 @@ export default function ParcelDetailScreen({ id, onNav }) {
                 {/* TODO: i18n — 'Estimation réservation' has no direct key */}
                 <span style={{ color: 'var(--ink-500)' }}>Estimation réservation</span>
                 <span className="mono" style={{ color: parcel.confirmedPriceXaf != null ? 'var(--ink-400)' : 'var(--ink-700)', fontWeight: 600, textDecoration: parcel.confirmedPriceXaf != null ? 'line-through' : 'none' }}>
-                  {parcel.priceXaf ? fmt(parcel.priceXaf, 'CAD') : '—'}
+                  {parcel.priceXaf ? fmt(parcel.priceXaf, routeCurrency) : '—'}
                 </span>
               </div>
 
@@ -738,7 +739,7 @@ export default function ParcelDetailScreen({ id, onNav }) {
                     {/* TODO: i18n — 'Prix réel (pesée)' has no direct key */}
                     <span style={{ color: 'var(--ink-700)', fontWeight: 600 }}>Prix réel (pesée)</span>
                     <span className="mono" style={{ fontWeight: 700, fontSize: 14, color: 'var(--ink-900)' }}>
-                      {fmt(parcel.confirmedPriceXaf, 'CAD')}
+                      {fmt(parcel.confirmedPriceXaf, routeCurrency)}
                     </span>
                   </div>
                   {(() => {
@@ -754,7 +755,7 @@ export default function ParcelDetailScreen({ id, onNav }) {
                           {diff > 0 ? '↑ Supplément' : '↓ Remise'}
                         </span>
                         <span className="mono" style={{ fontWeight: 700, color: diff > 0 ? 'var(--warn-700)' : 'var(--ok-700)' }}>
-                          {diff > 0 ? '+' : ''}{fmt(diff, 'CAD')}
+                          {diff > 0 ? '+' : ''}{fmt(diff, routeCurrency)}
                         </span>
                       </div>
                     );
@@ -792,14 +793,14 @@ export default function ParcelDetailScreen({ id, onNav }) {
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, padding: '6px 8px', background: 'var(--brand-50)', borderRadius: 5 }}>
                   {/* TODO: i18n — 'Valeur déclarée' has no direct key */}
                   <span style={{ color: 'var(--ink-600)' }}>Valeur déclarée</span>
-                  <span className="mono" style={{ fontWeight: 700, color: 'var(--ink-900)' }}>{fmt(parcel.declaredValue, 'CAD')}</span>
+                  <span className="mono" style={{ fontWeight: 700, color: 'var(--ink-900)' }}>{fmt(parcel.declaredValue, routeCurrency)}</span>
                 </div>
               )}
               {parcel.coverageFee > 0 && (
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, padding: '6px 8px', background: 'var(--brand-50)', borderRadius: 5 }}>
                   {/* TODO: i18n — 'Couverture (20 %)' has no direct key */}
                   <span style={{ color: 'var(--ink-600)' }}>Couverture (20 %)</span>
-                  <span className="mono" style={{ fontWeight: 700, color: 'var(--brand-700)' }}>+{fmt(parcel.coverageFee, 'CAD')}</span>
+                  <span className="mono" style={{ fontWeight: 700, color: 'var(--brand-700)' }}>+{fmt(parcel.coverageFee, routeCurrency)}</span>
                 </div>
               )}
               {/* Marchandises interdites */}
@@ -1371,12 +1372,12 @@ function WeightModal({ parcel, onClose, onSaved }) {
                       <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, padding: '4px 8px', background: 'var(--bg-soft)', borderRadius: 4 }}>
                         {/* TODO: i18n — 'Estimation réservation' has no direct key */}
                         <span style={{ color: 'var(--ink-400)' }}>Estimation réservation</span>
-                        <span className="mono" style={{ color: 'var(--ink-400)', textDecoration: 'line-through' }}>{fmt(estimated, 'CAD')}</span>
+                        <span className="mono" style={{ color: 'var(--ink-400)', textDecoration: 'line-through' }}>{fmt(estimated, routeCurrency)}</span>
                       </div>
                       <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12.5, padding: '4px 8px', background: 'var(--brand-50)', borderRadius: 4 }}>
                         {/* TODO: i18n — 'Prix réel (pesée)' has no direct key */}
                         <span style={{ color: 'var(--ink-700)', fontWeight: 600 }}>Prix réel (pesée)</span>
-                        <span className="mono" style={{ fontWeight: 700, color: 'var(--ink-900)' }}>{fmt(real, 'CAD')}</span>
+                        <span className="mono" style={{ fontWeight: 700, color: 'var(--ink-900)' }}>{fmt(real, routeCurrency)}</span>
                       </div>
                       {diff === 0 ? (
                         // TODO: i18n — 'Identique à l\'estimation' has no direct key
@@ -1388,7 +1389,7 @@ function WeightModal({ parcel, onClose, onSaved }) {
                             {diff > 0 ? '↑ Supplément' : '↓ Remise'}
                           </span>
                           <span className="mono" style={{ fontWeight: 700, color: diff > 0 ? 'var(--warn-700)' : 'var(--ok-700)' }}>
-                            {diff > 0 ? '+' : ''}{fmt(diff, 'CAD')}
+                            {diff > 0 ? '+' : ''}{fmt(diff, routeCurrency)}
                           </span>
                         </div>
                       )}
@@ -1453,7 +1454,7 @@ function InteracModal({ parcel, onClose }) {
   };
 
   const rawAmount = parcel.payment?.amount ?? parcel.priceXaf;
-  const amountLabel = rawAmount != null ? fmt(rawAmount, 'CAD') : '—';
+  const amountLabel = rawAmount != null ? fmt(rawAmount, routeCurrency) : '—';
 
   return (
     <Modal width={640} onClose={onClose}
