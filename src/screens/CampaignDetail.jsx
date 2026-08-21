@@ -821,10 +821,9 @@ export default function CampaignDetailScreen({ id, onNav }) {
           ) : (
             <div>
               {(() => {
-                const CHINA_CODES = ['SHA', 'PVG', 'CAN', 'SZX', 'SHG', 'CTU', 'PEK', 'BJS'];
-                const isChina = CHINA_CODES.some(c =>
-                  campaign.from?.toUpperCase().startsWith(c) || campaign.to?.toUpperCase().startsWith(c)
-                );
+                const isChina =
+                  campaign.from?.toUpperCase().startsWith('CHN') ||
+                  campaign.to?.toUpperCase().startsWith('CHN');
                 const depDate = campaign.departureDate
                   ? new Date(campaign.departureDate).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })
                   : 'à définir';
