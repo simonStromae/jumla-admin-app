@@ -127,6 +127,7 @@ export default function ParcelFormPage({ mode = 'create', parcel, campaign, onNa
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          campaignId:       d.campaignId || undefined,
           weightKg:         Number(d.weightKg),
           productType:      d.productType,
           nbCartons:        d.nbCartons,
@@ -139,6 +140,7 @@ export default function ParcelFormPage({ mode = 'create', parcel, campaign, onNa
           nbCasiers24x33:   d.nbCasiers24x33,
           nbCasiers12x50:   d.nbCasiers12x50,
           marginPct:        Number(d.marginPct),
+          cbm:              d.cbm && Number(d.cbm) > 0 ? Number(d.cbm) : undefined,
         }),
       });
       const json = await res.json();
@@ -149,11 +151,14 @@ export default function ParcelFormPage({ mode = 'create', parcel, campaign, onNa
 
   // Recalculate whenever pricing-relevant fields change
   useEffect(() => {
-    const timer = setTimeout(() => calcPrice({ ...data, weightKg: totalKg, productType: dominantType }), 300);
+    const timer = setTimeout(() => calcPrice({ ...data, weightKg: totalKg, productType: dominantType, cbm }), 300);
     return () => clearTimeout(timer);
-  }, [items, data.nbCartons, data.nbPetitsSacs, data.nbSacsMoyens, data.nbGrandsSacs, data.nbPlastiques, data.nbPlastiquesBiere, data.nbCasiers24x65, data.nbCasiers24x33, data.nbCasiers12x50, data.marginPct]);
+  }, [items, data.campaignId, data.nbCartons, data.nbPetitsSacs, data.nbSacsMoyens, data.nbGrandsSacs, data.nbPlastiques, data.nbPlastiquesBiere, data.nbCasiers24x65, data.nbCasiers24x33, data.nbCasiers12x50, data.marginPct, cbm]);
+
+  const [cbm, setCbm] = useState('');
 
   const activeCampaign = campaigns.find(c => c.id === data.campaignId) || campaign || null;
+  const isMaritime = activeCampaign?.routeFees?.transportMode === 'sea';
   const allowedCategoryIds = activeCampaign?.routeFees?.allowedCategories ?? null;
   const visibleProductTypes = allowedCategoryIds
     ? PRODUCT_TYPES.filter(pt => allowedCategoryIds.includes(pt.id))
@@ -195,6 +200,7 @@ export default function ParcelFormPage({ mode = 'create', parcel, campaign, onNa
           nbCasiers24x33:    data.nbCasiers24x33,
           nbCasiers12x50:    data.nbCasiers12x50,
           marginPct:         Number(data.marginPct),
+          cbm:               isMaritime && cbm ? Number(cbm) : null,
           pricingDetails:    pricing || null,
           recipName:         data.recipName  || null,
           recipPhone:        data.recipPhone || null,
@@ -383,6 +389,29 @@ export default function ParcelFormPage({ mode = 'create', parcel, campaign, onNa
                 </span>
               )}
             </div>
+
+            {isMaritime && (
+              <div style={{ marginTop: 14, paddingTop: 14, borderTop: '1px solid var(--border-soft)' }}>
+                <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.06em', color: '#0369a1', marginBottom: 10 }}>🚢 Volume (CBM)</div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <div className="field" style={{ marginBottom: 0, width: 180 }}>
+                    <label className="label">Volume (m³)</label>
+                    <input
+                      className="input mono"
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      value={cbm}
+                      onChange={e => setCbm(e.target.value)}
+                      placeholder="ex: 1.20"
+                    />
+                  </div>
+                  <div style={{ fontSize: 12, color: 'var(--ink-400)', lineHeight: 1.5, paddingTop: 18 }}>
+                    Le tarif le plus élevé entre le poids et le CBM sera appliqué.
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Packaging */}
@@ -571,6 +600,8 @@ export default function ParcelFormPage({ mode = 'create', parcel, campaign, onNa
               <div style={{ fontSize: 11, opacity: .55, marginTop: 2 }}>
                 {/* TODO: "CAD · Marge" label has no i18n key */}
                 CAD · Marge {data.marginPct}% · {totalKg.toFixed(1)} kg
+                {isMaritime && cbm && pricing?.cbmApplied && <> · 🚢 {Number(cbm).toFixed(2)} m³ CBM</>}
+                {isMaritime && cbm && pricing?.cbmApplied === false && <> · ⚖️ poids prédominant</>}
               </div>
             </div>
 
@@ -598,8 +629,17 @@ export default function ParcelFormPage({ mode = 'create', parcel, campaign, onNa
                   {pricing.conditionnement > 0 && <PriceRow label="Conditionnement" value={pricing.conditionnement} />}
                   {pricing.fraisSAQ > 0  && <PriceRow label="Frais SAQ" value={pricing.fraisSAQ} />}
                   <div style={{ borderTop: '1px solid var(--border-soft)', margin: '6px 0' }} />
-                  <PriceRow label="Sous-total" value={pricing.sousTotal} />
-                  <PriceRow label={`Marge ${data.marginPct}%`} value={pricing.marge} />
+                  {pricing.cbmApplied ? (
+                    <div style={{ padding: '6px 8px', background: '#e0f2fe', borderRadius: 6, fontSize: 12, color: '#0369a1', fontWeight: 600, marginBottom: 4 }}>
+                      🚢 Tarif CBM appliqué : {Number(cbm).toFixed(2)} m³ × {(pricing.cbmPrice / Number(cbm)).toFixed(0)} $/m³
+                    </div>
+                  ) : (
+                    <>
+                      <PriceRow label="Sous-total" value={pricing.sousTotal} />
+                      <PriceRow label={`Marge ${data.marginPct}%`} value={pricing.marge} />
+                      {pricing.cbmPrice > 0 && <div style={{ fontSize: 11, color: 'var(--ink-400)', padding: '2px 0' }}>CBM alternatif : {pricing.cbmPrice.toFixed(2)} $ (poids prédominant)</div>}
+                    </>
+                  )}
                   {data.delivery === 'home' && <PriceRow label="Livraison domicile" value={25} />}
                   <div style={{ borderTop: '2px solid var(--ink-200)', margin: '6px 0' }} />
                   <PriceRow label="Prix client" value={pricing.prixClient + (data.delivery === 'home' ? 25 : 0)} bold />
