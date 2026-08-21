@@ -132,6 +132,7 @@ export async function GET(req: NextRequest) {
       currency:          c.route.currency ?? 'CAD',
       exchangeRateToCAD: (c as any).exchangeRateToCAD ?? null,
       routeId:           c.routeId,
+      routeFees:         c.route.fees ?? null,
     };
   });
 
