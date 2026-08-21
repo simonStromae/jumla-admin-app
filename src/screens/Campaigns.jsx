@@ -66,20 +66,25 @@ export function CampaignCard({ c, onClick }) {
             </span>
           </div>
           <Progress pct={pct} kind={pct >= 95 ? null : pct >= 70 ? 'warn' : 'bad'} />
-          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, marginTop: 5 }}>
-            <span>
-              <span className="mono" style={{ fontWeight: 600, color: 'var(--ok-600)' }}>{(c.collected ?? 0).toLocaleString('fr')}</span>
-              <span style={{ color: 'var(--ink-400)' }}> CAD encaissé</span>
-            </span>
-            {outstanding > 0 ? (
-              <span>
-                <span className="mono" style={{ fontWeight: 600, color: 'var(--bad-600)' }}>{outstanding.toLocaleString('fr')}</span>
-                <span style={{ color: 'var(--ink-400)' }}> CAD restant</span>
-              </span>
-            ) : (
-              <span style={{ color: 'var(--ok-600)' }}>✓ Tout encaissé</span>
-            )}
-          </div>
+          {(() => {
+            const cur = c.currency ?? 'CAD';
+            return (
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, marginTop: 5 }}>
+                <span>
+                  <span className="mono" style={{ fontWeight: 600, color: 'var(--ok-600)' }}>{(c.collected ?? 0).toLocaleString('fr')}</span>
+                  <span style={{ color: 'var(--ink-400)' }}> {cur} encaissé</span>
+                </span>
+                {outstanding > 0 ? (
+                  <span>
+                    <span className="mono" style={{ fontWeight: 600, color: 'var(--bad-600)' }}>{outstanding.toLocaleString('fr')}</span>
+                    <span style={{ color: 'var(--ink-400)' }}> {cur} restant</span>
+                  </span>
+                ) : (
+                  <span style={{ color: 'var(--ok-600)' }}>✓ Tout encaissé</span>
+                )}
+              </div>
+            );
+          })()}
           {(c.cancelled ?? 0) > 0 && (
             <div style={{ fontSize: 11, color: 'var(--warn-700)', marginTop: 4, display: 'flex', alignItems: 'center', gap: 4 }}>
               <I.Ban style={{ width: 10, height: 10 }} />
