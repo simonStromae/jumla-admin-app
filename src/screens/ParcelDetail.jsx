@@ -1083,6 +1083,7 @@ const BEER_FORMATS = [
 function WeightModal({ parcel, onClose, onSaved }) {
   const t = useAdminT();
   const { currency, fmt } = useCurrency();
+  const routeCurrency = parcel.campaign?.route?.currency ?? 'CAD';
   const initItems = () => {
     if (Array.isArray(parcel.items) && parcel.items.length > 0) {
       return parcel.items.map(it => ({
@@ -1435,6 +1436,7 @@ function WeightModal({ parcel, onClose, onSaved }) {
 function InteracModal({ parcel, onClose }) {
   const t = useAdminT();
   const { currency, fmt } = useCurrency();
+  const routeCurrency = parcel.campaign?.route?.currency ?? 'CAD';
   const [payUrl,     setPayUrl]     = useState('');
   const [expiresAt,  setExpiresAt]  = useState('');
   const [generating, setGenerating] = useState(false);
