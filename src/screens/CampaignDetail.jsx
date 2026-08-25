@@ -681,7 +681,7 @@ export default function CampaignDetailScreen({ id, onNav }) {
       {/* KPI strip */}
       {(() => {
         const routeCurrency = campaign.route?.currency ?? 'CAD';
-        const rateToCAD = routeCurrency !== 'CAD' ? (rates[routeCurrency] ?? null) : null;
+        const rateToCAD = routeCurrency !== 'CAD' ? (campaign.exchangeRateToCAD ?? rates[routeCurrency] ?? null) : null;
         const fmtOrig = (amount) => `${Math.round(amount).toLocaleString('fr')} ${routeCurrency}`;
         return (
           <>
@@ -1089,7 +1089,7 @@ export default function CampaignDetailScreen({ id, onNav }) {
                       const rc = campaign.route?.currency ?? 'CAD';
                       const raw = p.payment?.amount ?? p.priceXaf;
                       if (raw == null) return <span style={{ color: 'var(--ink-300)' }}>—</span>;
-                      const cadRate = rc !== 'CAD' ? (rates[rc] ?? null) : null;
+                      const cadRate = rc !== 'CAD' ? (campaign.exchangeRateToCAD ?? rates[rc] ?? null) : null;
                       const cadAmt = cadRate ? Math.round(raw * cadRate) : null;
                       return (
                         <div>

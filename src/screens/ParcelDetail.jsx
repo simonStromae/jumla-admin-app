@@ -186,7 +186,14 @@ export default function ParcelDetailScreen({ id, onNav }) {
   const client        = parcel.client     || {};
   const campaign      = parcel.campaign   || {};
   const payment       = parcel.payment;
-  const routeCurrency = campaign.route?.currency ?? 'CAD';
+  const routeCurrency   = campaign.route?.currency ?? 'CAD';
+  const campRateToCAD   = campaign.exchangeRateToCAD ?? null;
+  // fmt but using the campaign-specific rate instead of global settings
+  const fmtRoute = (amount) => {
+    if (amount == null) return '—';
+    if (routeCurrency === 'CAD' || !campRateToCAD) return fmt(amount, routeCurrency);
+    return `${Math.round(amount * campRateToCAD).toLocaleString('fr')} CAD`;
+  };
   const PARCEL_FLOW = ['enr','rec','pre','exp','tra','apd','dou','ins','ret','lib','ard','ver','pdl','liv','ok'];
   const allEvents  = parcel.trackingEvents || [];
   const curFlowPos = PARCEL_FLOW.indexOf(parcel.status);
@@ -695,7 +702,7 @@ export default function ParcelDetailScreen({ id, onNav }) {
                 if (raw == null) return <span className="mono" style={{ fontSize: 22, fontWeight: 700 }}>—</span>;
                 return (
                   <div style={{ textAlign: 'right' }}>
-                    <div className="mono" style={{ fontSize: 22, fontWeight: 700 }}>{fmt(raw, routeCurrency)}</div>
+                    <div className="mono" style={{ fontSize: 22, fontWeight: 700 }}>{fmtRoute(raw)}</div>
                     {routeCurrency !== currency && (
                       <div style={{ fontSize: 12, color: 'var(--ink-400)', fontVariantNumeric: 'tabular-nums' }}>
                         {raw.toLocaleString('fr')} {routeCurrency}
@@ -741,7 +748,7 @@ export default function ParcelDetailScreen({ id, onNav }) {
                 <span style={{ color: 'var(--ink-500)' }}>Estimation réservation</span>
                 <div style={{ textAlign: 'right' }}>
                   <span className="mono" style={{ color: parcel.confirmedPriceXaf != null ? 'var(--ink-400)' : 'var(--ink-700)', fontWeight: 600, textDecoration: parcel.confirmedPriceXaf != null ? 'line-through' : 'none' }}>
-                    {parcel.priceXaf ? fmt(parcel.priceXaf, routeCurrency) : '—'}
+                    {parcel.priceXaf ? fmtRoute(parcel.priceXaf) : '—'}
                   </span>
                   {routeCurrency !== currency && parcel.priceXaf != null && (
                     <div style={{ fontSize: 11, color: 'var(--ink-400)' }}>{parcel.priceXaf.toLocaleString('fr')} {routeCurrency}</div>
@@ -756,7 +763,7 @@ export default function ParcelDetailScreen({ id, onNav }) {
                     <span style={{ color: 'var(--ink-700)', fontWeight: 600 }}>Prix réel (pesée)</span>
                     <div style={{ textAlign: 'right' }}>
                       <span className="mono" style={{ fontWeight: 700, fontSize: 14, color: 'var(--ink-900)' }}>
-                        {fmt(parcel.confirmedPriceXaf, routeCurrency)}
+                        {fmtRoute(parcel.confirmedPriceXaf)}
                       </span>
                       {routeCurrency !== currency && (
                         <div style={{ fontSize: 11, color: 'var(--ink-500)' }}>{parcel.confirmedPriceXaf.toLocaleString('fr')} {routeCurrency}</div>
@@ -776,7 +783,7 @@ export default function ParcelDetailScreen({ id, onNav }) {
                           {diff > 0 ? '↑ Supplément' : '↓ Remise'}
                         </span>
                         <span className="mono" style={{ fontWeight: 700, color: diff > 0 ? 'var(--warn-700)' : 'var(--ok-700)' }}>
-                          {diff > 0 ? '+' : ''}{fmt(diff, routeCurrency)}
+                          {diff > 0 ? '+' : ''}{fmtRoute(diff)}
                         </span>
                       </div>
                     );
@@ -814,14 +821,14 @@ export default function ParcelDetailScreen({ id, onNav }) {
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, padding: '6px 8px', background: 'var(--brand-50)', borderRadius: 5 }}>
                   {/* TODO: i18n — 'Valeur déclarée' has no direct key */}
                   <span style={{ color: 'var(--ink-600)' }}>Valeur déclarée</span>
-                  <span className="mono" style={{ fontWeight: 700, color: 'var(--ink-900)' }}>{fmt(parcel.declaredValue, routeCurrency)}</span>
+                  <span className="mono" style={{ fontWeight: 700, color: 'var(--ink-900)' }}>{fmtRoute(parcel.declaredValue)}</span>
                 </div>
               )}
               {parcel.coverageFee > 0 && (
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, padding: '6px 8px', background: 'var(--brand-50)', borderRadius: 5 }}>
                   {/* TODO: i18n — 'Couverture (20 %)' has no direct key */}
                   <span style={{ color: 'var(--ink-600)' }}>Couverture (20 %)</span>
-                  <span className="mono" style={{ fontWeight: 700, color: 'var(--brand-700)' }}>+{fmt(parcel.coverageFee, routeCurrency)}</span>
+                  <span className="mono" style={{ fontWeight: 700, color: 'var(--brand-700)' }}>+{fmtRoute(parcel.coverageFee)}</span>
                 </div>
               )}
               {/* Marchandises interdites */}
@@ -1084,6 +1091,12 @@ function WeightModal({ parcel, onClose, onSaved }) {
   const t = useAdminT();
   const { currency, fmt } = useCurrency();
   const routeCurrency = parcel.campaign?.route?.currency ?? 'CAD';
+  const campRateToCAD = parcel.campaign?.exchangeRateToCAD ?? null;
+  const fmtRoute = (amount) => {
+    if (amount == null) return '—';
+    if (routeCurrency === 'CAD' || !campRateToCAD) return fmt(amount, routeCurrency);
+    return `${Math.round(amount * campRateToCAD).toLocaleString('fr')} CAD`;
+  };
   const initItems = () => {
     if (Array.isArray(parcel.items) && parcel.items.length > 0) {
       return parcel.items.map(it => ({
@@ -1394,12 +1407,12 @@ function WeightModal({ parcel, onClose, onSaved }) {
                       <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, padding: '4px 8px', background: 'var(--bg-soft)', borderRadius: 4 }}>
                         {/* TODO: i18n — 'Estimation réservation' has no direct key */}
                         <span style={{ color: 'var(--ink-400)' }}>Estimation réservation</span>
-                        <span className="mono" style={{ color: 'var(--ink-400)', textDecoration: 'line-through' }}>{fmt(estimated, routeCurrency)}</span>
+                        <span className="mono" style={{ color: 'var(--ink-400)', textDecoration: 'line-through' }}>{fmtRoute(estimated)}</span>
                       </div>
                       <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12.5, padding: '4px 8px', background: 'var(--brand-50)', borderRadius: 4 }}>
                         {/* TODO: i18n — 'Prix réel (pesée)' has no direct key */}
                         <span style={{ color: 'var(--ink-700)', fontWeight: 600 }}>Prix réel (pesée)</span>
-                        <span className="mono" style={{ fontWeight: 700, color: 'var(--ink-900)' }}>{fmt(real, routeCurrency)}</span>
+                        <span className="mono" style={{ fontWeight: 700, color: 'var(--ink-900)' }}>{fmtRoute(real)}</span>
                       </div>
                       {diff === 0 ? (
                         // TODO: i18n — 'Identique à l\'estimation' has no direct key
@@ -1411,7 +1424,7 @@ function WeightModal({ parcel, onClose, onSaved }) {
                             {diff > 0 ? '↑ Supplément' : '↓ Remise'}
                           </span>
                           <span className="mono" style={{ fontWeight: 700, color: diff > 0 ? 'var(--warn-700)' : 'var(--ok-700)' }}>
-                            {diff > 0 ? '+' : ''}{fmt(diff, routeCurrency)}
+                            {diff > 0 ? '+' : ''}{fmtRoute(diff)}
                           </span>
                         </div>
                       )}
@@ -1437,6 +1450,12 @@ function InteracModal({ parcel, onClose }) {
   const t = useAdminT();
   const { currency, fmt } = useCurrency();
   const routeCurrency = parcel.campaign?.route?.currency ?? 'CAD';
+  const campRateToCAD = parcel.campaign?.exchangeRateToCAD ?? null;
+  const fmtRoute = (amount) => {
+    if (amount == null) return '—';
+    if (routeCurrency === 'CAD' || !campRateToCAD) return fmt(amount, routeCurrency);
+    return `${Math.round(amount * campRateToCAD).toLocaleString('fr')} CAD`;
+  };
   const [payUrl,     setPayUrl]     = useState('');
   const [expiresAt,  setExpiresAt]  = useState('');
   const [generating, setGenerating] = useState(false);
@@ -1477,7 +1496,7 @@ function InteracModal({ parcel, onClose }) {
   };
 
   const rawAmount = parcel.payment?.amount ?? parcel.priceXaf;
-  const amountLabel = rawAmount != null ? fmt(rawAmount, routeCurrency) : '—';
+  const amountLabel = rawAmount != null ? fmtRoute(rawAmount) : '—';
 
   return (
     <Modal width={640} onClose={onClose}
