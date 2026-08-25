@@ -3,9 +3,25 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/src/lib/prisma';
 import { chargeOpaqueData } from '@/src/lib/authorizeNet';
 
+async function resolveToken(token: string) {
+  const settings = await prisma.setting.findMany({
+    where: { key: { endsWith: `:${token}` } },
+  });
+  const row = settings.find(s => s.key.startsWith('plink:parcel:'));
+  if (!row) return null;
+  try {
+    const meta = JSON.parse(row.value) as { parcelId: string; expiresAt: string };
+    if (new Date(meta.expiresAt) < new Date()) return null;
+    return meta.parcelId;
+  } catch { return null; }
+}
+
 export async function POST(req: NextRequest, { params }: { params: { token: string } }) {
+  const parcelId = await resolveToken(params.token);
+  if (!parcelId) return NextResponse.json({ error: 'Lien invalide ou expiré' }, { status: 404 });
+
   const parcel = await prisma.parcel.findUnique({
-    where: { id: params.token },
+    where: { id: parcelId },
     include: { payment: true },
   });
   if (!parcel) return NextResponse.json({ error: 'Lien invalide ou expiré' }, { status: 404 });
