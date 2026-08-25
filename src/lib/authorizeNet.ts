@@ -93,7 +93,10 @@ export async function chargeOpaqueData(
     txRequest.setTransactionType(ApiContracts.TransactionTypeEnum.AUTHCAPTURETRANSACTION);
     txRequest.setAmount(amountCad.toFixed(2));
     txRequest.setPayment(payment);
-    txRequest.setDescription(description.substring(0, 255));
+
+    const order = new ApiContracts.OrderType();
+    order.setDescription(description.substring(0, 255));
+    txRequest.setOrder(order);
 
     if (billTo) {
       const customerAddress = new ApiContracts.CustomerAddressType();
