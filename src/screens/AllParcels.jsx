@@ -341,7 +341,9 @@ export default function AllParcelsScreen({ onNav, initialSearch = '' }) {
               <td style={{ textAlign: 'right' }}>
                 {(() => {
                   const rc = p.routeCurrency ?? currency;
-                  const showConv = rc !== currency;
+                  const showConv = rc !== 'CAD';
+                  const campRate = p.exchangeRateToCAD ?? null;
+                  const toCAD = (amt) => campRate ? Math.round(amt * campRate) : Math.round(convert(amt, rc));
                   if (p.confirmedPriceXaf != null && p.adjustmentStatus !== 'none') {
                     return (
                       <>
@@ -351,7 +353,7 @@ export default function AllParcelsScreen({ onNav, initialSearch = '' }) {
                         </div>
                         {showConv && (
                           <div style={{ fontSize: 10.5, color: 'var(--ink-400)', fontFamily: 'var(--font-mono)' }}>
-                            ≈ {Math.round(convert(p.confirmedPriceXaf, rc)).toLocaleString('fr')} {currency}
+                            ≈ {toCAD(p.confirmedPriceXaf).toLocaleString('fr')} CAD
                           </div>
                         )}
                         <div style={{ fontSize: 10.5, color: 'var(--ink-400)', textDecoration: 'line-through', fontFamily: 'var(--font-mono)' }}>
@@ -367,7 +369,7 @@ export default function AllParcelsScreen({ onNav, initialSearch = '' }) {
                       <span style={{ fontSize: 11, color: 'var(--ink-400)', marginLeft: 3 }}>{rc}</span>
                       {showConv && (
                         <div style={{ fontSize: 10.5, color: 'var(--ink-400)', fontFamily: 'var(--font-mono)' }}>
-                          ≈ {Math.round(convert(amt, rc)).toLocaleString('fr')} {currency}
+                          ≈ {toCAD(amt).toLocaleString('fr')} CAD
                         </div>
                       )}
                     </>
