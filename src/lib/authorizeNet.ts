@@ -77,6 +77,7 @@ export async function chargeOpaqueData(
   billTo?:     BillTo,
 ): Promise<ChargeResult> {
   return new Promise((resolve) => {
+    try {
     const merchantAuth = new ApiContracts.MerchantAuthenticationType();
     merchantAuth.setName(creds.loginId);
     merchantAuth.setTransactionKey(creds.transactionKey);
@@ -149,5 +150,8 @@ export async function chargeOpaqueData(
         resolve({ success: false, error: e?.message ?? 'Erreur serveur' });
       }
     });
+    } catch (e: any) {
+      resolve({ success: false, error: `SDK setup error: ${e?.message ?? e}` });
+    }
   });
 }
