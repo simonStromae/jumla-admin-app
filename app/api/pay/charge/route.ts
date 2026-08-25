@@ -5,11 +5,13 @@ import { prisma } from '@/src/lib/prisma';
 import { chargeOpaqueData } from '@/src/lib/authorizeNet';
 
 export async function POST(req: NextRequest) {
+  let step = 'auth';
   try {
     const { error, session } = await requireAuth();
     if (error) return error;
     const clientId = (session!.user as any).id as string;
 
+    step = 'parse-body';
     const body = await req.json();
     const { opaqueData, amountCad, parcelId, type, billTo } = body;
 
@@ -23,14 +25,16 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'parcelId requis' }, { status: 400 });
     }
 
+    step = 'find-parcel';
     const parcel = await prisma.parcel.findFirst({
-      where: { id: parcelId, clientId, deletedAt: null },
+      where: { id: parcelId, clientId },
       select: { id: true, trackingCode: true, priceXaf: true, confirmedPriceXaf: true, adjustmentStatus: true },
     });
     if (!parcel) {
       return NextResponse.json({ error: 'Colis introuvable' }, { status: 404 });
     }
 
+    step = 'load-credentials';
     const rows = await prisma.setting.findMany({
       where: { key: { in: ['authnet_login_id', 'authnet_transaction_key', 'authnet_environment'] } },
     });
@@ -47,8 +51,11 @@ export async function POST(req: NextRequest) {
       environment:    (m.authnet_environment === 'production' ? 'production' : 'sandbox') as 'sandbox' | 'production',
     };
 
+    step = 'charge';
+    console.log('[pay/charge] charging', { parcelId, amountCad, type, env: creds.environment });
     const description = `Jumla Cargo — ${parcel.trackingCode} (${type ?? 'paiement'})`;
     const result = await chargeOpaqueData(creds, opaqueData, Number(amountCad), description, billTo ?? undefined);
+    console.log('[pay/charge] charge result', { success: result.success, error: result.error });
 
     if (!result.success) {
       return NextResponse.json({ error: result.error ?? 'Paiement refusé' }, { status: 402 });
@@ -126,7 +133,8 @@ export async function POST(req: NextRequest) {
       cardType:      result.cardType,
     });
   } catch (err: any) {
-    console.error('[pay/charge] Unexpected error:', err?.message ?? err);
-    return NextResponse.json({ error: 'Erreur serveur inattendue' }, { status: 500 });
+    const msg = err?.message ?? String(err);
+    console.error(`[pay/charge] Error at step "${step}":`, msg);
+    return NextResponse.json({ error: `Erreur étape ${step}: ${msg}` }, { status: 500 });
   }
 }

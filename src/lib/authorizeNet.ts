@@ -77,6 +77,7 @@ export async function chargeOpaqueData(
   billTo?:     BillTo,
 ): Promise<ChargeResult> {
   return new Promise((resolve) => {
+    try {
     const merchantAuth = new ApiContracts.MerchantAuthenticationType();
     merchantAuth.setName(creds.loginId);
     merchantAuth.setTransactionKey(creds.transactionKey);
@@ -92,7 +93,10 @@ export async function chargeOpaqueData(
     txRequest.setTransactionType(ApiContracts.TransactionTypeEnum.AUTHCAPTURETRANSACTION);
     txRequest.setAmount(amountCad.toFixed(2));
     txRequest.setPayment(payment);
-    txRequest.setDescription(description.substring(0, 255));
+
+    const order = new ApiContracts.OrderType();
+    order.setDescription(description.substring(0, 255));
+    txRequest.setOrder(order);
 
     if (billTo) {
       const customerAddress = new ApiContracts.CustomerAddressType();
@@ -149,5 +153,8 @@ export async function chargeOpaqueData(
         resolve({ success: false, error: e?.message ?? 'Erreur serveur' });
       }
     });
+    } catch (e: any) {
+      resolve({ success: false, error: `SDK setup error: ${e?.message ?? e}` });
+    }
   });
 }
