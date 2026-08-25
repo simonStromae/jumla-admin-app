@@ -21,7 +21,7 @@ export async function POST(req: NextRequest) {
     token, expiry, user.id,
   );
 
-  const baseUrl  = process.env.NEXTAUTH_URL ?? 'http://localhost:3000';
+  const baseUrl  = process.env.NEXTAUTH_URL ?? process.env.AUTH_URL ?? 'https://jumla.cargo';
   const resetUrl = `${baseUrl}/reset-password?token=${token}`;
 
   await sendPasswordResetEmail(user.email, user.name, resetUrl).catch(() => {});
