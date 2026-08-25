@@ -24,6 +24,10 @@ export default function ClientFormModal({ mode = 'create', client, onClose, onSa
   }));
   const [saving, setSaving] = useState(false);
   const [saveErr, setSaveErr] = useState('');
+  const [pwMode, setPwMode] = useState('email');
+  const [newPw, setNewPw] = useState('');
+  const [pwBusy, setPwBusy] = useState(false);
+  const [pwMsg, setPwMsg] = useState(null);
 
   const upd = (k, v) => setData(d => ({ ...d, [k]: v }));
 
@@ -269,6 +273,65 @@ export default function ClientFormModal({ mode = 'create', client, onClose, onSa
               <textarea className="textarea" rows={3} value={data.notes} onChange={e => upd('notes', e.target.value)} placeholder="Particularités, instructions, historique..." />
             </div>
           </div>
+
+          {/* Password reset block — edit mode only */}
+          {isEdit && (
+            <div className="card" style={{ padding: 16, marginBottom: 14 }}>
+              <div className="section-title" style={{ marginBottom: 12 }}>
+                <I.Lock style={{ width: 14, height: 14, color: 'var(--brand-600)' }} /> Mot de passe
+              </div>
+              <div style={{ display: 'flex', gap: 6, marginBottom: 12 }}>
+                {[
+                  { key: 'email', label: 'Envoyer un lien' },
+                  { key: 'direct', label: 'Définir directement' },
+                ].map(m => (
+                  <button key={m.key} onClick={() => { setPwMode(m.key); setPwMsg(null); setNewPw(''); }}
+                    className="btn btn--ghost btn--xs"
+                    style={{
+                      borderColor: pwMode === m.key ? 'var(--brand-400)' : 'var(--border)',
+                      background: pwMode === m.key ? 'var(--brand-50)' : 'var(--bg-soft)',
+                      color: pwMode === m.key ? 'var(--brand-700)' : 'var(--ink-500)',
+                      fontWeight: pwMode === m.key ? 700 : 400,
+                    }}>
+                    {m.label}
+                  </button>
+                ))}
+              </div>
+              {pwMode === 'direct' && (
+                <div className="field" style={{ marginBottom: 10 }}>
+                  <label className="label">Nouveau mot de passe <span className="opt">/ min. 8 caractères</span></label>
+                  <input className="input" type="password" value={newPw} onChange={e => setNewPw(e.target.value)}
+                    placeholder="••••••••" autoComplete="new-password" />
+                </div>
+              )}
+              {pwMsg && (
+                <div style={{ fontSize: 12, marginBottom: 10, padding: '6px 10px', borderRadius: 6,
+                  background: pwMsg.ok ? 'var(--ok-50)' : 'var(--bad-50)',
+                  color: pwMsg.ok ? 'var(--ok-700)' : 'var(--bad-700)',
+                  border: `1px solid ${pwMsg.ok ? 'var(--ok-200)' : 'var(--bad-200)'}` }}>
+                  {pwMsg.text}
+                </div>
+              )}
+              <button className="btn btn--soft btn--xs" disabled={pwBusy || (pwMode === 'direct' && newPw.length < 8)}
+                onClick={async () => {
+                  setPwBusy(true); setPwMsg(null);
+                  try {
+                    const body = pwMode === 'direct' ? { newPassword: newPw } : {};
+                    const res = await fetch(`/api/clients/${client.id}/reset-password`, {
+                      method: 'POST', headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify(body),
+                    });
+                    const json = await res.json();
+                    if (!res.ok) { setPwMsg({ ok: false, text: json.error || 'Erreur' }); }
+                    else if (json.mode === 'email') { setPwMsg({ ok: true, text: `Lien envoyé à ${json.email}` }); }
+                    else { setPwMsg({ ok: true, text: 'Mot de passe mis à jour' }); setNewPw(''); }
+                  } catch { setPwMsg({ ok: false, text: 'Erreur réseau' }); }
+                  finally { setPwBusy(false); }
+                }}>
+                {pwBusy ? 'En cours…' : pwMode === 'email' ? 'Envoyer le lien de réinitialisation' : 'Enregistrer le nouveau mot de passe'}
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Right: live preview */}
