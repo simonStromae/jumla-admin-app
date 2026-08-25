@@ -9,7 +9,7 @@ import { Pagination } from '../components/Pagination.jsx';
 export default function AllParcelsScreen({ onNav, initialSearch = '' }) {
   const can = useCan();
   const t = useAdminT();
-  const { currency, fmt, convert } = useCurrency();
+  const { currency, fmt, convert, rates } = useCurrency();
   const [tab, setTab]                     = useState('all');
   const [campaignFilter, setCampaignFilter] = useState('all');
   const [search, setSearch]               = useState(initialSearch);
@@ -341,9 +341,10 @@ export default function AllParcelsScreen({ onNav, initialSearch = '' }) {
               <td style={{ textAlign: 'right' }}>
                 {(() => {
                   const rc = p.routeCurrency ?? currency;
-                  const showConv = rc !== 'CAD';
-                  const campRate = p.exchangeRateToCAD ?? null;
-                  const toCAD = (amt) => campRate ? Math.round(amt * campRate) : Math.round(convert(amt, rc));
+                  const campRate = p.exchangeRateToCAD ?? (rc !== 'CAD' ? (rates[rc] ?? null) : null);
+                  // Only show conversion when we have a real non-1 rate
+                  const showConv = rc !== 'CAD' && campRate && campRate !== 1;
+                  const toCAD = (amt) => campRate ? Math.round(amt * campRate) : Math.round(amt);
                   if (p.confirmedPriceXaf != null && p.adjustmentStatus !== 'none') {
                     return (
                       <>

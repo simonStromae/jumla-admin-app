@@ -55,7 +55,7 @@ const DRIVER_WARNINGS = {
 
 export default function ParcelDetailScreen({ id, onNav }) {
   const t = useAdminT();
-  const { currency, fmt } = useCurrency();
+  const { currency, fmt, rates } = useCurrency();
   const [parcel,        setParcel]        = useState(null);
   const [bordereaux,    setBordereaux]    = useState([]);
   const [loading,       setLoading]       = useState(true);
@@ -187,12 +187,14 @@ export default function ParcelDetailScreen({ id, onNav }) {
   const campaign      = parcel.campaign   || {};
   const payment       = parcel.payment;
   const routeCurrency   = campaign.route?.currency ?? 'CAD';
-  const campRateToCAD   = campaign.exchangeRateToCAD ?? null;
-  // fmt but using the campaign-specific rate instead of global settings
+  // Campaign-specific rate takes priority; fall back to global settings rate
+  const campRateToCAD   = campaign.exchangeRateToCAD ?? (routeCurrency !== 'CAD' ? (rates[routeCurrency] ?? null) : null);
+  // Show in CAD when rate is available; otherwise show native currency to avoid misleading 1:1
   const fmtRoute = (amount) => {
     if (amount == null) return '—';
-    if (routeCurrency === 'CAD' || !campRateToCAD) return fmt(amount, routeCurrency);
-    return `${Math.round(amount * campRateToCAD).toLocaleString('fr')} CAD`;
+    if (routeCurrency === 'CAD') return fmt(amount, 'CAD');
+    if (campRateToCAD) return `${Math.round(amount * campRateToCAD).toLocaleString('fr')} CAD`;
+    return `${Math.round(amount).toLocaleString('fr')} ${routeCurrency}`;
   };
   const PARCEL_FLOW = ['enr','rec','pre','exp','tra','apd','dou','ins','ret','lib','ard','ver','pdl','liv','ok'];
   const allEvents  = parcel.trackingEvents || [];
@@ -1089,13 +1091,14 @@ const BEER_FORMATS = [
 
 function WeightModal({ parcel, onClose, onSaved }) {
   const t = useAdminT();
-  const { currency, fmt } = useCurrency();
+  const { currency, fmt, rates } = useCurrency();
   const routeCurrency = parcel.campaign?.route?.currency ?? 'CAD';
-  const campRateToCAD = parcel.campaign?.exchangeRateToCAD ?? null;
+  const campRateToCAD = parcel.campaign?.exchangeRateToCAD ?? (routeCurrency !== 'CAD' ? (rates[routeCurrency] ?? null) : null);
   const fmtRoute = (amount) => {
     if (amount == null) return '—';
-    if (routeCurrency === 'CAD' || !campRateToCAD) return fmt(amount, routeCurrency);
-    return `${Math.round(amount * campRateToCAD).toLocaleString('fr')} CAD`;
+    if (routeCurrency === 'CAD') return fmt(amount, 'CAD');
+    if (campRateToCAD) return `${Math.round(amount * campRateToCAD).toLocaleString('fr')} CAD`;
+    return `${Math.round(amount).toLocaleString('fr')} ${routeCurrency}`;
   };
   const initItems = () => {
     if (Array.isArray(parcel.items) && parcel.items.length > 0) {
@@ -1448,13 +1451,14 @@ function WeightModal({ parcel, onClose, onSaved }) {
 
 function InteracModal({ parcel, onClose }) {
   const t = useAdminT();
-  const { currency, fmt } = useCurrency();
+  const { currency, fmt, rates } = useCurrency();
   const routeCurrency = parcel.campaign?.route?.currency ?? 'CAD';
-  const campRateToCAD = parcel.campaign?.exchangeRateToCAD ?? null;
+  const campRateToCAD = parcel.campaign?.exchangeRateToCAD ?? (routeCurrency !== 'CAD' ? (rates[routeCurrency] ?? null) : null);
   const fmtRoute = (amount) => {
     if (amount == null) return '—';
-    if (routeCurrency === 'CAD' || !campRateToCAD) return fmt(amount, routeCurrency);
-    return `${Math.round(amount * campRateToCAD).toLocaleString('fr')} CAD`;
+    if (routeCurrency === 'CAD') return fmt(amount, 'CAD');
+    if (campRateToCAD) return `${Math.round(amount * campRateToCAD).toLocaleString('fr')} CAD`;
+    return `${Math.round(amount).toLocaleString('fr')} ${routeCurrency}`;
   };
   const [payUrl,     setPayUrl]     = useState('');
   const [expiresAt,  setExpiresAt]  = useState('');
