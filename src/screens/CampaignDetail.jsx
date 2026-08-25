@@ -682,6 +682,13 @@ export default function CampaignDetailScreen({ id, onNav }) {
       {(() => {
         const routeCurrency = campaign.route?.currency ?? 'CAD';
         const rateToCAD = routeCurrency !== 'CAD' ? (campaign.exchangeRateToCAD ?? rates[routeCurrency] ?? null) : null;
+        // fmt using campaign-specific rate; fall back to native if no rate
+        const fmtC = (amount) => {
+          if (amount == null) return '—';
+          if (routeCurrency === 'CAD') return fmt(amount, 'CAD');
+          if (rateToCAD) return `${Math.round(amount * rateToCAD).toLocaleString('fr')} CAD`;
+          return `${Math.round(amount).toLocaleString('fr')} ${routeCurrency}`;
+        };
         const fmtOrig = (amount) => `${Math.round(amount).toLocaleString('fr')} ${routeCurrency}`;
         return (
           <>
@@ -689,9 +696,9 @@ export default function CampaignDetailScreen({ id, onNav }) {
               {[
                 { l: t.campaigns.kpi.parcels,             v: parcels.length,                   u: '' },
                 { l: 'Poids total',                        v: totalWeight.toLocaleString('fr'),  u: 'kg' },
-                { l: 'Facturé',                            v: fmt(invoiced, routeCurrency),     u: '', sub: rateToCAD ? fmtOrig(invoiced) : null },
-                { l: 'Perçu',                              v: fmt(collected, routeCurrency),    u: '', col: 'var(--ok-600)', sub: rateToCAD ? fmtOrig(collected) : null },
-                { l: 'Reste à percevoir',                  v: fmt(outstanding, routeCurrency),  u: '', col: outstanding > 0 ? 'var(--bad-600)' : 'var(--ok-600)', sub: rateToCAD ? fmtOrig(outstanding) : null },
+                { l: 'Facturé',                            v: fmtC(invoiced),     u: '', sub: rateToCAD ? fmtOrig(invoiced) : null },
+                { l: 'Perçu',                              v: fmtC(collected),    u: '', col: 'var(--ok-600)', sub: rateToCAD ? fmtOrig(collected) : null },
+                { l: 'Reste à percevoir',                  v: fmtC(outstanding),  u: '', col: outstanding > 0 ? 'var(--bad-600)' : 'var(--ok-600)', sub: rateToCAD ? fmtOrig(outstanding) : null },
                 { l: 'Taux recouvrement',                  v: pct,                              u: '%', col: pct >= 95 ? 'var(--ok-600)' : 'var(--warn-700)' },
               ].map((k, i) => (
                 <div key={i} style={{ padding: '14px 18px', borderRight: i < 5 ? '1px solid var(--border-soft)' : 'none' }}>
@@ -1090,7 +1097,8 @@ export default function CampaignDetailScreen({ id, onNav }) {
                       const raw = p.payment?.amount ?? p.priceXaf;
                       if (raw == null) return <span style={{ color: 'var(--ink-300)' }}>—</span>;
                       const cadRate = rc !== 'CAD' ? (campaign.exchangeRateToCAD ?? rates[rc] ?? null) : null;
-                      const cadAmt = cadRate ? Math.round(raw * cadRate) : null;
+                      // Only show conversion when we have a real rate (not 1)
+                      const cadAmt = (cadRate && cadRate !== 1) ? Math.round(raw * cadRate) : null;
                       return (
                         <div>
                           <span className="mono" style={{ fontWeight: 700, color: 'var(--ink-900)' }}>
