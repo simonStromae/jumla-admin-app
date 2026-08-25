@@ -94,8 +94,9 @@ export default function CardPaymentModal({ amountCad, currency = 'CAD', amountOr
         setProcessing(false);
         return;
       }
+      let res, json;
       try {
-        const res = await fetch('/api/pay/charge', {
+        res  = await fetch('/api/pay/charge', {
           method:  'POST',
           headers: { 'Content-Type': 'application/json' },
           body:    JSON.stringify({
@@ -114,18 +115,20 @@ export default function CardPaymentModal({ amountCad, currency = 'CAD', amountOr
             },
           }),
         });
-        const json = await res.json();
-        if (!res.ok || !json.ok) {
-          setErr(json.error ?? 'Paiement refusé.');
-          setProcessing(false);
-          return;
-        }
-        setPaid(json);
-        onSuccess?.(json);
-      } catch {
-        setErr('Erreur réseau. Réessayez.');
+        json = await res.json();
+      } catch (fetchErr) {
+        console.error('[CardPaymentModal] fetch error:', fetchErr);
+        setErr('Erreur réseau. Vérifiez votre connexion et réessayez.');
         setProcessing(false);
+        return;
       }
+      if (!res.ok || !json.ok) {
+        setErr(json.error ?? 'Paiement refusé.');
+        setProcessing(false);
+        return;
+      }
+      setPaid(json);
+      if (onSuccess) onSuccess(json);
     });
   };
 
