@@ -149,13 +149,13 @@ export default function ParcelFormPage({ mode = 'create', parcel, campaign, onNa
     setCalcLoading(false);
   }, []);
 
+  const [cbm, setCbm] = useState('');
+
   // Recalculate whenever pricing-relevant fields change
   useEffect(() => {
     const timer = setTimeout(() => calcPrice({ ...data, weightKg: totalKg, productType: dominantType, cbm }), 300);
     return () => clearTimeout(timer);
   }, [items, data.campaignId, data.nbCartons, data.nbPetitsSacs, data.nbSacsMoyens, data.nbGrandsSacs, data.nbPlastiques, data.nbPlastiquesBiere, data.nbCasiers24x65, data.nbCasiers24x33, data.nbCasiers12x50, data.marginPct, cbm]);
-
-  const [cbm, setCbm] = useState('');
 
   const activeCampaign = campaigns.find(c => c.id === data.campaignId) || campaign || null;
   const isMaritime = activeCampaign?.routeFees?.transportMode === 'sea';
