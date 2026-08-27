@@ -219,6 +219,24 @@ export default function ParcelDetailPage({ params }) {
   const reloadParcel = () =>
     fetch('/api/me/parcels/' + params.id).then(r => r.ok ? r.json() : null).then(d => { if (d) setParcel(d); }).catch(() => {});
 
+  const routeCurrency    = parcel.campaign?.currency ?? 'CAD';
+  const rateToCAD        = parcel.campaign?.exchangeRateToCAD ?? null;
+  const toCAD = (amount) => {
+    if (!amount) return 0;
+    if (routeCurrency === 'CAD') return amount;
+    if (rateToCAD) return Math.round(amount * rateToCAD);
+    return amount;
+  };
+  const fmtMoney = (amount) => {
+    if (amount == null) return '—';
+    const n = amount.toLocaleString(locale === 'fr' ? 'fr-FR' : 'en-CA');
+    if (routeCurrency === 'CAD') return `${n} CAD`;
+    const cad = rateToCAD ? ` (≈ ${Math.round(amount * rateToCAD).toLocaleString(locale === 'fr' ? 'fr-FR' : 'en-CA')} CAD)` : '';
+    return `${n} ${routeCurrency}${cad}`;
+  };
+  const fmtCAD = (amount) =>
+    amount == null ? '—' : `${Math.round(amount).toLocaleString(locale === 'fr' ? 'fr-FR' : 'en-CA')} CAD`;
+
   return (
     <div>
       {/* Card payment modal */}
@@ -226,6 +244,9 @@ export default function ParcelDetailPage({ params }) {
         <Suspense fallback={null}>
           <CardPaymentModal
             amountCad={cardModal.amountCad}
+            currency={routeCurrency !== 'CAD' ? routeCurrency : undefined}
+            amountOriginal={routeCurrency !== 'CAD' ? cardModal.amountOriginal : undefined}
+            exchangeRate={rateToCAD ?? undefined}
             parcelId={parcel.id}
             type={cardModal.type}
             onSuccess={() => { setCardModal(null); reloadParcel(); }}
@@ -385,7 +406,7 @@ export default function ParcelDetailPage({ params }) {
                 <InfoCell label={t('parcel.info.description')} value={parcel.description} />
                 <InfoCell label={t('parcel.info.weight')}      value={parcel.weightKg ? `${parcel.weightKg} kg` : null} />
                 <InfoCell label={t('parcel.info.type')}        value={ptLabel(parcel.productType)} />
-                <InfoCell label={t('parcel.info.price')}       value={parcel.priceXaf ? `${parcel.priceXaf.toLocaleString(locale === 'fr' ? 'fr-FR' : 'en-CA')} CAD` : null} />
+                <InfoCell label={t('parcel.info.price')}       value={parcel.priceXaf ? fmtMoney(parcel.priceXaf) : null} />
                 <InfoCell label={t('parcel.info.departurePlanned')} value={fmt(parcel.campaign?.departureDate)} />
                 <InfoCell label={t('parcel.info.arrivalPlanned')}   value={fmt(parcel.campaign?.arrivalDate)} />
               </div>
@@ -537,12 +558,12 @@ export default function ParcelDetailPage({ params }) {
                 <div style={{ padding: '14px 16px', background: '#f9fafb', borderRadius: 12, border: '1px solid #e5e7eb' }}>
                   <div style={{ fontSize: 10.5, fontWeight: 700, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '.05em', marginBottom: 8 }}>{t('parcel.adjustment.estimate')}</div>
                   <div style={{ fontFamily: 'monospace', fontSize: 22, fontWeight: 700, color: '#9ca3af', textDecoration: 'line-through' }}>{parcel.priceXaf?.toLocaleString(locale === 'fr' ? 'fr-FR' : 'en-CA') ?? '—'}</div>
-                  <div style={{ fontSize: 11, color: '#9ca3af', marginTop: 2 }}>CAD</div>
+                  <div style={{ fontSize: 11, color: '#9ca3af', marginTop: 2 }}>{routeCurrency}</div>
                 </div>
                 <div style={{ padding: '14px 16px', background: '#f9fafb', borderRadius: 12, border: '1px solid #e5e7eb' }}>
                   <div style={{ fontSize: 10.5, fontWeight: 700, color: '#6b7280', textTransform: 'uppercase', letterSpacing: '.05em', marginBottom: 8 }}>{t('parcel.adjustment.actual')}</div>
                   <div style={{ fontFamily: 'monospace', fontSize: 22, fontWeight: 800, color: '#111827' }}>{parcel.confirmedPriceXaf.toLocaleString(locale === 'fr' ? 'fr-FR' : 'en-CA')}</div>
-                  <div style={{ fontSize: 11, color: '#9ca3af', marginTop: 2 }}>CAD</div>
+                  <div style={{ fontSize: 11, color: '#9ca3af', marginTop: 2 }}>{routeCurrency}</div>
                 </div>
                 <div style={{ padding: '14px 16px', borderRadius: 12, border: isPending ? '1.5px solid var(--info-100)' : '1.5px solid #86efac', background: isPending ? 'var(--info-50)' : '#f0fdf4' }}>
                   <div style={{ fontSize: 10.5, fontWeight: 700, color: isPending ? 'var(--info-700)' : '#15803d', textTransform: 'uppercase', letterSpacing: '.05em', marginBottom: 8 }}>
@@ -551,21 +572,21 @@ export default function ParcelDetailPage({ params }) {
                   <div style={{ fontFamily: 'monospace', fontSize: 22, fontWeight: 800, color: isPending ? 'var(--info-700)' : '#15803d' }}>
                     {isPending ? '+' : '−'}{supplement.toLocaleString(locale === 'fr' ? 'fr-FR' : 'en-CA')}
                   </div>
-                  <div style={{ fontSize: 11, color: isPending ? 'var(--info-600)' : '#16a34a', marginTop: 2 }}>CAD</div>
+                  <div style={{ fontSize: 11, color: isPending ? 'var(--info-600)' : '#16a34a', marginTop: 2 }}>{routeCurrency}</div>
                 </div>
               </div>
               {isPending && supplement > 0 && (
                 <>
                   {cardEnabled && (
                     <button
-                      onClick={() => setCardModal({ amountCad: supplement, type: 'supplement' })}
+                      onClick={() => setCardModal({ amountCad: toCAD(supplement), amountOriginal: supplement, type: 'supplement' })}
                       style={{
                         width: '100%', marginBottom: 10, padding: '11px 0',
                         background: 'linear-gradient(90deg,#00B4D8,#1B4FD8)',
                         color: 'white', fontWeight: 700, fontSize: 14,
                         border: 'none', borderRadius: 10, cursor: 'pointer',
                       }}>
-                      💳 Payer le supplément {supplement.toLocaleString(locale === 'fr' ? 'fr-FR' : 'en-CA')} CAD par carte
+                      💳 Payer le supplément {fmtMoney(supplement)} par carte
                     </button>
                   )}
                   <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12, padding: '12px 16px', background: 'white', border: '1px solid var(--border)', borderLeft: '3px solid var(--brand-400)', borderRadius: 10 }}>
@@ -607,14 +628,14 @@ export default function ParcelDetailPage({ params }) {
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
                         <span style={{ fontSize: 13, color: '#6b7280' }}>{locale === 'fr' ? 'Facture initiale' : 'Initial invoice'}</span>
                         <div style={{ textAlign: 'right' }}>
-                          <div style={{ fontWeight: 700, fontSize: 15, fontFamily: 'monospace', color: '#16a34a' }}>✓ {parcel.payment.amount.toLocaleString(locale === 'fr' ? 'fr-FR' : 'en-CA')} CAD</div>
+                          <div style={{ fontWeight: 700, fontSize: 15, fontFamily: 'monospace', color: '#16a34a' }}>✓ {fmtMoney(parcel.payment.amount)}</div>
                           {parcel.payment.paidAt && <div style={{ fontSize: 11, color: '#9ca3af' }}>{t('parcel.payment.paidOn').replace('{date}', fmt(parcel.payment.paidAt))}</div>}
                         </div>
                       </div>
                       {supplement > 0 && (
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 14px', background: 'var(--info-50)', border: '1.5px solid var(--info-100)', borderRadius: 9, marginBottom: 10 }}>
                           <span style={{ fontSize: 13, color: 'var(--info-700)', fontWeight: 600 }}>{t('parcel.adjustment.supplement')}</span>
-                          <span style={{ fontWeight: 800, fontSize: 15, fontFamily: 'monospace', color: 'var(--info-700)' }}>+{supplement.toLocaleString(locale === 'fr' ? 'fr-FR' : 'en-CA')} CAD</span>
+                          <span style={{ fontWeight: 800, fontSize: 15, fontFamily: 'monospace', color: 'var(--info-700)' }}>+{fmtMoney(supplement)}</span>
                         </div>
                       )}
                       <div style={{ fontSize: 12, color: '#6b7280', fontStyle: 'italic' }}>{t('parcel.adjustment.seeAbove')}</div>
@@ -623,18 +644,18 @@ export default function ParcelDetailPage({ params }) {
                     <>
                       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
                         <span style={{ fontSize: 13, color: '#6b7280' }}>{t('parcel.payment.total')}</span>
-                        <span style={{ fontWeight: 700, fontSize: 15, fontFamily: 'monospace' }}>{parcel.payment.amount.toLocaleString(locale === 'fr' ? 'fr-FR' : 'en-CA')} CAD</span>
+                        <span style={{ fontWeight: 700, fontSize: 15, fontFamily: 'monospace' }}>{fmtMoney(parcel.payment.amount)}</span>
                       </div>
                       {(partial || !paid) && parcel.payment.allocated > 0 && (
                         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
                           <span style={{ fontSize: 13, color: '#6b7280' }}>{t('parcel.payment.received')}</span>
-                          <span style={{ fontWeight: 600, fontSize: 14, color: '#16a34a', fontFamily: 'monospace' }}>{parcel.payment.allocated.toLocaleString(locale === 'fr' ? 'fr-FR' : 'en-CA')} CAD</span>
+                          <span style={{ fontWeight: 600, fontSize: 14, color: '#16a34a', fontFamily: 'monospace' }}>{fmtMoney(parcel.payment.allocated)}</span>
                         </div>
                       )}
                       {!paid && (
                         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 12 }}>
                           <span style={{ fontSize: 13, color: '#6b7280' }}>{t('parcel.payment.remaining')}</span>
-                          <span style={{ fontWeight: 700, fontSize: 15, color: '#dc2626', fontFamily: 'monospace' }}>{parcel.payment.remaining.toLocaleString(locale === 'fr' ? 'fr-FR' : 'en-CA')} CAD</span>
+                          <span style={{ fontWeight: 700, fontSize: 15, color: '#dc2626', fontFamily: 'monospace' }}>{fmtMoney(parcel.payment.remaining)}</span>
                         </div>
                       )}
                       {paid && parcel.payment.paidAt && (
@@ -644,19 +665,19 @@ export default function ParcelDetailPage({ params }) {
                         <>
                           {cardEnabled && (
                             <button
-                              onClick={() => setCardModal({ amountCad: parcel.payment.remaining, type: 'invoice' })}
+                              onClick={() => setCardModal({ amountCad: toCAD(parcel.payment.remaining), amountOriginal: parcel.payment.remaining, type: 'invoice' })}
                               style={{
                                 width: '100%', marginTop: 12, padding: '11px 0',
                                 background: 'linear-gradient(90deg,#00B4D8,#1B4FD8)',
                                 color: 'white', fontWeight: 700, fontSize: 14,
                                 border: 'none', borderRadius: 10, cursor: 'pointer',
                               }}>
-                              💳 Payer {parcel.payment.remaining.toLocaleString(locale === 'fr' ? 'fr-FR' : 'en-CA')} CAD par carte
+                              💳 Payer {fmtMoney(parcel.payment.remaining)} par carte
                             </button>
                           )}
                           <div style={{ padding: '10px 14px', borderRadius: 8, background: 'var(--info-50)', border: '1px solid var(--info-100)', fontSize: 12.5, color: 'var(--info-700)', marginTop: 8 }}>
                             {t('parcel.payment.interac')
-                              .replace('{amount}', parcel.payment.remaining.toLocaleString(locale === 'fr' ? 'fr-FR' : 'en-CA'))
+                              .replace('{amount}', fmtMoney(parcel.payment.remaining))
                               .replace('{code}', parcel.trackingCode)}
                           </div>
                         </>
