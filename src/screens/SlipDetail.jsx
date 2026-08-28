@@ -142,8 +142,20 @@ export default function SlipDetailScreen({ id, onNav }) {
 
   if (!slip) return (
     <div className="page">
-      {/* TODO: no translation key for 'Bordereau introuvable' */}
-      <div style={{ padding: 32, color: 'var(--bad-700)' }}>Bordereau introuvable : {id}</div>
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: 360, textAlign: 'center', padding: '48px 24px' }}>
+        <div style={{ width: 64, height: 64, borderRadius: '50%', background: 'var(--ink-100)', display: 'grid', placeItems: 'center', marginBottom: 20 }}>
+          <I.Box style={{ width: 28, height: 28, color: 'var(--ink-400)' }} />
+        </div>
+        <div style={{ fontSize: 17, fontWeight: 700, color: 'var(--ink-800)', marginBottom: 8 }}>
+          Bordereau non disponible
+        </div>
+        <div style={{ fontSize: 13, color: 'var(--ink-400)', maxWidth: 360, lineHeight: 1.6, marginBottom: 28 }}>
+          Ce colis n'a pas encore de bordereau. Il sera généré automatiquement une fois la cargaison préparée et validée par l'équipe.
+        </div>
+        <button className="btn btn--ghost" onClick={() => window.history.back()}>
+          <I.ArrowLeft style={{ width: 13, height: 13 }} /> Retour
+        </button>
+      </div>
     </div>
   );
 

@@ -539,7 +539,6 @@ export function ParcelActionsMenu({ parcel, onNav, isLocked, onDelete, onCancel 
   const sections = [
     [
       { icon: I.Eye,   label: 'Voir le détail',          onClick: () => onNav('/parcels/' + parcel.id) },
-      { icon: I.Edit,  label: 'Modifier',                onClick: () => onNav('/parcels/' + parcel.id + '/edit'), disabled: isLocked },
     ],
     [
       { icon: I.Print, label: 'Bordereau du colis',      onClick: () => onNav('/admin/slips/' + parcel.id) },
