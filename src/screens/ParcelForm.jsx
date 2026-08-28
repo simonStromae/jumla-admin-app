@@ -80,27 +80,27 @@ export default function ParcelFormPage({ mode = 'create', parcel, campaign, onNa
   }, { type: 'standard', w: 0 }).type;
 
   const [data, setData] = useState({
-    campaignId:       campaign?.id || '',
-    clientId:         '',
-    nbCartons:        parcel?.nbCartons   || 0,
-    nbPetitsSacs:     parcel?.nbPetitsSacs    || 0,
-    nbSacsMoyens:     parcel?.nbSacsMoyens    || 0,
-    nbGrandsSacs:     parcel?.nbGrandsSacs    || 0,
-    nbPlastiques:     parcel?.nbPlastiques    || 0,
+    campaignId:       parcel?.campaignId || campaign?.id || '',
+    clientId:         parcel?.clientId  || '',
+    nbCartons:        parcel?.nbCartons        || 0,
+    nbPetitsSacs:     parcel?.nbPetitsSacs     || 0,
+    nbSacsMoyens:     parcel?.nbSacsMoyens     || 0,
+    nbGrandsSacs:     parcel?.nbGrandsSacs     || 0,
+    nbPlastiques:     parcel?.nbPlastiques     || 0,
     nbPlastiquesBiere:parcel?.nbPlastiquesBiere || 0,
-    nbCasiers24x65:   parcel?.nbCasiers24x65  || 0,
-    nbCasiers24x33:   parcel?.nbCasiers24x33  || 0,
-    nbCasiers12x50:   parcel?.nbCasiers12x50  || 0,
+    nbCasiers24x65:   parcel?.nbCasiers24x65   || 0,
+    nbCasiers24x33:   parcel?.nbCasiers24x33   || 0,
+    nbCasiers12x50:   parcel?.nbCasiers12x50   || 0,
     marginPct:        parcel?.marginPct   ?? 0,
-    delivery:         'pickup',
+    delivery:         parcel?.delivery   || 'pickup',
     notes:            parcel?.notes       || '',
     recipName:        parcel?.recipName   || '',
     recipPhone:       parcel?.recipPhone  || '',
     recipCity:        parcel?.recipCity   || '',
-    recipAddress:     '',
-    recipApt:         '',
-    recipProvince:    'QC',
-    recipPostal:      '',
+    recipAddress:     parcel?.recipAddress  || '',
+    recipApt:         parcel?.recipApt      || '',
+    recipProvince:    parcel?.recipProvince || 'QC',
+    recipPostal:      parcel?.recipPostal   || '',
   });
 
   const upd = (k, v) => setData(d => ({ ...d, [k]: v }));
@@ -178,50 +178,88 @@ export default function ParcelFormPage({ mode = 'create', parcel, campaign, onNa
   ).slice(0, 20);
 
   async function handleSubmit() {
-    // TODO: no i18n keys for these validation messages
     if (!data.campaignId) { setErr('Veuillez sélectionner une cargaison'); return; }
     if (!data.clientId)   { setErr('Veuillez sélectionner un client'); return; }
     if (totalKg <= 0) { setErr('Le poids total des articles est obligatoire'); return; }
+    const missingDesc = items.some(i => !i.description.trim());
+    if (missingDesc) { setErr('La description est obligatoire pour chaque article'); return; }
 
     setSaving(true); setErr('');
     const deliveryFee = data.delivery === 'home' ? 25 : 0;
     const finalPrice  = pricing ? Math.round(pricing.prixClient + deliveryFee) : null;
+    const mappedItems = items.map(({ id, ...r }) => ({ ...r, weightKg: Number(r.weightKg) || 0, nbPieces: r.nbPieces ? Number(r.nbPieces) : null }));
 
     try {
-      const res = await fetch('/api/parcels', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          clientId:          data.clientId,
-          campaignId:        data.campaignId,
-          items:             items.map(({ id, ...r }) => ({ ...r, weightKg: Number(r.weightKg) || 0, nbPieces: r.nbPieces ? Number(r.nbPieces) : null })),
-          description:       items.map(i => i.description).filter(Boolean).join(' · ') || null,
-          weightKg:          totalKg,
-          productType:       dominantType,
-          priceXaf:          finalPrice,
-          notes:             data.notes || null,
-          nbCartons:         data.nbCartons,
-          nbPetitsSacs:      data.nbPetitsSacs,
-          nbSacsMoyens:      data.nbSacsMoyens,
-          nbGrandsSacs:      data.nbGrandsSacs,
-          nbPlastiques:      data.nbPlastiques,
-          nbPlastiquesBiere: data.nbPlastiquesBiere,
-          nbCasiers24x65:    data.nbCasiers24x65,
-          nbCasiers24x33:    data.nbCasiers24x33,
-          nbCasiers12x50:    data.nbCasiers12x50,
-          marginPct:         Number(data.marginPct),
-          cbm:               isMaritime && cbm ? Number(cbm) : null,
-          pricingDetails:    pricing || null,
-          recipName:         data.recipName  || null,
-          recipPhone:        data.recipPhone || null,
-          recipCity:         data.recipCity  || null,
-          recipAddress:      data.recipAddress || null,
-          recipApt:          data.recipApt    || null,
-          recipProvince:     data.recipProvince || null,
-          recipPostal:       data.recipPostal   || null,
-          delivery:          data.delivery,
-        }),
-      });
+      let res;
+      if (isEdit && parcel?.id) {
+        res = await fetch('/api/parcels/' + parcel.id, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            items:             mappedItems,
+            description:       mappedItems.map(i => i.description).filter(Boolean).join(' · ') || null,
+            weightKg:          totalKg,
+            productType:       dominantType,
+            priceXaf:          finalPrice,
+            notes:             data.notes || null,
+            nbCartons:         data.nbCartons,
+            nbPetitsSacs:      data.nbPetitsSacs,
+            nbSacsMoyens:      data.nbSacsMoyens,
+            nbGrandsSacs:      data.nbGrandsSacs,
+            nbPlastiques:      data.nbPlastiques,
+            nbPlastiquesBiere: data.nbPlastiquesBiere,
+            nbCasiers24x65:    data.nbCasiers24x65,
+            nbCasiers24x33:    data.nbCasiers24x33,
+            nbCasiers12x50:    data.nbCasiers12x50,
+            marginPct:         Number(data.marginPct),
+            cbm:               isMaritime && cbm ? Number(cbm) : null,
+            pricingDetails:    pricing || null,
+            recipName:         data.recipName    || null,
+            recipPhone:        data.recipPhone   || null,
+            recipCity:         data.recipCity    || null,
+            recipAddress:      data.recipAddress || null,
+            recipApt:          data.recipApt     || null,
+            recipProvince:     data.recipProvince || null,
+            recipPostal:       data.recipPostal   || null,
+            delivery:          data.delivery,
+          }),
+        });
+      } else {
+        res = await fetch('/api/parcels', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            clientId:          data.clientId,
+            campaignId:        data.campaignId,
+            items:             mappedItems,
+            description:       mappedItems.map(i => i.description).filter(Boolean).join(' · ') || null,
+            weightKg:          totalKg,
+            productType:       dominantType,
+            priceXaf:          finalPrice,
+            notes:             data.notes || null,
+            nbCartons:         data.nbCartons,
+            nbPetitsSacs:      data.nbPetitsSacs,
+            nbSacsMoyens:      data.nbSacsMoyens,
+            nbGrandsSacs:      data.nbGrandsSacs,
+            nbPlastiques:      data.nbPlastiques,
+            nbPlastiquesBiere: data.nbPlastiquesBiere,
+            nbCasiers24x65:    data.nbCasiers24x65,
+            nbCasiers24x33:    data.nbCasiers24x33,
+            nbCasiers12x50:    data.nbCasiers12x50,
+            marginPct:         Number(data.marginPct),
+            cbm:               isMaritime && cbm ? Number(cbm) : null,
+            pricingDetails:    pricing || null,
+            recipName:         data.recipName    || null,
+            recipPhone:        data.recipPhone   || null,
+            recipCity:         data.recipCity    || null,
+            recipAddress:      data.recipAddress || null,
+            recipApt:          data.recipApt     || null,
+            recipProvince:     data.recipProvince || null,
+            recipPostal:       data.recipPostal   || null,
+            delivery:          data.delivery,
+          }),
+        });
+      }
       const json = await res.json();
       if (!res.ok) { setErr(json.error || t.common.error); setSaving(false); return; }
       if (campaign) onNav('/campaign/' + campaign.id);
@@ -365,15 +403,13 @@ export default function ParcelFormPage({ mode = 'create', parcel, campaign, onNa
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 160px 90px 70px 32px', gap: 6, marginBottom: 8, padding: '0 2px' }}>
-              {/* TODO: "Type produit" and "Pièces" have no exact i18n keys; using t.common.description, t.common.type, t.common.weight as close matches */}
-              {[t.common.description, t.common.type, t.common.weight, /* TODO: no i18n key for "Pièces" */'Pièces', ''].map((h, i) => (
+              {[<>{t.common.description} <span style={{ color: 'var(--bad-500)' }}>*</span></>, t.common.type, t.common.weight, 'Pièces', ''].map((h, i) => (
                 <div key={i} style={{ fontSize: 10.5, fontWeight: 700, color: 'var(--ink-400)', textTransform: 'uppercase', letterSpacing: '.04em' }}>{h}</div>
               ))}
             </div>
 
             {items.map(item => (
               <div key={item.id} style={{ display: 'grid', gridTemplateColumns: '1fr 160px 90px 70px 32px', gap: 6, marginBottom: 6 }}>
-                {/* TODO: no i18n key for description placeholder */}
                 <input className="input input--sm" value={item.description}
                   onChange={e => updItem(item.id, 'description', e.target.value)}
                   placeholder="Ex: Vêtements, cosmétiques…" />
