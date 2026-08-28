@@ -365,15 +365,13 @@ export default function ParcelFormPage({ mode = 'create', parcel, campaign, onNa
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 160px 90px 70px 32px', gap: 6, marginBottom: 8, padding: '0 2px' }}>
-              {/* TODO: "Type produit" and "Pièces" have no exact i18n keys; using t.common.description, t.common.type, t.common.weight as close matches */}
-              {[t.common.description, t.common.type, t.common.weight, /* TODO: no i18n key for "Pièces" */'Pièces', ''].map((h, i) => (
+              {[t.common.description, t.common.type, t.common.weight, 'Pièces', ''].map((h, i) => (
                 <div key={i} style={{ fontSize: 10.5, fontWeight: 700, color: 'var(--ink-400)', textTransform: 'uppercase', letterSpacing: '.04em' }}>{h}</div>
               ))}
             </div>
 
             {items.map(item => (
               <div key={item.id} style={{ display: 'grid', gridTemplateColumns: '1fr 160px 90px 70px 32px', gap: 6, marginBottom: 6 }}>
-                {/* TODO: no i18n key for description placeholder */}
                 <input className="input input--sm" value={item.description}
                   onChange={e => updItem(item.id, 'description', e.target.value)}
                   placeholder="Ex: Vêtements, cosmétiques…" />
