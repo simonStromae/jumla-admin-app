@@ -57,9 +57,19 @@ export default function ParcelFormPage({ mode = 'create', parcel, campaign, onNa
   const [pricing, setPricing]       = useState(null);
   const [calcLoading, setCalcLoading] = useState(false);
 
-  const [items, setItems] = useState([
-    { id: 1, description: '', productType: 'standard', weightKg: '', nbPieces: '' },
-  ]);
+  const [items, setItems] = useState(() => {
+    const saved = Array.isArray(parcel?.items) ? parcel.items : [];
+    if (saved.length > 0) {
+      return saved.map((it, i) => ({
+        id: i + 1,
+        description: it.description ?? '',
+        productType: it.productType ?? 'standard',
+        weightKg:    it.weightKg != null ? String(it.weightKg) : '',
+        nbPieces:    it.nbPieces != null ? String(it.nbPieces) : '',
+      }));
+    }
+    return [{ id: 1, description: '', productType: 'standard', weightKg: '', nbPieces: '' }];
+  });
   const addItem    = () => setItems(p => [...p, { id: Date.now(), description: '', productType: 'standard', weightKg: '', nbPieces: '' }]);
   const removeItem = id  => setItems(p => p.filter(i => i.id !== id));
   const updItem    = (id, k, v) => setItems(p => p.map(i => i.id === id ? { ...i, [k]: v } : i));
