@@ -34,7 +34,14 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
 
   try {
   const body = await req.json();
-  const { status, confirmed, notes, weightKg, priceXaf, eventNote, eventLocation, items, confirmedPriceXaf, adjustmentStatus, marginPct, driverId, delivery, cancellationReason } = body;
+  const {
+    status, confirmed, notes, weightKg, priceXaf, eventNote, eventLocation, items,
+    confirmedPriceXaf, adjustmentStatus, marginPct, driverId, delivery, cancellationReason,
+    description, productType, pricingDetails, cbm,
+    nbCartons, nbPetitsSacs, nbSacsMoyens, nbGrandsSacs, nbPlastiques, nbPlastiquesBiere,
+    nbCasiers24x65, nbCasiers24x33, nbCasiers12x50,
+    recipName, recipPhone, recipCity, recipAddress, recipApt, recipProvince, recipPostal,
+  } = body;
 
   // Fetch parcel with campaign to check lock status
   const existing = await prisma.parcel.findUnique({
@@ -96,6 +103,26 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
       ...(driverId  !== undefined && { driverId:  driverId  || null }),
       ...(delivery  !== undefined && { delivery:  delivery  || null }),
       ...(cancellationReason !== undefined && { cancellationReason } as any),
+      ...(description !== undefined && { description }),
+      ...(productType !== undefined && { productType }),
+      ...(pricingDetails !== undefined && { pricingDetails } as any),
+      ...(cbm         !== undefined && { cbm: cbm ? Number(cbm) : null } as any),
+      ...(nbCartons         !== undefined && { nbCartons:         Number(nbCartons) }),
+      ...(nbPetitsSacs      !== undefined && { nbPetitsSacs:      Number(nbPetitsSacs) }),
+      ...(nbSacsMoyens      !== undefined && { nbSacsMoyens:      Number(nbSacsMoyens) }),
+      ...(nbGrandsSacs      !== undefined && { nbGrandsSacs:      Number(nbGrandsSacs) }),
+      ...(nbPlastiques      !== undefined && { nbPlastiques:      Number(nbPlastiques) }),
+      ...(nbPlastiquesBiere !== undefined && { nbPlastiquesBiere: Number(nbPlastiquesBiere) }),
+      ...(nbCasiers24x65    !== undefined && { nbCasiers24x65:    Number(nbCasiers24x65) }),
+      ...(nbCasiers24x33    !== undefined && { nbCasiers24x33:    Number(nbCasiers24x33) }),
+      ...(nbCasiers12x50    !== undefined && { nbCasiers12x50:    Number(nbCasiers12x50) }),
+      ...(recipName    !== undefined && { recipName:    recipName    || null }),
+      ...(recipPhone   !== undefined && { recipPhone:   recipPhone   || null }),
+      ...(recipCity    !== undefined && { recipCity:    recipCity    || null }),
+      ...(recipAddress !== undefined && { recipAddress: recipAddress || null }),
+      ...(recipApt     !== undefined && { recipApt:     recipApt     || null }),
+      ...(recipProvince !== undefined && { recipProvince: recipProvince || null }),
+      ...(recipPostal  !== undefined && { recipPostal:  recipPostal  || null }),
     },
   });
 
