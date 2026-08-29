@@ -262,7 +262,8 @@ export default function ParcelFormPage({ mode = 'create', parcel, campaign, onNa
       }
       const json = await res.json();
       if (!res.ok) { setErr(json.error || t.common.error); setSaving(false); return; }
-      if (campaign) onNav('/campaign/' + campaign.id);
+      const destId = activeCampaign?.id ?? campaign?.id;
+      if (destId) onNav('/campaign/' + destId);
       else onNav('/parcels');
     } catch { setErr(t.common.networkError); setSaving(false); }
   }
@@ -281,10 +282,12 @@ export default function ParcelFormPage({ mode = 'create', parcel, campaign, onNa
       {/* Breadcrumb */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12.5, color: 'var(--ink-400)', marginBottom: 8 }}>
         <a style={{ cursor: 'pointer' }} onClick={() => onNav('/')}>{t.campaigns.title}</a>
-        {campaign && (
+        {(activeCampaign || campaign) && (
           <>
             <I.ChevronRight style={{ width: 12, height: 12 }} />
-            <a style={{ cursor: 'pointer' }} onClick={() => onNav('/campaign/' + campaign.id)}>{campaign.code}</a>
+            <a style={{ cursor: 'pointer' }} onClick={() => onNav('/campaign/' + (activeCampaign?.id ?? campaign?.id))}>
+              {activeCampaign?.code ?? '…'}
+            </a>
           </>
         )}
         <I.ChevronRight style={{ width: 12, height: 12 }} />
@@ -306,7 +309,7 @@ export default function ParcelFormPage({ mode = 'create', parcel, campaign, onNa
           </div>
         </div>
         <div className="page__actions">
-          <button className="btn btn--ghost" onClick={() => campaign ? onNav('/campaign/' + campaign.id) : onNav('/parcels')}>{t.common.cancel}</button>
+          <button className="btn btn--ghost" onClick={() => activeCampaign ? onNav('/campaign/' + activeCampaign.id) : campaign ? onNav('/campaign/' + campaign.id) : onNav('/parcels')}>{t.common.cancel}</button>
           <button className="btn btn--brand" onClick={handleSubmit} disabled={saving}>
             {/* TODO: no i18n key for "Créer le colis" — using t.common.create as close match */}
             <I.Check />{saving ? t.common.saving : isEdit ? t.common.save : t.common.create}

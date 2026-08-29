@@ -9,7 +9,8 @@ function NewParcelContent() {
   const onNav = useNav();
   const searchParams = useSearchParams();
   const campaignId = searchParams.get('campaign');
-  const campaign = campaignId ? DATA.CAMPAIGNS.find(c => c.id === campaignId) || null : null;
+  // Pass a stub so the form pre-fills campaignId; full details come from the API-loaded campaigns list
+  const campaign = campaignId ? { id: campaignId } : null;
   return <ParcelFormPage mode="create" campaign={campaign} onNav={onNav} />;
 }
 
