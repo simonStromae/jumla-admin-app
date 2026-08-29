@@ -518,94 +518,83 @@ export default function ParcelFormPage({ mode = 'create', parcel, campaign, onNa
                 </label>
               ))}
             </div>
-            {data.delivery === 'home' && (
-              <div style={{ marginTop: 12, padding: 14, background: 'var(--bg-soft)', borderRadius: 8, border: '1px solid var(--border-soft)', marginBottom: 14 }}>
-                {/* TODO: no i18n key for "Destinataire & Adresse de livraison" */}
-                <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.06em', color: 'var(--ink-500)', marginBottom: 12 }}>Destinataire &amp; Adresse de livraison</div>
+            {/* Recipient — always visible */}
+            <div style={{ marginTop: 12, padding: 14, background: 'var(--bg-soft)', borderRadius: 8, border: '1px solid var(--border-soft)', marginBottom: 14 }}>
+              <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.06em', color: 'var(--ink-500)', marginBottom: 12 }}>Destinataire</div>
 
-                {clientAddresses.length > 0 && (
-                  <div className="field" style={{ marginBottom: 10 }}>
-                    {/* TODO: no i18n key for "Adresse sauvegardée du client" */}
-                    <label className="label">Adresse sauvegardée du client</label>
-                    <select className="select" defaultValue="" onChange={e => {
-                      const addr = clientAddresses.find(a => a.id === e.target.value);
-                      if (addr) {
-                        upd('recipAddress',  addr.address  || '');
-                        upd('recipApt',      addr.apt      || '');
-                        upd('recipCity',     addr.city     || '');
-                        upd('recipProvince', addr.province || 'QC');
-                        upd('recipPostal',   addr.postal   || '');
-                      }
-                    }}>
-                      {/* TODO: no i18n key for "Choisir une adresse sauvegardée…" */}
-                      <option value="">Choisir une adresse sauvegardée…</option>
-                      {clientAddresses.map(a => (
-                        <option key={a.id} value={a.id}>
-                          {a.label ? `${a.label} — ` : ''}{a.address}{a.city ? `, ${a.city}` : ''}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                )}
-
-                {clientRecipients.length > 0 && (
-                  <div className="field" style={{ marginBottom: 10 }}>
-                    {/* TODO: no i18n key for "Destinataire fréquent" */}
-                    <label className="label">Destinataire fréquent</label>
-                    <select className="select" defaultValue="" onChange={e => {
-                      const r = clientRecipients.find(x => x.id === e.target.value);
-                      if (r) {
-                        upd('recipName',  r.name  || '');
-                        upd('recipPhone', r.phone || '');
-                        if (r.city) upd('recipCity', r.city);
-                      }
-                    }}>
-                      {/* TODO: no i18n key for "Choisir un destinataire fréquent…" */}
-                      <option value="">Choisir un destinataire fréquent…</option>
-                      {clientRecipients.map(r => (
-                        <option key={r.id} value={r.id}>
-                          {r.label ? `${r.label} — ` : ''}{r.name}{r.city ? ` (${r.city})` : ''}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                )}
-
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 8 }}>
-                  <div className="field" style={{ marginBottom: 0 }}>
-                    {/* TODO: "destinataire" qualifier has no i18n key; using t.common.name as close match */}
-                    <label className="label">{t.common.name}</label>
-                    <input className="input input--sm" value={data.recipName} onChange={e => upd('recipName', e.target.value)} placeholder={t.common.name} />
-                  </div>
-                  <div className="field" style={{ marginBottom: 0 }}>
-                    {/* TODO: "destinataire" qualifier has no i18n key; using t.common.phone as close match */}
-                    <label className="label">{t.common.phone}</label>
-                    <PhoneInput value={data.recipPhone} onChange={v => upd('recipPhone', v)} />
-                  </div>
+              {clientAddresses.length > 0 && (
+                <div className="field" style={{ marginBottom: 10 }}>
+                  <label className="label">Adresse sauvegardée du client</label>
+                  <select className="select" defaultValue="" onChange={e => {
+                    const addr = clientAddresses.find(a => a.id === e.target.value);
+                    if (addr) {
+                      upd('recipAddress',  addr.address  || '');
+                      upd('recipApt',      addr.apt      || '');
+                      upd('recipCity',     addr.city     || '');
+                      upd('recipProvince', addr.province || 'QC');
+                      upd('recipPostal',   addr.postal   || '');
+                    }
+                  }}>
+                    <option value="">Choisir une adresse sauvegardée…</option>
+                    {clientAddresses.map(a => (
+                      <option key={a.id} value={a.id}>
+                        {a.label ? `${a.label} — ` : ''}{a.address}{a.city ? `, ${a.city}` : ''}
+                      </option>
+                    ))}
+                  </select>
                 </div>
-                <div className="field" style={{ marginBottom: 8 }}>
-                  {/* TODO: "(numéro et rue)" qualifier has no i18n key; using t.common.address as close match */}
-                  <label className="label">{t.common.address}</label>
-                  <input className="input input--sm" value={data.recipAddress} onChange={e => upd('recipAddress', e.target.value)} placeholder="123 rue Sainte-Catherine" />
+              )}
+
+              {clientRecipients.length > 0 && (
+                <div className="field" style={{ marginBottom: 10 }}>
+                  <label className="label">Destinataire fréquent</label>
+                  <select className="select" defaultValue="" onChange={e => {
+                    const r = clientRecipients.find(x => x.id === e.target.value);
+                    if (r) {
+                      upd('recipName',  r.name  || '');
+                      upd('recipPhone', r.phone || '');
+                      if (r.city) upd('recipCity', r.city);
+                    }
+                  }}>
+                    <option value="">Choisir un destinataire fréquent…</option>
+                    {clientRecipients.map(r => (
+                      <option key={r.id} value={r.id}>
+                        {r.label ? `${r.label} — ` : ''}{r.name}{r.city ? ` (${r.city})` : ''}
+                      </option>
+                    ))}
+                  </select>
                 </div>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 60px 140px', gap: 8 }}>
-                  <div className="field" style={{ marginBottom: 0 }}>
-                    <label className="label">{t.common.city}</label>
-                    <input className="input input--sm" value={data.recipCity} onChange={e => upd('recipCity', e.target.value)} placeholder="Montréal" />
-                  </div>
-                  <div className="field" style={{ marginBottom: 0 }}>
-                    {/* TODO: no i18n key for "Province" */}
-                    <label className="label">Province</label>
-                    <input className="input input--sm" value={data.recipProvince} onChange={e => upd('recipProvince', e.target.value)} placeholder="QC" />
-                  </div>
-                  <div className="field" style={{ marginBottom: 0 }}>
-                    {/* TODO: no i18n key for "Code postal" */}
-                    <label className="label">Code postal</label>
-                    <input className="input input--sm" value={data.recipPostal} onChange={e => upd('recipPostal', e.target.value)} placeholder="H3H 1A1" />
-                  </div>
+              )}
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 8 }}>
+                <div className="field" style={{ marginBottom: 0 }}>
+                  <label className="label">{t.common.name}</label>
+                  <input className="input input--sm" value={data.recipName} onChange={e => upd('recipName', e.target.value)} placeholder={t.common.name} />
+                </div>
+                <div className="field" style={{ marginBottom: 0 }}>
+                  <label className="label">{t.common.phone}</label>
+                  <PhoneInput value={data.recipPhone} onChange={v => upd('recipPhone', v)} />
                 </div>
               </div>
-            )}
+              <div className="field" style={{ marginBottom: 8 }}>
+                <label className="label">{t.common.address} <span className="opt">/ optionnel</span></label>
+                <input className="input input--sm" value={data.recipAddress} onChange={e => upd('recipAddress', e.target.value)} placeholder="123 rue Sainte-Catherine" />
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 60px 140px', gap: 8 }}>
+                <div className="field" style={{ marginBottom: 0 }}>
+                  <label className="label">{t.common.city}</label>
+                  <input className="input input--sm" value={data.recipCity} onChange={e => upd('recipCity', e.target.value)} placeholder="Montréal" />
+                </div>
+                <div className="field" style={{ marginBottom: 0 }}>
+                  <label className="label">Province</label>
+                  <input className="input input--sm" value={data.recipProvince} onChange={e => upd('recipProvince', e.target.value)} placeholder="QC" />
+                </div>
+                <div className="field" style={{ marginBottom: 0 }}>
+                  <label className="label">Code postal</label>
+                  <input className="input input--sm" value={data.recipPostal} onChange={e => upd('recipPostal', e.target.value)} placeholder="H3H 1A1" />
+                </div>
+              </div>
+            </div>
 
             <div className="field" style={{ marginBottom: 0 }}>
               <label className="label">{t.common.notes} <span className="opt">/ {t.common.optional}</span></label>
