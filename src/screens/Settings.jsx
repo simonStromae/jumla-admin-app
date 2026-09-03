@@ -1830,7 +1830,7 @@ function RouteEditModal({ editRoute, onClose, onSaved }) {
           <div style={{ marginTop: packagingEnabled ? 12 : 0, fontSize: 12, color: 'var(--ink-400)' }}>
             {packagingEnabled
               ? <>Le carton est configuré par palier (forfait sur le 1er palier, 1,50 {currency}/carton sur les suivants par défaut).{!africanRoute && <span style={{ color: 'var(--ink-300)' }}> · Sacs non disponibles sur cette route.</span>}</>
-              : 'Les frais d'emballage ne seront pas facturés sur cette route.'
+              : "Les frais d'emballage ne seront pas facturés sur cette route."
             }
           </div>
         </div>
