@@ -1487,9 +1487,19 @@ function RouteEditModal({ editRoute, onClose, onSaved }) {
   const [suppElectronique, setSuppElectronique] = useState(String(r?.fees?.supplements?.electronique ?? 5));
   const [suppDocuments,    setSuppDocuments]    = useState(String(r?.fees?.supplements?.documents    ?? -2));
 
+  // Emballages toggle
+  const [packagingEnabled, setPackagingEnabled] = useState(r?.fees?.packagingEnabled ?? true);
+
   // Marge & livraison
   const [marginPct,      setMarginPct]      = useState(String(r?.fees?.marginPct  ?? 0));
-  const [deliveryFeeIle, setDeliveryFeeIle] = useState(String(r?.fees?.deliveryFee ?? 25));
+  const [deliveryIleEnabled,   setDeliveryIleEnabled]   = useState(r?.fees?.deliveryFee      !== 0);
+  const [deliveryGrandEnabled, setDeliveryGrandEnabled] = useState(r?.fees?.deliveryFeeGrand !== 0);
+  const [deliveryFeeIle, setDeliveryFeeIle] = useState(String(
+    r?.fees?.deliveryFee != null ? r.fees.deliveryFee : 25
+  ));
+  const [deliveryFeeGrand, setDeliveryFeeGrand] = useState(String(
+    r?.fees?.deliveryFeeGrand != null ? r.fees.deliveryFeeGrand : Math.round((r?.fees?.deliveryFee ?? 25) * 1.2)
+  ));
 
   // Contact & dépôt (côté départ)
   const [dropoffAddress,      setDropoffAddress]      = useState(r?.fees?.dropoff?.address      || '');
@@ -1526,23 +1536,27 @@ function RouteEditModal({ editRoute, onClose, onSaved }) {
     if (!origin.trim() || !destination.trim()) { setErr(/* TODO i18n */ 'Codes IATA obligatoires'); return; }
     setSaving(true); setErr('');
     try {
+      // Safe float parser — handles 0 correctly (parseFloat('0') || x would wrongly return x)
+      const pf = (v, def = 0) => { const n = parseFloat(v); return isNaN(n) ? def : n; };
       const fees = {
         transportMode,
         africanRoute,
+        packagingEnabled,
         allowedCategories,
         tiers:       tiers.map(tierToApi),
-        bags:        africanRoute ? { small: parseFloat(bagSmall)||5, medium: parseFloat(bagMedium)||7.5, large: parseFloat(bagLarge)||10 } : { small: 0, medium: 0, large: 0 },
-        plastic:     parseFloat(plastic) || 0.6,
-        saq:         africanRoute ? { casier24x65: parseFloat(saq24x65)||24.5, casier24x33: parseFloat(saq24x33)||35.83, casier12x50: parseFloat(saq12x50)||21.34 } : { casier24x65: 0, casier24x33: 0, casier12x50: 0 },
-        supplements: { vetements: parseFloat(suppVetements)||2, cosmetique: parseFloat(suppCosmetique)||3, biere: africanRoute ? (parseFloat(suppBiere)||6) : 0, electronique: parseFloat(suppElectronique)||5, documents: parseFloat(suppDocuments)||-2 },
+        bags:        (packagingEnabled && africanRoute) ? { small: pf(bagSmall, 5), medium: pf(bagMedium, 7.5), large: pf(bagLarge, 10) } : { small: 0, medium: 0, large: 0 },
+        plastic:     packagingEnabled ? pf(plastic, 0.6) : 0,
+        saq:         africanRoute ? { casier24x65: pf(saq24x65, 24.5), casier24x33: pf(saq24x33, 35.83), casier12x50: pf(saq12x50, 21.34) } : { casier24x65: 0, casier24x33: 0, casier12x50: 0 },
+        supplements: { vetements: pf(suppVetements), cosmetique: pf(suppCosmetique), biere: africanRoute ? pf(suppBiere) : 0, electronique: pf(suppElectronique), documents: pf(suppDocuments) },
         ...(transportMode === 'sea' ? {
-          pricePerCbm:        parseFloat(pricePerCbm)        || 500,
-          bulkyPerCbm:        parseFloat(bulkyPerCbm)        || 800,
-          highValueThreshold: parseFloat(highValueThreshold) || 500,
-          highValuePct:       parseFloat(highValuePct)       || 2,
+          pricePerCbm:        pf(pricePerCbm,        500),
+          bulkyPerCbm:        pf(bulkyPerCbm,        800),
+          highValueThreshold: pf(highValueThreshold, 500),
+          highValuePct:       pf(highValuePct,       2),
         } : {}),
-        marginPct:   parseFloat(marginPct) || 0,
-        deliveryFee: parseFloat(deliveryFeeIle) || 25,
+        marginPct:       pf(marginPct),
+        deliveryFee:     deliveryIleEnabled   ? pf(deliveryFeeIle,   25) : 0,
+        deliveryFeeGrand: deliveryGrandEnabled ? pf(deliveryFeeGrand, 30) : 0,
         dropoff: {
           address:      dropoffAddress.trim()      || null,
           phone:        dropoffPhone.trim()        || null,
@@ -1786,26 +1800,38 @@ function RouteEditModal({ editRoute, onClose, onSaved }) {
         {/* Section 3 — Emballages & conditionnement */}
         <SectionTitle>Emballages & conditionnement</SectionTitle>
         <div className="card" style={{ padding: 20, marginBottom: 20 }}>
-          <div style={{ display: 'grid', gridTemplateColumns: `repeat(${africanRoute ? 5 : 2}, 1fr)`, gap: 12 }}>
-            {[
-              { label: 'Carton', sub: '(1er palier : forfait)', val: '1', readOnly: true, always: true },
-              { label: 'Petit sac',  val: bagSmall,  set: setBagSmall,  african: true },
-              { label: 'Moyen sac', val: bagMedium, set: setBagMedium, african: true },
-              { label: 'Grand sac', val: bagLarge,  set: setBagLarge,  african: true },
-              { label: 'Plastique', sub: '$/unité', val: plastic, set: setPlastic, always: true },
-            ].filter(f => f.always || (f.african && africanRoute)).map(f => (
-              <div key={f.label} className="field" style={{ marginBottom: 0 }}>
-                <label className="label">{f.label}{f.sub && <span className="opt"> {f.sub}</span>}</label>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                  <input className="input mono" type="number" step="0.1" value={f.val} onChange={f.set ? e => f.set(e.target.value) : undefined} readOnly={f.readOnly} style={{ flex: 1, background: f.readOnly ? 'var(--bg-soft)' : undefined }} />
-                  <span style={{ fontSize: 12, color: 'var(--ink-400)', whiteSpace: 'nowrap' }}>{currency}</span>
+          <label style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16, cursor: 'pointer' }}>
+            <input type="checkbox" checked={packagingEnabled} onChange={e => setPackagingEnabled(e.target.checked)}
+              style={{ width: 16, height: 16, accentColor: 'var(--brand-500)', cursor: 'pointer' }} />
+            <span style={{ fontSize: 13, fontWeight: 600, color: packagingEnabled ? 'var(--ink-800)' : 'var(--ink-400)' }}>
+              Frais d'emballage actifs sur cette route
+            </span>
+            {!packagingEnabled && <span style={{ fontSize: 11, color: 'var(--ink-400)', background: 'var(--bg-soft)', borderRadius: 4, padding: '2px 8px', border: '1px solid var(--border)' }}>Désactivé</span>}
+          </label>
+          {packagingEnabled && (
+            <div style={{ display: 'grid', gridTemplateColumns: `repeat(${africanRoute ? 5 : 2}, 1fr)`, gap: 12 }}>
+              {[
+                { label: 'Carton', sub: '(1er palier : forfait)', val: '1', readOnly: true, always: true },
+                { label: 'Petit sac',  val: bagSmall,  set: setBagSmall,  african: true },
+                { label: 'Moyen sac', val: bagMedium, set: setBagMedium, african: true },
+                { label: 'Grand sac', val: bagLarge,  set: setBagLarge,  african: true },
+                { label: 'Plastique', sub: '$/unité', val: plastic, set: setPlastic, always: true },
+              ].filter(f => f.always || (f.african && africanRoute)).map(f => (
+                <div key={f.label} className="field" style={{ marginBottom: 0 }}>
+                  <label className="label">{f.label}{f.sub && <span className="opt"> {f.sub}</span>}</label>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <input className="input mono" type="number" step="0.1" value={f.val} onChange={f.set ? e => f.set(e.target.value) : undefined} readOnly={f.readOnly} style={{ flex: 1, background: f.readOnly ? 'var(--bg-soft)' : undefined }} />
+                    <span style={{ fontSize: 12, color: 'var(--ink-400)', whiteSpace: 'nowrap' }}>{currency}</span>
+                  </div>
                 </div>
-              </div>
-            ))}
-          </div>
-          <div style={{ marginTop: 12, fontSize: 12, color: 'var(--ink-400)' }}>
-            Le carton est configuré par palier (forfait sur le 1er palier, 1,50 {currency}/carton sur les suivants par défaut).
-            {!africanRoute && <span style={{ color: 'var(--ink-300)' }}> · Sacs non disponibles sur cette route.</span>}
+              ))}
+            </div>
+          )}
+          <div style={{ marginTop: packagingEnabled ? 12 : 0, fontSize: 12, color: 'var(--ink-400)' }}>
+            {packagingEnabled
+              ? <>Le carton est configuré par palier (forfait sur le 1er palier, 1,50 {currency}/carton sur les suivants par défaut).{!africanRoute && <span style={{ color: 'var(--ink-300)' }}> · Sacs non disponibles sur cette route.</span>}</>
+              : "Les frais d'emballage ne seront pas facturés sur cette route."
+            }
           </div>
         </div>
 
@@ -1906,26 +1932,50 @@ function RouteEditModal({ editRoute, onClose, onSaved }) {
         </div>
 
         {/* Section 6 — Marge & livraison */}
-        <SectionTitle>{/* TODO i18n: Marge & livraison */}Marge & livraison</SectionTitle>
+        <SectionTitle>Marge & livraison</SectionTitle>
         <div className="card" style={{ padding: 20, marginBottom: 20 }}>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16 }}>
             <div className="field" style={{ marginBottom: 0 }}>
-              <label className="label">{/* TODO i18n: Marge par défaut (%) */}Marge par défaut (%)</label>
+              <label className="label">Marge par défaut (%)</label>
               <input className="input mono" type="number" step="1" value={marginPct} onChange={e => setMarginPct(e.target.value)} />
             </div>
+
+            {/* Livraison île de Montréal */}
             <div className="field" style={{ marginBottom: 0 }}>
-              <label className="label">{/* TODO i18n: Livraison île de Montréal */}Livraison île de Montréal</label>
+              <label style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6, cursor: 'pointer' }}>
+                <input type="checkbox" checked={deliveryIleEnabled} onChange={e => setDeliveryIleEnabled(e.target.checked)}
+                  style={{ width: 14, height: 14, accentColor: 'var(--brand-500)', cursor: 'pointer' }} />
+                <span className="label" style={{ margin: 0, color: deliveryIleEnabled ? undefined : 'var(--ink-300)' }}>
+                  Livraison île de Montréal
+                </span>
+              </label>
               <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                <input className="input mono" type="number" step="1" value={deliveryFeeIle} onChange={e => setDeliveryFeeIle(e.target.value)} style={{ flex: 1 }} />
+                <input className="input mono" type="number" step="1" value={deliveryFeeIle}
+                  onChange={e => setDeliveryFeeIle(e.target.value)}
+                  disabled={!deliveryIleEnabled}
+                  style={{ flex: 1, opacity: deliveryIleEnabled ? 1 : 0.4 }} />
                 <span style={{ fontSize: 12, color: 'var(--ink-400)' }}>{currency}</span>
               </div>
+              {!deliveryIleEnabled && <div style={{ fontSize: 11, color: 'var(--ink-300)', marginTop: 4 }}>Non disponible</div>}
             </div>
+
+            {/* Livraison Grand Montréal */}
             <div className="field" style={{ marginBottom: 0 }}>
-              <label className="label">{/* TODO i18n: Livraison Grand Montréal */}Livraison Grand Montréal</label>
+              <label style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6, cursor: 'pointer' }}>
+                <input type="checkbox" checked={deliveryGrandEnabled} onChange={e => setDeliveryGrandEnabled(e.target.checked)}
+                  style={{ width: 14, height: 14, accentColor: 'var(--brand-500)', cursor: 'pointer' }} />
+                <span className="label" style={{ margin: 0, color: deliveryGrandEnabled ? undefined : 'var(--ink-300)' }}>
+                  Livraison Grand Montréal
+                </span>
+              </label>
               <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                <input className="input mono" type="number" step="1" value={String(Math.round((parseFloat(deliveryFeeIle) || 25) * 1.2))} readOnly style={{ flex: 1, background: 'var(--bg-soft)' }} />
-                <span style={{ fontSize: 12, color: 'var(--ink-400)' }}>{currency} <span style={{ fontSize: 11, color: 'var(--ink-300)' }}>(auto)</span></span>
+                <input className="input mono" type="number" step="1" value={deliveryFeeGrand}
+                  onChange={e => setDeliveryFeeGrand(e.target.value)}
+                  disabled={!deliveryGrandEnabled}
+                  style={{ flex: 1, opacity: deliveryGrandEnabled ? 1 : 0.4 }} />
+                <span style={{ fontSize: 12, color: 'var(--ink-400)' }}>{currency}</span>
               </div>
+              {!deliveryGrandEnabled && <div style={{ fontSize: 11, color: 'var(--ink-300)', marginTop: 4 }}>Non disponible</div>}
             </div>
           </div>
         </div>
