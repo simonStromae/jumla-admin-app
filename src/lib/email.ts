@@ -61,7 +61,7 @@ export async function sendStatusEmail(
   if (!process.env.RESEND_API_KEY) return;
   const resend = new Resend(process.env.RESEND_API_KEY);
   const st = STATUS_LABELS[status] ?? { label: status, icon: '📦' };
-  const trackUrl = `${process.env.NEXTAUTH_URL ?? 'https://jumla.cargo'}/suivi?code=${trackingCode}`;
+  const trackUrl = `${process.env.NEXTAUTH_URL ?? 'https://www.jumlas.com'}/suivi?code=${trackingCode}`;
   await resend.emails.send({
     from: process.env.RESEND_FROM_EMAIL ?? 'Jumla Shipping <onboarding@resend.dev>',
     to: email,

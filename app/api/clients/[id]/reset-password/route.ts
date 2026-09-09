@@ -22,7 +22,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     }
     const hashed = await bcrypt.hash(body.newPassword, 10);
     await prisma.$executeRawUnsafe(
-      `UPDATE users SET password = $1, "resetToken" = NULL, "resetExpiry" = NULL WHERE id = $2`,
+      `UPDATE users SET "passwordHash" = $1, "resetToken" = NULL, "resetExpiry" = NULL WHERE id = $2`,
       hashed, user.id,
     );
     return NextResponse.json({ ok: true, mode: 'direct' });
@@ -35,7 +35,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     `UPDATE users SET "resetToken" = $1, "resetExpiry" = $2 WHERE id = $3`,
     token, expiry, user.id,
   );
-  const baseUrl  = process.env.NEXTAUTH_URL ?? process.env.AUTH_URL ?? 'https://jumla.cargo';
+  const baseUrl  = process.env.NEXTAUTH_URL ?? process.env.AUTH_URL ?? 'https://www.jumlas.com';
   const resetUrl = `${baseUrl}/reset-password?token=${token}`;
   await sendPasswordResetEmail(user.email, user.name, resetUrl);
   return NextResponse.json({ ok: true, mode: 'email', email: user.email });
