@@ -97,9 +97,11 @@ export default function AgentLayout({ children }) {
         .agent-input {
           width: 100%; padding: 12px 14px; border-radius: 10px;
           border: 1.5px solid #E5E7EB; font-size: 15px; font-family: inherit;
-          background: white; outline: none; transition: border-color .15s;
+          background: white; color: #111827; outline: none; transition: border-color .15s;
+          -webkit-text-fill-color: #111827;
         }
         .agent-input:focus { border-color: #1B4FD8; }
+        .agent-input::placeholder { color: #9CA3AF; -webkit-text-fill-color: #9CA3AF; }
         .pill {
           display: inline-flex; align-items: center; gap: 4px;
           padding: 2px 8px; border-radius: 999px; font-size: 11px; font-weight: 600;
