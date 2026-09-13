@@ -591,16 +591,22 @@ export default function CampaignDetailScreen({ id, onNav }) {
   const totalWeight = parcels.reduce((s, p) => s + (p.weightKg || 0), 0);
   const invoiced = parcels.reduce((s, p) => {
     const adj = p.adjustmentStatus, conf = p.confirmedPriceXaf;
-    return s + ((adj === 'paid' || adj === 'discount') && conf != null
+    // Use confirmedPriceXaf whenever an adjustment exists (pending, paid, or discount)
+    return s + (conf != null && adj != null
       ? conf : (p.payment?.amount ?? p.priceXaf ?? 0));
   }, 0);
   const collected = parcels.reduce((s, p) => {
     const adj = p.adjustmentStatus, conf = p.confirmedPriceXaf;
-    const inv     = (adj === 'paid' || adj === 'discount') && conf != null
+    const inv = conf != null && adj != null
       ? conf : (p.payment?.amount ?? p.priceXaf ?? 0);
-    const payAmt  = p.payment?.status === 'completed' ? (p.payment.amount || 0) : 0;
-    const suppAmt = conf != null ? Math.max(0, conf - (p.priceXaf ?? 0)) : 0;
-    const suppPaid = adj === 'paid' ? suppAmt : 0;
+    // Base invoice: fully paid = payment.amount; partial = use payment.amount as proxy for collected portion
+    const baseStatus = p.payment?.status;
+    const baseAmt    = p.payment?.amount ?? 0;
+    const payAmt     = (baseStatus === 'completed' || baseStatus === 'partial') ? baseAmt : 0;
+    // Supplement paid: conf - base price, only when adj === 'paid'
+    const suppPaid   = adj === 'paid' && conf != null
+      ? Math.max(0, conf - (p.priceXaf ?? baseAmt))
+      : 0;
     return s + Math.min(payAmt + suppPaid, inv);
   }, 0);
   const outstanding = invoiced - collected;
@@ -1093,103 +1099,130 @@ export default function CampaignDetailScreen({ id, onNav }) {
       {/* ── Campaign Timeline ── */}
       <CampaignTimeline campaign={campaign} route={route} />
 
-      {/* ── Onglets principaux : Colis / Paiements ── */}
-      <div style={{ display: 'flex', alignItems: 'center', borderBottom: '2px solid var(--border)', marginBottom: 0 }}>
-        {[
-          { key: 'colis',     label: 'Colis',     count: parcels.length },
-          { key: 'paiements', label: 'Paiements', count: null },
-        ].map(tab => (
-          <button
-            key={tab.key}
-            onClick={() => {
-              setMainTab(tab.key);
-              if (tab.key === 'paiements') loadCampaignTxs();
-            }}
-            style={{
-              padding: '10px 20px', fontSize: 13, fontWeight: 600, cursor: 'pointer',
-              background: 'none', border: 'none',
-              borderBottom: mainTab === tab.key ? '2px solid var(--brand-600)' : '2px solid transparent',
-              color: mainTab === tab.key ? 'var(--brand-700)' : 'var(--ink-400)',
-              display: 'flex', alignItems: 'center', gap: 6, marginBottom: -2,
-            }}
-          >
-            {tab.label}
-            {tab.count != null && tab.count > 0 && (
-              <span style={{
-                fontSize: 11, fontWeight: 700, minWidth: 18, height: 18,
-                display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                borderRadius: 9, padding: '0 5px',
-                background: mainTab === tab.key ? 'var(--brand-100)' : 'var(--ink-100)',
-                color:      mainTab === tab.key ? 'var(--brand-700)' : 'var(--ink-500)',
-              }}>
-                {tab.count}
-              </span>
-            )}
-          </button>
-        ))}
-      </div>
+      {/* ── Section Colis / Paiements ── */}
+      <div className="card" style={{ overflow: 'hidden', padding: 0 }}>
 
-      {/* ══ ONGLET COLIS ══ */}
-      {mainTab === 'colis' && (
-        <>
-          {/* Sub-tabs Actifs / Annulés + barre de recherche */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 0, marginBottom: 0, borderBottom: '1px solid var(--border)' }}>
-            {[
-              { key: 'active',    label: 'Actifs',  count: parcels.length },
-              { key: 'cancelled', label: 'Annulés', count: cancelledParcels.length },
-            ].map(tab => (
-              <button
-                key={tab.key}
-                onClick={() => { setParcelTab(tab.key); setDeletingParcelId(null); setDeleteParcelErr(''); setParcelSearch(''); }}
-                style={{
-                  padding: '8px 16px', fontSize: 12.5, fontWeight: 600, cursor: 'pointer',
-                  background: 'none', border: 'none',
-                  borderBottom: parcelTab === tab.key ? '2px solid var(--brand-600)' : '2px solid transparent',
-                  color: parcelTab === tab.key ? 'var(--brand-700)' : 'var(--ink-400)',
-                  display: 'flex', alignItems: 'center', gap: 5, marginBottom: -1,
-                }}
-              >
-                {tab.label}
-                {tab.count > 0 && (
-                  <span style={{
-                    fontSize: 10, fontWeight: 700, minWidth: 16, height: 16,
-                    display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                    borderRadius: 8, padding: '0 4px',
-                    background: parcelTab === tab.key ? 'var(--brand-100)' : 'var(--ink-100)',
-                    color:      parcelTab === tab.key ? 'var(--brand-700)' : 'var(--ink-500)',
-                  }}>
-                    {tab.count}
-                  </span>
+        {/* ── Onglets principaux ── */}
+        <div style={{ display: 'flex', alignItems: 'center', borderBottom: '1px solid var(--border)', padding: '0 20px', background: 'white' }}>
+          {[
+            { key: 'colis',     label: 'Colis',     count: parcels.length },
+            { key: 'paiements', label: 'Paiements', count: campaignTxs?.length ?? null },
+          ].map(tab => (
+            <button
+              key={tab.key}
+              onClick={() => {
+                setMainTab(tab.key);
+                if (tab.key === 'paiements') loadCampaignTxs();
+              }}
+              style={{
+                padding: '14px 4px', marginRight: 24, fontSize: 13.5, fontWeight: 600,
+                cursor: 'pointer', background: 'none', border: 'none',
+                borderBottom: mainTab === tab.key ? '2px solid var(--brand-600)' : '2px solid transparent',
+                color: mainTab === tab.key ? 'var(--brand-700)' : 'var(--ink-400)',
+                display: 'flex', alignItems: 'center', gap: 7, marginBottom: -1,
+                transition: 'color .15s',
+              }}
+            >
+              {tab.label}
+              {tab.count != null && tab.count > 0 && (
+                <span style={{
+                  fontSize: 11, fontWeight: 700, minWidth: 20, height: 20,
+                  display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                  borderRadius: 10, padding: '0 6px',
+                  background: mainTab === tab.key ? 'var(--brand-600)' : 'var(--ink-100)',
+                  color:      mainTab === tab.key ? 'white' : 'var(--ink-500)',
+                }}>
+                  {tab.count}
+                </span>
+              )}
+            </button>
+          ))}
+        </div>
+
+        {/* ══ ONGLET COLIS ══ */}
+        {mainTab === 'colis' && (
+          <>
+            {/* Barre d'outils : filtre pills + search + nouveau */}
+            <div style={{
+              display: 'flex', alignItems: 'center', gap: 10,
+              padding: '10px 16px', borderBottom: '1px solid var(--border-soft)',
+              background: 'var(--bg-soft)',
+            }}>
+              {/* Segment control Actifs / Annulés */}
+              <div style={{ display: 'flex', background: 'var(--border)', borderRadius: 8, padding: 3, gap: 2 }}>
+                {[
+                  { key: 'active',    label: 'Actifs',  count: parcels.length },
+                  { key: 'cancelled', label: 'Annulés', count: cancelledParcels.length },
+                ].map(seg => (
+                  <button
+                    key={seg.key}
+                    onClick={() => { setParcelTab(seg.key); setDeletingParcelId(null); setDeleteParcelErr(''); setParcelSearch(''); }}
+                    style={{
+                      padding: '5px 12px', borderRadius: 6, border: 'none', fontSize: 12.5, fontWeight: 600,
+                      cursor: 'pointer', transition: 'all .15s', display: 'flex', alignItems: 'center', gap: 5,
+                      background: parcelTab === seg.key ? 'white' : 'transparent',
+                      color:      parcelTab === seg.key ? 'var(--ink-800)' : 'var(--ink-400)',
+                      boxShadow:  parcelTab === seg.key ? '0 1px 3px rgba(0,0,0,.1)' : 'none',
+                    }}
+                  >
+                    {seg.label}
+                    {seg.count > 0 && (
+                      <span style={{
+                        fontSize: 10, fontWeight: 700, minWidth: 16, height: 16,
+                        display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                        borderRadius: 8, padding: '0 4px',
+                        background: parcelTab === seg.key ? 'var(--brand-100)' : 'transparent',
+                        color:      parcelTab === seg.key ? 'var(--brand-700)' : 'var(--ink-400)',
+                      }}>
+                        {seg.count}
+                      </span>
+                    )}
+                  </button>
+                ))}
+              </div>
+
+              <div style={{ flex: 1 }} />
+
+              {/* Barre de recherche */}
+              <div style={{ position: 'relative' }}>
+                <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.8"
+                  style={{ position: 'absolute', left: 9, top: '50%', transform: 'translateY(-50%)', width: 15, height: 15, color: 'var(--ink-400)', pointerEvents: 'none' }}>
+                  <circle cx="8.5" cy="8.5" r="5.5"/><path d="M13.5 13.5L17 17" strokeLinecap="round"/>
+                </svg>
+                <input
+                  value={parcelSearch}
+                  onChange={e => setParcelSearch(e.target.value)}
+                  placeholder="Rechercher un colis…"
+                  style={{
+                    padding: '7px 28px 7px 30px', fontSize: 13, border: '1px solid var(--border)',
+                    borderRadius: 8, background: 'white', outline: 'none', width: 220,
+                    color: 'var(--ink-800)', transition: 'border-color .15s',
+                  }}
+                />
+                {parcelSearch && (
+                  <button
+                    onClick={() => setParcelSearch('')}
+                    style={{
+                      position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%)',
+                      background: 'none', border: 'none', cursor: 'pointer', padding: 2,
+                      color: 'var(--ink-400)', fontSize: 14, lineHeight: 1,
+                    }}
+                  >✕</button>
                 )}
-              </button>
-            ))}
-            <div style={{ flex: 1 }} />
-            {/* Barre de recherche */}
-            <div style={{ position: 'relative', marginRight: 8 }}>
-              <input
-                value={parcelSearch}
-                onChange={e => setParcelSearch(e.target.value)}
-                placeholder="Rechercher…"
-                style={{
-                  padding: '6px 10px 6px 30px', fontSize: 12.5, border: '1px solid var(--border)',
-                  borderRadius: 8, background: 'var(--bg-soft)', outline: 'none', width: 180,
-                  color: 'var(--ink-800)',
-                }}
-              />
-              <span style={{ position: 'absolute', left: 9, top: '50%', transform: 'translateY(-50%)', fontSize: 13, color: 'var(--ink-400)', pointerEvents: 'none' }}>🔍</span>
-            </div>
-            {campaign.status === 'enr' && parcelTab === 'active' && (
-              <button className="btn btn--brand btn--sm" onClick={() => onNav('/parcels/new?campaign=' + id)}>
-                <I.Plus />{t.parcels.new}
-              </button>
-            )}
-          </div>
+              </div>
 
-          {deleteParcelErr && (
-            <div style={{ padding: '8px 14px', background: 'var(--bad-50)', borderRadius: 6, fontSize: 12.5, color: 'var(--bad-700)', marginTop: 8 }}>
-              {deleteParcelErr}
+              {campaign.status === 'enr' && parcelTab === 'active' && (
+                <button className="btn btn--brand btn--sm" onClick={() => onNav('/parcels/new?campaign=' + id)}>
+                  <I.Plus />{t.parcels.new}
+                </button>
+              )}
             </div>
-          )}
+
+            {deleteParcelErr && (
+              <div style={{ padding: '8px 16px', background: 'var(--bad-50)', fontSize: 12.5, color: 'var(--bad-700)', borderBottom: '1px solid var(--bad-100)' }}>
+                {deleteParcelErr}
+              </div>
+            )}
 
           {filteredParcels.length === 0 ? (
             <div className="card" style={{ padding: '48px 24px', textAlign: 'center' }}>
@@ -1256,7 +1289,10 @@ export default function CampaignDetailScreen({ id, onNav }) {
                       <td style={{ textAlign: 'right' }}>
                         {(() => {
                           const rc = campaign.route?.currency ?? 'CAD';
-                          const raw = p.payment?.amount ?? p.priceXaf;
+                          // Prefer confirmedPriceXaf when an adjustment exists
+                          const raw = (p.confirmedPriceXaf != null && p.adjustmentStatus != null)
+                            ? p.confirmedPriceXaf
+                            : (p.payment?.amount ?? p.priceXaf);
                           if (raw == null) return <span style={{ color: 'var(--ink-300)' }}>—</span>;
                           const cadRate = rc !== 'CAD' ? (campaign.exchangeRateToCAD ?? rates[rc] ?? null) : null;
                           const cadAmt = (cadRate && cadRate !== 1) ? Math.round(raw * cadRate) : null;
@@ -1278,7 +1314,22 @@ export default function CampaignDetailScreen({ id, onNav }) {
                         <span className={`badge badge--dot badge--${payInfo.cls}`}>
                           {payLabel}
                         </span>
-                        {p.payment?.status === 'partial' && p.payment?.amount != null && (
+                        {p.adjustmentStatus === 'pending' && (
+                          <div style={{ fontSize: 10.5, color: 'var(--info-600)', marginTop: 2, fontWeight: 600 }}>
+                            + Supplément en att.
+                          </div>
+                        )}
+                        {p.adjustmentStatus === 'paid' && (
+                          <div style={{ fontSize: 10.5, color: 'var(--ok-600)', marginTop: 2 }}>
+                            ✓ Supplément payé
+                          </div>
+                        )}
+                        {p.adjustmentStatus === 'discount' && (
+                          <div style={{ fontSize: 10.5, color: 'var(--ink-400)', marginTop: 2 }}>
+                            Remise appliquée
+                          </div>
+                        )}
+                        {p.payment?.status === 'partial' && p.payment?.amount != null && !p.adjustmentStatus && (
                           <div style={{ fontSize: 10.5, color: 'var(--ink-400)', marginTop: 2 }}>
                             / {fmt(p.payment.amount, campaign.route?.currency ?? 'CAD')}
                           </div>
@@ -1330,7 +1381,7 @@ export default function CampaignDetailScreen({ id, onNav }) {
             </table>
           )}
 
-          <div style={{ marginTop: 12, fontSize: 12, color: 'var(--ink-400)', marginBottom: 8 }}>
+          <div style={{ padding: '10px 16px 12px', fontSize: 12, color: 'var(--ink-400)' }}>
             {parcelSearch
               ? `${filteredParcels.length} résultat${filteredParcels.length > 1 ? 's' : ''} sur ${parcels.length} colis`
               : `${parcels.length} colis actifs · Capacité ${campaign.capacityKg != null ? campaign.capacityKg + ' kg' : '—'}`
@@ -1341,7 +1392,7 @@ export default function CampaignDetailScreen({ id, onNav }) {
 
       {/* ══ ONGLET PAIEMENTS ══ */}
       {mainTab === 'paiements' && (
-        <div style={{ marginTop: 8 }}>
+        <div>
           {txLoading ? (
             <div style={{ padding: '48px 0', textAlign: 'center', color: 'var(--ink-400)', fontSize: 14 }}>Chargement…</div>
           ) : !campaignTxs || campaignTxs.length === 0 ? (
@@ -1437,6 +1488,7 @@ export default function CampaignDetailScreen({ id, onNav }) {
         </div>
       )}
     </div>
+  </div>
   );
 }
 
