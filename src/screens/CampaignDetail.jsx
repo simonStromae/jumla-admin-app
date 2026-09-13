@@ -87,7 +87,7 @@ function PanelSection({ title, accent, children }) {
   );
 }
 
-function ParcelQuickPanel({ parcel: initial, routeCurrency = 'CAD', onClose, onRefresh, onNav }) {
+function ParcelQuickPanel({ parcel: initial, routeCurrency = 'CAD', routeId, onClose, onRefresh, onNav }) {
   const { currency, fmt } = useCurrency();
   const [parcel,           setParcel]           = useState(initial);
   const [newStatus,        setNewStatus]        = useState(initial.status);
@@ -98,6 +98,9 @@ function ParcelQuickPanel({ parcel: initial, routeCurrency = 'CAD', onClose, onR
   const [busy,             setBusy]             = useState('');
   const [done,             setDone]             = useState({});
   const [err,              setErr]              = useState('');
+  const [editWeight,       setEditWeight]       = useState(String(initial.weightKg ?? ''));
+  const [editMarginPct,    setEditMarginPct]    = useState(String(initial.marginPct ?? 0));
+  const [pricingResult,    setPricingResult]    = useState(null);
 
   const flash = key => {
     setDone(d => ({ ...d, [key]: true }));
@@ -358,6 +361,67 @@ function ParcelQuickPanel({ parcel: initial, routeCurrency = 'CAD', onClose, onR
           )}
         </PanelSection>
 
+        {/* ── Poids & Facturation ── */}
+        <PanelSection title="Poids &amp; Facturation">
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+              <div>
+                <div style={{ fontSize: 11, color: 'var(--ink-400)', marginBottom: 3 }}>Poids (kg)</div>
+                <input
+                  type="number" min="0.1" step="0.1"
+                  value={editWeight}
+                  onChange={e => { setEditWeight(e.target.value); setPricingResult(null); }}
+                  style={{ width: '100%', padding: '8px 10px', border: '1px solid var(--border)', borderRadius: 8, fontSize: 13, boxSizing: 'border-box' }}
+                />
+              </div>
+              <div>
+                <div style={{ fontSize: 11, color: 'var(--ink-400)', marginBottom: 3 }}>Marge (%)</div>
+                <input
+                  type="number" min="0" max="100" step="1"
+                  value={editMarginPct}
+                  onChange={e => { setEditMarginPct(e.target.value); setPricingResult(null); }}
+                  style={{ width: '100%', padding: '8px 10px', border: '1px solid var(--border)', borderRadius: 8, fontSize: 13, boxSizing: 'border-box' }}
+                />
+              </div>
+            </div>
+            {pricingResult && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 10px', background: 'var(--ok-50)', borderRadius: 7, fontSize: 12, color: 'var(--ok-700)', border: '1px solid var(--ok-200)' }}>
+                ✓ Prix calculé : <strong style={{ marginLeft: 4 }}>{pricingResult.prixClient?.toLocaleString('fr')} {routeCurrency}</strong>
+              </div>
+            )}
+            <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+              <button
+                disabled={!!busy || !editWeight || Number(editWeight) <= 0}
+                onClick={async () => {
+                  setBusy('weight'); setErr('');
+                  try {
+                    let newPrice = null;
+                    if (routeId && editWeight) {
+                      const calc = await fetch('/api/pricing/calculate', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ routeId, weightKg: Number(editWeight), marginPct: Number(editMarginPct) || 0 }),
+                      });
+                      const calcData = await calc.json();
+                      if (calcData.prixClient) { newPrice = calcData.prixClient; setPricingResult(calcData); }
+                    }
+                    await patchParcel({
+                      weightKg:  Number(editWeight),
+                      marginPct: Number(editMarginPct) || 0,
+                      ...(newPrice != null ? { priceXaf: Math.round(newPrice) } : {}),
+                    });
+                    flash('weight'); onRefresh();
+                  } catch { setErr('Erreur lors de la mise à jour du poids.'); }
+                  setBusy('');
+                }}
+                style={{ ...btnBase, background: 'var(--brand-600)', color: '#fff', opacity: (busy || !editWeight || Number(editWeight) <= 0) ? .5 : 1 }}
+              >
+                {busy === 'weight' ? '…' : done.weight ? '✓ Mis à jour' : 'Recalculer et sauvegarder'}
+              </button>
+            </div>
+          </div>
+        </PanelSection>
+
         {/* ── Notes internes ── */}
         <PanelSection title="Notes internes">
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -387,15 +451,31 @@ function ParcelQuickPanel({ parcel: initial, routeCurrency = 'CAD', onClose, onR
         </div>
       )}
 
-      <div style={{ marginTop: 18, paddingTop: 14, borderTop: '1px solid var(--border-soft)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <button className="btn btn--ghost btn--sm" onClick={onClose}>Fermer</button>
-        <button
-          className="btn btn--ghost btn--sm"
-          onClick={() => onNav('/parcels/' + parcel.id)}
-          style={{ color: 'var(--brand-600)', fontWeight: 700 }}
-        >
-          Voir la fiche complète →
-        </button>
+      <div style={{ marginTop: 18, paddingTop: 14, borderTop: '1px solid var(--border-soft)' }}>
+        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 10 }}>
+          <button
+            className="btn btn--ghost btn--sm"
+            onClick={() => window.open('/client/invoice/' + parcel.id, '_blank')}
+          >
+            📄 Facture
+          </button>
+          <button
+            className="btn btn--ghost btn--sm"
+            onClick={() => onNav('/parcels/' + parcel.id + '/labels')}
+          >
+            🏷 Étiquettes
+          </button>
+        </div>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <button className="btn btn--ghost btn--sm" onClick={onClose}>Fermer</button>
+          <button
+            className="btn btn--ghost btn--sm"
+            onClick={() => onNav('/parcels/' + parcel.id)}
+            style={{ color: 'var(--brand-600)', fontWeight: 700 }}
+          >
+            Fiche complète →
+          </button>
+        </div>
       </div>
     </Modal>
   );
@@ -426,6 +506,23 @@ export default function CampaignDetailScreen({ id, onNav }) {
   const [deletingParcelId,   setDeletingParcelId]   = useState(null);
   const [deleteParcelErr,    setDeleteParcelErr]    = useState('');
   const [quickParcel,        setQuickParcel]        = useState(null);
+  const [mainTab,            setMainTab]            = useState('colis'); // 'colis' | 'paiements'
+  const [parcelSearch,       setParcelSearch]       = useState('');
+  const [campaignTxs,        setCampaignTxs]       = useState(null);
+  const [txLoading,          setTxLoading]         = useState(false);
+
+  const loadCampaignTxs = async () => {
+    if (campaignTxs !== null) return;
+    setTxLoading(true);
+    try {
+      const data = await fetch('/api/transactions').then(r => r.json());
+      const filtered = Array.isArray(data)
+        ? data.filter(tx => tx.allocations?.some(a => a.campaignCode === campaign?.code))
+        : [];
+      setCampaignTxs(filtered);
+    } catch { setCampaignTxs([]); }
+    setTxLoading(false);
+  };
 
   const reload = useCallback(() => {
     fetch('/api/campaigns/' + id)
@@ -480,6 +577,16 @@ export default function CampaignDetailScreen({ id, onNav }) {
   const parcels        = allParcels.filter(p => p.status !== 'ann');
   const cancelledParcels = allParcels.filter(p => p.status === 'ann');
   const shownParcels   = parcelTab === 'cancelled' ? cancelledParcels : parcels;
+
+  const filteredParcels = parcelSearch.trim()
+    ? shownParcels.filter(p => {
+        const q = parcelSearch.toLowerCase();
+        return (p.trackingCode || '').toLowerCase().includes(q)
+          || (p.client?.name || '').toLowerCase().includes(q)
+          || (p.client?.phone || '').includes(q)
+          || (p.recipName || '').toLowerCase().includes(q);
+      })
+    : shownParcels;
 
   const totalWeight = parcels.reduce((s, p) => s + (p.weightKg || 0), 0);
   const invoiced = parcels.reduce((s, p) => {
@@ -794,6 +901,7 @@ export default function CampaignDetailScreen({ id, onNav }) {
         <ParcelQuickPanel
           parcel={quickParcel}
           routeCurrency={campaign.route?.currency ?? 'CAD'}
+          routeId={campaign.route?.id}
           onClose={() => setQuickParcel(null)}
           onRefresh={reload}
           onNav={onNav}
@@ -985,194 +1093,349 @@ export default function CampaignDetailScreen({ id, onNav }) {
       {/* ── Campaign Timeline ── */}
       <CampaignTimeline campaign={campaign} route={route} />
 
-      {/* Parcel table */}
-      {/* Tabs: Actifs / Annulés */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 0, marginBottom: 0, borderBottom: '1px solid var(--border)' }}>
+      {/* ── Onglets principaux : Colis / Paiements ── */}
+      <div style={{ display: 'flex', alignItems: 'center', borderBottom: '2px solid var(--border)', marginBottom: 0 }}>
         {[
-          { key: 'active',    label: 'Actifs',   count: parcels.length },
-          { key: 'cancelled', label: 'Annulés',  count: cancelledParcels.length },
+          { key: 'colis',     label: 'Colis',     count: parcels.length },
+          { key: 'paiements', label: 'Paiements', count: null },
         ].map(tab => (
           <button
             key={tab.key}
-            onClick={() => { setParcelTab(tab.key); setDeletingParcelId(null); setDeleteParcelErr(''); }}
+            onClick={() => {
+              setMainTab(tab.key);
+              if (tab.key === 'paiements') loadCampaignTxs();
+            }}
             style={{
-              padding: '10px 18px', fontSize: 13, fontWeight: 600, cursor: 'pointer',
-              background: 'none', border: 'none', borderBottom: parcelTab === tab.key ? '2px solid var(--brand-600)' : '2px solid transparent',
-              color: parcelTab === tab.key ? 'var(--brand-700)' : 'var(--ink-400)',
-              display: 'flex', alignItems: 'center', gap: 6, marginBottom: -1,
+              padding: '10px 20px', fontSize: 13, fontWeight: 600, cursor: 'pointer',
+              background: 'none', border: 'none',
+              borderBottom: mainTab === tab.key ? '2px solid var(--brand-600)' : '2px solid transparent',
+              color: mainTab === tab.key ? 'var(--brand-700)' : 'var(--ink-400)',
+              display: 'flex', alignItems: 'center', gap: 6, marginBottom: -2,
             }}
           >
             {tab.label}
-            {tab.count > 0 && (
+            {tab.count != null && tab.count > 0 && (
               <span style={{
                 fontSize: 11, fontWeight: 700, minWidth: 18, height: 18,
                 display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
                 borderRadius: 9, padding: '0 5px',
-                background: parcelTab === tab.key ? 'var(--brand-100)' : 'var(--ink-100)',
-                color:      parcelTab === tab.key ? 'var(--brand-700)' : 'var(--ink-500)',
+                background: mainTab === tab.key ? 'var(--brand-100)' : 'var(--ink-100)',
+                color:      mainTab === tab.key ? 'var(--brand-700)' : 'var(--ink-500)',
               }}>
                 {tab.count}
               </span>
             )}
           </button>
         ))}
-        {campaign.status === 'enr' && parcelTab === 'active' && (
-          <button className="btn btn--brand btn--sm" style={{ marginLeft: 'auto' }} onClick={() => onNav('/parcels/new?campaign=' + id)}>
-            <I.Plus />{t.parcels.new}
-          </button>
-        )}
       </div>
 
-      {deleteParcelErr && (
-        <div style={{ padding: '8px 14px', background: 'var(--bad-50)', borderRadius: 6, fontSize: 12.5, color: 'var(--bad-700)', marginTop: 8 }}>
-          {deleteParcelErr}
-        </div>
+      {/* ══ ONGLET COLIS ══ */}
+      {mainTab === 'colis' && (
+        <>
+          {/* Sub-tabs Actifs / Annulés + barre de recherche */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 0, marginBottom: 0, borderBottom: '1px solid var(--border)' }}>
+            {[
+              { key: 'active',    label: 'Actifs',  count: parcels.length },
+              { key: 'cancelled', label: 'Annulés', count: cancelledParcels.length },
+            ].map(tab => (
+              <button
+                key={tab.key}
+                onClick={() => { setParcelTab(tab.key); setDeletingParcelId(null); setDeleteParcelErr(''); setParcelSearch(''); }}
+                style={{
+                  padding: '8px 16px', fontSize: 12.5, fontWeight: 600, cursor: 'pointer',
+                  background: 'none', border: 'none',
+                  borderBottom: parcelTab === tab.key ? '2px solid var(--brand-600)' : '2px solid transparent',
+                  color: parcelTab === tab.key ? 'var(--brand-700)' : 'var(--ink-400)',
+                  display: 'flex', alignItems: 'center', gap: 5, marginBottom: -1,
+                }}
+              >
+                {tab.label}
+                {tab.count > 0 && (
+                  <span style={{
+                    fontSize: 10, fontWeight: 700, minWidth: 16, height: 16,
+                    display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                    borderRadius: 8, padding: '0 4px',
+                    background: parcelTab === tab.key ? 'var(--brand-100)' : 'var(--ink-100)',
+                    color:      parcelTab === tab.key ? 'var(--brand-700)' : 'var(--ink-500)',
+                  }}>
+                    {tab.count}
+                  </span>
+                )}
+              </button>
+            ))}
+            <div style={{ flex: 1 }} />
+            {/* Barre de recherche */}
+            <div style={{ position: 'relative', marginRight: 8 }}>
+              <input
+                value={parcelSearch}
+                onChange={e => setParcelSearch(e.target.value)}
+                placeholder="Rechercher…"
+                style={{
+                  padding: '6px 10px 6px 30px', fontSize: 12.5, border: '1px solid var(--border)',
+                  borderRadius: 8, background: 'var(--bg-soft)', outline: 'none', width: 180,
+                  color: 'var(--ink-800)',
+                }}
+              />
+              <span style={{ position: 'absolute', left: 9, top: '50%', transform: 'translateY(-50%)', fontSize: 13, color: 'var(--ink-400)', pointerEvents: 'none' }}>🔍</span>
+            </div>
+            {campaign.status === 'enr' && parcelTab === 'active' && (
+              <button className="btn btn--brand btn--sm" onClick={() => onNav('/parcels/new?campaign=' + id)}>
+                <I.Plus />{t.parcels.new}
+              </button>
+            )}
+          </div>
+
+          {deleteParcelErr && (
+            <div style={{ padding: '8px 14px', background: 'var(--bad-50)', borderRadius: 6, fontSize: 12.5, color: 'var(--bad-700)', marginTop: 8 }}>
+              {deleteParcelErr}
+            </div>
+          )}
+
+          {filteredParcels.length === 0 ? (
+            <div className="card" style={{ padding: '48px 24px', textAlign: 'center' }}>
+              <div style={{ fontSize: 32, marginBottom: 12 }}>📦</div>
+              <div style={{ fontSize: 16, fontWeight: 600, color: 'var(--ink-700)', marginBottom: 6 }}>
+                {parcelSearch ? `Aucun résultat pour « ${parcelSearch} »` : parcelTab === 'cancelled' ? 'Aucun colis annulé' : 'Aucun colis dans cette cargaison'}
+              </div>
+              {!parcelSearch && parcelTab === 'active' && (
+                <div style={{ fontSize: 13, color: 'var(--ink-400)', marginBottom: 20 }}>Ajoutez le premier colis pour commencer.</div>
+              )}
+            </div>
+          ) : (
+            <table className="tbl">
+              <thead>
+                <tr>
+                  <th>{t.campaigns.detail.tableHeaders.tracking}</th>
+                  <th>{t.parcels.table.client}</th>
+                  <th>{t.parcels.table.weight}</th>
+                  <th>{t.common.description}</th>
+                  <th style={{ textAlign: 'right' }}>{t.parcels.table.amount}</th>
+                  <th>{t.parcels.table.payment}</th>
+                  <th>{t.parcels.table.status}</th>
+                  {can('parcels') && parcelTab === 'active' && <th style={{ width: 60 }}></th>}
+                </tr>
+              </thead>
+              <tbody>
+                {filteredParcels.map(p => {
+                  const payInfo  = PAYMENT_STATUS[p.payment?.status] || { label: p.payment?.status || '—', cls: 'neutral' };
+                  const payLabel = PAYMENT_STATUS[p.payment?.status]?.label ?? getPaymentLabel(p.payment?.status);
+                  const parcelLabel = PARCEL_STATUS[p.status] || p.status || '—';
+                  const clientName = p.client?.name || '—';
+                  const initials = clientName.split(' ').map(x => x[0]).join('').slice(0, 2).toUpperCase();
+                  const isConfirming = deletingParcelId === p.id;
+                  return (
+                    <tr
+                      key={p.id}
+                      style={{ cursor: 'pointer', background: isConfirming ? 'var(--bad-50)' : undefined }}
+                      onClick={() => { if (!isConfirming) setQuickParcel(p); }}
+                    >
+                      <td>
+                        <span className="mono" style={{ fontWeight: 700, color: 'var(--brand-700)' }}>
+                          {p.trackingCode || p.id}
+                        </span>
+                      </td>
+                      <td>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                          <Avatar initials={initials} size="sm" />
+                          <div>
+                            <div style={{ fontWeight: 600 }}>{clientName}</div>
+                            {p.client?.phone && (
+                              <div className="mono" style={{ fontSize: 11, color: 'var(--ink-400)' }}>{p.client.phone}</div>
+                            )}
+                          </div>
+                        </div>
+                      </td>
+                      <td>
+                        <span className="mono" style={{ fontWeight: 600 }}>{p.weightKg != null ? p.weightKg : '—'}</span>
+                      </td>
+                      <td style={{ maxWidth: 180, fontSize: 12, color: 'var(--ink-600)' }}>
+                        <div style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          {p.description || '—'}
+                        </div>
+                      </td>
+                      <td style={{ textAlign: 'right' }}>
+                        {(() => {
+                          const rc = campaign.route?.currency ?? 'CAD';
+                          const raw = p.payment?.amount ?? p.priceXaf;
+                          if (raw == null) return <span style={{ color: 'var(--ink-300)' }}>—</span>;
+                          const cadRate = rc !== 'CAD' ? (campaign.exchangeRateToCAD ?? rates[rc] ?? null) : null;
+                          const cadAmt = (cadRate && cadRate !== 1) ? Math.round(raw * cadRate) : null;
+                          return (
+                            <div>
+                              <span className="mono" style={{ fontWeight: 700, color: 'var(--ink-900)' }}>
+                                {raw.toLocaleString('fr')} <span style={{ fontSize: 11, fontWeight: 500, color: 'var(--ink-400)' }}>{rc}</span>
+                              </span>
+                              {cadAmt != null && (
+                                <div style={{ fontSize: 10.5, color: 'var(--ink-400)', marginTop: 1 }}>
+                                  ≈ {cadAmt.toLocaleString('fr')} CAD
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })()}
+                      </td>
+                      <td>
+                        <span className={`badge badge--dot badge--${payInfo.cls}`}>
+                          {payLabel}
+                        </span>
+                        {p.payment?.status === 'partial' && p.payment?.amount != null && (
+                          <div style={{ fontSize: 10.5, color: 'var(--ink-400)', marginTop: 2 }}>
+                            / {fmt(p.payment.amount, campaign.route?.currency ?? 'CAD')}
+                          </div>
+                        )}
+                        {!p.payment && p.priceXaf != null && (
+                          <div style={{ fontSize: 10.5, color: 'var(--ink-400)', marginTop: 2 }}>
+                            Aucune facture
+                          </div>
+                        )}
+                      </td>
+                      <td>
+                        <span className="badge badge--neutral">{parcelLabel}</span>
+                      </td>
+                      {can('parcels') && parcelTab === 'active' && (
+                        <td onClick={e => e.stopPropagation()}>
+                          {isConfirming ? (
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                              <button
+                                className="btn btn--sm"
+                                style={{ background: 'var(--bad-600)', color: '#fff', border: 'none', fontSize: 11, padding: '3px 8px' }}
+                                onClick={e => handleDeleteParcel(p.id, e)}
+                              >
+                                Confirmer
+                              </button>
+                              <button
+                                className="btn btn--ghost btn--sm"
+                                style={{ fontSize: 11, padding: '3px 8px' }}
+                                onClick={e => { e.stopPropagation(); setDeletingParcelId(null); }}
+                              >
+                                Annuler
+                              </button>
+                            </div>
+                          ) : (
+                            <button
+                              className="btn btn--ghost btn--sm"
+                              style={{ color: 'var(--ink-300)', padding: '4px 6px' }}
+                              title="Supprimer ce colis"
+                              onClick={e => handleDeleteParcel(p.id, e)}
+                            >
+                              <I.Trash style={{ width: 13, height: 13 }} />
+                            </button>
+                          )}
+                        </td>
+                      )}
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          )}
+
+          <div style={{ marginTop: 12, fontSize: 12, color: 'var(--ink-400)', marginBottom: 8 }}>
+            {parcelSearch
+              ? `${filteredParcels.length} résultat${filteredParcels.length > 1 ? 's' : ''} sur ${parcels.length} colis`
+              : `${parcels.length} colis actifs · Capacité ${campaign.capacityKg != null ? campaign.capacityKg + ' kg' : '—'}`
+            }
+          </div>
+        </>
       )}
 
-      {shownParcels.length === 0 ? (
-        <div className="card" style={{ padding: '48px 24px', textAlign: 'center' }}>
-          <div style={{ fontSize: 32, marginBottom: 12 }}>📦</div>
-          <div style={{ fontSize: 16, fontWeight: 600, color: 'var(--ink-700)', marginBottom: 6 }}>
-            {parcelTab === 'cancelled' ? 'Aucun colis annulé' : 'Aucun colis dans cette cargaison'}
-          </div>
-          {parcelTab === 'active' && (
-            <div style={{ fontSize: 13, color: 'var(--ink-400)', marginBottom: 20 }}>Ajoutez le premier colis pour commencer.</div>
-          )}
-        </div>
-      ) : (
-        <table className="tbl">
-          <thead>
-            <tr>
-              <th>{t.campaigns.detail.tableHeaders.tracking}</th>
-              <th>{t.parcels.table.client}</th>
-              <th>{t.parcels.table.weight}</th>
-              <th>{t.common.description}</th>
-              <th style={{ textAlign: 'right' }}>{t.parcels.table.amount}</th>
-              <th>{t.parcels.table.payment}</th>
-              <th>{t.parcels.table.status}</th>
-              {can('parcels') && parcelTab === 'active' && <th style={{ width: 60 }}></th>}
-            </tr>
-          </thead>
-          <tbody>
-            {shownParcels.map(p => {
-              const payInfo  = PAYMENT_STATUS[p.payment?.status] || { label: p.payment?.status || '—', cls: 'neutral' };
-              const payLabel = PAYMENT_STATUS[p.payment?.status]?.label ?? getPaymentLabel(p.payment?.status);
-              const parcelLabel = PARCEL_STATUS[p.status] || p.status || '—';
-              const clientName = p.client?.name || '—';
-              const initials = clientName.split(' ').map(x => x[0]).join('').slice(0, 2).toUpperCase();
-              const isConfirming = deletingParcelId === p.id;
-              return (
-                <tr
-                  key={p.id}
-                  style={{ cursor: 'pointer', background: isConfirming ? 'var(--bad-50)' : undefined }}
-                  onClick={() => { if (!isConfirming) setQuickParcel(p); }}
-                >
-                  <td>
-                    <span className="mono" style={{ fontWeight: 700, color: 'var(--brand-700)' }}>
-                      {p.trackingCode || p.id}
-                    </span>
-                  </td>
-                  <td>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                      <Avatar initials={initials} size="sm" />
-                      <div>
-                        <div style={{ fontWeight: 600 }}>{clientName}</div>
-                        {p.client?.phone && (
-                          <div className="mono" style={{ fontSize: 11, color: 'var(--ink-400)' }}>{p.client.phone}</div>
-                        )}
-                      </div>
-                    </div>
-                  </td>
-                  <td>
-                    <span className="mono" style={{ fontWeight: 600 }}>{p.weightKg != null ? p.weightKg : '—'}</span>
-                  </td>
-                  <td style={{ maxWidth: 180, fontSize: 12, color: 'var(--ink-600)' }}>
-                    <div style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                      {p.description || '—'}
-                    </div>
-                  </td>
-                  <td style={{ textAlign: 'right' }}>
-                    {(() => {
-                      const rc = campaign.route?.currency ?? 'CAD';
-                      const raw = p.payment?.amount ?? p.priceXaf;
-                      if (raw == null) return <span style={{ color: 'var(--ink-300)' }}>—</span>;
-                      const cadRate = rc !== 'CAD' ? (campaign.exchangeRateToCAD ?? rates[rc] ?? null) : null;
-                      // Only show conversion when we have a real rate (not 1)
-                      const cadAmt = (cadRate && cadRate !== 1) ? Math.round(raw * cadRate) : null;
-                      return (
-                        <div>
-                          <span className="mono" style={{ fontWeight: 700, color: 'var(--ink-900)' }}>
-                            {raw.toLocaleString('fr')} <span style={{ fontSize: 11, fontWeight: 500, color: 'var(--ink-400)' }}>{rc}</span>
+      {/* ══ ONGLET PAIEMENTS ══ */}
+      {mainTab === 'paiements' && (
+        <div style={{ marginTop: 8 }}>
+          {txLoading ? (
+            <div style={{ padding: '48px 0', textAlign: 'center', color: 'var(--ink-400)', fontSize: 14 }}>Chargement…</div>
+          ) : !campaignTxs || campaignTxs.length === 0 ? (
+            <div className="card" style={{ padding: '48px 24px', textAlign: 'center' }}>
+              <div style={{ fontSize: 32, marginBottom: 12 }}>💳</div>
+              <div style={{ fontSize: 16, fontWeight: 600, color: 'var(--ink-700)' }}>Aucun paiement enregistré</div>
+              <div style={{ fontSize: 13, color: 'var(--ink-400)', marginTop: 6 }}>Les encaissements apparaîtront ici au fur et à mesure.</div>
+            </div>
+          ) : (
+            <>
+              <table className="tbl">
+                <thead>
+                  <tr>
+                    <th>Date</th>
+                    <th>Client</th>
+                    <th style={{ textAlign: 'right' }}>Montant</th>
+                    <th>Méthode</th>
+                    <th>Référence</th>
+                    <th>Colis</th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {campaignTxs.map(tx => {
+                    const campAllocs = tx.allocations?.filter(a => a.campaignCode === campaign.code) ?? [];
+                    const methodLabels = { interac: 'Interac', cash: 'Espèces', virement: 'Virement', mobile_money: 'Mobile Money' };
+                    return (
+                      <tr key={tx.id}>
+                        <td style={{ fontSize: 12, color: 'var(--ink-500)', whiteSpace: 'nowrap' }}>
+                          {new Date(tx.createdAt).toLocaleDateString('fr-CA')}
+                        </td>
+                        <td>
+                          <div style={{ fontWeight: 600, fontSize: 13 }}>{tx.clientName}</div>
+                          {tx.clientPhone && <div className="mono" style={{ fontSize: 11, color: 'var(--ink-400)' }}>{tx.clientPhone}</div>}
+                        </td>
+                        <td style={{ textAlign: 'right' }}>
+                          <span className="mono" style={{ fontWeight: 700, color: 'var(--ok-700)' }}>
+                            {Number(tx.amount).toLocaleString('fr')}
                           </span>
-                          {cadAmt != null && (
-                            <div style={{ fontSize: 10.5, color: 'var(--ink-400)', marginTop: 1 }}>
-                              ≈ {cadAmt.toLocaleString('fr')} CAD
+                          <span style={{ fontSize: 10.5, color: 'var(--ink-400)', marginLeft: 4 }}>{campaign.route?.currency ?? 'CAD'}</span>
+                        </td>
+                        <td style={{ fontSize: 12.5 }}>
+                          {methodLabels[tx.method] ?? tx.method ?? '—'}
+                        </td>
+                        <td>
+                          {tx.reference
+                            ? <span className="mono" style={{ fontSize: 12, fontWeight: 700, color: 'var(--brand-700)', background: 'var(--brand-50)', padding: '2px 6px', borderRadius: 4 }}>{tx.reference}</span>
+                            : <span style={{ color: 'var(--ink-300)' }}>—</span>
+                          }
+                        </td>
+                        <td style={{ fontSize: 12 }}>
+                          {campAllocs.length > 0 ? (
+                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 3 }}>
+                              {campAllocs.map(a => (
+                                <span
+                                  key={a.paymentId}
+                                  className="mono"
+                                  style={{ fontSize: 11, fontWeight: 600, color: 'var(--brand-700)', background: 'var(--brand-50)', padding: '1px 5px', borderRadius: 4, cursor: 'pointer' }}
+                                  onClick={() => {
+                                    const p = parcels.find(x => x.trackingCode === a.trackingCode);
+                                    if (p) { setMainTab('colis'); setQuickParcel(p); }
+                                  }}
+                                >
+                                  {a.trackingCode}
+                                </span>
+                              ))}
                             </div>
-                          )}
-                        </div>
-                      );
-                    })()}
-                  </td>
-                  <td>
-                    <span className={`badge badge--dot badge--${payInfo.cls}`}>
-                      {payLabel}
-                    </span>
-                    {p.payment?.status === 'partial' && p.payment?.amount != null && (
-                      <div style={{ fontSize: 10.5, color: 'var(--ink-400)', marginTop: 2 }}>
-                        / {fmt(p.payment.amount, campaign.route?.currency ?? 'CAD')}
-                      </div>
-                    )}
-                    {!p.payment && p.priceXaf != null && (
-                      <div style={{ fontSize: 10.5, color: 'var(--ink-400)', marginTop: 2 }}>
-                        Aucune facture
-                      </div>
-                    )}
-                  </td>
-                  <td>
-                    <span className="badge badge--neutral">{parcelLabel}</span>
-                  </td>
-                  {can('parcels') && parcelTab === 'active' && (
-                    <td onClick={e => e.stopPropagation()}>
-                      {isConfirming ? (
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                          <button
-                            className="btn btn--sm"
-                            style={{ background: 'var(--bad-600)', color: '#fff', border: 'none', fontSize: 11, padding: '3px 8px' }}
-                            onClick={e => handleDeleteParcel(p.id, e)}
-                          >
-                            Confirmer
-                          </button>
+                          ) : '—'}
+                        </td>
+                        <td>
                           <button
                             className="btn btn--ghost btn--sm"
                             style={{ fontSize: 11, padding: '3px 8px' }}
-                            onClick={e => { e.stopPropagation(); setDeletingParcelId(null); }}
+                            onClick={() => onNav('/admin/receipts/' + tx.id)}
                           >
-                            Annuler
+                            Reçu →
                           </button>
-                        </div>
-                      ) : (
-                        <button
-                          className="btn btn--ghost btn--sm"
-                          style={{ color: 'var(--ink-300)', padding: '4px 6px' }}
-                          title="Supprimer ce colis"
-                          onClick={e => handleDeleteParcel(p.id, e)}
-                        >
-                          <I.Trash style={{ width: 13, height: 13 }} />
-                        </button>
-                      )}
-                    </td>
-                  )}
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+              <div style={{ marginTop: 12, fontSize: 12, color: 'var(--ink-400)' }}>
+                {campaignTxs.length} transaction{campaignTxs.length > 1 ? 's' : ''} ·{' '}
+                Total perçu :{' '}
+                <strong style={{ color: 'var(--ok-700)' }}>
+                  {campaignTxs.reduce((s, tx) => s + Number(tx.amount), 0).toLocaleString('fr')} {campaign.route?.currency ?? 'CAD'}
+                </strong>
+              </div>
+            </>
+          )}
+        </div>
       )}
-
-      {/* TODO: i18n — "colis · Capacité" has no translation key */}
-      <div style={{ marginTop: 12, fontSize: 12, color: 'var(--ink-400)', marginBottom: 8 }}>
-        {parcels.length} colis actifs · Capacité {campaign.capacityKg != null ? campaign.capacityKg + ' kg' : '—'}
-      </div>
     </div>
   );
 }

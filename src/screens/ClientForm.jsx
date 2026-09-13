@@ -103,13 +103,13 @@ export default function ClientFormModal({ mode = 'create', client, onClose, onSa
           )}
           <div style={{ flex: 1 }} />
           {saveErr && <span style={{ fontSize: 12, color: 'var(--bad-600)' }}>{saveErr}</span>}
-          <button className="btn btn--ghost" onClick={onClose}>{t.common.cancel}</button>
+          <button type="button" className="btn btn--ghost" onClick={onClose}>{t.common.cancel}</button>
           {!isEdit && (
-            <button className="btn btn--soft" onClick={() => handleSave(true)} disabled={saving}>
+            <button type="button" className="btn btn--soft" onClick={() => handleSave(true)} disabled={saving}>
               {t.common.save} &amp; {t.common.new}
             </button>
           )}
-          <button className="btn btn--brand" onClick={() => handleSave(false)} disabled={saving}>
+          <button type="button" className="btn btn--brand" onClick={() => handleSave(false)} disabled={saving}>
             <I.Check />{saving ? t.common.saving : isEdit ? t.common.save : t.common.create}
           </button>
         </>
@@ -285,7 +285,7 @@ export default function ClientFormModal({ mode = 'create', client, onClose, onSa
                   { key: 'email', label: 'Envoyer un lien' },
                   { key: 'direct', label: 'Définir directement' },
                 ].map(m => (
-                  <button key={m.key} onClick={() => { setPwMode(m.key); setPwMsg(null); setNewPw(''); }}
+                  <button type="button" key={m.key} onClick={() => { setPwMode(m.key); setPwMsg(null); setNewPw(''); }}
                     className="btn btn--ghost btn--xs"
                     style={{
                       borderColor: pwMode === m.key ? 'var(--brand-400)' : 'var(--border)',
@@ -312,7 +312,7 @@ export default function ClientFormModal({ mode = 'create', client, onClose, onSa
                   {pwMsg.text}
                 </div>
               )}
-              <button className="btn btn--soft btn--xs" disabled={pwBusy || (pwMode === 'direct' && newPw.length < 8)}
+              <button type="button" className="btn btn--soft btn--xs" disabled={pwBusy || (pwMode === 'direct' && newPw.length < 8)}
                 onClick={async () => {
                   setPwBusy(true); setPwMsg(null);
                   try {
