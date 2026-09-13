@@ -30,7 +30,11 @@ export default auth((req) => {
 
   if (pathname.startsWith('/client')) {
     if (role === 'driver') return NextResponse.redirect(new URL('/livreur/dashboard', req.url));
-    if (role === 'admin' || role === 'agent') return NextResponse.redirect(new URL('/admin/dashboard', req.url));
+    // Allow admins/agents to preview invoice and tracking pages directly
+    const adminViewable = pathname.startsWith('/client/invoice/') || pathname.startsWith('/client/suivi');
+    if ((role === 'admin' || role === 'agent') && !adminViewable) {
+      return NextResponse.redirect(new URL('/admin/dashboard', req.url));
+    }
   }
 });
 
