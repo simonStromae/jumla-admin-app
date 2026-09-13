@@ -1464,6 +1464,7 @@ export default function CampaignDetailScreen({ id, onNav }) {
         </div>
       )}
     </div>
+  </div>
   );
 }
 
