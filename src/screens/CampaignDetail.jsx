@@ -591,16 +591,22 @@ export default function CampaignDetailScreen({ id, onNav }) {
   const totalWeight = parcels.reduce((s, p) => s + (p.weightKg || 0), 0);
   const invoiced = parcels.reduce((s, p) => {
     const adj = p.adjustmentStatus, conf = p.confirmedPriceXaf;
-    return s + ((adj === 'paid' || adj === 'discount') && conf != null
+    // Use confirmedPriceXaf whenever an adjustment exists (pending, paid, or discount)
+    return s + (conf != null && adj != null
       ? conf : (p.payment?.amount ?? p.priceXaf ?? 0));
   }, 0);
   const collected = parcels.reduce((s, p) => {
     const adj = p.adjustmentStatus, conf = p.confirmedPriceXaf;
-    const inv     = (adj === 'paid' || adj === 'discount') && conf != null
+    const inv = conf != null && adj != null
       ? conf : (p.payment?.amount ?? p.priceXaf ?? 0);
-    const payAmt  = p.payment?.status === 'completed' ? (p.payment.amount || 0) : 0;
-    const suppAmt = conf != null ? Math.max(0, conf - (p.priceXaf ?? 0)) : 0;
-    const suppPaid = adj === 'paid' ? suppAmt : 0;
+    // Base invoice: fully paid = payment.amount; partial = use payment.amount as proxy for collected portion
+    const baseStatus = p.payment?.status;
+    const baseAmt    = p.payment?.amount ?? 0;
+    const payAmt     = (baseStatus === 'completed' || baseStatus === 'partial') ? baseAmt : 0;
+    // Supplement paid: conf - base price, only when adj === 'paid'
+    const suppPaid   = adj === 'paid' && conf != null
+      ? Math.max(0, conf - (p.priceXaf ?? baseAmt))
+      : 0;
     return s + Math.min(payAmt + suppPaid, inv);
   }, 0);
   const outstanding = invoiced - collected;
@@ -1283,7 +1289,10 @@ export default function CampaignDetailScreen({ id, onNav }) {
                       <td style={{ textAlign: 'right' }}>
                         {(() => {
                           const rc = campaign.route?.currency ?? 'CAD';
-                          const raw = p.payment?.amount ?? p.priceXaf;
+                          // Prefer confirmedPriceXaf when an adjustment exists
+                          const raw = (p.confirmedPriceXaf != null && p.adjustmentStatus != null)
+                            ? p.confirmedPriceXaf
+                            : (p.payment?.amount ?? p.priceXaf);
                           if (raw == null) return <span style={{ color: 'var(--ink-300)' }}>—</span>;
                           const cadRate = rc !== 'CAD' ? (campaign.exchangeRateToCAD ?? rates[rc] ?? null) : null;
                           const cadAmt = (cadRate && cadRate !== 1) ? Math.round(raw * cadRate) : null;
@@ -1305,7 +1314,22 @@ export default function CampaignDetailScreen({ id, onNav }) {
                         <span className={`badge badge--dot badge--${payInfo.cls}`}>
                           {payLabel}
                         </span>
-                        {p.payment?.status === 'partial' && p.payment?.amount != null && (
+                        {p.adjustmentStatus === 'pending' && (
+                          <div style={{ fontSize: 10.5, color: 'var(--info-600)', marginTop: 2, fontWeight: 600 }}>
+                            + Supplément en att.
+                          </div>
+                        )}
+                        {p.adjustmentStatus === 'paid' && (
+                          <div style={{ fontSize: 10.5, color: 'var(--ok-600)', marginTop: 2 }}>
+                            ✓ Supplément payé
+                          </div>
+                        )}
+                        {p.adjustmentStatus === 'discount' && (
+                          <div style={{ fontSize: 10.5, color: 'var(--ink-400)', marginTop: 2 }}>
+                            Remise appliquée
+                          </div>
+                        )}
+                        {p.payment?.status === 'partial' && p.payment?.amount != null && !p.adjustmentStatus && (
                           <div style={{ fontSize: 10.5, color: 'var(--ink-400)', marginTop: 2 }}>
                             / {fmt(p.payment.amount, campaign.route?.currency ?? 'CAD')}
                           </div>
