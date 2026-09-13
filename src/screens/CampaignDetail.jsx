@@ -88,19 +88,23 @@ function PanelSection({ title, accent, children }) {
 }
 
 function ParcelQuickPanel({ parcel: initial, routeCurrency = 'CAD', routeId, onClose, onRefresh, onNav }) {
-  const { currency, fmt } = useCurrency();
+  const { fmt } = useCurrency();
   const [parcel,           setParcel]           = useState(initial);
   const [newStatus,        setNewStatus]        = useState(initial.status);
   const [statusNote,       setStatusNote]       = useState('');
   const [notes,            setNotes]            = useState(initial.notes || '');
   const [holdReason,       setHoldReason]       = useState(HOLD_REASONS[0]);
   const [customHoldReason, setCustomHoldReason] = useState('');
+  const [showHold,         setShowHold]         = useState(false);
   const [busy,             setBusy]             = useState('');
   const [done,             setDone]             = useState({});
   const [err,              setErr]              = useState('');
   const [editWeight,       setEditWeight]       = useState(String(initial.weightKg ?? ''));
   const [editMarginPct,    setEditMarginPct]    = useState(String(initial.marginPct ?? 0));
   const [pricingResult,    setPricingResult]    = useState(null);
+  const [payAmount,        setPayAmount]        = useState(String(initial.payment?.amount ?? ''));
+  const [payMethod,        setPayMethod]        = useState('interac');
+  const [payRef,           setPayRef]           = useState('');
 
   const flash = key => {
     setDone(d => ({ ...d, [key]: true }));
@@ -138,7 +142,7 @@ function ParcelQuickPanel({ parcel: initial, routeCurrency = 'CAD', routeId, onC
     setBusy('hold'); setErr('');
     try {
       await patchParcel({ status: 'ret', eventNote: reason });
-      setNewStatus('ret'); flash('hold'); onRefresh();
+      setNewStatus('ret'); setShowHold(false); flash('hold'); onRefresh();
     } catch { setErr('Erreur lors de la mise en retenu.'); }
     setBusy('');
   };
@@ -152,10 +156,6 @@ function ParcelQuickPanel({ parcel: initial, routeCurrency = 'CAD', routeId, onC
     setBusy('');
   };
 
-  const [payAmount,    setPayAmount]    = useState(String(initial.payment?.amount ?? ''));
-  const [payMethod,    setPayMethod]    = useState('interac');
-  const [payRef,       setPayRef]       = useState('');
-
   const submitPayment = async () => {
     const amt = Math.round(Number(payAmount));
     if (!amt || amt <= 0 || !parcel.payment) return;
@@ -166,9 +166,7 @@ function ParcelQuickPanel({ parcel: initial, routeCurrency = 'CAD', routeId, onC
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          clientId,
-          amount: amt,
-          method: payMethod,
+          clientId, amount: amt, method: payMethod,
           ...(payRef && { reference: payRef }),
           allocations: [{ paymentId: parcel.payment.id, amount: amt }],
         }),
@@ -180,269 +178,273 @@ function ParcelQuickPanel({ parcel: initial, routeCurrency = 'CAD', routeId, onC
     setBusy('');
   };
 
-  const payStatus    = parcel.payment?.status;
-  const canPay       = payStatus === 'pending' || payStatus === 'partial';
-  const payInfo      = PAYMENT_STATUS[payStatus] || { label: payStatus || '—', cls: 'neutral' };
-  const isHeld       = newStatus === 'ret';
-  const allStatuses  = Object.entries(PARCEL_STATUS).map(([id, label]) => ({ id, label }));
-  const btnBase      = { padding: '7px 14px', borderRadius: 8, border: 'none', fontWeight: 700, fontSize: 12.5, cursor: 'pointer' };
+  const payStatus = parcel.payment?.status;
+  const canPay    = payStatus === 'pending' || payStatus === 'partial';
+  const payInfo   = PAYMENT_STATUS[payStatus] || { label: payStatus || '—', cls: 'neutral' };
+  const isHeld    = newStatus === 'ret';
+
+  const adjStatus  = parcel.adjustmentStatus;
+  const adjConf    = parcel.confirmedPriceXaf;
+  const basePrice  = parcel.priceXaf ?? parcel.payment?.amount ?? null;
+  const supplement = (adjConf != null && basePrice != null) ? adjConf - basePrice : null;
+  const totalDue   = (adjConf != null && adjStatus != null) ? adjConf : (parcel.payment?.amount ?? parcel.priceXaf ?? null);
+
+  const inp = { width: '100%', padding: '8px 10px', border: '1px solid var(--border)', borderRadius: 8, fontSize: 13, boxSizing: 'border-box', background: 'white' };
+  const btnBrand = { padding: '8px 16px', borderRadius: 8, border: 'none', fontWeight: 700, fontSize: 13, cursor: 'pointer', background: 'var(--brand-600)', color: '#fff' };
+  const btnGhost = { padding: '7px 14px', borderRadius: 8, border: '1px solid var(--border)', fontWeight: 600, fontSize: 12.5, cursor: 'pointer', background: 'transparent', color: 'var(--ink-600)' };
+  const sec      = { paddingTop: 16, marginTop: 12, borderTop: '1px solid var(--border-soft)' };
+  const secLabel = { fontSize: 10.5, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.05em', color: 'var(--ink-400)', marginBottom: 10, display: 'block' };
 
   return (
     <Modal title={null} onClose={onClose}>
-      {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 18 }}>
+
+      {/* ── Header ── */}
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 20 }}>
         <div>
-          <div style={{ fontFamily: 'var(--ff-mono)', fontWeight: 700, fontSize: 15, color: 'var(--brand-700)', marginBottom: 3 }}>
+          <div style={{ fontFamily: 'var(--ff-mono)', fontWeight: 700, fontSize: 16, color: 'var(--brand-700)', marginBottom: 2 }}>
             {parcel.trackingCode || parcel.id}
           </div>
           <div style={{ fontWeight: 600, fontSize: 13.5, color: 'var(--ink-800)' }}>{parcel.client?.name}</div>
           {parcel.client?.phone && <div style={{ fontSize: 11.5, color: 'var(--ink-400)', marginTop: 1 }}>{parcel.client.phone}</div>}
+          {parcel.description && <div style={{ fontSize: 11.5, color: 'var(--ink-500)', marginTop: 3, fontStyle: 'italic' }}>{parcel.description}</div>}
         </div>
-        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', justifyContent: 'flex-end', maxWidth: 200 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4 }}>
           <span className={`badge badge--dot badge--${payInfo.cls}`}>{payInfo.label}</span>
           <span className="badge badge--neutral">{PARCEL_STATUS[newStatus] || newStatus}</span>
+          {parcel.weightKg != null && (
+            <span style={{ fontSize: 11, color: 'var(--ink-400)', fontFamily: 'var(--ff-mono)', marginTop: 2 }}>{parcel.weightKg} kg</span>
+          )}
         </div>
       </div>
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+      {/* ── Facturation ── */}
+      <div>
+        <span style={secLabel}>Facturation</span>
 
-        {/* ── Paiement ── */}
-        {parcel.payment && (
-          <PanelSection title="Paiement">
-            {/* Résumé facture */}
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: canPay ? 12 : 0 }}>
-              <div>
-                <div>
-                  <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--ink-900)', fontFamily: 'var(--ff-mono)' }}>
-                    {fmt(parcel.payment.amount ?? 0, routeCurrency)}
-                    {payStatus === 'partial' && <span style={{ fontSize: 11, fontWeight: 400, color: 'var(--ink-400)', marginLeft: 6 }}>facturé</span>}
-                  </div>
-                  {routeCurrency !== currency && (
-                    <div style={{ fontSize: 11, color: 'var(--ink-400)', marginTop: 1 }}>
-                      {(parcel.payment.amount ?? 0).toLocaleString('fr')} {routeCurrency}
-                    </div>
-                  )}
-                </div>
-                <div style={{ fontSize: 11.5, color: 'var(--ink-400)', marginTop: 2 }}>
-                  {payInfo.label}
-                  {parcel.payment.interacRef && ` · Réf. ${parcel.payment.interacRef}`}
-                </div>
-              </div>
-              {payStatus === 'completed'
-                ? <span style={{ fontSize: 12, color: 'var(--ok-600)', fontWeight: 700 }}>✓ Payé</span>
-                : done.payment
-                ? <span style={{ fontSize: 12, color: 'var(--ok-600)', fontWeight: 700 }}>✓ Enregistré</span>
-                : null}
+        {/* Montant principal */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+          <div>
+            <div style={{ fontFamily: 'var(--ff-mono)', fontWeight: 700, fontSize: 22, color: 'var(--ink-900)', lineHeight: 1 }}>
+              {totalDue != null ? totalDue.toLocaleString('fr') : '—'}
+              <span style={{ fontSize: 12, fontWeight: 500, color: 'var(--ink-400)', marginLeft: 5 }}>{routeCurrency}</span>
             </div>
+            {parcel.payment?.interacRef && (
+              <div style={{ fontSize: 11.5, color: 'var(--ink-400)', marginTop: 3 }}>Réf. {parcel.payment.interacRef}</div>
+            )}
+          </div>
+          {payStatus === 'completed' && !adjStatus && (
+            <span style={{ fontSize: 13, color: 'var(--ok-600)', fontWeight: 700 }}>✓ Payé</span>
+          )}
+          {done.payment && (
+            <span style={{ fontSize: 12, color: 'var(--ok-600)', fontWeight: 700 }}>✓ Paiement enregistré</span>
+          )}
+        </div>
 
-            {/* Formulaire d'encaissement */}
-            {canPay && (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 8, paddingTop: 10, borderTop: '1px solid var(--border-soft)' }}>
-                <div style={{ fontSize: 11.5, fontWeight: 700, color: 'var(--ink-500)', textTransform: 'uppercase', letterSpacing: '.04em' }}>
-                  Enregistrer un encaissement
-                </div>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
-                  <div>
-                    <div style={{ fontSize: 11, color: 'var(--ink-400)', marginBottom: 3 }}>Montant reçu ({routeCurrency})</div>
-                    <input
-                      type="number"
-                      min="1"
-                      value={payAmount}
-                      onChange={e => setPayAmount(e.target.value)}
-                      placeholder="Ex: 500"
-                      style={{ width: '100%', padding: '8px 10px', border: '1px solid var(--border)', borderRadius: 8, fontSize: 13, boxSizing: 'border-box' }}
-                    />
-                  </div>
-                  <div>
-                    <div style={{ fontSize: 11, color: 'var(--ink-400)', marginBottom: 3 }}>Méthode</div>
-                    <select
-                      value={payMethod}
-                      onChange={e => setPayMethod(e.target.value)}
-                      style={{ width: '100%', padding: '8px 10px', border: '1px solid var(--border)', borderRadius: 8, fontSize: 13, background: 'white' }}
-                    >
-                      {PAY_METHODS.map(m => <option key={m.id} value={m.id}>{m.label}</option>)}
-                    </select>
-                  </div>
-                </div>
-                {(payMethod === 'interac' || payMethod === 'virement') && (
-                  <div>
-                    <div style={{ fontSize: 11, color: 'var(--ink-400)', marginBottom: 3 }}>Référence (optionnel)</div>
-                    <input
-                      value={payRef}
-                      onChange={e => setPayRef(e.target.value)}
-                      placeholder="Ex: XK7F2A"
-                      style={{ width: '100%', padding: '8px 10px', border: '1px solid var(--border)', borderRadius: 8, fontSize: 13, boxSizing: 'border-box' }}
-                    />
-                  </div>
-                )}
-                <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-                  <button
-                    disabled={!!busy || !payAmount || Number(payAmount) <= 0}
-                    onClick={submitPayment}
-                    style={{ ...btnBase, background: 'var(--ok-600)', color: '#fff', opacity: (!!busy || !payAmount || Number(payAmount) <= 0) ? .5 : 1 }}
-                  >
-                    {busy === 'payment' ? '…' : '✓ Enregistrer le paiement'}
-                  </button>
-                </div>
+        {/* Détail ajustement */}
+        {adjStatus && adjConf != null && basePrice != null && (
+          <div style={{
+            borderRadius: 8, padding: '10px 12px', marginBottom: 12,
+            background: adjStatus === 'pending' ? 'var(--info-50)' : 'var(--ok-50)',
+            border: `1px solid ${adjStatus === 'pending' ? 'var(--info-200)' : 'var(--ok-200)'}`,
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--ink-500)', fontSize: 12.5, marginBottom: 3 }}>
+              <span>Prix de base</span>
+              <span className="mono">{basePrice.toLocaleString('fr')} {routeCurrency}</span>
+            </div>
+            {supplement !== null && (
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12.5, marginBottom: 6,
+                color: supplement >= 0 ? 'var(--info-700)' : 'var(--ok-700)' }}>
+                <span>{supplement >= 0 ? 'Supplément' : 'Remise'}</span>
+                <span className="mono" style={{ fontWeight: 700 }}>
+                  {supplement >= 0 ? '+' : ''}{supplement.toLocaleString('fr')} {routeCurrency}
+                </span>
               </div>
             )}
-          </PanelSection>
+            <div style={{ display: 'flex', justifyContent: 'space-between', paddingTop: 6,
+              borderTop: `1px solid ${adjStatus === 'pending' ? 'var(--info-200)' : 'var(--ok-200)'}`,
+              fontWeight: 700, fontSize: 13 }}>
+              <span style={{ color: 'var(--ink-700)' }}>Total</span>
+              <span className="mono" style={{ color: 'var(--ink-900)' }}>{adjConf.toLocaleString('fr')} {routeCurrency}</span>
+            </div>
+            <div style={{ marginTop: 6, fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.04em',
+              color: adjStatus === 'pending' ? 'var(--info-600)' : 'var(--ok-600)' }}>
+              {adjStatus === 'pending' ? '⏳ Supplément en attente de paiement'
+                : adjStatus === 'paid'    ? '✓ Supplément réglé'
+                :                          '✓ Remise appliquée'}
+            </div>
+          </div>
         )}
 
-        {/* ── Statut ── */}
-        <PanelSection title="Changer le statut">
+        {/* Formulaire d'encaissement */}
+        {canPay && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            <select
-              value={newStatus}
-              onChange={e => setNewStatus(e.target.value)}
-              style={{ width: '100%', padding: '8px 10px', border: '1px solid var(--border)', borderRadius: 8, fontSize: 13, background: 'white' }}
-            >
-              {allStatuses.map(s => <option key={s.id} value={s.id}>{s.label}</option>)}
+            <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.04em', color: 'var(--ink-400)' }}>
+              Encaisser un paiement
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+              <div>
+                <div style={{ fontSize: 11, color: 'var(--ink-400)', marginBottom: 3 }}>Montant ({routeCurrency})</div>
+                <input type="number" min="1" value={payAmount} onChange={e => setPayAmount(e.target.value)} placeholder="Ex: 81" style={inp} />
+              </div>
+              <div>
+                <div style={{ fontSize: 11, color: 'var(--ink-400)', marginBottom: 3 }}>Méthode</div>
+                <select value={payMethod} onChange={e => setPayMethod(e.target.value)} style={inp}>
+                  {PAY_METHODS.map(m => <option key={m.id} value={m.id}>{m.label}</option>)}
+                </select>
+              </div>
+            </div>
+            {(payMethod === 'interac' || payMethod === 'virement') && (
+              <div>
+                <div style={{ fontSize: 11, color: 'var(--ink-400)', marginBottom: 3 }}>Référence (optionnel)</div>
+                <input value={payRef} onChange={e => setPayRef(e.target.value)} placeholder="Ex: XK7F2A" style={inp} />
+              </div>
+            )}
+            <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+              <button
+                disabled={!!busy || !payAmount || Number(payAmount) <= 0}
+                onClick={submitPayment}
+                style={{ ...btnBrand, opacity: (!!busy || !payAmount || Number(payAmount) <= 0) ? .5 : 1 }}
+              >
+                {busy === 'payment' ? '…' : '✓ Encaisser'}
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* ── Statut ── */}
+      <div style={sec}>
+        <span style={secLabel}>Statut</span>
+
+        {isHeld ? (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 12px',
+            background: 'var(--bad-50)', border: '1px solid var(--bad-100)', borderRadius: 8 }}>
+            <div style={{ flex: 1, fontSize: 12.5, color: 'var(--bad-700)', fontWeight: 600 }}>⚠️ Colis actuellement en retenu</div>
+            <button disabled={!!busy} onClick={releaseParcel} style={{ ...btnBrand, opacity: busy ? .6 : 1, whiteSpace: 'nowrap' }}>
+              {busy === 'release' ? '…' : done.release ? '✓ Libéré' : '↑ Libérer'}
+            </button>
+          </div>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <select value={newStatus} onChange={e => setNewStatus(e.target.value)} style={inp}>
+              {Object.entries(PARCEL_STATUS).map(([id, lbl]) => <option key={id} value={id}>{lbl}</option>)}
             </select>
             <textarea
-              value={statusNote}
-              onChange={e => setStatusNote(e.target.value)}
-              placeholder="Note / raison (optionnel)…"
-              rows={2}
-              style={{ width: '100%', padding: '8px 10px', border: '1px solid var(--border)', borderRadius: 8, fontSize: 12.5, resize: 'vertical', boxSizing: 'border-box', fontFamily: 'inherit' }}
+              value={statusNote} onChange={e => setStatusNote(e.target.value)}
+              placeholder="Note / raison (optionnel)…" rows={2}
+              style={{ ...inp, resize: 'vertical', fontFamily: 'inherit', fontSize: 12.5 }}
             />
-            <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <button
+                onClick={() => setShowHold(h => !h)}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 12, color: 'var(--bad-500)', padding: 0, fontWeight: 600 }}
+              >
+                {showHold ? '▲ Annuler' : '⚠ Mettre en retenu'}
+              </button>
               <button
                 disabled={!!busy || (newStatus === parcel.status && !statusNote)}
                 onClick={saveStatus}
-                style={{ ...btnBase, background: 'var(--brand-600)', color: '#fff', opacity: (!!busy || (newStatus === parcel.status && !statusNote)) ? .5 : 1 }}
+                style={{ ...btnBrand, opacity: (!!busy || (newStatus === parcel.status && !statusNote)) ? .5 : 1 }}
               >
                 {busy === 'status' ? '…' : done.status ? '✓ Enregistré' : 'Enregistrer'}
               </button>
             </div>
-          </div>
-        </PanelSection>
-
-        {/* ── Retenu / Libérer ── */}
-        <PanelSection title={isHeld ? '⚠️ Colis en retenu' : 'Retenu / Libérer'} accent={isHeld ? 'bad' : undefined}>
-          {isHeld ? (
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
-              <div style={{ fontSize: 12.5, color: 'var(--bad-700)' }}>Ce colis est actuellement en retenu.</div>
-              <button
-                disabled={!!busy}
-                onClick={releaseParcel}
-                style={{ ...btnBase, background: 'var(--ok-600)', color: '#fff', opacity: busy ? .6 : 1, whiteSpace: 'nowrap' }}
-              >
-                {busy === 'release' ? '…' : done.release ? '✓ Libéré' : '↑ Libérer'}
-              </button>
-            </div>
-          ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-              <select
-                value={holdReason}
-                onChange={e => setHoldReason(e.target.value)}
-                style={{ width: '100%', padding: '8px 10px', border: '1px solid var(--border)', borderRadius: 8, fontSize: 13, background: 'white' }}
-              >
-                {HOLD_REASONS.map(r => <option key={r}>{r}</option>)}
-              </select>
-              {holdReason === 'Autre' && (
-                <input
-                  value={customHoldReason}
-                  onChange={e => setCustomHoldReason(e.target.value)}
-                  placeholder="Précisez la raison…"
-                  style={{ width: '100%', padding: '8px 10px', border: '1px solid var(--border)', borderRadius: 8, fontSize: 13, boxSizing: 'border-box' }}
-                />
-              )}
-              <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-                <button
-                  disabled={!!busy || (holdReason === 'Autre' && !customHoldReason)}
-                  onClick={holdParcel}
-                  style={{ ...btnBase, background: 'var(--bad-600)', color: '#fff', opacity: (!!busy || (holdReason === 'Autre' && !customHoldReason)) ? .5 : 1 }}
-                >
-                  {busy === 'hold' ? '…' : done.hold ? '✓ Mis en retenu' : 'Mettre en retenu'}
-                </button>
-              </div>
-            </div>
-          )}
-        </PanelSection>
-
-        {/* ── Poids & Facturation ── */}
-        <PanelSection title="Poids &amp; Facturation">
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
-              <div>
-                <div style={{ fontSize: 11, color: 'var(--ink-400)', marginBottom: 3 }}>Poids (kg)</div>
-                <input
-                  type="number" min="0.1" step="0.1"
-                  value={editWeight}
-                  onChange={e => { setEditWeight(e.target.value); setPricingResult(null); }}
-                  style={{ width: '100%', padding: '8px 10px', border: '1px solid var(--border)', borderRadius: 8, fontSize: 13, boxSizing: 'border-box' }}
-                />
-              </div>
-              <div>
-                <div style={{ fontSize: 11, color: 'var(--ink-400)', marginBottom: 3 }}>Marge (%)</div>
-                <input
-                  type="number" min="0" max="100" step="1"
-                  value={editMarginPct}
-                  onChange={e => { setEditMarginPct(e.target.value); setPricingResult(null); }}
-                  style={{ width: '100%', padding: '8px 10px', border: '1px solid var(--border)', borderRadius: 8, fontSize: 13, boxSizing: 'border-box' }}
-                />
-              </div>
-            </div>
-            {pricingResult && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 10px', background: 'var(--ok-50)', borderRadius: 7, fontSize: 12, color: 'var(--ok-700)', border: '1px solid var(--ok-200)' }}>
-                ✓ Prix calculé : <strong style={{ marginLeft: 4 }}>{pricingResult.prixClient?.toLocaleString('fr')} {routeCurrency}</strong>
+            {showHold && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8, padding: '12px',
+                background: 'var(--bad-50)', border: '1px solid var(--bad-100)', borderRadius: 8 }}>
+                <select value={holdReason} onChange={e => setHoldReason(e.target.value)} style={inp}>
+                  {HOLD_REASONS.map(r => <option key={r}>{r}</option>)}
+                </select>
+                {holdReason === 'Autre' && (
+                  <input value={customHoldReason} onChange={e => setCustomHoldReason(e.target.value)}
+                    placeholder="Précisez la raison…" style={inp} />
+                )}
+                <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                  <button
+                    disabled={!!busy || (holdReason === 'Autre' && !customHoldReason)}
+                    onClick={holdParcel}
+                    style={{ ...btnGhost, border: '1px solid var(--bad-300)', color: 'var(--bad-600)',
+                      opacity: (!!busy || (holdReason === 'Autre' && !customHoldReason)) ? .5 : 1 }}
+                  >
+                    {busy === 'hold' ? '…' : done.hold ? '✓ Mis en retenu' : 'Confirmer la mise en retenu'}
+                  </button>
+                </div>
               </div>
             )}
-            <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-              <button
-                disabled={!!busy || !editWeight || Number(editWeight) <= 0}
-                onClick={async () => {
-                  setBusy('weight'); setErr('');
-                  try {
-                    let newPrice = null;
-                    if (routeId && editWeight) {
-                      const calc = await fetch('/api/pricing/calculate', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ routeId, weightKg: Number(editWeight), marginPct: Number(editMarginPct) || 0 }),
-                      });
-                      const calcData = await calc.json();
-                      if (calcData.prixClient) { newPrice = calcData.prixClient; setPricingResult(calcData); }
-                    }
-                    await patchParcel({
-                      weightKg:  Number(editWeight),
-                      marginPct: Number(editMarginPct) || 0,
-                      ...(newPrice != null ? { priceXaf: Math.round(newPrice) } : {}),
-                    });
-                    flash('weight'); onRefresh();
-                  } catch { setErr('Erreur lors de la mise à jour du poids.'); }
-                  setBusy('');
-                }}
-                style={{ ...btnBase, background: 'var(--brand-600)', color: '#fff', opacity: (busy || !editWeight || Number(editWeight) <= 0) ? .5 : 1 }}
-              >
-                {busy === 'weight' ? '…' : done.weight ? '✓ Mis à jour' : 'Recalculer et sauvegarder'}
-              </button>
-            </div>
           </div>
-        </PanelSection>
+        )}
+      </div>
 
-        {/* ── Notes internes ── */}
-        <PanelSection title="Notes internes">
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            <textarea
-              value={notes}
-              onChange={e => setNotes(e.target.value)}
-              placeholder="Instructions, précautions, informations importantes…"
-              rows={3}
-              style={{ width: '100%', padding: '8px 10px', border: '1px solid var(--border)', borderRadius: 8, fontSize: 12.5, resize: 'vertical', boxSizing: 'border-box', fontFamily: 'inherit' }}
-            />
-            <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-              <button
-                disabled={!!busy}
-                onClick={saveNotes}
-                style={{ ...btnBase, background: 'var(--bg-soft)', border: '1px solid var(--border)', color: 'var(--ink-700)', opacity: busy ? .6 : 1 }}
-              >
-                {busy === 'notes' ? '…' : done.notes ? '✓ Sauvegardé' : 'Sauvegarder les notes'}
-              </button>
+      {/* ── Poids & Prix ── */}
+      <div style={sec}>
+        <span style={secLabel}>Poids &amp; Prix</span>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+            <div>
+              <div style={{ fontSize: 11, color: 'var(--ink-400)', marginBottom: 3 }}>Poids (kg)</div>
+              <input type="number" min="0.1" step="0.1" value={editWeight}
+                onChange={e => { setEditWeight(e.target.value); setPricingResult(null); }} style={inp} />
+            </div>
+            <div>
+              <div style={{ fontSize: 11, color: 'var(--ink-400)', marginBottom: 3 }}>Marge (%)</div>
+              <input type="number" min="0" max="100" step="1" value={editMarginPct}
+                onChange={e => { setEditMarginPct(e.target.value); setPricingResult(null); }} style={inp} />
             </div>
           </div>
-        </PanelSection>
+          {pricingResult && (
+            <div style={{ padding: '7px 10px', background: 'var(--ok-50)', borderRadius: 7, fontSize: 12,
+              color: 'var(--ok-700)', border: '1px solid var(--ok-200)' }}>
+              Prix calculé : <strong>{pricingResult.prixClient?.toLocaleString('fr')} {routeCurrency}</strong>
+            </div>
+          )}
+          <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+            <button
+              disabled={!!busy || !editWeight || Number(editWeight) <= 0}
+              onClick={async () => {
+                setBusy('weight'); setErr('');
+                try {
+                  let newPrice = null;
+                  if (routeId && editWeight) {
+                    const calc = await fetch('/api/pricing/calculate', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ routeId, weightKg: Number(editWeight), marginPct: Number(editMarginPct) || 0 }),
+                    });
+                    const calcData = await calc.json();
+                    if (calcData.prixClient) { newPrice = calcData.prixClient; setPricingResult(calcData); }
+                  }
+                  await patchParcel({
+                    weightKg:  Number(editWeight),
+                    marginPct: Number(editMarginPct) || 0,
+                    ...(newPrice != null ? { priceXaf: Math.round(newPrice) } : {}),
+                  });
+                  flash('weight'); onRefresh();
+                } catch { setErr('Erreur lors de la mise à jour du poids.'); }
+                setBusy('');
+              }}
+              style={{ ...btnGhost, opacity: (busy || !editWeight || Number(editWeight) <= 0) ? .5 : 1 }}
+            >
+              {busy === 'weight' ? '…' : done.weight ? '✓ Mis à jour' : 'Recalculer et sauvegarder'}
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* ── Notes internes ── */}
+      <div style={sec}>
+        <span style={secLabel}>Notes internes</span>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          <textarea
+            value={notes} onChange={e => setNotes(e.target.value)}
+            placeholder="Instructions, précautions, informations importantes…" rows={3}
+            style={{ ...inp, resize: 'vertical', fontFamily: 'inherit', fontSize: 12.5 }}
+          />
+          <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+            <button disabled={!!busy} onClick={saveNotes} style={{ ...btnGhost, opacity: busy ? .6 : 1 }}>
+              {busy === 'notes' ? '…' : done.notes ? '✓ Sauvegardé' : 'Sauvegarder les notes'}
+            </button>
+          </div>
+        </div>
       </div>
 
       {err && (
@@ -451,28 +453,21 @@ function ParcelQuickPanel({ parcel: initial, routeCurrency = 'CAD', routeId, onC
         </div>
       )}
 
-      <div style={{ marginTop: 18, paddingTop: 14, borderTop: '1px solid var(--border-soft)' }}>
-        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 10 }}>
-          <button
-            className="btn btn--ghost btn--sm"
-            onClick={() => window.open('/client/invoice/' + parcel.id, '_blank')}
-          >
+      {/* ── Footer ── */}
+      <div style={{ marginTop: 20, paddingTop: 14, borderTop: '1px solid var(--border-soft)',
+        display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div style={{ display: 'flex', gap: 6 }}>
+          <button className="btn btn--ghost btn--sm" onClick={() => window.open('/client/invoice/' + parcel.id, '_blank')}>
             📄 Facture
           </button>
-          <button
-            className="btn btn--ghost btn--sm"
-            onClick={() => onNav('/parcels/' + parcel.id + '/labels')}
-          >
+          <button className="btn btn--ghost btn--sm" onClick={() => onNav('/parcels/' + parcel.id + '/labels')}>
             🏷 Étiquettes
           </button>
         </div>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
           <button className="btn btn--ghost btn--sm" onClick={onClose}>Fermer</button>
-          <button
-            className="btn btn--ghost btn--sm"
-            onClick={() => onNav('/parcels/' + parcel.id)}
-            style={{ color: 'var(--brand-600)', fontWeight: 700 }}
-          >
+          <button className="btn btn--ghost btn--sm" onClick={() => onNav('/parcels/' + parcel.id)}
+            style={{ color: 'var(--brand-600)', fontWeight: 700 }}>
             Fiche complète →
           </button>
         </div>
