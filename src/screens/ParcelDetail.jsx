@@ -73,6 +73,10 @@ export default function ParcelDetailScreen({ id, onNav }) {
   const [drivers,      setDrivers]      = useState([]);
   const [driverId,     setDriverId]     = useState('');
   const [savingDriver, setSavingDriver] = useState(false);
+  const [showRecipEdit, setShowRecipEdit] = useState(false);
+  const [recipForm, setRecipForm] = useState({ recipName: '', recipPhone: '', recipCity: '', recipAddress: '', recipApt: '', recipProvince: 'QC', recipPostal: '' });
+  const [savingRecip, setSavingRecip] = useState(false);
+  const [recipErr, setRecipErr] = useState('');
 
   useEffect(() => {
     fetch('/api/parcels/' + id)
@@ -277,10 +281,12 @@ export default function ParcelDetailScreen({ id, onNav }) {
         <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
           {/* Sender */}
           <div className="card" style={{ padding: 14 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
-              <I.Pin style={{ color: 'var(--brand-500)', width: 16, height: 16 }} />
-              {/* TODO: i18n — 'Expéditeur / Client' has no direct key */}
-              <span style={{ fontSize: 10.5, textTransform: 'uppercase', letterSpacing: '.06em', fontWeight: 700, color: 'var(--ink-400)' }}>Expéditeur / Client</span>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <I.Pin style={{ color: 'var(--brand-500)', width: 16, height: 16 }} />
+                <span style={{ fontSize: 10.5, textTransform: 'uppercase', letterSpacing: '.06em', fontWeight: 700, color: 'var(--ink-400)' }}>Expéditeur / Client</span>
+              </div>
+              <button className="btn btn--ghost btn--xs" onClick={() => onNav('/clients/' + client.id)} style={{ fontSize: 12 }}>Voir profil →</button>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
               <Avatar initials={(client.name || '?').split(' ').map(x => x[0]).slice(0,2).join('')} color={1} size="lg" />
@@ -293,13 +299,17 @@ export default function ParcelDetailScreen({ id, onNav }) {
           </div>
 
           {/* Recipient */}
-          {(parcel.recipName || parcel.recipPhone || parcel.recipCity) && (
-            <div className="card" style={{ padding: 14 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+          <div className="card" style={{ padding: 14 }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                 <I.Truck style={{ color: 'var(--brand-500)', width: 16, height: 16 }} />
-                {/* TODO: i18n — 'Destinataire' (recipient) has no direct key */}
                 <span style={{ fontSize: 10.5, textTransform: 'uppercase', letterSpacing: '.06em', fontWeight: 700, color: 'var(--ink-400)' }}>Destinataire</span>
               </div>
+              <button className="btn btn--ghost btn--xs" onClick={() => { setRecipForm({ recipName: parcel.recipName || '', recipPhone: parcel.recipPhone || '', recipCity: parcel.recipCity || '', recipAddress: parcel.recipAddress || '', recipApt: parcel.recipApt || '', recipProvince: parcel.recipProvince || 'QC', recipPostal: parcel.recipPostal || '' }); setRecipErr(''); setShowRecipEdit(true); }} style={{ fontSize: 12 }}>
+                {(parcel.recipName || parcel.recipPhone) ? 'Modifier →' : '+ Ajouter'}
+              </button>
+            </div>
+            {(parcel.recipName || parcel.recipPhone || parcel.recipCity) ? (
               <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                 <Avatar initials={(parcel.recipName || '?').split(' ').map(x => x[0]).slice(0,2).join('')} color={3} size="lg" />
                 <div>
@@ -308,8 +318,10 @@ export default function ParcelDetailScreen({ id, onNav }) {
                   {parcel.recipPhone && <div className="mono" style={{ fontSize: 12, color: 'var(--ink-400)', marginTop: 2 }}>{parcel.recipPhone}</div>}
                 </div>
               </div>
-            </div>
-          )}
+            ) : (
+              <div style={{ fontSize: 13, color: 'var(--ink-400)', fontStyle: 'italic' }}>Aucun destinataire renseigné</div>
+            )}
+          </div>
 
           {/* Driver assignment */}
           {drivers.length > 0 && (
@@ -962,6 +974,68 @@ export default function ParcelDetailScreen({ id, onNav }) {
       )}
       {showPayModal && parcel && (
         <InteracModal parcel={parcel} onClose={() => setShowPayModal(false)} />
+      )}
+
+      {showRecipEdit && (
+        <Modal title={(parcel.recipName || parcel.recipPhone) ? 'Modifier le destinataire' : 'Ajouter un destinataire'} onClose={() => setShowRecipEdit(false)}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+              <div className="field" style={{ marginBottom: 0 }}>
+                <label className="label">Nom <span style={{ color: 'var(--bad-600)' }}>*</span></label>
+                <input className="input input--sm" value={recipForm.recipName} onChange={e => setRecipForm(f => ({ ...f, recipName: e.target.value }))} placeholder="Prénom Nom" />
+              </div>
+              <div className="field" style={{ marginBottom: 0 }}>
+                <label className="label">Téléphone <span style={{ color: 'var(--bad-600)' }}>*</span></label>
+                <input className="input input--sm" value={recipForm.recipPhone} onChange={e => setRecipForm(f => ({ ...f, recipPhone: e.target.value }))} placeholder="+33 6 00 00 00 00" />
+              </div>
+            </div>
+            <div className="field" style={{ marginBottom: 0 }}>
+              <label className="label">Adresse <span className="opt">/ optionnel</span></label>
+              <input className="input input--sm" value={recipForm.recipAddress} onChange={e => setRecipForm(f => ({ ...f, recipAddress: e.target.value }))} placeholder="123 rue Sainte-Catherine" />
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 60px 140px', gap: 8 }}>
+              <div className="field" style={{ marginBottom: 0 }}>
+                <label className="label">Ville</label>
+                <input className="input input--sm" value={recipForm.recipCity} onChange={e => setRecipForm(f => ({ ...f, recipCity: e.target.value }))} placeholder="Montréal" />
+              </div>
+              <div className="field" style={{ marginBottom: 0 }}>
+                <label className="label">Province</label>
+                <input className="input input--sm" value={recipForm.recipProvince} onChange={e => setRecipForm(f => ({ ...f, recipProvince: e.target.value }))} placeholder="QC" />
+              </div>
+              <div className="field" style={{ marginBottom: 0 }}>
+                <label className="label">Code postal</label>
+                <input className="input input--sm" value={recipForm.recipPostal} onChange={e => setRecipForm(f => ({ ...f, recipPostal: e.target.value }))} placeholder="H3H 1A1" />
+              </div>
+            </div>
+            {recipErr && <div style={{ padding: '8px 12px', background: 'var(--bad-50)', border: '1px solid var(--bad-100)', borderRadius: 7, fontSize: 13, color: 'var(--bad-700)' }}>{recipErr}</div>}
+            <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 4 }}>
+              <button className="btn btn--ghost" onClick={() => setShowRecipEdit(false)}>{t.common.cancel}</button>
+              <button
+                disabled={savingRecip}
+                onClick={async () => {
+                  if (!recipForm.recipName.trim()) { setRecipErr('Le nom du destinataire est obligatoire'); return; }
+                  if (!recipForm.recipPhone.trim()) { setRecipErr('Le téléphone du destinataire est obligatoire'); return; }
+                  setSavingRecip(true); setRecipErr('');
+                  const res = await fetch('/api/parcels/' + id, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(recipForm),
+                  });
+                  if (res.ok) {
+                    setParcel(p => ({ ...p, ...recipForm }));
+                    setShowRecipEdit(false);
+                  } else {
+                    setRecipErr('Erreur lors de la sauvegarde — veuillez réessayer.');
+                  }
+                  setSavingRecip(false);
+                }}
+                className="btn btn--primary btn--sm"
+              >
+                {savingRecip ? 'Enregistrement…' : 'Enregistrer'}
+              </button>
+            </div>
+          </div>
+        </Modal>
       )}
 
       {showDeleteModal && (
