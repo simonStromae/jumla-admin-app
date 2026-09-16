@@ -183,6 +183,8 @@ export default function ParcelFormPage({ mode = 'create', parcel, campaign, onNa
     if (totalKg <= 0) { setErr('Le poids total des articles est obligatoire'); return; }
     const missingDesc = items.some(i => !i.description.trim());
     if (missingDesc) { setErr('La description est obligatoire pour chaque article'); return; }
+    if (!data.recipName?.trim()) { setErr('Le nom du destinataire est obligatoire'); return; }
+    if (!data.recipPhone?.trim()) { setErr('Le téléphone du destinataire est obligatoire'); return; }
 
     setSaving(true); setErr('');
     const deliveryFee = data.delivery === 'home' ? 25 : 0;
@@ -571,11 +573,11 @@ export default function ParcelFormPage({ mode = 'create', parcel, campaign, onNa
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 8 }}>
                 <div className="field" style={{ marginBottom: 0 }}>
-                  <label className="label">{t.common.name}</label>
+                  <label className="label">{t.common.name} <span style={{ color: 'var(--bad-600)' }}>*</span></label>
                   <input className="input input--sm" value={data.recipName} onChange={e => upd('recipName', e.target.value)} placeholder={t.common.name} />
                 </div>
                 <div className="field" style={{ marginBottom: 0 }}>
-                  <label className="label">{t.common.phone}</label>
+                  <label className="label">{t.common.phone} <span style={{ color: 'var(--bad-600)' }}>*</span></label>
                   <PhoneInput value={data.recipPhone} onChange={v => upd('recipPhone', v)} />
                 </div>
               </div>
