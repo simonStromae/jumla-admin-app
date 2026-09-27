@@ -20,6 +20,7 @@ export async function GET() {
         t.method,
         t.reference,
         t.note,
+        t."collectedAt",
         t."createdAt",
         u.name  AS "clientName",
         u.phone AS "clientPhone",
@@ -43,7 +44,7 @@ export async function GET() {
       LEFT JOIN payments py  ON py.id  = ta."paymentId"
       LEFT JOIN parcels par  ON par.id = py."parcelId"
       LEFT JOIN campaigns c  ON c.id   = par."campaignId"
-      GROUP BY t.id, t."clientId", t.amount, t.type, t.method, t.reference, t.note, t."createdAt",
+      GROUP BY t.id, t."clientId", t.amount, t.type, t.method, t.reference, t.note, t."collectedAt", t."createdAt",
                u.name, u.phone, rb.name
       ORDER BY t."createdAt" DESC
     `) as any[];
@@ -121,20 +122,23 @@ export async function POST(req: NextRequest) {
 
   const recordedById = (session!.user as any).id as string;
   const body = await req.json();
-  const { clientId, amount, type, method, reference, note, allocations } = body;
+  const { clientId, amount, type, method, reference, note, allocations, collectedAt } = body;
 
   if (!clientId || !amount) {
     return NextResponse.json({ error: 'clientId et amount requis' }, { status: 400 });
+  }
+  if (!collectedAt) {
+    return NextResponse.json({ error: 'Le bureau de collecte est obligatoire' }, { status: 400 });
   }
 
   try {
     const txId = crypto.randomUUID().replace(/-/g, '');
 
     await prisma.$executeRawUnsafe(
-      `INSERT INTO transactions (id, "clientId", amount, type, method, reference, note, "recordedById", "createdAt")
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW())`,
+      `INSERT INTO transactions (id, "clientId", amount, type, method, reference, note, "recordedById", "collectedAt", "createdAt")
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW())`,
       txId, clientId, Number(amount), type || 'payment', method || 'interac',
-      reference || null, note || null, recordedById
+      reference || null, note || null, recordedById, collectedAt
     );
 
     for (const alloc of (allocations ?? []) as { paymentId: string; amount: number }[]) {

@@ -64,6 +64,7 @@ const fr = {
     campaigns: 'Cargaisons',
     codes: 'Codes',
     payment: 'Paiement par carte',
+    bureaux: 'Bureaux',
   },
 
   // Shared status labels
@@ -375,6 +376,7 @@ const en = {
     campaigns: 'Shipments',
     codes: 'Codes',
     payment: 'Card payments',
+    bureaux: 'Offices',
   },
 
   campaignStatus: {
