@@ -73,6 +73,18 @@ const HOLD_REASONS = [
   'Autre',
 ];
 
+const BUREAUX_DEFAULT = ['Douala', 'Montréal', 'Chine', 'Nigeria'];
+function useBureaux() {
+  const [bureaux, setBureaux] = useState(BUREAUX_DEFAULT);
+  useEffect(() => {
+    fetch('/api/settings').then(r => r.json()).then(d => {
+      try { const b = JSON.parse(d.bureaux || 'null'); if (Array.isArray(b) && b.length) setBureaux(b); }
+      catch { /* keep default */ }
+    }).catch(() => {});
+  }, []);
+  return bureaux;
+}
+
 function PanelSection({ title, accent, children }) {
   const borderColor = accent === 'bad' ? 'var(--bad-100)' : 'var(--border)';
   const bg = accent === 'bad' ? 'var(--bad-50)' : 'var(--bg-soft)';
@@ -89,6 +101,7 @@ function PanelSection({ title, accent, children }) {
 
 function ParcelQuickPanel({ parcel: initial, routeCurrency = 'CAD', routeId, onClose, onRefresh, onNav }) {
   const { fmt } = useCurrency();
+  const bureaux = useBureaux();
   const [parcel,           setParcel]           = useState(initial);
   const [newStatus,        setNewStatus]        = useState(initial.status);
   const [statusNote,       setStatusNote]       = useState('');
@@ -105,6 +118,7 @@ function ParcelQuickPanel({ parcel: initial, routeCurrency = 'CAD', routeId, onC
   const [payAmount,        setPayAmount]        = useState(String(initial.payment?.amount ?? ''));
   const [payMethod,        setPayMethod]        = useState('interac');
   const [payRef,           setPayRef]           = useState('');
+  const [payBureau,        setPayBureau]        = useState('');
 
   const flash = key => {
     setDone(d => ({ ...d, [key]: true }));
@@ -159,6 +173,7 @@ function ParcelQuickPanel({ parcel: initial, routeCurrency = 'CAD', routeId, onC
   const submitPayment = async () => {
     const amt = Math.round(Number(payAmount));
     if (!amt || amt <= 0 || !parcel.payment) return;
+    if (!payBureau) { setErr('Sélectionnez le bureau de collecte.'); return; }
     setBusy('payment'); setErr('');
     try {
       const clientId = parcel.client?.id ?? parcel.payment.clientId;
@@ -167,12 +182,13 @@ function ParcelQuickPanel({ parcel: initial, routeCurrency = 'CAD', routeId, onC
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           clientId, amount: amt, method: payMethod,
+          collectedAt: payBureau,
           ...(payRef && { reference: payRef }),
           allocations: [{ paymentId: parcel.payment.id, amount: amt }],
         }),
       });
       if (!r.ok) throw new Error();
-      setPayRef('');
+      setPayRef(''); setPayBureau('');
       flash('payment'); onRefresh();
     } catch { setErr('Erreur lors de l\'enregistrement du paiement.'); }
     setBusy('');
@@ -299,11 +315,18 @@ function ParcelQuickPanel({ parcel: initial, routeCurrency = 'CAD', routeId, onC
                 <input value={payRef} onChange={e => setPayRef(e.target.value)} placeholder="Ex: XK7F2A" style={inp} />
               </div>
             )}
+            <div>
+              <div style={{ fontSize: 11, color: 'var(--ink-400)', marginBottom: 3 }}>Perçu à <span style={{ color: 'var(--bad-500)' }}>*</span></div>
+              <select value={payBureau} onChange={e => setPayBureau(e.target.value)} style={inp}>
+                <option value="">— Bureau de collecte —</option>
+                {bureaux.map(b => <option key={b} value={b}>{b}</option>)}
+              </select>
+            </div>
             <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
               <button
-                disabled={!!busy || !payAmount || Number(payAmount) <= 0}
+                disabled={!!busy || !payAmount || Number(payAmount) <= 0 || !payBureau}
                 onClick={submitPayment}
-                style={{ ...btnBrand, opacity: (!!busy || !payAmount || Number(payAmount) <= 0) ? .5 : 1 }}
+                style={{ ...btnBrand, opacity: (!!busy || !payAmount || Number(payAmount) <= 0 || !payBureau) ? .5 : 1 }}
               >
                 {busy === 'payment' ? '…' : '✓ Encaisser'}
               </button>

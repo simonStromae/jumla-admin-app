@@ -413,6 +413,27 @@ export async function GET(req: NextRequest) {
     color: (i % 8) + 1,
   }));
 
+  // ── Encaissements par bureau ──────────────────────────────────────────────
+  const bureauRows = await prisma.$queryRawUnsafe<any[]>(
+    `SELECT "collectedAt" AS bureau,
+            SUM(amount)::int AS total,
+            COUNT(*)::int AS count
+     FROM transactions
+     WHERE "collectedAt" IS NOT NULL
+       AND "createdAt" >= $1 AND "createdAt" < $2
+     GROUP BY "collectedAt"
+     ORDER BY total DESC`,
+    yearStart, yearEnd
+  ).catch(() => [] as any[]);
+
+  const bureauMax = bureauRows.reduce((m: number, r: any) => Math.max(m, Number(r.total)), 1);
+  const bureauStats = bureauRows.map((r: any) => ({
+    bureau: r.bureau,
+    total:  Number(r.total),
+    count:  Number(r.count),
+    meter:  Math.round(Number(r.total) / bureauMax * 100),
+  }));
+
   // ── Activité récente ──────────────────────────────────────────────────────
   const recentTrackingEvents = yearCampaignIds.length === 0 ? [] : await prisma.trackingEvent.findMany({
     where:   { parcel: { campaignId: { in: yearCampaignIds } } },
@@ -478,6 +499,7 @@ export async function GET(req: NextRequest) {
     airlineStats,
     routeStats,
     paymentMethods,
+    bureauStats,
     unpaid: unpaidItems.slice(0, 8),
     recentActivity,
   });
