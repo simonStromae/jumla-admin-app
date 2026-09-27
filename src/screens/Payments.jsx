@@ -19,6 +19,19 @@ const TYPE_LABELS = {
   credit:  'Crédit accordé',
 };
 
+const BUREAUX_DEFAULT = ['Douala', 'Montréal', 'Chine', 'Nigeria'];
+
+function useBureaux() {
+  const [bureaux, setBureaux] = useState(BUREAUX_DEFAULT);
+  useEffect(() => {
+    fetch('/api/settings').then(r => r.json()).then(d => {
+      try { const b = JSON.parse(d.bureaux || 'null'); if (Array.isArray(b) && b.length) setBureaux(b); }
+      catch { /* keep default */ }
+    }).catch(() => {});
+  }, []);
+  return bureaux;
+}
+
 const PAY_STATUS = {
   completed: { label: 'Payé',       cls: 'ok'      }, // → t.paymentStatus.completed
   paid:      { label: 'Payé',       cls: 'ok'      }, // → t.paymentStatus.completed
@@ -35,7 +48,8 @@ const PAY_STATUS = {
 function RecordPaymentModal({ preselectedClient, preselectedPaymentId, onClose, onSave }) {
   const t = useAdminT();
   const { currency, fmt } = useCurrency();
-  const [form, setForm]             = useState({ type: 'payment', amount: '', method: 'interac', reference: '', note: '' });
+  const bureaux = useBureaux();
+  const [form, setForm]             = useState({ type: 'payment', amount: '', method: 'interac', reference: '', note: '', collectedAt: '' });
   const [clientQuery, setClientQuery] = useState(preselectedClient?.name || '');
   const [clients, setClients]       = useState([]);
   const [selectedClient, setSelectedClient] = useState(preselectedClient || null);
@@ -95,9 +109,10 @@ function RecordPaymentModal({ preselectedClient, preselectedPaymentId, onClose, 
   const clearClient = () => { setSelectedClient(null); setClientQuery(''); setBalance(null); setAllocations({}); };
 
   const handleSave = async () => {
-    if (!selectedClient) { setErr(/* TODO: i18n — no translation key */ 'Sélectionnez un client'); return; }
-    if (!totalAmount)    { setErr(/* TODO: i18n — no translation key */ 'Montant requis'); return; }
-    if (credit < 0)      { setErr(/* TODO: i18n — no translation key */ 'Le montant alloué dépasse le montant reçu'); return; }
+    if (!selectedClient)   { setErr('Sélectionnez un client'); return; }
+    if (!totalAmount)      { setErr('Montant requis'); return; }
+    if (!form.collectedAt) { setErr('Sélectionnez le bureau de collecte'); return; }
+    if (credit < 0)        { setErr('Le montant alloué dépasse le montant reçu'); return; }
     setSaving(true); setErr('');
     const allocs = Object.entries(allocations)
       .filter(([, a]) => Number(a) > 0)
@@ -113,6 +128,7 @@ function RecordPaymentModal({ preselectedClient, preselectedPaymentId, onClose, 
           method:      form.method,
           reference:   form.reference || null,
           note:        form.note || null,
+          collectedAt: form.collectedAt,
           allocations: allocs,
         }),
       });
@@ -253,10 +269,19 @@ function RecordPaymentModal({ preselectedClient, preselectedPaymentId, onClose, 
             <input className="input mono" value={form.reference} onChange={e => upd('reference', e.target.value)} placeholder="ex: XK7F2A" />
           </div>
 
+          {/* Perçu à (bureau) */}
+          <div className="field">
+            <label className="label">Perçu à <span style={{ color: 'var(--bad-500)' }}>*</span></label>
+            <select className="select" value={form.collectedAt} onChange={e => upd('collectedAt', e.target.value)}>
+              <option value="">— Sélectionner un bureau —</option>
+              {bureaux.map(b => <option key={b} value={b}>{b}</option>)}
+            </select>
+          </div>
+
           {/* Note */}
           <div className="field" style={{ marginBottom: 0 }}>
-            <label className="label">{/* TODO: i18n — no key for "Note interne", using closest match */}{t.common.note} <span className="opt">{t.common.optional}</span></label>
-            <input className="input" value={form.note} onChange={e => upd('note', e.target.value)} placeholder={/* TODO: i18n — no translation key */ "Contentieux, accord, …"} />
+            <label className="label">{t.common.note} <span className="opt">{t.common.optional}</span></label>
+            <input className="input" value={form.note} onChange={e => upd('note', e.target.value)} placeholder="Contentieux, accord, …" />
           </div>
         </div>
 
@@ -382,10 +407,12 @@ function RecordPaymentModal({ preselectedClient, preselectedPaymentId, onClose, 
 
 function TransactionsTab({ onRecord, onNav }) {
   const t = useAdminT();
+  const bureaux = useBureaux();
   const { currency, fmt } = useCurrency();
-  const [rows, setRows]     = useState([]);
+  const [rows, setRows]       = useState([]);
   const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState('');
+  const [search, setSearch]   = useState('');
+  const [filterBureau, setFilterBureau] = useState('');
 
   const load = () => {
     setLoading(true);
@@ -397,6 +424,7 @@ function TransactionsTab({ onRecord, onNav }) {
   useEffect(() => { load(); }, []);
 
   const filtered = rows.filter(r => {
+    if (filterBureau && r.collectedAt !== filterBureau) return false;
     if (!search) return true;
     const q = search.toLowerCase();
     return r.clientName?.toLowerCase().includes(q)
@@ -404,14 +432,42 @@ function TransactionsTab({ onRecord, onNav }) {
       || r.allocations?.some(a => a.trackingCode?.toLowerCase().includes(q));
   });
 
+  // Stats by bureau (real transactions only, not legacy)
+  const realRows = rows.filter(r => !r.isLegacy && r.collectedAt);
+  const bureauStats = bureaux.map(b => ({
+    label: b,
+    total: realRows.filter(r => r.collectedAt === b).reduce((s, r) => s + r.amount, 0),
+    count: realRows.filter(r => r.collectedAt === b).length,
+  })).filter(s => s.count > 0);
+
   return (
     <>
+      {bureauStats.length > 0 && (
+        <div style={{ display: 'flex', gap: 10, padding: '12px 0 4px', flexWrap: 'wrap' }}>
+          {bureauStats.map(s => (
+            <button key={s.label} onClick={() => setFilterBureau(f => f === s.label ? '' : s.label)} style={{
+              display: 'flex', flexDirection: 'column', padding: '10px 16px', borderRadius: 10, cursor: 'pointer',
+              border: `1px solid ${filterBureau === s.label ? 'var(--brand-400)' : 'var(--border)'}`,
+              background: filterBureau === s.label ? 'var(--brand-50)' : 'var(--bg-soft)',
+            }}>
+              <span style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.06em', color: filterBureau === s.label ? 'var(--brand-500)' : 'var(--ink-400)', marginBottom: 3 }}>{s.label}</span>
+              <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 800, fontSize: 15, color: filterBureau === s.label ? 'var(--brand-700)' : 'var(--ink-800)' }}>{fmt(s.total, 'CAD')}</span>
+              <span style={{ fontSize: 11, color: 'var(--ink-400)', marginTop: 1 }}>{s.count} encaissement{s.count > 1 ? 's' : ''}</span>
+            </button>
+          ))}
+        </div>
+      )}
+
       <div className="toolbar">
         <div style={{ position: 'relative' }}>
           <I.Search style={{ position: 'absolute', left: 10, top: 9, width: 14, height: 14, color: 'var(--ink-400)' }} />
           <input className="input input--sm" placeholder={'Rechercher un client, colis…'} style={{ width: 260, paddingLeft: 32 }}
             value={search} onChange={e => setSearch(e.target.value)} />
         </div>
+        <select className="select input--sm" value={filterBureau} onChange={e => setFilterBureau(e.target.value)} style={{ width: 180 }}>
+          <option value="">Tous les bureaux</option>
+          {bureaux.map(b => <option key={b} value={b}>{b}</option>)}
+        </select>
       </div>
 
       <table className="tbl" style={{ borderTopLeftRadius: 0, borderTopRightRadius: 0 }}>
@@ -421,11 +477,12 @@ function TransactionsTab({ onRecord, onNav }) {
             <th>{t.payments.table.client}</th>
             <th>{t.common.type}</th>
             <th style={{ textAlign: 'right' }}>{t.payments.table.amount}</th>
+            <th>Bureau</th>
             <th>{t.payments.table.method}</th>
             <th>{t.payments.table.reference}</th>
-            <th>{/* TODO: i18n — no translation key */}Colis soldés</th>
-            <th>{/* TODO: i18n — no translation key */}Crédit généré</th>
-            <th>{/* TODO: i18n — no translation key */}Agent</th>
+            <th>Colis soldés</th>
+            <th>Crédit généré</th>
+            <th>Agent</th>
             <th style={{ borderRadius: 0 }}>{t.common.note}</th>
             <th style={{ borderRadius: 0 }}></th>
           </tr>
@@ -437,6 +494,7 @@ function TransactionsTab({ onRecord, onNav }) {
               <td><Skel w={110} h={13} style={{ marginBottom: 4 }} /><Skel w={80} h={10} /></td>
               <td><Skel w={70} h={20} r={999} /></td>
               <td><Skel w={70} h={13} style={{ marginLeft: 'auto' }} /></td>
+              <td><Skel w={72} h={20} r={999} /></td>
               <td><Skel w={80} h={12} /></td>
               <td><Skel w={60} h={12} /></td>
               <td><Skel w={120} h={12} /></td>
@@ -448,7 +506,7 @@ function TransactionsTab({ onRecord, onNav }) {
           ))}
           {!loading && filtered.length === 0 && (
             <tr>
-              <td colSpan={11} style={{ textAlign: 'center', padding: 40, color: 'var(--ink-400)', fontSize: 13 }}>
+              <td colSpan={12} style={{ textAlign: 'center', padding: 40, color: 'var(--ink-400)', fontSize: 13 }}>
                 {search ? t.common.noData : /* TODO: i18n — no translation key */ 'Aucune transaction enregistrée'}
               </td>
             </tr>
@@ -474,6 +532,11 @@ function TransactionsTab({ onRecord, onNav }) {
                   <span className="mono" style={{ fontWeight: 700, color: 'var(--ok-700)', fontSize: 13 }}>
                     {fmt(r.amount, 'CAD')}
                   </span>
+                </td>
+                <td>
+                  {r.collectedAt
+                    ? <span style={{ fontSize: 11, fontWeight: 700, padding: '2px 8px', borderRadius: 999, background: 'var(--info-50)', color: 'var(--info-700)', border: '1px solid var(--info-100)', whiteSpace: 'nowrap' }}>{r.collectedAt}</span>
+                    : <span style={{ color: 'var(--ink-300)', fontSize: 12 }}>—</span>}
                 </td>
                 <td style={{ fontSize: 12, color: 'var(--ink-600)' }}>{t.payments.methods?.[r.method] ?? METHOD_LABELS[r.method] ?? r.method}</td>
                 <td className="mono" style={{ fontSize: 12, color: 'var(--ink-600)' }}>{r.reference ?? '—'}</td>
@@ -751,10 +814,11 @@ function InvoicePreviewModal({ parcelId, onClose }) {
 
 function InvoiceSettleModal({ invoice, onClose, onSave }) {
   const t = useAdminT();
+  const bureaux = useBureaux();
   const { currency, fmt } = useCurrency();
   const [balance, setBalance] = useState(null);
   const [mode, setMode]       = useState('full');
-  const [form, setForm]       = useState({ method: 'interac', reference: '', note: '', amount: '' });
+  const [form, setForm]       = useState({ method: 'interac', reference: '', note: '', amount: '', collectedAt: '' });
   const [checked, setChecked] = useState({});
   const [saving, setSaving]   = useState(false);
   const [err, setErr]         = useState('');
@@ -780,8 +844,9 @@ function InvoiceSettleModal({ invoice, onClose, onSave }) {
   const amount       = mode === 'full' ? totalDue : (Number(form.amount) || 0);
 
   const handleSave = async () => {
-    if (!amount) { setErr(/* TODO: i18n — no translation key */ 'Montant requis'); return; }
-    if (selected.length === 0) { setErr(/* TODO: i18n — no translation key */ 'Sélectionnez au moins une ligne'); return; }
+    if (!amount)           { setErr('Montant requis'); return; }
+    if (selected.length === 0) { setErr('Sélectionnez au moins une ligne'); return; }
+    if (!form.collectedAt) { setErr('Sélectionnez le bureau de collecte'); return; }
     setSaving(true); setErr('');
     let left = amount;
     const allocs = [];
@@ -799,6 +864,7 @@ function InvoiceSettleModal({ invoice, onClose, onSave }) {
         type: 'payment', method: form.method,
         reference: form.reference || null,
         note: form.note || null,
+        collectedAt: form.collectedAt,
         allocations: allocs,
       }),
     });
@@ -930,8 +996,15 @@ function InvoiceSettleModal({ invoice, onClose, onSave }) {
             </div>
           </div>
           <div className="field">
-            <label className="label">{/* TODO: i18n — no key for "Note interne", using closest match */}{t.common.note} <span style={{ color: 'var(--ink-400)', fontWeight: 400 }}>{t.common.optional}</span></label>
-            <input className="input" value={form.note} onChange={e => setForm(f => ({ ...f, note: e.target.value }))} placeholder={/* TODO: i18n — no translation key */ "Contentieux, accord, …"} />
+            <label className="label">{t.common.note} <span style={{ color: 'var(--ink-400)', fontWeight: 400 }}>{t.common.optional}</span></label>
+            <input className="input" value={form.note} onChange={e => setForm(f => ({ ...f, note: e.target.value }))} placeholder="Contentieux, accord, …" />
+          </div>
+          <div className="field" style={{ marginBottom: 0 }}>
+            <label className="label">Perçu à <span style={{ color: 'var(--bad-500)' }}>*</span></label>
+            <select className="input" value={form.collectedAt} onChange={e => setForm(f => ({ ...f, collectedAt: e.target.value }))}>
+              <option value="">— Sélectionner un bureau —</option>
+              {bureaux.map(b => <option key={b} value={b}>{b}</option>)}
+            </select>
           </div>
         </>
       )}

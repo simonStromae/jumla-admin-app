@@ -2046,6 +2046,94 @@ function RouteEditModal({ editRoute, onClose, onSaved }) {
   );
 }
 
+/* ── Bureaux de collecte ─────────────────────────────────── */
+const BUREAUX_DEFAULT = ['Douala', 'Montréal', 'Chine', 'Nigeria'];
+
+function SectionBureaux() {
+  const [bureaux, setBureaux] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [newLabel, setNewLabel] = useState('');
+  const [saving, setSaving]   = useState(false);
+  const [saved, setSaved]     = useState(false);
+
+  useEffect(() => {
+    fetch('/api/settings').then(r => r.json()).then(d => {
+      try { setBureaux(JSON.parse(d.bureaux || 'null') || BUREAUX_DEFAULT); }
+      catch { setBureaux(BUREAUX_DEFAULT); }
+      setLoading(false);
+    }).catch(() => { setBureaux(BUREAUX_DEFAULT); setLoading(false); });
+  }, []);
+
+  const persist = async (list) => {
+    setSaving(true); setSaved(false);
+    await fetch('/api/settings', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ bureaux: JSON.stringify(list) }),
+    });
+    setSaving(false); setSaved(true);
+    setTimeout(() => setSaved(false), 2000);
+  };
+
+  const add = () => {
+    const v = newLabel.trim();
+    if (!v || bureaux.includes(v)) return;
+    const list = [...bureaux, v];
+    setBureaux(list); setNewLabel('');
+    persist(list);
+  };
+
+  const remove = (idx) => {
+    const list = bureaux.filter((_, i) => i !== idx);
+    setBureaux(list);
+    persist(list);
+  };
+
+  return (
+    <SettingsCard
+      title="Bureaux de collecte"
+      sub="Points de perception des fonds. Le champ est obligatoire lors de chaque encaissement pour tracer l'origine des fonds."
+    >
+      {loading ? (
+        <div style={{ color: 'var(--ink-400)', fontSize: 13 }}>Chargement…</div>
+      ) : (
+        <>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 16 }}>
+            {bureaux.map((b, i) => (
+              <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--bg-soft)' }}>
+                <I.Building style={{ width: 15, height: 15, color: 'var(--brand-500)', flexShrink: 0 }} />
+                <span style={{ flex: 1, fontWeight: 600, fontSize: 14 }}>{b}</span>
+                <button
+                  onClick={() => remove(i)}
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--ink-300)', fontSize: 18, lineHeight: 1, padding: '0 4px' }}
+                  title="Supprimer"
+                >×</button>
+              </div>
+            ))}
+            {bureaux.length === 0 && (
+              <div style={{ textAlign: 'center', padding: '20px 0', color: 'var(--ink-400)', fontSize: 13, fontStyle: 'italic' }}>Aucun bureau configuré</div>
+            )}
+          </div>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <input
+              className="input"
+              value={newLabel}
+              onChange={e => setNewLabel(e.target.value)}
+              onKeyDown={e => e.key === 'Enter' && add()}
+              placeholder="ex: Paris, Yaoundé, Lagos…"
+              style={{ flex: 1 }}
+            />
+            <button className="btn btn--brand" onClick={add} disabled={saving || !newLabel.trim()}>
+              + Ajouter
+            </button>
+          </div>
+          {saved && <div style={{ marginTop: 8, fontSize: 12, color: 'var(--ok-600)', fontWeight: 600 }}>✓ Enregistré</div>}
+        </>
+      )}
+    </SettingsCard>
+  );
+}
+
 /* ── Paiement par carte (Authorize.net) ──────────────────── */
 function SectionPaymentGateway() {
   const FIELDS_DEFAULT = { authnet_login_id: '', authnet_client_key: '', authnet_transaction_key: '', authnet_environment: 'sandbox' };
@@ -2251,6 +2339,7 @@ export default function SettingsScreen({ onNav }) {
           {section === 'campaigns' && <SectionCampaigns />}
           {section === 'codes'     && <SectionCodes />}
           {section === 'payment'   && <SectionPaymentGateway />}
+          {section === 'bureaux'   && <SectionBureaux />}
         </div>
       </div>
 

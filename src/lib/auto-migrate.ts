@@ -89,6 +89,7 @@ export async function autoMigrate() {
   `);
   await run(`ALTER TABLE transactions ALTER COLUMN amount TYPE NUMERIC(12,2) USING amount::numeric`);
   await run(`ALTER TABLE transaction_allocations ALTER COLUMN amount TYPE NUMERIC(12,2) USING amount::numeric`);
+  await run(`ALTER TABLE transactions ADD COLUMN IF NOT EXISTS "collectedAt" TEXT`);
 
   // Push subscriptions
   await run(`
