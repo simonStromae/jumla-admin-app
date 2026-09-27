@@ -19,6 +19,7 @@ export default function AnalyticsScreen({ onNav }) {
   const [airlineStats, setAirlineStats]         = useState([]);
   const [unpaid, setUnpaid]                     = useState([]);
   const [paymentMethods, setPaymentMethods]     = useState([]);
+  const [bureauStats, setBureauStats]           = useState([]);
   const [recentActivity, setRecentActivity]     = useState([]);
   const t = useAdminT();
   const { currency, fmt } = useCurrency();
@@ -49,6 +50,7 @@ export default function AnalyticsScreen({ onNav }) {
       setAirlineStats(d.airlineStats         || []);
       setUnpaid(d.unpaid                     || []);
       setPaymentMethods(d.paymentMethods     || []);
+      setBureauStats(d.bureauStats           || []);
       setRecentActivity(d.recentActivity     || []);
       setRoutes(Array.isArray(routesData) ? routesData : []);
     }).catch(() => {});
@@ -256,6 +258,35 @@ export default function AnalyticsScreen({ onNav }) {
           )}
         </ChartCard>
       </div>
+
+      {/* ── Encaissements par bureau ── */}
+      {bureauStats.length > 0 && (
+        <div style={{ marginBottom: 14 }}>
+          <ChartCard title="Encaissements par bureau" sub="Répartition géographique des fonds perçus · filtré par année">
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+              {bureauStats.map((b, i) => (
+                <div key={i}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6 }}>
+                    <div style={{ width: 28, height: 28, borderRadius: 6, background: 'var(--info-50)', display: 'grid', placeItems: 'center', flexShrink: 0 }}>
+                      <I.Building style={{ width: 13, height: 13, color: 'var(--info-500)' }} />
+                    </div>
+                    <span style={{ fontSize: 13, fontWeight: 700, flex: 1 }}>{b.bureau}</span>
+                    <span className="mono" style={{ fontSize: 13, fontWeight: 700, color: 'var(--ink-900)' }}>
+                      {b.total > 999 ? (b.total / 1000).toFixed(1) + 'k' : b.total} {currency}
+                    </span>
+                    <span style={{ fontSize: 11, color: 'var(--ink-400)', minWidth: 80, textAlign: 'right' }}>
+                      {b.count} encaissement{b.count > 1 ? 's' : ''}
+                    </span>
+                  </div>
+                  <div style={{ height: 8, background: 'var(--ink-100)', borderRadius: 999, overflow: 'hidden' }}>
+                    <div style={{ height: '100%', width: b.meter + '%', background: 'linear-gradient(90deg, var(--info-300), var(--info-500))', borderRadius: 999 }} />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </ChartCard>
+        </div>
+      )}
 
       {/* ── Top classements ── */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 14, marginBottom: 14 }}>
