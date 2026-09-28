@@ -76,6 +76,7 @@ export async function autoMigrate() {
       reference TEXT,
       note TEXT,
       "recordedById" TEXT REFERENCES users(id),
+      "collectedAt" TEXT,
       "createdAt" TIMESTAMPTZ NOT NULL DEFAULT NOW()
     )
   `);
@@ -89,6 +90,8 @@ export async function autoMigrate() {
   `);
   await run(`ALTER TABLE transactions ALTER COLUMN amount TYPE NUMERIC(12,2) USING amount::numeric`);
   await run(`ALTER TABLE transaction_allocations ALTER COLUMN amount TYPE NUMERIC(12,2) USING amount::numeric`);
+  // Idempotent column additions for DBs created before these columns were introduced
+  await run(`ALTER TABLE transactions ADD COLUMN IF NOT EXISTS "recordedById" TEXT REFERENCES users(id)`);
   await run(`ALTER TABLE transactions ADD COLUMN IF NOT EXISTS "collectedAt" TEXT`);
 
   // Push subscriptions

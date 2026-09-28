@@ -409,15 +409,20 @@ function TransactionsTab({ onRecord, onNav }) {
   const t = useAdminT();
   const bureaux = useBureaux();
   const { currency, fmt } = useCurrency();
-  const [rows, setRows]       = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [search, setSearch]   = useState('');
-  const [filterBureau, setFilterBureau] = useState('');
+  const [rows, setRows]         = useState([]);
+  const [loading, setLoading]   = useState(true);
+  const [search, setSearch]     = useState('');
+  const [filterBureau, setFilterBureau]     = useState('');
   const [filterCampaign, setFilterCampaign] = useState('');
+  const [queryErr, setQueryErr] = useState('');
 
   const load = () => {
     setLoading(true);
-    fetch('/api/transactions').then(r => r.json()).then(d => {
+    fetch('/api/transactions').then(r => {
+      const err = r.headers.get('X-Query-Error');
+      setQueryErr(err || '');
+      return r.json();
+    }).then(d => {
       setRows(Array.isArray(d) ? d : []);
       setLoading(false);
     }).catch(() => setLoading(false));
@@ -453,6 +458,12 @@ function TransactionsTab({ onRecord, onNav }) {
 
   return (
     <>
+      {queryErr && (
+        <div style={{ margin: '8px 0', padding: '10px 14px', background: 'var(--bad-50)', border: '1px solid var(--bad-200)', borderRadius: 8, fontSize: 12, color: 'var(--bad-700)' }}>
+          <strong>Erreur de chargement des transactions :</strong> {queryErr}<br />
+          <span style={{ opacity: .8 }}>Visitez <code>/api/db-migrate</code> pour mettre à jour le schéma, puis rechargez.</span>
+        </div>
+      )}
       {bureauStats.length > 0 && (
         <div style={{ display: 'flex', gap: 10, padding: '12px 0 4px', flexWrap: 'wrap' }}>
           {bureauStats.map(s => (
