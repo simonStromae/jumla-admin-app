@@ -146,6 +146,12 @@ export default function AllParcelsScreen({ onNav, initialSearch = '' }) {
              (p.campaign || '').toLowerCase().includes(q);
     }
     return true;
+  }).sort((a, b) => {
+    const aP = a.clientType === 'partenaire' || a.clientType === 'commercial';
+    const bP = b.clientType === 'partenaire' || b.clientType === 'commercial';
+    if (aP && !bP) return -1;
+    if (!aP && bP) return 1;
+    return 0;
   });
   const paged = filtered.slice((page - 1) * pageSize, page * pageSize);
 
@@ -156,21 +162,27 @@ export default function AllParcelsScreen({ onNav, initialSearch = '' }) {
     return next;
   });
   const pagedItems = (() => {
-    const result = [];
     const groups = {};
+    const singles = [];
     for (const p of paged) {
       const isPartner = p.clientType === 'partenaire' || p.clientType === 'commercial';
       if (isPartner && p.clientId) {
-        if (!groups[p.clientId]) {
-          groups[p.clientId] = { type: 'group', clientId: p.clientId, name: p.senderName, parcels: [] };
-          result.push(groups[p.clientId]);
-        }
+        if (!groups[p.clientId]) groups[p.clientId] = { type: 'group', clientId: p.clientId, name: p.senderName, parcels: [] };
         groups[p.clientId].parcels.push(p);
       } else {
-        result.push({ type: 'single', parcel: p });
+        singles.push({ type: 'single', parcel: p });
       }
     }
-    return result;
+    const groupItems = [];
+    for (const g of Object.values(groups)) {
+      if (g.parcels.length === 1) {
+        singles.unshift({ type: 'single', parcel: g.parcels[0], isPartner: true });
+      } else {
+        groupItems.push(g);
+      }
+    }
+    groupItems.sort((a, b) => a.name.localeCompare(b.name, 'fr'));
+    return [...groupItems, ...singles];
   })();
 
   const pagedIds = paged.map(p => p.id);
@@ -339,20 +351,31 @@ export default function AllParcelsScreen({ onNav, initialSearch = '' }) {
               const isOpen = expandedPartners.has(item.clientId);
               const paid = item.parcels.filter(p => p.paid === 'paid').length;
               const pending = item.parcels.length - paid;
+              const totalW = item.parcels.reduce((s, p) => s + (p.actualKg || 0), 0);
+              const totalAmt = item.parcels.reduce((s, p) => s + (p.amount ?? p.priceXaf ?? 0), 0);
+              const rc = item.parcels[0]?.routeCurrency ?? currency;
+              const payBadge = paid === item.parcels.length
+                ? <span className="badge badge--dot badge--ok">Tout payé</span>
+                : paid > 0
+                  ? <span className="badge badge--dot badge--warn">{paid}/{item.parcels.length} payés</span>
+                  : <span className="badge badge--dot badge--bad">{pending} en attente</span>;
               return (
                 <React.Fragment key={'grp-' + item.clientId}>
                   <tr style={{ background: 'var(--brand-50)', cursor: 'pointer', borderBottom: '1px solid var(--brand-100)' }} onClick={() => togglePartner(item.clientId)}>
-                    <td colSpan={12}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '4px 0' }}>
-                        <span style={{ fontSize: 11, color: 'var(--brand-500)', transition: 'transform .15s', display: 'inline-block', transform: isOpen ? 'rotate(90deg)' : 'none', userSelect: 'none' }}>▶</span>
-                        <span style={{ fontSize: 10, fontWeight: 700, background: 'var(--brand-100)', color: 'var(--brand-700)', borderRadius: 4, padding: '2px 7px', textTransform: 'uppercase', letterSpacing: '.05em' }}>Partenaire</span>
-                        <strong style={{ fontSize: 13, color: 'var(--ink-900)' }}>{item.name}</strong>
-                        <span style={{ fontSize: 12, color: 'var(--ink-500)' }}>{item.parcels.length} colis</span>
-                        <div style={{ flex: 1 }} />
-                        {paid > 0 && <span style={{ fontSize: 11, color: 'var(--ok-600)', fontWeight: 600 }}>✓ {paid} payé{paid > 1 ? 's' : ''}</span>}
-                        {pending > 0 && <span style={{ fontSize: 11, color: 'var(--bad-500)', fontWeight: 600 }}>⏳ {pending} en attente</span>}
+                    <td />
+                    <td />
+                    <td>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <I.ChevronRight style={{ width: 13, height: 13, color: 'var(--brand-500)', transition: 'transform .15s', transform: isOpen ? 'rotate(90deg)' : 'none', flexShrink: 0 }} />
+                        <span style={{ fontSize: 10, fontWeight: 700, background: 'var(--brand-100)', color: 'var(--brand-700)', borderRadius: 4, padding: '2px 7px', textTransform: 'uppercase', letterSpacing: '.05em', whiteSpace: 'nowrap' }}>Partenaire</span>
                       </div>
                     </td>
+                    <td><strong style={{ fontSize: 13 }}>{item.name}</strong></td>
+                    <td><span style={{ fontSize: 12, color: 'var(--ink-500)' }}>{item.parcels.length} colis</span></td>
+                    <td><span className="mono" style={{ fontSize: 12, color: 'var(--ink-500)' }}>{totalW > 0 ? totalW.toFixed(1) : '—'} kg</span></td>
+                    <td style={{ textAlign: 'right' }}><span className="mono" style={{ fontWeight: 700 }}>{totalAmt.toLocaleString('fr')} <span style={{ fontSize: 10, color: 'var(--ink-400)' }}>{rc}</span></span></td>
+                    <td>{payBadge}</td>
+                    <td /><td /><td /><td />
                   </tr>
                   {isOpen && item.parcels.map(p => (
                     <tr key={p.id} style={{ background: 'var(--brand-25, #f8fbff)', borderLeft: '3px solid var(--brand-200)' }}>
@@ -360,19 +383,20 @@ export default function AllParcelsScreen({ onNav, initialSearch = '' }) {
                         <input type="checkbox" checked={selected.includes(p.id)} onChange={() => handleSelectOne(p.id)} style={{ accentColor: 'var(--brand-500)' }} />
                       </td>
                       <td><a className="mono" onClick={() => onNav('/campaign/' + p.campaignId)} style={{ fontSize: 12, fontWeight: 600, color: 'var(--brand-700)', cursor: 'pointer' }}>{p.campaign}</a></td>
-                      <td><a className="mono" style={{ fontWeight: 700, color: 'var(--brand-700)', cursor: 'pointer' }} onClick={() => onNav('/parcels/' + p.id.split('-').pop())}>{p.code}</a></td>
-                      <td style={{ paddingLeft: 24 }}>
-                        <div style={{ fontWeight: 600, fontSize: 12.5 }}>{p.recipName}</div>
-                        <div style={{ fontSize: 11, color: 'var(--ink-400)' }}>{p.recipCity}</div>
+                      <td><a className="mono" style={{ fontWeight: 700, color: 'var(--brand-700)', cursor: 'pointer', paddingLeft: 20 }} onClick={() => onNav('/parcels/' + p.id.split('-').pop())}>{p.code}</a></td>
+                      <td />
+                      <td>
+                        <div style={{ fontWeight: 500, fontSize: 12.5 }}>{p.recipName || '—'}</div>
+                        {p.recipCity && <div style={{ fontSize: 11, color: 'var(--ink-400)' }}>{p.recipCity}</div>}
                       </td>
-                      <td><div className="mono" style={{ fontSize: 12 }}><strong>{p.actualKg}</strong> kg</div></td>
+                      <td><span className="mono" style={{ fontSize: 12 }}><strong>{p.actualKg}</strong> kg</span></td>
                       <td style={{ textAlign: 'right' }}>
                         <span className="mono" style={{ fontWeight: 700 }}>{(p.amount ?? 0).toLocaleString('fr')}</span>
                         <span style={{ fontSize: 11, color: 'var(--ink-400)', marginLeft: 3 }}>{p.routeCurrency ?? currency}</span>
                       </td>
                       <td>{(() => { const ps = STATUS.payment[p.paid] ?? STATUS.payment['pending']; return <span className={'badge badge--dot badge--' + ps.cls}>{ps.label}</span>; })()}</td>
                       <td>{(() => { const ps = STATUS.parcel[p.status] ?? { label: p.status, cls: 'neutral' }; return <span className={'badge badge--dot badge--' + ps.cls} style={{ fontSize: 11 }}>{ps.label}</span>; })()}</td>
-                      <td colSpan={4} />
+                      <td colSpan={3} />
                     </tr>
                   ))}
                 </React.Fragment>
@@ -395,9 +419,12 @@ export default function AllParcelsScreen({ onNav, initialSearch = '' }) {
               <td><a className="mono" style={{ fontWeight: 700, color: 'var(--brand-700)', cursor: 'pointer' }} onClick={() => onNav('/parcels/' + p.id.split('-').pop())}>{p.code}</a></td>
               <td>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <Avatar initials={p.senderName.split(' ').map(x => x[0]).join('')} color={(p.id.charCodeAt(0) % 8) + 1} size="sm" />
+                  {!item.isPartner && <Avatar initials={p.senderName.split(' ').map(x => x[0]).join('')} color={(p.id.charCodeAt(0) % 8) + 1} size="sm" />}
                   <div>
-                    <div style={{ fontWeight: 600, fontSize: 12.5 }}>{p.senderName}</div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                      <span style={{ fontWeight: 600, fontSize: 12.5 }}>{p.senderName}</span>
+                      {item.isPartner && <span style={{ fontSize: 9, fontWeight: 700, background: 'var(--brand-100)', color: 'var(--brand-700)', borderRadius: 3, padding: '1px 5px', textTransform: 'uppercase', letterSpacing: '.05em' }}>Partenaire</span>}
+                    </div>
                     <div className="mono" style={{ fontSize: 10.5, color: 'var(--ink-400)' }}>{p.senderPhone}</div>
                   </div>
                 </div>
