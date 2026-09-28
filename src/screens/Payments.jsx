@@ -413,6 +413,7 @@ function TransactionsTab({ onRecord, onNav }) {
   const [loading, setLoading] = useState(true);
   const [search, setSearch]   = useState('');
   const [filterBureau, setFilterBureau] = useState('');
+  const [filterCampaign, setFilterCampaign] = useState('');
 
   const load = () => {
     setLoading(true);
@@ -423,7 +424,13 @@ function TransactionsTab({ onRecord, onNav }) {
   };
   useEffect(() => { load(); }, []);
 
+  // Campaign codes from all rows
+  const campaignCodes = [...new Set(
+    rows.flatMap(r => (r.allocations || []).map(a => a.campaignCode).filter(Boolean))
+  )].sort();
+
   const filtered = rows.filter(r => {
+    if (filterCampaign && !r.allocations?.some(a => a.campaignCode === filterCampaign)) return false;
     if (filterBureau && r.collectedAt !== filterBureau) return false;
     if (!search) return true;
     const q = search.toLowerCase();
@@ -432,8 +439,12 @@ function TransactionsTab({ onRecord, onNav }) {
       || r.allocations?.some(a => a.trackingCode?.toLowerCase().includes(q));
   });
 
-  // Stats by bureau (real transactions only, not legacy)
-  const realRows = rows.filter(r => !r.isLegacy && r.collectedAt);
+  // Stats by bureau (real transactions only, not legacy); filtered by campaign if set
+  const realRows = rows.filter(r => {
+    if (r.isLegacy || !r.collectedAt) return false;
+    if (filterCampaign && !r.allocations?.some(a => a.campaignCode === filterCampaign)) return false;
+    return true;
+  });
   const bureauStats = bureaux.map(b => ({
     label: b,
     total: realRows.filter(r => r.collectedAt === b).reduce((s, r) => s + r.amount, 0),
@@ -468,6 +479,12 @@ function TransactionsTab({ onRecord, onNav }) {
           <option value="">Tous les bureaux</option>
           {bureaux.map(b => <option key={b} value={b}>{b}</option>)}
         </select>
+        {campaignCodes.length > 0 && (
+          <select className="select input--sm" value={filterCampaign} onChange={e => setFilterCampaign(e.target.value)} style={{ width: 180 }}>
+            <option value="">Toutes les cargaisons</option>
+            {campaignCodes.map(c => <option key={c} value={c}>{c}</option>)}
+          </select>
+        )}
       </div>
 
       <table className="tbl" style={{ borderTopLeftRadius: 0, borderTopRightRadius: 0 }}>
