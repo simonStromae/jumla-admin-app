@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import I from '../components/Icons.jsx';
 import { RoutePill, Avatar, Modal, useCan } from '../components/Shell.jsx';
 import { useAdminT } from '../lib/useAdminT.js';
@@ -526,6 +526,7 @@ export default function CampaignDetailScreen({ id, onNav }) {
   const [quickParcel,        setQuickParcel]        = useState(null);
   const [mainTab,            setMainTab]            = useState('colis'); // 'colis' | 'paiements'
   const [parcelSearch,       setParcelSearch]       = useState('');
+  const [expandedPartners,   setExpandedPartners]   = useState(new Set());
   const [campaignTxs,        setCampaignTxs]       = useState(null);
   const [txLoading,          setTxLoading]         = useState(false);
 
@@ -605,6 +606,32 @@ export default function CampaignDetailScreen({ id, onNav }) {
           || (p.recipName || '').toLowerCase().includes(q);
       })
     : shownParcels;
+
+  // Group partner parcels into collapsible accordion items
+  const parcelDisplayItems = (() => {
+    const result = [];
+    const groups = {};
+    for (const p of filteredParcels) {
+      const ct = p.client?.clientType;
+      const isPartner = ct === 'partenaire' || ct === 'commercial';
+      if (isPartner && p.client?.id) {
+        if (!groups[p.client.id]) {
+          groups[p.client.id] = { type: 'group', clientId: p.client.id, clientName: p.client.name, parcels: [] };
+          result.push(groups[p.client.id]);
+        }
+        groups[p.client.id].parcels.push(p);
+      } else {
+        result.push({ type: 'single', parcel: p });
+      }
+    }
+    return result;
+  })();
+
+  const togglePartner = (clientId) => setExpandedPartners(prev => {
+    const next = new Set(prev);
+    if (next.has(clientId)) next.delete(clientId); else next.add(clientId);
+    return next;
+  });
 
   const totalWeight = parcels.reduce((s, p) => s + (p.weightKg || 0), 0);
   const invoiced = parcels.reduce((s, p) => {
@@ -1267,7 +1294,97 @@ export default function CampaignDetailScreen({ id, onNav }) {
                 </tr>
               </thead>
               <tbody>
-                {filteredParcels.map(p => {
+                {parcelDisplayItems.map(item => {
+                  const colCount = 7 + (can('parcels') && parcelTab === 'active' ? 1 : 0);
+
+                  // ── Partner group row ──────────────────────────────────
+                  if (item.type === 'group') {
+                    const isOpen = expandedPartners.has(item.clientId);
+                    const paid = item.parcels.filter(p => p.payment?.status === 'completed').length;
+                    const pending = item.parcels.length - paid;
+                    const rc = campaign.route?.currency ?? 'CAD';
+                    const groupTotal = item.parcels.reduce((s, p) => {
+                      const raw = (p.confirmedPriceXaf != null && p.adjustmentStatus != null) ? p.confirmedPriceXaf : (p.payment?.amount ?? p.priceXaf ?? 0);
+                      return s + Number(raw);
+                    }, 0);
+                    return (
+                      <React.Fragment key={'grp-' + item.clientId}>
+                        <tr
+                          style={{ background: 'var(--brand-50)', cursor: 'pointer', borderBottom: '1px solid var(--brand-100)' }}
+                          onClick={() => togglePartner(item.clientId)}
+                        >
+                          <td colSpan={colCount}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '4px 0' }}>
+                              <span style={{ fontSize: 11, color: 'var(--brand-500)', transition: 'transform .15s', display: 'inline-block', transform: isOpen ? 'rotate(90deg)' : 'none', userSelect: 'none' }}>▶</span>
+                              <span style={{ fontSize: 10, fontWeight: 700, background: 'var(--brand-100)', color: 'var(--brand-700)', borderRadius: 4, padding: '2px 7px', textTransform: 'uppercase', letterSpacing: '.05em' }}>Partenaire</span>
+                              <strong style={{ fontSize: 13, color: 'var(--ink-900)' }}>{item.clientName}</strong>
+                              <span style={{ fontSize: 12, color: 'var(--ink-500)' }}>{item.parcels.length} colis</span>
+                              <span style={{ fontSize: 12, color: 'var(--ink-400)' }}>·</span>
+                              <span className="mono" style={{ fontSize: 12, fontWeight: 700, color: 'var(--ink-700)' }}>{groupTotal.toLocaleString('fr')} {rc}</span>
+                              <div style={{ flex: 1 }} />
+                              {paid > 0 && <span style={{ fontSize: 11, color: 'var(--ok-600)', fontWeight: 600 }}>✓ {paid} payé{paid > 1 ? 's' : ''}</span>}
+                              {pending > 0 && <span style={{ fontSize: 11, color: 'var(--bad-500)', fontWeight: 600 }}>⏳ {pending} en attente</span>}
+                            </div>
+                          </td>
+                        </tr>
+                        {isOpen && item.parcels.map(p => {
+                          const payInfo  = PAYMENT_STATUS[p.payment?.status] || { label: p.payment?.status || '—', cls: 'neutral' };
+                          const payLabel = PAYMENT_STATUS[p.payment?.status]?.label ?? getPaymentLabel(p.payment?.status);
+                          const parcelLabel = PARCEL_STATUS[p.status] || p.status || '—';
+                          const isConfirming = deletingParcelId === p.id;
+                          return (
+                            <tr
+                              key={p.id}
+                              style={{ cursor: 'pointer', background: isConfirming ? 'var(--bad-50)' : 'var(--brand-25, #f8fbff)', borderLeft: '3px solid var(--brand-200)' }}
+                              onClick={() => { if (!isConfirming) setQuickParcel(p); }}
+                            >
+                              <td style={{ paddingLeft: 28 }}>
+                                <span className="mono" style={{ fontWeight: 700, color: 'var(--brand-700)' }}>{p.trackingCode || p.id}</span>
+                              </td>
+                              <td>
+                                <div style={{ fontSize: 12, color: 'var(--ink-600)' }}>{p.recipName || '—'}</div>
+                                {p.recipCity && <div style={{ fontSize: 11, color: 'var(--ink-400)' }}>{p.recipCity}</div>}
+                              </td>
+                              <td><span className="mono" style={{ fontWeight: 600 }}>{p.weightKg != null ? p.weightKg : '—'}</span></td>
+                              <td style={{ maxWidth: 180, fontSize: 12, color: 'var(--ink-600)' }}>
+                                <div style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.description || '—'}</div>
+                              </td>
+                              <td style={{ textAlign: 'right' }}>
+                                {(() => {
+                                  const raw = (p.confirmedPriceXaf != null && p.adjustmentStatus != null) ? p.confirmedPriceXaf : (p.payment?.amount ?? p.priceXaf);
+                                  if (raw == null) return <span style={{ color: 'var(--ink-300)' }}>—</span>;
+                                  return <span className="mono" style={{ fontWeight: 700 }}>{Number(raw).toLocaleString('fr')} <span style={{ fontSize: 10, color: 'var(--ink-400)' }}>{rc}</span></span>;
+                                })()}
+                              </td>
+                              <td>
+                                <span className={`badge badge--dot badge--${payInfo.cls}`}>{payLabel}</span>
+                                {p.adjustmentStatus === 'pending' && <div style={{ fontSize: 10.5, color: 'var(--info-600)', marginTop: 2, fontWeight: 600 }}>+ Supplément en att.</div>}
+                                {p.adjustmentStatus === 'paid' && <div style={{ fontSize: 10.5, color: 'var(--ok-600)', marginTop: 2 }}>✓ Supplément payé</div>}
+                              </td>
+                              <td><span className="badge badge--neutral">{parcelLabel}</span></td>
+                              {can('parcels') && parcelTab === 'active' && (
+                                <td onClick={e => e.stopPropagation()}>
+                                  {isConfirming ? (
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                                      <button className="btn btn--sm" style={{ background: 'var(--bad-600)', color: '#fff', border: 'none', fontSize: 11, padding: '3px 8px' }} onClick={e => handleDeleteParcel(p.id, e)}>Confirmer</button>
+                                      <button className="btn btn--ghost btn--sm" style={{ fontSize: 11, padding: '3px 8px' }} onClick={e => { e.stopPropagation(); setDeletingParcelId(null); }}>Annuler</button>
+                                    </div>
+                                  ) : (
+                                    <button className="btn btn--ghost btn--sm" style={{ color: 'var(--ink-300)', padding: '4px 6px' }} title="Supprimer ce colis" onClick={e => handleDeleteParcel(p.id, e)}>
+                                      <I.Trash style={{ width: 13, height: 13 }} />
+                                    </button>
+                                  )}
+                                </td>
+                              )}
+                            </tr>
+                          );
+                        })}
+                      </React.Fragment>
+                    );
+                  }
+
+                  // ── Regular parcel row ─────────────────────────────────
+                  const p = item.parcel;
                   const payInfo  = PAYMENT_STATUS[p.payment?.status] || { label: p.payment?.status || '—', cls: 'neutral' };
                   const payLabel = PAYMENT_STATUS[p.payment?.status]?.label ?? getPaymentLabel(p.payment?.status);
                   const parcelLabel = PARCEL_STATUS[p.status] || p.status || '—';
@@ -1307,7 +1424,6 @@ export default function CampaignDetailScreen({ id, onNav }) {
                       <td style={{ textAlign: 'right' }}>
                         {(() => {
                           const rc = campaign.route?.currency ?? 'CAD';
-                          // Prefer confirmedPriceXaf when an adjustment exists
                           const raw = (p.confirmedPriceXaf != null && p.adjustmentStatus != null)
                             ? p.confirmedPriceXaf
                             : (p.payment?.amount ?? p.priceXaf);

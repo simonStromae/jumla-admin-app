@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useAdminT } from '../lib/useAdminT.js';
 import { useCurrency } from '../lib/useCurrency.js';
 import { STATUS } from '../data.js';
@@ -29,6 +29,7 @@ export default function AllParcelsScreen({ onNav, initialSearch = '' }) {
   const [repairResults, setRepairResults] = useState(null);
   const [syncing, setSyncing]             = useState(false);
   const [syncResult, setSyncResult]       = useState(null);
+  const [expandedPartners, setExpandedPartners] = useState(new Set());
 
   useEffect(() => {
     Promise.all([
@@ -147,6 +148,31 @@ export default function AllParcelsScreen({ onNav, initialSearch = '' }) {
     return true;
   });
   const paged = filtered.slice((page - 1) * pageSize, page * pageSize);
+
+  // Group partner parcels into accordion items within the current page
+  const togglePartner = (clientId) => setExpandedPartners(prev => {
+    const next = new Set(prev);
+    if (next.has(clientId)) next.delete(clientId); else next.add(clientId);
+    return next;
+  });
+  const pagedItems = (() => {
+    const result = [];
+    const groups = {};
+    for (const p of paged) {
+      const isPartner = p.clientType === 'partenaire' || p.clientType === 'commercial';
+      if (isPartner && p.clientId) {
+        if (!groups[p.clientId]) {
+          groups[p.clientId] = { type: 'group', clientId: p.clientId, name: p.senderName, parcels: [] };
+          result.push(groups[p.clientId]);
+        }
+        groups[p.clientId].parcels.push(p);
+      } else {
+        result.push({ type: 'single', parcel: p });
+      }
+    }
+    return result;
+  })();
+
   const pagedIds = paged.map(p => p.id);
   const allParcelsChecked = pagedIds.length > 0 && pagedIds.every(id => selected.includes(id));
   const someParcelsChecked = pagedIds.some(id => selected.includes(id));
@@ -307,7 +333,55 @@ export default function AllParcelsScreen({ onNav, initialSearch = '' }) {
           </tr>
         </thead>
         <tbody>
-          {paged.map(p => (
+          {pagedItems.map(item => {
+            // ── Partner group row ──────────────────────────────────────
+            if (item.type === 'group') {
+              const isOpen = expandedPartners.has(item.clientId);
+              const paid = item.parcels.filter(p => p.paid === 'paid').length;
+              const pending = item.parcels.length - paid;
+              return (
+                <React.Fragment key={'grp-' + item.clientId}>
+                  <tr style={{ background: 'var(--brand-50)', cursor: 'pointer', borderBottom: '1px solid var(--brand-100)' }} onClick={() => togglePartner(item.clientId)}>
+                    <td colSpan={12}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '4px 0' }}>
+                        <span style={{ fontSize: 11, color: 'var(--brand-500)', transition: 'transform .15s', display: 'inline-block', transform: isOpen ? 'rotate(90deg)' : 'none', userSelect: 'none' }}>▶</span>
+                        <span style={{ fontSize: 10, fontWeight: 700, background: 'var(--brand-100)', color: 'var(--brand-700)', borderRadius: 4, padding: '2px 7px', textTransform: 'uppercase', letterSpacing: '.05em' }}>Partenaire</span>
+                        <strong style={{ fontSize: 13, color: 'var(--ink-900)' }}>{item.name}</strong>
+                        <span style={{ fontSize: 12, color: 'var(--ink-500)' }}>{item.parcels.length} colis</span>
+                        <div style={{ flex: 1 }} />
+                        {paid > 0 && <span style={{ fontSize: 11, color: 'var(--ok-600)', fontWeight: 600 }}>✓ {paid} payé{paid > 1 ? 's' : ''}</span>}
+                        {pending > 0 && <span style={{ fontSize: 11, color: 'var(--bad-500)', fontWeight: 600 }}>⏳ {pending} en attente</span>}
+                      </div>
+                    </td>
+                  </tr>
+                  {isOpen && item.parcels.map(p => (
+                    <tr key={p.id} style={{ background: 'var(--brand-25, #f8fbff)', borderLeft: '3px solid var(--brand-200)' }}>
+                      <td onClick={e => e.stopPropagation()}>
+                        <input type="checkbox" checked={selected.includes(p.id)} onChange={() => handleSelectOne(p.id)} style={{ accentColor: 'var(--brand-500)' }} />
+                      </td>
+                      <td><a className="mono" onClick={() => onNav('/campaign/' + p.campaignId)} style={{ fontSize: 12, fontWeight: 600, color: 'var(--brand-700)', cursor: 'pointer' }}>{p.campaign}</a></td>
+                      <td><a className="mono" style={{ fontWeight: 700, color: 'var(--brand-700)', cursor: 'pointer' }} onClick={() => onNav('/parcels/' + p.id.split('-').pop())}>{p.code}</a></td>
+                      <td style={{ paddingLeft: 24 }}>
+                        <div style={{ fontWeight: 600, fontSize: 12.5 }}>{p.recipName}</div>
+                        <div style={{ fontSize: 11, color: 'var(--ink-400)' }}>{p.recipCity}</div>
+                      </td>
+                      <td><div className="mono" style={{ fontSize: 12 }}><strong>{p.actualKg}</strong> kg</div></td>
+                      <td style={{ textAlign: 'right' }}>
+                        <span className="mono" style={{ fontWeight: 700 }}>{(p.amount ?? 0).toLocaleString('fr')}</span>
+                        <span style={{ fontSize: 11, color: 'var(--ink-400)', marginLeft: 3 }}>{p.routeCurrency ?? currency}</span>
+                      </td>
+                      <td>{(() => { const ps = STATUS.payment[p.paid] ?? STATUS.payment['pending']; return <span className={'badge badge--dot badge--' + ps.cls}>{ps.label}</span>; })()}</td>
+                      <td>{(() => { const ps = STATUS.parcel[p.status] ?? { label: p.status, cls: 'neutral' }; return <span className={'badge badge--dot badge--' + ps.cls} style={{ fontSize: 11 }}>{ps.label}</span>; })()}</td>
+                      <td colSpan={4} />
+                    </tr>
+                  ))}
+                </React.Fragment>
+              );
+            }
+
+            // ── Regular parcel row ─────────────────────────────────────
+            const p = item.parcel;
+            return (
             <tr key={p.id}>
               <td onClick={e => e.stopPropagation()}>
                 <input type="checkbox"
@@ -428,7 +502,8 @@ export default function AllParcelsScreen({ onNav, initialSearch = '' }) {
                 }
               </td>
             </tr>
-          ))}
+            );
+          })}
         </tbody>
       </table>
 
