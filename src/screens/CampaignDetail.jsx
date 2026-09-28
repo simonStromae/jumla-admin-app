@@ -1501,6 +1501,24 @@ export default function CampaignDetailScreen({ id, onNav }) {
                   {campaignTxs.reduce((s, tx) => s + Number(tx.amount), 0).toLocaleString('fr')} {campaign.route?.currency ?? 'CAD'}
                 </strong>
               </div>
+              {(() => {
+                const byBureau = {};
+                for (const tx of campaignTxs) {
+                  if (tx.collectedAt) byBureau[tx.collectedAt] = (byBureau[tx.collectedAt] || 0) + Number(tx.amount);
+                }
+                const entries = Object.entries(byBureau).sort((a, b) => b[1] - a[1]);
+                if (!entries.length) return null;
+                return (
+                  <div style={{ marginTop: 10, display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+                    <span style={{ fontSize: 11, color: 'var(--ink-400)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '.06em' }}>Par bureau :</span>
+                    {entries.map(([bureau, total]) => (
+                      <span key={bureau} style={{ fontSize: 12, background: 'var(--info-50)', color: 'var(--info-700)', border: '1px solid var(--info-100)', borderRadius: 6, padding: '3px 10px', fontWeight: 600 }}>
+                        {bureau} · {total.toLocaleString('fr')} {campaign.route?.currency ?? 'CAD'}
+                      </span>
+                    ))}
+                  </div>
+                );
+              })()}
             </>
           )}
         </div>
