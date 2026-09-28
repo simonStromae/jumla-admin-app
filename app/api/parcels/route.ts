@@ -17,7 +17,7 @@ export async function GET(req: NextRequest) {
   const queryOpts = {
     orderBy: { createdAt: 'desc' as const },
     include: {
-      client:         { select: { id: true, name: true, email: true, phone: true, city: true } },
+      client:         { select: { id: true, name: true, email: true, phone: true, city: true, clientType: true } },
       campaign:       { select: { id: true, code: true, route: { select: { currency: true } } } },
       payment:        true,
       trackingEvents: { orderBy: { createdAt: 'desc' as const }, take: 1 },
@@ -65,6 +65,7 @@ export async function GET(req: NextRequest) {
     exchangeRateToCAD: (p.campaign as any).exchangeRateToCAD ?? null,
     campaignId:   p.campaignId,
     clientId:     p.clientId,
+    clientType:   (p.client as any).clientType ?? 'standard',
     senderName:   p.client.name,
     senderPhone:  p.client.phone ?? '—',
     recipName:    p.recipName  ?? '—',
