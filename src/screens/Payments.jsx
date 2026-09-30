@@ -413,6 +413,213 @@ function RecordPaymentModal({ preselectedClient, preselectedPaymentId, onClose, 
   );
 }
 
+/* ─── Regularize legacy payments modal ──────────────────── */
+
+function RegularizeModal({ legacyRows, bureaux, onClose, onSave }) {
+  const { fmt } = useCurrency();
+  const [selected, setSelected]   = useState(new Set(legacyRows.map(r => r.id)));
+  const [bureau, setBureau]       = useState('');
+  const [agentId, setAgentId]     = useState('');
+  const [method, setMethod]       = useState('interac');
+  const [agents, setAgents]       = useState([]);
+  const [saving, setSaving]       = useState(false);
+  const [err, setErr]             = useState('');
+  const [results, setResults]     = useState(null);
+
+  useEffect(() => {
+    fetch('/api/users').then(r => r.json()).then(d => {
+      setAgents(Array.isArray(d) ? d : []);
+    }).catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    if (!isCanadianBureau(bureau) && method === 'interac') setMethod('cash');
+  }, [bureau]);
+
+  const toggleAll = () => {
+    if (selected.size === legacyRows.length) setSelected(new Set());
+    else setSelected(new Set(legacyRows.map(r => r.id)));
+  };
+  const toggle = (id) => setSelected(prev => {
+    const next = new Set(prev); next.has(id) ? next.delete(id) : next.add(id); return next;
+  });
+
+  const selectedRows  = legacyRows.filter(r => selected.has(r.id));
+  const totalSelected = selectedRows.reduce((s, r) => s + r.amount, 0);
+
+  const submit = async () => {
+    if (!selected.size) { setErr('Sélectionnez au moins un paiement.'); return; }
+    if (!bureau)        { setErr('Sélectionnez le bureau de collecte.'); return; }
+    setSaving(true); setErr('');
+
+    // Group selected rows by clientId → one transaction per client
+    const byClient = {};
+    for (const row of selectedRows) {
+      if (!byClient[row.clientId]) byClient[row.clientId] = [];
+      byClient[row.clientId].push(row);
+    }
+
+    const out = [];
+    for (const [clientId, clientRows] of Object.entries(byClient)) {
+      const amount      = clientRows.reduce((s, r) => s + r.amount, 0);
+      const allocations = clientRows.map(r => ({
+        paymentId: r.allocations?.[0]?.paymentId ?? r.id,
+        amount:    r.amount,
+      }));
+      try {
+        const res  = await fetch('/api/transactions', {
+          method:  'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body:    JSON.stringify({
+            clientId, amount, method, collectedAt: bureau,
+            ...(agentId && { recordedById: agentId }),
+            allocations,
+          }),
+        });
+        const json = await res.json().catch(() => ({}));
+        out.push({ clientId, name: clientRows[0].clientName, ok: res.ok, count: clientRows.length, error: json.error });
+      } catch {
+        out.push({ clientId, name: clientRows[0].clientName, ok: false, count: clientRows.length, error: 'Erreur réseau' });
+      }
+    }
+
+    setSaving(false);
+    setResults(out);
+    if (out.every(r => r.ok)) onSave();
+  };
+
+  const inp = { padding: '6px 10px', border: '1px solid var(--border)', borderRadius: 6, fontSize: 13, width: '100%' };
+
+  return (
+    <Modal title="Régulariser les anciens paiements" width={740} onClose={onClose}
+      footer={results ? (
+        <>
+          <div style={{ flex: 1 }} />
+          <button className="btn btn--ghost" onClick={onClose}>Fermer</button>
+        </>
+      ) : (
+        <>
+          {err && <span style={{ fontSize: 12, color: 'var(--bad-600)', flex: 1 }}>{err}</span>}
+          <div style={{ flex: 1 }} />
+          <button className="btn btn--ghost" onClick={onClose} disabled={saving}>Annuler</button>
+          <button
+            onClick={submit} disabled={saving || !selected.size || !bureau}
+            style={{ background: 'var(--brand-600)', color: '#fff', border: 'none', borderRadius: 7, padding: '7px 18px', fontWeight: 600, cursor: 'pointer', opacity: (saving || !selected.size || !bureau) ? .5 : 1 }}
+          >
+            {saving ? 'Création…' : `Créer ${Object.keys(Object.fromEntries(selectedRows.map(r => [r.clientId, 1]))).length} transaction(s)`}
+          </button>
+        </>
+      )}
+    >
+      {results ? (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          {results.map(r => (
+            <div key={r.clientId} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 12px', borderRadius: 8, background: r.ok ? 'var(--ok-50)' : 'var(--bad-50)', border: `1px solid ${r.ok ? 'var(--ok-200)' : 'var(--bad-200)'}` }}>
+              <span style={{ fontSize: 18 }}>{r.ok ? '✅' : '❌'}</span>
+              <div>
+                <div style={{ fontWeight: 600, fontSize: 13 }}>{r.name}</div>
+                <div style={{ fontSize: 12, color: r.ok ? 'var(--ok-700)' : 'var(--bad-600)' }}>
+                  {r.ok ? `${r.count} paiement(s) régularisé(s)` : r.error}
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <>
+          {/* Config row */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12, marginBottom: 16 }}>
+            <div>
+              <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--ink-500)', marginBottom: 4 }}>Bureau de collecte <span style={{ color: 'var(--bad-500)' }}>*</span></div>
+              <select value={bureau} onChange={e => setBureau(e.target.value)} style={inp}>
+                <option value="">— Sélectionner —</option>
+                {bureaux.map(b => <option key={b} value={b}>{b}</option>)}
+              </select>
+            </div>
+            <div>
+              <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--ink-500)', marginBottom: 4 }}>Agent</div>
+              <select value={agentId} onChange={e => setAgentId(e.target.value)} style={inp}>
+                <option value="">— Non spécifié —</option>
+                {agents.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
+              </select>
+            </div>
+            <div>
+              <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--ink-500)', marginBottom: 4 }}>Méthode</div>
+              <select value={method} onChange={e => setMethod(e.target.value)} style={inp}>
+                {isCanadianBureau(bureau) && <option value="interac">Virement Interac</option>}
+                <option value="cash">Espèces</option>
+                <option value="mobile_money">Mobile Money</option>
+                <option value="virement">Virement bancaire</option>
+              </select>
+            </div>
+          </div>
+
+          {/* Summary bar */}
+          {selected.size > 0 && (
+            <div style={{ padding: '8px 12px', background: 'var(--brand-50)', border: '1px solid var(--brand-200)', borderRadius: 8, fontSize: 13, marginBottom: 12, display: 'flex', gap: 16, alignItems: 'center' }}>
+              <span style={{ fontWeight: 600, color: 'var(--brand-700)' }}>{selected.size} paiement(s) sélectionné(s)</span>
+              <span style={{ color: 'var(--ink-500)' }}>Total :</span>
+              <span className="mono" style={{ fontWeight: 700, color: 'var(--ok-700)' }}>{totalSelected.toLocaleString('fr')} CAD</span>
+            </div>
+          )}
+
+          {/* Payments table */}
+          <div style={{ maxHeight: 380, overflowY: 'auto', border: '1px solid var(--border)', borderRadius: 8 }}>
+            <table className="tbl" style={{ margin: 0, borderRadius: 0 }}>
+              <thead>
+                <tr>
+                  <th style={{ width: 36, borderRadius: 0 }}>
+                    <input type="checkbox" checked={selected.size === legacyRows.length} onChange={toggleAll}
+                      ref={el => { if (el) el.indeterminate = selected.size > 0 && selected.size < legacyRows.length; }}
+                      style={{ accentColor: 'var(--brand-500)' }} />
+                  </th>
+                  <th>Date</th>
+                  <th>Client</th>
+                  <th>Colis</th>
+                  <th style={{ textAlign: 'right' }}>Montant</th>
+                </tr>
+              </thead>
+              <tbody>
+                {legacyRows.map(r => {
+                  const alloc = r.allocations?.[0];
+                  return (
+                    <tr key={r.id} style={{ cursor: 'pointer', background: selected.has(r.id) ? 'var(--brand-25, #f8fbff)' : undefined }}
+                      onClick={() => toggle(r.id)}>
+                      <td onClick={e => e.stopPropagation()}>
+                        <input type="checkbox" checked={selected.has(r.id)} onChange={() => toggle(r.id)}
+                          style={{ accentColor: 'var(--brand-500)' }} />
+                      </td>
+                      <td style={{ fontSize: 12, color: 'var(--ink-500)', whiteSpace: 'nowrap' }}>
+                        {new Date(r.createdAt).toLocaleDateString('fr-CA')}
+                      </td>
+                      <td>
+                        <div style={{ fontWeight: 600, fontSize: 13 }}>{r.clientName}</div>
+                        <div className="mono" style={{ fontSize: 10.5, color: 'var(--ink-400)' }}>{r.clientPhone}</div>
+                      </td>
+                      <td>
+                        {alloc?.trackingCode && (
+                          <span className="mono" style={{ fontSize: 11, fontWeight: 600, color: 'var(--brand-700)', background: 'var(--brand-50)', padding: '1px 6px', borderRadius: 4 }}>
+                            {alloc.trackingCode}
+                          </span>
+                        )}
+                        {alloc?.campaignCode && <span style={{ fontSize: 11, color: 'var(--ink-400)', marginLeft: 5 }}>{alloc.campaignCode}</span>}
+                      </td>
+                      <td style={{ textAlign: 'right' }}>
+                        <span className="mono" style={{ fontWeight: 700, color: 'var(--ok-700)' }}>{r.amount.toLocaleString('fr')}</span>
+                        <span style={{ fontSize: 10, color: 'var(--ink-400)', marginLeft: 3 }}>CAD</span>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </>
+      )}
+    </Modal>
+  );
+}
+
 /* ─── Transactions list tab ──────────────────────────────── */
 
 function TransactionsTab({ onRecord, onNav }) {
@@ -425,6 +632,7 @@ function TransactionsTab({ onRecord, onNav }) {
   const [filterBureau, setFilterBureau]     = useState('');
   const [filterCampaign, setFilterCampaign] = useState('');
   const [queryErr, setQueryErr] = useState('');
+  const [regularizeOpen, setRegularizeOpen] = useState(false);
 
   const load = () => {
     setLoading(true);
@@ -505,6 +713,13 @@ function TransactionsTab({ onRecord, onNav }) {
             <option value="">Toutes les cargaisons</option>
             {campaignCodes.map(c => <option key={c} value={c}>{c}</option>)}
           </select>
+        )}
+        {rows.filter(r => r.isLegacy).length > 0 && (
+          <button className="btn btn--ghost btn--sm" style={{ marginLeft: 'auto', borderColor: 'var(--info-300)', color: 'var(--info-700)' }}
+            onClick={() => setRegularizeOpen(true)}>
+            <I.History style={{ width: 13, height: 13 }} />
+            Régulariser ({rows.filter(r => r.isLegacy).length} anciens)
+          </button>
         )}
       </div>
 
@@ -622,6 +837,15 @@ function TransactionsTab({ onRecord, onNav }) {
           })}
         </tbody>
       </table>
+
+      {regularizeOpen && (
+        <RegularizeModal
+          legacyRows={rows.filter(r => r.isLegacy)}
+          bureaux={bureaux}
+          onClose={() => setRegularizeOpen(false)}
+          onSave={() => { setRegularizeOpen(false); load(); }}
+        />
+      )}
     </>
   );
 }

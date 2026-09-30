@@ -120,9 +120,11 @@ export async function POST(req: NextRequest) {
   const { session, error } = await requirePermission('payments');
   if (error) return error;
 
-  const recordedById = (session!.user as any).id as string;
+  const sessionUserId = (session!.user as any).id as string;
   const body = await req.json();
-  const { clientId, amount, type, method, reference, note, allocations, collectedAt } = body;
+  const { clientId, amount, type, method, reference, note, allocations, collectedAt, recordedById: bodyRecordedById } = body;
+  // Allow admin to specify a different agent (e.g. when regularising legacy payments)
+  const recordedById = bodyRecordedById ?? sessionUserId;
 
   if (!clientId || !amount) {
     return NextResponse.json({ error: 'clientId et amount requis' }, { status: 400 });
