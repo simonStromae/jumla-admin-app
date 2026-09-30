@@ -47,16 +47,18 @@ model User {
   billingAddress     String?
   createdAt          DateTime  @default(now())
 
-  parcels          Parcel[]       @relation("ClientParcels")
-  driverParcels    Parcel[]       @relation("DriverParcels")
-  payments         Payment[]
-  sentMessages     Message[]       @relation("sender")
-  receivedMessages Message[]       @relation("recipient")
-  trackingEvents   TrackingEvent[]
-  campaignCosts    CampaignCost[]
-  campaigns        Campaign[]
-  notifications    Notification[]
-  invoices         Invoice[]
+  parcels               Parcel[]        @relation("ClientParcels")
+  driverParcels         Parcel[]        @relation("DriverParcels")
+  payments              Payment[]
+  sentMessages          Message[]       @relation("sender")
+  receivedMessages      Message[]       @relation("recipient")
+  trackingEvents        TrackingEvent[]
+  campaignCosts         CampaignCost[]
+  campaigns             Campaign[]
+  notifications         Notification[]
+  invoices              Invoice[]
+  transactions          Transaction[]   @relation("TransactionClient")
+  recordedTransactions  Transaction[]   @relation("TransactionRecorder")
 
   @@map("users")
 }
@@ -226,7 +228,40 @@ model Payment {
   paidAt     DateTime?
   createdAt  DateTime      @default(now())
 
+  allocations TransactionAllocation[]
+
   @@map("payments")
+}
+
+model Transaction {
+  id           String    @id
+  clientId     String
+  amount       Decimal   @db.Decimal(12, 2)
+  type         String    @default("payment")
+  method       String    @default("interac")
+  reference    String?
+  note         String?
+  recordedById String?
+  collectedAt  String?
+  createdAt    DateTime  @default(now())
+
+  client       User                    @relation("TransactionClient", fields: [clientId], references: [id])
+  recordedBy   User?                   @relation("TransactionRecorder", fields: [recordedById], references: [id])
+  allocations  TransactionAllocation[]
+
+  @@map("transactions")
+}
+
+model TransactionAllocation {
+  id            String      @id
+  transactionId String
+  paymentId     String
+  amount        Decimal     @db.Decimal(12, 2)
+
+  transaction   Transaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+  payment       Payment     @relation(fields: [paymentId], references: [id])
+
+  @@map("transaction_allocations")
 }
 
 model TrackingEvent {
