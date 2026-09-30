@@ -21,6 +21,9 @@ const TYPE_LABELS = {
 
 const BUREAUX_DEFAULT = ['Douala', 'Montréal', 'Chine', 'Nigeria'];
 
+// Interac is Canada-only — exclude it when the bureau is clearly not in Canada
+const isCanadianBureau = (b) => !b || /montr[eé]al|mtl|canada|qu[eé]bec|toronto|ottawa|vancouver|calgary|edmonton/i.test(b);
+
 function useBureaux() {
   const [bureaux, setBureaux] = useState(BUREAUX_DEFAULT);
   useEffect(() => {
@@ -59,6 +62,15 @@ function RecordPaymentModal({ preselectedClient, preselectedPaymentId, onClose, 
   const [err, setErr]               = useState('');
   const searchRef = useRef(null);
 
+  const upd = (k, v) => setForm(f => {
+    const next = { ...f, [k]: v };
+    // Interac not available outside Canada — auto-switch to cash
+    if (k === 'collectedAt' && !isCanadianBureau(v) && next.method === 'interac') {
+      next.method = 'cash';
+    }
+    return next;
+  });
+
   // Client autocomplete
   useEffect(() => {
     if (!clientQuery || clientQuery.length < 2 || selectedClient) { setClients([]); return; }
@@ -86,8 +98,6 @@ function RecordPaymentModal({ preselectedClient, preselectedPaymentId, onClose, 
       })
       .catch(() => setBalance({ totalDue: 0, creditBalance: 0, unpaidInvoices: [], allInvoices: [] }));
   }, [selectedClient, preselectedPaymentId]);
-
-  const upd = (k, v) => setForm(f => ({ ...f, [k]: v }));
 
   const totalAmount    = Number(form.amount) || 0;
   const totalAllocated = Object.values(allocations).reduce((s, a) => s + (Number(a) || 0), 0);
@@ -255,10 +265,10 @@ function RecordPaymentModal({ preselectedClient, preselectedPaymentId, onClose, 
           <div className="field">
             <label className="label">{t.payments.table.method}</label>
             <select className="select" value={form.method} onChange={e => upd('method', e.target.value)}>
-              <option value="interac">{t.payments.methods.interac}</option>
+              {isCanadianBureau(form.collectedAt) && <option value="interac">{t.payments.methods.interac}</option>}
               <option value="cash">{t.payments.methods.cash}</option>
-              <option value="mobilemoney">{/* TODO: i18n — no translation key */}Mobile Money</option>
-              <option value="cheque">{/* TODO: i18n — no translation key */}Chèque</option>
+              <option value="mobilemoney">Mobile Money</option>
+              <option value="cheque">Chèque</option>
               <option value="virement">{t.payments.methods.transfer}</option>
             </select>
           </div>
