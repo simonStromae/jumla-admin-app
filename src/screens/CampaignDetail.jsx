@@ -49,11 +49,13 @@ const PAYMENT_STATUS = {
 };
 
 const PAY_METHODS = [
-  { id: 'interac',      label: 'Virement Interac' },
+  { id: 'interac',      label: 'Virement Interac', canadaOnly: true },
   { id: 'cash',         label: 'Espèces'          },
   { id: 'virement',     label: 'Virement bancaire'},
   { id: 'mobile_money', label: 'Mobile Money'     },
 ];
+
+const isCanadianBureau = (b) => !b || /montr[eé]al|mtl|canada|qu[eé]bec|toronto|ottawa|vancouver|calgary|edmonton/i.test(b);
 // TODO: i18n — parcel status labels are not covered by translation keys
 const PARCEL_STATUS = {
   enr: 'Enregistré',  rec: 'Reçu entrepôt',    pre: 'Vérifié/Préparé',
@@ -119,6 +121,11 @@ function ParcelQuickPanel({ parcel: initial, routeCurrency = 'CAD', routeId, onC
   const [payMethod,        setPayMethod]        = useState('interac');
   const [payRef,           setPayRef]           = useState('');
   const [payBureau,        setPayBureau]        = useState('');
+
+  const handleBureauChange = (bureau) => {
+    setPayBureau(bureau);
+    if (!isCanadianBureau(bureau) && payMethod === 'interac') setPayMethod('cash');
+  };
 
   const flash = key => {
     setDone(d => ({ ...d, [key]: true }));
@@ -305,7 +312,7 @@ function ParcelQuickPanel({ parcel: initial, routeCurrency = 'CAD', routeId, onC
               <div>
                 <div style={{ fontSize: 11, color: 'var(--ink-400)', marginBottom: 3 }}>Méthode</div>
                 <select value={payMethod} onChange={e => setPayMethod(e.target.value)} style={inp}>
-                  {PAY_METHODS.map(m => <option key={m.id} value={m.id}>{m.label}</option>)}
+                  {PAY_METHODS.filter(m => !m.canadaOnly || isCanadianBureau(payBureau)).map(m => <option key={m.id} value={m.id}>{m.label}</option>)}
                 </select>
               </div>
             </div>
@@ -317,7 +324,7 @@ function ParcelQuickPanel({ parcel: initial, routeCurrency = 'CAD', routeId, onC
             )}
             <div>
               <div style={{ fontSize: 11, color: 'var(--ink-400)', marginBottom: 3 }}>Perçu à <span style={{ color: 'var(--bad-500)' }}>*</span></div>
-              <select value={payBureau} onChange={e => setPayBureau(e.target.value)} style={inp}>
+              <select value={payBureau} onChange={e => handleBureauChange(e.target.value)} style={inp}>
                 <option value="">— Bureau de collecte —</option>
                 {bureaux.map(b => <option key={b} value={b}>{b}</option>)}
               </select>
