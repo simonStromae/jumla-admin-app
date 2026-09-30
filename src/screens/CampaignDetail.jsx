@@ -1544,13 +1544,54 @@ export default function CampaignDetailScreen({ id, onNav }) {
             </div>
           ) : (
             <>
-              <table className="tbl">
+              {/* ── Résumé par bureau ── */}
+              {(() => {
+                const rc = campaign.route?.currency ?? 'CAD';
+                const byBureau = {};
+                let noOffice = 0;
+                for (const tx of campaignTxs) {
+                  if (tx.collectedAt) byBureau[tx.collectedAt] = (byBureau[tx.collectedAt] || 0) + Number(tx.amount);
+                  else noOffice += Number(tx.amount);
+                }
+                const entries = Object.entries(byBureau).sort((a, b) => b[1] - a[1]);
+                const grandTotal = campaignTxs.reduce((s, tx) => s + Number(tx.amount), 0);
+                return (
+                  <div style={{ padding: '14px 20px', background: 'var(--bg-soft)', borderBottom: '1px solid var(--border)', display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', minWidth: 110, padding: '8px 14px', background: 'var(--ok-50)', border: '1px solid var(--ok-200)', borderRadius: 8 }}>
+                      <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--ok-600)', textTransform: 'uppercase', letterSpacing: '.06em', marginBottom: 2 }}>Total perçu</span>
+                      <span className="mono" style={{ fontSize: 16, fontWeight: 700, color: 'var(--ok-800)' }}>{grandTotal.toLocaleString('fr')}</span>
+                      <span style={{ fontSize: 10, color: 'var(--ok-600)' }}>{rc} · {campaignTxs.length} encaissement{campaignTxs.length > 1 ? 's' : ''}</span>
+                    </div>
+                    <div style={{ width: 1, height: 44, background: 'var(--border)', alignSelf: 'center' }} />
+                    {entries.map(([bureau, total]) => {
+                      const pct = grandTotal > 0 ? Math.round(total / grandTotal * 100) : 0;
+                      return (
+                        <div key={bureau} style={{ display: 'flex', flexDirection: 'column', minWidth: 100, padding: '8px 14px', background: 'var(--info-50)', border: '1px solid var(--info-100)', borderRadius: 8 }}>
+                          <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--info-600)', textTransform: 'uppercase', letterSpacing: '.06em', marginBottom: 2 }}>{bureau}</span>
+                          <span className="mono" style={{ fontSize: 15, fontWeight: 700, color: 'var(--info-800)' }}>{total.toLocaleString('fr')}</span>
+                          <span style={{ fontSize: 10, color: 'var(--info-500)' }}>{rc} · {pct}%</span>
+                        </div>
+                      );
+                    })}
+                    {noOffice > 0 && (
+                      <div style={{ display: 'flex', flexDirection: 'column', minWidth: 100, padding: '8px 14px', background: 'var(--bg-soft)', border: '1px solid var(--border)', borderRadius: 8 }}>
+                        <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--ink-400)', textTransform: 'uppercase', letterSpacing: '.06em', marginBottom: 2 }}>Non assigné</span>
+                        <span className="mono" style={{ fontSize: 15, fontWeight: 700, color: 'var(--ink-600)' }}>{noOffice.toLocaleString('fr')}</span>
+                        <span style={{ fontSize: 10, color: 'var(--ink-400)' }}>{rc}</span>
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
+
+              <table className="tbl" style={{ borderRadius: 0 }}>
                 <thead>
                   <tr>
                     <th>Date</th>
                     <th>Client</th>
                     <th style={{ textAlign: 'right' }}>Montant</th>
                     <th>Méthode</th>
+                    <th>Bureau</th>
                     <th>Référence</th>
                     <th>Colis</th>
                     <th></th>
@@ -1577,6 +1618,12 @@ export default function CampaignDetailScreen({ id, onNav }) {
                         </td>
                         <td style={{ fontSize: 12.5 }}>
                           {methodLabels[tx.method] ?? tx.method ?? '—'}
+                        </td>
+                        <td>
+                          {tx.collectedAt
+                            ? <span style={{ fontSize: 12, fontWeight: 600, background: 'var(--info-50)', color: 'var(--info-700)', border: '1px solid var(--info-100)', borderRadius: 5, padding: '2px 8px' }}>{tx.collectedAt}</span>
+                            : <span style={{ color: 'var(--ink-300)', fontSize: 12 }}>—</span>
+                          }
                         </td>
                         <td>
                           {tx.reference
@@ -1617,31 +1664,6 @@ export default function CampaignDetailScreen({ id, onNav }) {
                   })}
                 </tbody>
               </table>
-              <div style={{ marginTop: 12, fontSize: 12, color: 'var(--ink-400)' }}>
-                {campaignTxs.length} transaction{campaignTxs.length > 1 ? 's' : ''} ·{' '}
-                Total perçu :{' '}
-                <strong style={{ color: 'var(--ok-700)' }}>
-                  {campaignTxs.reduce((s, tx) => s + Number(tx.amount), 0).toLocaleString('fr')} {campaign.route?.currency ?? 'CAD'}
-                </strong>
-              </div>
-              {(() => {
-                const byBureau = {};
-                for (const tx of campaignTxs) {
-                  if (tx.collectedAt) byBureau[tx.collectedAt] = (byBureau[tx.collectedAt] || 0) + Number(tx.amount);
-                }
-                const entries = Object.entries(byBureau).sort((a, b) => b[1] - a[1]);
-                if (!entries.length) return null;
-                return (
-                  <div style={{ marginTop: 10, display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
-                    <span style={{ fontSize: 11, color: 'var(--ink-400)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '.06em' }}>Par bureau :</span>
-                    {entries.map(([bureau, total]) => (
-                      <span key={bureau} style={{ fontSize: 12, background: 'var(--info-50)', color: 'var(--info-700)', border: '1px solid var(--info-100)', borderRadius: 6, padding: '3px 10px', fontWeight: 600 }}>
-                        {bureau} · {total.toLocaleString('fr')} {campaign.route?.currency ?? 'CAD'}
-                      </span>
-                    ))}
-                  </div>
-                );
-              })()}
             </>
           )}
         </div>
