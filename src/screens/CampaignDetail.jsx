@@ -1981,57 +1981,89 @@ function CampaignTimeline({ campaign }) {
   );
 }
 
-/* ── Customs invoice modal ── */
+/* ── Customs invoice modal (fullscreen) ── */
+const CUSTOMS_TEMPLATES_KEY = 'jumla_customs_templates';
+function loadTemplates() {
+  try { return JSON.parse(localStorage.getItem(CUSTOMS_TEMPLATES_KEY) || '[]'); } catch { return []; }
+}
+function saveTemplates(tpls) {
+  try { localStorage.setItem(CUSTOMS_TEMPLATES_KEY, JSON.stringify(tpls)); } catch {}
+}
+
 function CustomsInvoiceModal({ campaign, onClose }) {
   const today = new Date().toISOString().slice(0, 10);
   const awbDefault = (() => {
     const legs = campaign.legs || [];
-    if (!legs.length) return '';
     const leg = legs.find(l => l.awbNumber) || legs[0];
     return leg?.awbNumber || '';
   })();
 
-  const [invoiceDate, setInvoiceDate] = useState(today);
-  const [awb,         setAwb]         = useState(awbDefault);
-  const [expediteur,  setExpediteur]  = useState({ name: 'TATICO SARL', address: 'BP: Douala Cameroun', tel: '' });
+  const [invoiceDate,  setInvoiceDate]  = useState(today);
+  const [awb,          setAwb]          = useState(awbDefault);
+  const [expediteur,   setExpediteur]   = useState({ name: 'TATICO SARL', address: 'BP: Douala Cameroun', tel: '' });
   const [destinataire, setDestinataire] = useState({ name: 'Jumla Shipping', contact: '', address: '', tel: '' });
   const [rows, setRows] = useState([
     { description: '', hsCode: '', texture: '', nbPieces: '', qty: '', unitValue: '' },
   ]);
+  const [templates,    setTemplates]    = useState(() => loadTemplates());
+  const [selectedTpl,  setSelectedTpl]  = useState('');
+  const [saveNameMode, setSaveNameMode] = useState(false);
+  const [tplName,      setTplName]      = useState('');
 
-  const addRow = () => setRows(r => [...r, { description: '', hsCode: '', texture: '', nbPieces: '', qty: '', unitValue: '' }]);
+  useEffect(() => {
+    const onKey = (e) => { if (e.key === 'Escape') onClose(); };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [onClose]);
+
+  const emptyRow = () => ({ description: '', hsCode: '', texture: '', nbPieces: '', qty: '', unitValue: '' });
+  const addRow    = () => setRows(r => [...r, emptyRow()]);
   const removeRow = (i) => setRows(r => r.filter((_, idx) => idx !== i));
   const updateRow = (i, k, v) => setRows(r => r.map((row, idx) => idx === i ? { ...row, [k]: v } : row));
 
-  const grandTotal = rows.reduce((s, r) => {
-    const q = parseFloat(r.qty) || 0;
-    const u = parseFloat(r.unitValue) || 0;
-    return s + q * u;
-  }, 0);
+  const loadTemplate = () => {
+    const tpl = templates.find(t => t.name === selectedTpl);
+    if (tpl) setRows(tpl.rows.map(r => ({ ...r })));
+  };
 
-  const inp = { width: '100%', padding: '6px 9px', border: '1px solid var(--border)', borderRadius: 6, fontSize: 12.5, boxSizing: 'border-box', background: 'white' };
-  const lbl = { fontSize: 11, fontWeight: 600, color: 'var(--ink-500)', display: 'block', marginBottom: 4 };
-  const fld = { display: 'grid', gap: 4 };
-  const secH = { fontSize: 10.5, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.06em', color: 'var(--ink-400)', margin: '14px 0 8px', paddingTop: 12, borderTop: '1px solid var(--border-soft)' };
+  const saveTemplate = () => {
+    if (!tplName.trim()) return;
+    const hasRows = rows.some(r => r.description || r.hsCode);
+    if (!hasRows) return;
+    const updated = [...templates.filter(t => t.name !== tplName.trim()), { name: tplName.trim(), rows }];
+    saveTemplates(updated);
+    setTemplates(updated);
+    setSelectedTpl(tplName.trim());
+    setSaveNameMode(false);
+    setTplName('');
+  };
+
+  const deleteTemplate = (name) => {
+    const updated = templates.filter(t => t.name !== name);
+    saveTemplates(updated);
+    setTemplates(updated);
+    if (selectedTpl === name) setSelectedTpl('');
+  };
+
+  const grandTotal = rows.reduce((s, r) => s + (parseFloat(r.qty) || 0) * (parseFloat(r.unitValue) || 0), 0);
+
+  const inp  = { width: '100%', padding: '7px 10px', border: '1px solid var(--border)', borderRadius: 7, fontSize: 13, boxSizing: 'border-box', background: 'white' };
+  const inpS = { width: '100%', padding: '5px 7px', border: '1px solid var(--border)', borderRadius: 5, fontSize: 12.5, boxSizing: 'border-box', background: 'white' };
+  const lbl  = { fontSize: 12, fontWeight: 600, color: 'var(--ink-500)', display: 'block', marginBottom: 5 };
+  const fld  = { display: 'grid', gap: 4 };
+  const secH = { fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.06em', color: 'var(--ink-400)', margin: '18px 0 10px', paddingTop: 16, borderTop: '1px solid var(--border-soft)' };
 
   const handlePrint = () => {
     const printArea = document.getElementById('customs-invoice-preview');
     if (!printArea) return;
     const w = window.open('', '_blank', 'width=900,height=700');
-    w.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>Facture Commerciale</title>
+    w.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>Facture Commerciale — ${campaign.code}</title>
     <style>
       *{margin:0;padding:0;box-sizing:border-box}
-      body{font-family:'Arial',sans-serif;font-size:11px;color:#000;background:#fff;padding:20px}
+      body{font-family:'Arial',sans-serif;font-size:11px;color:#000;background:#fff;padding:24px}
       table{width:100%;border-collapse:collapse}
       td,th{border:1px solid #000;padding:4px 6px;vertical-align:top}
-      .no-border td,.no-border th{border:none}
-      .hdr-title{font-size:20px;font-weight:bold;text-align:center;margin-bottom:6px}
-      .hdr-sub{font-size:11px;text-align:center;margin-bottom:14px}
-      .section-title{font-weight:bold;background:#f0f0f0;padding:4px 6px}
-      .right{text-align:right}
-      .center{text-align:center}
-      .bold{font-weight:bold}
-      .total-row{font-weight:bold;background:#f8f8f8}
+      .right{text-align:right} .center{text-align:center} .bold{font-weight:bold}
     </style></head><body>${printArea.innerHTML}</body></html>`);
     w.document.close();
     w.focus();
@@ -2039,113 +2071,86 @@ function CustomsInvoiceModal({ campaign, onClose }) {
   };
 
   const previewContent = (
-    <div id="customs-invoice-preview" style={{ fontFamily: 'Arial, sans-serif', fontSize: 11, color: '#000', lineHeight: 1.35 }}>
-      {/* Header */}
-      <div style={{ textAlign: 'center', marginBottom: 10 }}>
-        <div style={{ fontSize: 18, fontWeight: 'bold', letterSpacing: 1, marginBottom: 3 }}>FACTURE COMMERCIALE</div>
+    <div id="customs-invoice-preview" style={{ fontFamily: 'Arial, sans-serif', fontSize: 11, color: '#000', lineHeight: 1.4 }}>
+      <div style={{ textAlign: 'center', marginBottom: 12 }}>
+        <div style={{ fontSize: 20, fontWeight: 'bold', letterSpacing: 1, marginBottom: 2 }}>FACTURE COMMERCIALE</div>
         <div style={{ fontSize: 11 }}>COMMERCIAL INVOICE</div>
       </div>
-
-      {/* Meta line */}
-      <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: 8, fontSize: 11 }}>
-        <tbody>
-          <tr>
-            <td style={{ border: '1px solid #000', padding: '4px 7px', width: '50%' }}>
-              <strong>Date :</strong> {invoiceDate || '—'}
-            </td>
-            <td style={{ border: '1px solid #000', padding: '4px 7px', width: '50%' }}>
-              <strong>AWB N° :</strong> {awb || '—'}
-            </td>
-          </tr>
-        </tbody>
+      <table style={{ borderCollapse: 'collapse', marginBottom: 8 }}>
+        <tbody><tr>
+          <td style={{ border: '1px solid #000', padding: '4px 8px', width: '50%' }}><strong>Date :</strong> {invoiceDate || '—'}</td>
+          <td style={{ border: '1px solid #000', padding: '4px 8px', width: '50%' }}><strong>AWB N° :</strong> {awb || '—'}</td>
+        </tr></tbody>
       </table>
-
-      {/* Parties */}
-      <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: 8, fontSize: 11 }}>
-        <thead>
-          <tr>
-            <th style={{ border: '1px solid #000', padding: '5px 7px', background: '#f0f0f0', width: '50%', textAlign: 'left' }}>EXPÉDITEUR / SHIPPER</th>
-            <th style={{ border: '1px solid #000', padding: '5px 7px', background: '#f0f0f0', width: '50%', textAlign: 'left' }}>DESTINATAIRE / CONSIGNEE</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td style={{ border: '1px solid #000', padding: '5px 7px', verticalAlign: 'top' }}>
-              <div><strong>{expediteur.name || '—'}</strong></div>
-              {expediteur.address && <div>{expediteur.address}</div>}
-              {expediteur.tel && <div>Tél : {expediteur.tel}</div>}
-            </td>
-            <td style={{ border: '1px solid #000', padding: '5px 7px', verticalAlign: 'top' }}>
-              <div><strong>{destinataire.name || '—'}</strong></div>
-              {destinataire.contact && <div>Contact : {destinataire.contact}</div>}
-              {destinataire.address && <div>{destinataire.address}</div>}
-              {destinataire.tel && <div>Tél : {destinataire.tel}</div>}
-            </td>
-          </tr>
-        </tbody>
+      <table style={{ borderCollapse: 'collapse', marginBottom: 8 }}>
+        <thead><tr>
+          <th style={{ border: '1px solid #000', padding: '5px 8px', background: '#f0f0f0', width: '50%', textAlign: 'left' }}>EXPÉDITEUR / SHIPPER</th>
+          <th style={{ border: '1px solid #000', padding: '5px 8px', background: '#f0f0f0', width: '50%', textAlign: 'left' }}>DESTINATAIRE / CONSIGNEE</th>
+        </tr></thead>
+        <tbody><tr>
+          <td style={{ border: '1px solid #000', padding: '6px 8px', verticalAlign: 'top' }}>
+            <div><strong>{expediteur.name || '—'}</strong></div>
+            {expediteur.address && <div>{expediteur.address}</div>}
+            {expediteur.tel && <div>Tél : {expediteur.tel}</div>}
+          </td>
+          <td style={{ border: '1px solid #000', padding: '6px 8px', verticalAlign: 'top' }}>
+            <div><strong>{destinataire.name || '—'}</strong></div>
+            {destinataire.contact && <div>Contact : {destinataire.contact}</div>}
+            {destinataire.address && <div>{destinataire.address}</div>}
+            {destinataire.tel && <div>Tél : {destinataire.tel}</div>}
+          </td>
+        </tr></tbody>
       </table>
-
-      {/* Goods table */}
-      <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: 4, fontSize: 10.5 }}>
-        <thead>
-          <tr>
-            {['Description', 'Code SH', 'Texture', 'Nbre pièces', 'Qté (kg)', 'Val. unit. (CAD)', 'Val. totale (CAD)'].map(h => (
-              <th key={h} style={{ border: '1px solid #000', padding: '4px 5px', background: '#f0f0f0', textAlign: 'center', fontSize: 10, fontWeight: 700 }}>{h}</th>
-            ))}
-          </tr>
-        </thead>
+      <table style={{ borderCollapse: 'collapse', marginBottom: 4 }}>
+        <thead><tr>
+          {['Description', 'Code SH', 'Texture', 'Nbre pièces', 'Qté (kg)', 'Val. unit. (CAD)', 'Val. totale (CAD)'].map(h => (
+            <th key={h} style={{ border: '1px solid #000', padding: '4px 5px', background: '#f0f0f0', textAlign: 'center', fontSize: 10, fontWeight: 700 }}>{h}</th>
+          ))}
+        </tr></thead>
         <tbody>
           {rows.map((row, i) => {
-            const total = (parseFloat(row.qty) || 0) * (parseFloat(row.unitValue) || 0);
+            const tot = (parseFloat(row.qty) || 0) * (parseFloat(row.unitValue) || 0);
             return (
               <tr key={i}>
-                <td style={{ border: '1px solid #000', padding: '4px 5px' }}>{row.description || ''}</td>
-                <td style={{ border: '1px solid #000', padding: '4px 5px', textAlign: 'center' }}>{row.hsCode || ''}</td>
-                <td style={{ border: '1px solid #000', padding: '4px 5px', textAlign: 'center' }}>{row.texture || ''}</td>
-                <td style={{ border: '1px solid #000', padding: '4px 5px', textAlign: 'center' }}>{row.nbPieces || ''}</td>
-                <td style={{ border: '1px solid #000', padding: '4px 5px', textAlign: 'right' }}>{row.qty || ''}</td>
-                <td style={{ border: '1px solid #000', padding: '4px 5px', textAlign: 'right' }}>{row.unitValue || ''}</td>
+                <td style={{ border: '1px solid #000', padding: '4px 5px' }}>{row.description}</td>
+                <td style={{ border: '1px solid #000', padding: '4px 5px', textAlign: 'center' }}>{row.hsCode}</td>
+                <td style={{ border: '1px solid #000', padding: '4px 5px', textAlign: 'center' }}>{row.texture}</td>
+                <td style={{ border: '1px solid #000', padding: '4px 5px', textAlign: 'center' }}>{row.nbPieces}</td>
+                <td style={{ border: '1px solid #000', padding: '4px 5px', textAlign: 'right' }}>{row.qty}</td>
+                <td style={{ border: '1px solid #000', padding: '4px 5px', textAlign: 'right' }}>{row.unitValue}</td>
                 <td style={{ border: '1px solid #000', padding: '4px 5px', textAlign: 'right', fontWeight: 600 }}>
-                  {total > 0 ? total.toLocaleString('fr', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : ''}
+                  {tot > 0 ? tot.toLocaleString('fr', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : ''}
                 </td>
               </tr>
             );
           })}
         </tbody>
-        <tfoot>
-          <tr>
-            <td colSpan={6} style={{ border: '1px solid #000', padding: '5px 7px', textAlign: 'right', fontWeight: 700, background: '#f8f8f8' }}>TOTAL CAD</td>
-            <td style={{ border: '1px solid #000', padding: '5px 7px', textAlign: 'right', fontWeight: 700, background: '#f8f8f8' }}>
-              {grandTotal.toLocaleString('fr', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-            </td>
-          </tr>
-        </tfoot>
+        <tfoot><tr>
+          <td colSpan={6} style={{ border: '1px solid #000', padding: '5px 8px', textAlign: 'right', fontWeight: 700, background: '#f8f8f8' }}>TOTAL CAD</td>
+          <td style={{ border: '1px solid #000', padding: '5px 8px', textAlign: 'right', fontWeight: 700, background: '#f8f8f8' }}>
+            {grandTotal.toLocaleString('fr', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+          </td>
+        </tr></tfoot>
       </table>
-
-      {/* Signature zone */}
-      <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: 10, fontSize: 11 }}>
-        <tbody>
-          <tr>
-            <td style={{ border: '1px solid #000', padding: '30px 7px 8px', width: '50%', verticalAlign: 'bottom' }}>
-              <div style={{ fontWeight: 700 }}>Signature et cachet de l'expéditeur</div>
-            </td>
-            <td style={{ border: '1px solid #000', padding: '30px 7px 8px', width: '50%', verticalAlign: 'bottom' }}>
-              <div style={{ fontWeight: 700 }}>Signature et cachet du destinataire</div>
-            </td>
-          </tr>
-        </tbody>
+      <table style={{ borderCollapse: 'collapse', marginTop: 12 }}>
+        <tbody><tr>
+          <td style={{ border: '1px solid #000', padding: '36px 8px 8px', width: '50%', verticalAlign: 'bottom', fontWeight: 700 }}>Signature et cachet de l'expéditeur</td>
+          <td style={{ border: '1px solid #000', padding: '36px 8px 8px', width: '50%', verticalAlign: 'bottom', fontWeight: 700 }}>Signature et cachet du destinataire</td>
+        </tr></tbody>
       </table>
     </div>
   );
 
   return (
-    <Modal
-      width={1080}
-      onClose={onClose}
-      title="Facture douanes"
-      sub={`Cargaison ${campaign.code}`}
-      footer={
-        <>
+    <div style={{ position: 'fixed', inset: 0, zIndex: 1000, background: 'rgba(15,23,42,.45)', display: 'flex', flexDirection: 'column' }} onClick={onClose}>
+      {/* Full-screen panel */}
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', background: 'var(--white)', margin: '24px', borderRadius: 16, boxShadow: '0 24px 80px rgba(0,0,0,.25)', overflow: 'hidden' }} onClick={e => e.stopPropagation()}>
+        {/* Header */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '16px 24px', borderBottom: '1px solid var(--border)', flexShrink: 0 }}>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontSize: 17, fontWeight: 700, color: 'var(--ink-900)', letterSpacing: '-.01em' }}>Facture douanes</div>
+            <div style={{ fontSize: 12.5, color: 'var(--ink-400)', marginTop: 2 }}>Cargaison {campaign.code}</div>
+          </div>
           <button className="btn btn--ghost" onClick={onClose}>Fermer</button>
           <button
             onClick={handlePrint}
@@ -2154,112 +2159,203 @@ function CustomsInvoiceModal({ campaign, onClose }) {
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="15" height="15"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
             Imprimer / PDF
           </button>
-        </>
-      }
-    >
-      <div style={{ display: 'grid', gridTemplateColumns: '320px 1fr', gap: 0, height: '70vh', overflow: 'hidden' }}>
-        {/* Left: form */}
-        <div style={{ borderRight: '1px solid var(--border)', overflowY: 'auto', padding: '16px 18px', display: 'grid', gap: 8, alignContent: 'start' }}>
-          <div style={fld}>
-            <label style={lbl}>Date de la facture</label>
-            <input type="date" style={inp} value={invoiceDate} onChange={e => setInvoiceDate(e.target.value)} />
-          </div>
-          <div style={fld}>
-            <label style={lbl}>N° AWB</label>
-            <input style={inp} value={awb} onChange={e => setAwb(e.target.value)} placeholder="ex: 124-12345678" />
-          </div>
-
-          <div style={secH}>Expéditeur</div>
-          <div style={fld}>
-            <label style={lbl}>Nom / Société</label>
-            <input style={inp} value={expediteur.name} onChange={e => setExpediteur(x => ({ ...x, name: e.target.value }))} />
-          </div>
-          <div style={fld}>
-            <label style={lbl}>Adresse</label>
-            <input style={inp} value={expediteur.address} onChange={e => setExpediteur(x => ({ ...x, address: e.target.value }))} />
-          </div>
-          <div style={fld}>
-            <label style={lbl}>Téléphone</label>
-            <input style={inp} value={expediteur.tel} onChange={e => setExpediteur(x => ({ ...x, tel: e.target.value }))} placeholder="+237 6XX XXX XXX" />
-          </div>
-
-          <div style={secH}>Destinataire</div>
-          <div style={fld}>
-            <label style={lbl}>Nom / Société</label>
-            <input style={inp} value={destinataire.name} onChange={e => setDestinataire(x => ({ ...x, name: e.target.value }))} />
-          </div>
-          <div style={fld}>
-            <label style={lbl}>Contact</label>
-            <input style={inp} value={destinataire.contact} onChange={e => setDestinataire(x => ({ ...x, contact: e.target.value }))} />
-          </div>
-          <div style={fld}>
-            <label style={lbl}>Adresse</label>
-            <input style={inp} value={destinataire.address} onChange={e => setDestinataire(x => ({ ...x, address: e.target.value }))} />
-          </div>
-          <div style={fld}>
-            <label style={lbl}>Téléphone</label>
-            <input style={inp} value={destinataire.tel} onChange={e => setDestinataire(x => ({ ...x, tel: e.target.value }))} />
-          </div>
-
-          <div style={secH}>Marchandises</div>
-          {rows.map((row, i) => (
-            <div key={i} style={{ border: '1px solid var(--border)', borderRadius: 8, padding: '10px 10px 6px', display: 'grid', gap: 6, position: 'relative' }}>
-              {rows.length > 1 && (
-                <button onClick={() => removeRow(i)} style={{ position: 'absolute', top: 6, right: 8, background: 'none', border: 'none', cursor: 'pointer', color: 'var(--bad-500)', fontSize: 14, lineHeight: 1, padding: 0 }}>×</button>
-              )}
-              <div style={{ fontSize: 10.5, fontWeight: 700, color: 'var(--ink-400)', marginBottom: 2 }}>Ligne {i + 1}</div>
-              <div style={fld}>
-                <label style={lbl}>Description</label>
-                <input style={inp} value={row.description} onChange={e => updateRow(i, 'description', e.target.value)} placeholder="ex: Vêtements usagés" />
-              </div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
-                <div style={fld}>
-                  <label style={lbl}>Code SH</label>
-                  <input style={inp} value={row.hsCode} onChange={e => updateRow(i, 'hsCode', e.target.value)} placeholder="ex: 6309.00" />
-                </div>
-                <div style={fld}>
-                  <label style={lbl}>Texture</label>
-                  <input style={inp} value={row.texture} onChange={e => updateRow(i, 'texture', e.target.value)} placeholder="ex: Coton" />
-                </div>
-                <div style={fld}>
-                  <label style={lbl}>Nbre pièces</label>
-                  <input style={inp} type="number" min="0" value={row.nbPieces} onChange={e => updateRow(i, 'nbPieces', e.target.value)} />
-                </div>
-                <div style={fld}>
-                  <label style={lbl}>Qté (kg)</label>
-                  <input style={inp} type="number" min="0" step="0.1" value={row.qty} onChange={e => updateRow(i, 'qty', e.target.value)} />
-                </div>
-              </div>
-              <div style={fld}>
-                <label style={lbl}>Valeur unitaire (CAD/kg)</label>
-                <input style={inp} type="number" min="0" step="0.01" value={row.unitValue} onChange={e => updateRow(i, 'unitValue', e.target.value)} placeholder="ex: 3.50" />
-              </div>
-              <div style={{ fontSize: 11, color: 'var(--ink-500)', textAlign: 'right' }}>
-                Total : <strong style={{ color: 'var(--ok-700)' }}>
-                  {((parseFloat(row.qty) || 0) * (parseFloat(row.unitValue) || 0)).toLocaleString('fr', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} CAD
-                </strong>
-              </div>
-            </div>
-          ))}
-          <button onClick={addRow} style={{ marginTop: 2, padding: '7px 12px', borderRadius: 7, border: '1px dashed var(--brand-300)', background: 'var(--brand-50)', color: 'var(--brand-700)', fontWeight: 600, fontSize: 12, cursor: 'pointer' }}>
-            + Ajouter une ligne
+          <button className="icon-btn" onClick={onClose} style={{ marginLeft: 4 }}>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
           </button>
-          <div style={{ marginTop: 6, padding: '8px 12px', background: 'var(--bg-soft)', borderRadius: 7, display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 12.5 }}>
-            <span style={{ fontWeight: 600, color: 'var(--ink-600)' }}>TOTAL GÉNÉRAL</span>
-            <span style={{ fontWeight: 700, fontSize: 14, color: 'var(--ok-700)' }}>
-              {grandTotal.toLocaleString('fr', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} CAD
-            </span>
-          </div>
         </div>
 
-        {/* Right: preview */}
-        <div style={{ overflowY: 'auto', padding: '20px 24px', background: '#f5f5f0' }}>
-          <div style={{ background: 'white', boxShadow: '0 2px 12px rgba(0,0,0,.1)', borderRadius: 4, padding: '28px 32px', minHeight: 500 }}>
-            {previewContent}
+        {/* Body: form + preview */}
+        <div style={{ flex: 1, display: 'grid', gridTemplateColumns: '460px 1fr', overflow: 'hidden' }}>
+          {/* Left: form */}
+          <div style={{ borderRight: '1px solid var(--border)', overflowY: 'auto', padding: '20px 24px', display: 'flex', flexDirection: 'column', gap: 0 }}>
+
+            {/* Date + AWB */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+              <div style={fld}>
+                <label style={lbl}>Date de la facture</label>
+                <input type="date" style={inp} value={invoiceDate} onChange={e => setInvoiceDate(e.target.value)} />
+              </div>
+              <div style={fld}>
+                <label style={lbl}>N° AWB</label>
+                <input style={inp} value={awb} onChange={e => setAwb(e.target.value)} placeholder="ex: 124-12345678" />
+              </div>
+            </div>
+
+            {/* Expéditeur */}
+            <div style={secH}>Expéditeur</div>
+            <div style={{ display: 'grid', gap: 10 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                <div style={fld}>
+                  <label style={lbl}>Nom / Société</label>
+                  <input style={inp} value={expediteur.name} onChange={e => setExpediteur(x => ({ ...x, name: e.target.value }))} />
+                </div>
+                <div style={fld}>
+                  <label style={lbl}>Téléphone</label>
+                  <input style={inp} value={expediteur.tel} onChange={e => setExpediteur(x => ({ ...x, tel: e.target.value }))} placeholder="+237 6XX XXX XXX" />
+                </div>
+              </div>
+              <div style={fld}>
+                <label style={lbl}>Adresse</label>
+                <input style={inp} value={expediteur.address} onChange={e => setExpediteur(x => ({ ...x, address: e.target.value }))} />
+              </div>
+            </div>
+
+            {/* Destinataire */}
+            <div style={secH}>Destinataire</div>
+            <div style={{ display: 'grid', gap: 10 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                <div style={fld}>
+                  <label style={lbl}>Nom / Société</label>
+                  <input style={inp} value={destinataire.name} onChange={e => setDestinataire(x => ({ ...x, name: e.target.value }))} />
+                </div>
+                <div style={fld}>
+                  <label style={lbl}>Contact</label>
+                  <input style={inp} value={destinataire.contact} onChange={e => setDestinataire(x => ({ ...x, contact: e.target.value }))} />
+                </div>
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                <div style={fld}>
+                  <label style={lbl}>Adresse</label>
+                  <input style={inp} value={destinataire.address} onChange={e => setDestinataire(x => ({ ...x, address: e.target.value }))} />
+                </div>
+                <div style={fld}>
+                  <label style={lbl}>Téléphone</label>
+                  <input style={inp} value={destinataire.tel} onChange={e => setDestinataire(x => ({ ...x, tel: e.target.value }))} />
+                </div>
+              </div>
+            </div>
+
+            {/* Marchandises header + template bar */}
+            <div style={{ ...secH, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+              <span>Marchandises</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+                {templates.length > 0 && (
+                  <>
+                    <select
+                      value={selectedTpl}
+                      onChange={e => setSelectedTpl(e.target.value)}
+                      style={{ padding: '4px 8px', border: '1px solid var(--border)', borderRadius: 6, fontSize: 12, background: 'white', maxWidth: 140 }}
+                    >
+                      <option value="">— Choisir modèle —</option>
+                      {templates.map(t => <option key={t.name} value={t.name}>{t.name}</option>)}
+                    </select>
+                    <button
+                      onClick={loadTemplate}
+                      disabled={!selectedTpl}
+                      style={{ padding: '4px 10px', borderRadius: 6, border: '1px solid var(--info-300)', background: 'var(--info-50)', color: 'var(--info-700)', fontWeight: 600, fontSize: 11.5, cursor: selectedTpl ? 'pointer' : 'not-allowed', opacity: selectedTpl ? 1 : .5 }}
+                    >
+                      Charger
+                    </button>
+                  </>
+                )}
+                {!saveNameMode ? (
+                  <button
+                    onClick={() => { setSaveNameMode(true); setTplName(''); }}
+                    style={{ padding: '4px 10px', borderRadius: 6, border: '1px solid var(--ok-300)', background: 'var(--ok-50)', color: 'var(--ok-700)', fontWeight: 600, fontSize: 11.5, cursor: 'pointer' }}
+                  >
+                    Sauvegarder modèle
+                  </button>
+                ) : (
+                  <div style={{ display: 'flex', gap: 5, alignItems: 'center' }}>
+                    <input
+                      autoFocus
+                      style={{ padding: '4px 8px', border: '1px solid var(--border)', borderRadius: 6, fontSize: 12, width: 120 }}
+                      value={tplName}
+                      onChange={e => setTplName(e.target.value)}
+                      placeholder="Nom du modèle"
+                      onKeyDown={e => { if (e.key === 'Enter') saveTemplate(); if (e.key === 'Escape') setSaveNameMode(false); }}
+                    />
+                    <button onClick={saveTemplate} style={{ padding: '4px 8px', borderRadius: 6, border: 'none', background: 'var(--ok-600)', color: '#fff', fontWeight: 700, fontSize: 12, cursor: 'pointer' }}>✓</button>
+                    <button onClick={() => setSaveNameMode(false)} style={{ padding: '4px 8px', borderRadius: 6, border: '1px solid var(--border)', background: 'white', fontSize: 12, cursor: 'pointer' }}>✕</button>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Saved templates pills */}
+            {templates.length > 0 && (
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5, marginBottom: 10, marginTop: -4 }}>
+                {templates.map(t => (
+                  <span key={t.name} style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '3px 8px', borderRadius: 20, background: selectedTpl === t.name ? 'var(--info-100)' : 'var(--bg-soft)', border: `1px solid ${selectedTpl === t.name ? 'var(--info-300)' : 'var(--border)'}`, fontSize: 11.5, color: selectedTpl === t.name ? 'var(--info-700)' : 'var(--ink-600)', cursor: 'pointer' }}
+                    onClick={() => setSelectedTpl(t.name === selectedTpl ? '' : t.name)}
+                  >
+                    {t.name}
+                    <button onClick={e => { e.stopPropagation(); deleteTemplate(t.name); }} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--bad-400)', padding: 0, lineHeight: 1, fontSize: 13 }}>×</button>
+                  </span>
+                ))}
+              </div>
+            )}
+
+            {/* Goods table */}
+            <div style={{ overflowX: 'auto', marginBottom: 8 }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12.5 }}>
+                <thead>
+                  <tr style={{ background: 'var(--bg-soft)' }}>
+                    {['Description', 'Code SH', 'Texture', 'Pcs', 'Qté kg', 'Val/kg CAD', 'Total', ''].map((h, i) => (
+                      <th key={i} style={{ padding: '6px 7px', border: '1px solid var(--border)', fontWeight: 700, fontSize: 11, color: 'var(--ink-500)', textAlign: i >= 4 ? 'right' : 'left', whiteSpace: 'nowrap' }}>{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {rows.map((row, i) => {
+                    const rowTotal = (parseFloat(row.qty) || 0) * (parseFloat(row.unitValue) || 0);
+                    return (
+                      <tr key={i} style={{ background: i % 2 === 0 ? 'white' : 'var(--bg-soft)' }}>
+                        <td style={{ border: '1px solid var(--border)', padding: 3 }}>
+                          <input style={inpS} value={row.description} onChange={e => updateRow(i, 'description', e.target.value)} placeholder="ex: Vêtements" />
+                        </td>
+                        <td style={{ border: '1px solid var(--border)', padding: 3, width: 80 }}>
+                          <input style={inpS} value={row.hsCode} onChange={e => updateRow(i, 'hsCode', e.target.value)} placeholder="6309.00" />
+                        </td>
+                        <td style={{ border: '1px solid var(--border)', padding: 3, width: 72 }}>
+                          <input style={inpS} value={row.texture} onChange={e => updateRow(i, 'texture', e.target.value)} placeholder="Coton" />
+                        </td>
+                        <td style={{ border: '1px solid var(--border)', padding: 3, width: 56 }}>
+                          <input style={{ ...inpS, textAlign: 'right' }} type="number" min="0" value={row.nbPieces} onChange={e => updateRow(i, 'nbPieces', e.target.value)} />
+                        </td>
+                        <td style={{ border: '1px solid var(--border)', padding: 3, width: 70 }}>
+                          <input style={{ ...inpS, textAlign: 'right' }} type="number" min="0" step="0.1" value={row.qty} onChange={e => updateRow(i, 'qty', e.target.value)} />
+                        </td>
+                        <td style={{ border: '1px solid var(--border)', padding: 3, width: 80 }}>
+                          <input style={{ ...inpS, textAlign: 'right' }} type="number" min="0" step="0.01" value={row.unitValue} onChange={e => updateRow(i, 'unitValue', e.target.value)} />
+                        </td>
+                        <td style={{ border: '1px solid var(--border)', padding: '3px 7px', width: 80, textAlign: 'right', fontWeight: 600, color: rowTotal > 0 ? 'var(--ok-700)' : 'var(--ink-300)', fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }}>
+                          {rowTotal > 0 ? rowTotal.toLocaleString('fr', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '—'}
+                        </td>
+                        <td style={{ border: '1px solid var(--border)', padding: 3, width: 28, textAlign: 'center' }}>
+                          {rows.length > 1 && (
+                            <button onClick={() => removeRow(i)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--bad-400)', fontSize: 16, lineHeight: 1, padding: 0, width: 22 }}>×</button>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+              <button onClick={addRow} style={{ padding: '7px 14px', borderRadius: 7, border: '1px dashed var(--brand-300)', background: 'var(--brand-50)', color: 'var(--brand-700)', fontWeight: 600, fontSize: 12.5, cursor: 'pointer' }}>
+                + Ajouter une ligne
+              </button>
+              <div style={{ padding: '7px 14px', background: 'var(--bg-soft)', borderRadius: 8, display: 'flex', gap: 10, alignItems: 'center' }}>
+                <span style={{ fontSize: 12.5, fontWeight: 600, color: 'var(--ink-600)' }}>TOTAL</span>
+                <span style={{ fontWeight: 700, fontSize: 15, color: 'var(--ok-700)', fontVariantNumeric: 'tabular-nums' }}>
+                  {grandTotal.toLocaleString('fr', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} CAD
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Right: preview */}
+          <div style={{ overflowY: 'auto', padding: '24px 32px', background: '#f0ede8' }}>
+            <div style={{ background: 'white', boxShadow: '0 2px 16px rgba(0,0,0,.12)', borderRadius: 4, padding: '32px 36px', maxWidth: 740, margin: '0 auto' }}>
+              {previewContent}
+            </div>
           </div>
         </div>
       </div>
-    </Modal>
+    </div>
   );
 }
 
