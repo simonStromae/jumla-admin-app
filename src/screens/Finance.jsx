@@ -901,6 +901,389 @@ function SnapshotsTab() {
   );
 }
 
+// ─── Budget & Scenarios Tab (Phase 4) ────────────────────────
+function BudgetTab() {
+  const { fmt: money } = useCurrency();
+  const [data,    setData]    = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [budget,  setBudget]  = useState({});
+  const [saving,  setSaving]  = useState(false);
+  const [saved,   setSaved]   = useState(false);
+  const [fy,      setFy]      = useState(null);
+  const [view,    setView]    = useState('budget'); // 'budget' | 'breakeven' | 'scenarios'
+  const saveTimer = useRef(null);
+
+  const currentFY = fiscalYearOf(new Date());
+
+  useEffect(() => {
+    const year = fy ?? currentFY;
+    setLoading(true);
+    fetch(`/api/finance/budget?fy=${year}`)
+      .then(r => r.json())
+      .then(d => {
+        setData(d);
+        setBudget(d.budget || {});
+      })
+      .finally(() => setLoading(false));
+  }, [fy, currentFY]);
+
+  const handleBudgetChange = (postId, raw) => {
+    const val = raw === '' ? undefined : parseFloat(raw);
+    setBudget(prev => {
+      const next = { ...prev, [postId]: val };
+      if (val === undefined) delete next[postId];
+      clearTimeout(saveTimer.current);
+      saveTimer.current = setTimeout(async () => {
+        setSaving(true);
+        await fetch(`/api/finance/budget?fy=${fy ?? currentFY}`, {
+          method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(next),
+        });
+        setSaving(false);
+        setSaved(true);
+        setTimeout(() => setSaved(false), 2000);
+      }, 800);
+      return next;
+    });
+  };
+
+  if (loading) return <div style={{ padding: 32, color: 'var(--ink-400)' }}>Chargement…</div>;
+  if (!data)   return null;
+
+  const varPosts  = data.posts.filter(p => p.type === 'variable');
+  const fixPosts  = data.posts.filter(p => p.type === 'fixed');
+  const pct2 = v => v !== null && v !== undefined ? fmt2(v) + ' %' : '—';
+
+  // Totals
+  const totalBudgetVar = varPosts.reduce((s, p) => s + (budget[p.id] ?? 0), 0);
+  const totalBudgetFix = fixPosts.reduce((s, p) => s + (budget[p.id] ?? 0), 0);
+  const totalActualVar = varPosts.reduce((s, p) => s + (data.actualVariable[p.id] ?? 0), 0);
+  const totalActualFix = fixPosts.reduce((s, p) => s + (data.actualFixed[p.id] ?? 0), 0);
+  const totalBudget    = totalBudgetVar + totalBudgetFix;
+
+  // Break-even: fixed costs / contribution margin ratio
+  const totalAnnualFix = fixPosts.reduce((s, p) => s + (data.annualFixed[p.id] ?? 0), 0);
+  const totalAnnualVar = varPosts.reduce((s, p) => s + (budget[p.id] ?? 0), 0);
+  const budgetRevenue  = data.totalRevenue > 0 ? data.totalRevenue : null;
+  const varRatio       = budgetRevenue && totalActualVar > 0 ? totalActualVar / budgetRevenue : (totalBudgetVar > 0 && totalBudget > 0 ? totalBudgetVar / (totalBudgetVar + totalBudgetFix + 1) : null);
+  const cmRatio        = varRatio !== null ? 1 - varRatio : null;
+  const breakEven      = cmRatio && cmRatio > 0 && totalAnnualFix > 0 ? totalAnnualFix / cmRatio : null;
+
+  // Scenario volumes: 0% / +10% / +20%
+  const baseRevenue = budgetRevenue ?? 0;
+  const baseVarCosts = totalActualVar > 0 ? totalActualVar : totalBudgetVar;
+  const scenarios = [0, 10, 20].map(pctChange => {
+    const rev    = baseRevenue * (1 + pctChange / 100);
+    const varC   = varRatio !== null ? rev * varRatio : baseVarCosts * (1 + pctChange / 100);
+    const gross  = rev - varC;
+    const net    = gross - totalAnnualFix;
+    const margin = rev > 0 ? gross / rev * 100 : null;
+    return { pctChange, rev, varC, gross, net, margin };
+  });
+
+  const s = {
+    th: { padding: '8px 10px', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.05em', color: 'var(--ink-400)', background: 'var(--bg-soft)', textAlign: 'right', borderBottom: '2px solid var(--border)', whiteSpace: 'nowrap' },
+    thL: { padding: '8px 10px', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.05em', color: 'var(--ink-400)', background: 'var(--bg-soft)', textAlign: 'left', borderBottom: '2px solid var(--border)', whiteSpace: 'nowrap' },
+    td: { padding: '7px 10px', fontSize: 13, borderBottom: '1px solid var(--border)', textAlign: 'right', fontVariantNumeric: 'tabular-nums' },
+    tdL: { padding: '7px 10px', fontSize: 13, borderBottom: '1px solid var(--border)', textAlign: 'left' },
+    tot: { padding: '8px 10px', fontSize: 13, fontWeight: 800, background: 'var(--bg-soft)', textAlign: 'right', fontVariantNumeric: 'tabular-nums' },
+    totL: { padding: '8px 10px', fontSize: 13, fontWeight: 800, background: 'var(--bg-soft)', textAlign: 'left' },
+    input: { width: 110, padding: '4px 8px', border: '1px solid var(--border)', borderRadius: 6, fontSize: 13, textAlign: 'right', background: 'var(--white)', color: 'var(--ink-900)', fontVariantNumeric: 'tabular-nums' },
+  };
+
+  const availableYears = [currentFY, currentFY - 1, currentFY - 2];
+
+  return (
+    <div>
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12, marginBottom: 20 }}>
+        <div>
+          <div style={{ fontSize: 22, fontWeight: 800, color: 'var(--ink-900)' }}>Budget & Break-even</div>
+        </div>
+        <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+          {saved && <span style={{ fontSize: 12, color: 'var(--ok-600)', fontWeight: 600 }}>✓ Enregistré</span>}
+          {saving && <span style={{ fontSize: 12, color: 'var(--ink-400)' }}>Enregistrement…</span>}
+          <select value={fy ?? currentFY} onChange={e => setFy(parseInt(e.target.value))}
+            style={{ padding: '6px 10px', border: '1px solid var(--border)', borderRadius: 8, fontSize: 13, background: 'var(--white)', color: 'var(--ink-900)' }}>
+            {availableYears.map(y => <option key={y} value={y}>{y}–{y + 1}</option>)}
+          </select>
+        </div>
+      </div>
+
+      {/* View toggle */}
+      <div style={{ display: 'flex', gap: 6, background: 'var(--bg-soft)', border: '1px solid var(--border)', borderRadius: 10, padding: 4, width: 'fit-content', marginBottom: 24 }}>
+        {[{ id: 'budget', label: '📒 Budget' }, { id: 'breakeven', label: '⚖️ Break-even' }, { id: 'scenarios', label: '🔮 Scénarios' }].map(v => (
+          <button key={v.id} onClick={() => setView(v.id)} style={{
+            padding: '6px 14px', borderRadius: 7, border: 'none', cursor: 'pointer', fontSize: 13, fontWeight: 600,
+            background: view === v.id ? 'var(--white)' : 'transparent',
+            color: view === v.id ? 'var(--ink-900)' : 'var(--ink-400)',
+            boxShadow: view === v.id ? '0 1px 3px rgba(0,0,0,.08)' : 'none',
+          }}>{v.label}</button>
+        ))}
+      </div>
+
+      {view === 'budget' && (
+        <>
+          <div style={{ fontSize: 13, color: 'var(--ink-500)', marginBottom: 16 }}>
+            Saisissez les montants budgétés pour l'exercice {data.label} · Réel YTD = cumulé depuis juillet
+          </div>
+          {[{ label: 'Coûts variables', posts: varPosts, actualMap: data.actualVariable, budgetTotal: totalBudgetVar, actualTotal: totalActualVar },
+            { label: 'Charges fixes (YTD)', posts: fixPosts, actualMap: data.actualFixed, budgetTotal: totalBudgetFix, actualTotal: totalActualFix }].map(section => (
+            <div key={section.label} style={{ marginBottom: 24 }}>
+              <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--ink-600)', marginBottom: 10 }}>{section.label}</div>
+              <div style={{ border: '1px solid var(--border)', borderRadius: 10, overflow: 'hidden' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 480 }}>
+                  <thead>
+                    <tr>
+                      <th style={s.thL}>Poste</th>
+                      <th style={s.th}>Budget annuel</th>
+                      <th style={s.th}>Réel YTD</th>
+                      <th style={s.th}>Écart</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {section.posts.map(post => {
+                      const bud   = budget[post.id] ?? 0;
+                      const act   = section.actualMap[post.id] ?? 0;
+                      const delta = act - bud;
+                      return (
+                        <tr key={post.id} style={{ background: 'var(--white)' }}
+                          onMouseEnter={e => e.currentTarget.style.background = 'var(--bg-soft)'}
+                          onMouseLeave={e => e.currentTarget.style.background = 'var(--white)'}>
+                          <td style={s.tdL}>{post.name}</td>
+                          <td style={{ ...s.td, width: 140 }}>
+                            <input type="number" step="0.01" placeholder="—"
+                              value={budget[post.id] !== undefined ? budget[post.id] : ''}
+                              onChange={e => handleBudgetChange(post.id, e.target.value)}
+                              style={s.input} />
+                          </td>
+                          <td style={s.td}>{act > 0 ? money(act) : <span style={{ color: 'var(--ink-300)' }}>—</span>}</td>
+                          <td style={{ ...s.td, fontWeight: bud > 0 ? 700 : 400, color: bud > 0 ? (delta > 0 ? 'var(--bad-500)' : 'var(--ok-600)') : 'var(--ink-300)' }}>
+                            {bud > 0 && act > 0 ? (delta > 0 ? '+' : '') + money(delta) : '—'}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                  <tfoot>
+                    <tr>
+                      <td style={s.totL}>Total</td>
+                      <td style={s.tot}>{section.budgetTotal > 0 ? money(section.budgetTotal) : '—'}</td>
+                      <td style={s.tot}>{section.actualTotal > 0 ? money(section.actualTotal) : '—'}</td>
+                      <td style={{ ...s.tot, color: section.actualTotal > section.budgetTotal ? 'var(--bad-500)' : section.budgetTotal > 0 ? 'var(--ok-600)' : 'var(--ink-400)' }}>
+                        {section.budgetTotal > 0 && section.actualTotal > 0
+                          ? (section.actualTotal - section.budgetTotal > 0 ? '+' : '') + money(section.actualTotal - section.budgetTotal)
+                          : '—'}
+                      </td>
+                    </tr>
+                  </tfoot>
+                </table>
+              </div>
+            </div>
+          ))}
+        </>
+      )}
+
+      {view === 'breakeven' && (
+        <div>
+          <div style={{ fontSize: 13, color: 'var(--ink-500)', marginBottom: 20 }}>
+            Basé sur les coûts fixes annuels réels et le ratio coûts variables / CA YTD
+          </div>
+          {breakEven !== null ? (
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 14, marginBottom: 24 }}>
+              <KpiCard label="CA réel YTD" value={money(data.totalRevenue)} sub={`${data.campaignCount} cargaisons`} color="var(--info-500)" />
+              <KpiCard label="Charges fixes annualisées" value={money(totalAnnualFix)} sub="Exercice complet" color="var(--bad-400)" />
+              <KpiCard label="Ratio coûts variables / CA" value={pct2(varRatio !== null ? varRatio * 100 : null)} sub="Coûts var. ÷ CA" color="var(--bad-300)" />
+              <KpiCard label="Taux de marge sur coûts var." value={pct2(cmRatio !== null ? cmRatio * 100 : null)} sub="1 − ratio var." color="var(--info-500)" />
+              <KpiCard label="Seuil de rentabilité"
+                value={money(breakEven)}
+                sub={data.totalRevenue > 0 ? (data.totalRevenue >= breakEven ? '✓ Seuil atteint YTD' : `Manque ${money(breakEven - data.totalRevenue)}`) : ''}
+                color={data.totalRevenue >= breakEven ? 'var(--ok-500)' : 'var(--bad-500)'} />
+            </div>
+          ) : (
+            <div style={{ background: 'var(--bg-soft)', border: '1px solid var(--border)', borderRadius: 10, padding: 24, color: 'var(--ink-400)', fontSize: 14 }}>
+              Insuffisamment de données pour calculer le seuil de rentabilité. Renseignez les coûts variables et les charges fixes réelles.
+            </div>
+          )}
+          {breakEven !== null && totalAnnualFix > 0 && (
+            <div style={{ background: 'var(--bg-soft)', border: '1px solid var(--border)', borderRadius: 10, padding: 16, fontSize: 13, color: 'var(--ink-600)' }}>
+              <strong>Formule :</strong> Seuil = Charges fixes ({money(totalAnnualFix)}) ÷ Taux de marge ({pct2(cmRatio !== null ? cmRatio * 100 : null)}) = <strong>{money(breakEven)}</strong>
+            </div>
+          )}
+        </div>
+      )}
+
+      {view === 'scenarios' && (
+        <div>
+          <div style={{ fontSize: 13, color: 'var(--ink-500)', marginBottom: 20 }}>
+            Projection de la marge brute selon différentes hypothèses de volume, à partir du CA et des coûts YTD
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: 16, marginBottom: 24 }}>
+            {scenarios.map(sc => {
+              const mColor = sc.margin === null ? 'var(--ink-400)' : sc.margin >= 20 ? 'var(--ok-600)' : sc.margin >= 0 ? 'var(--info-600)' : 'var(--bad-500)';
+              return (
+                <div key={sc.pctChange} style={{ background: 'var(--white)', border: '1px solid var(--border)', borderRadius: 12, padding: 20, borderTop: sc.pctChange === 0 ? '3px solid var(--info-400)' : sc.pctChange === 10 ? '3px solid var(--ok-400)' : '3px solid var(--bad-400)' }}>
+                  <div style={{ fontSize: 11, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.08em', color: 'var(--ink-400)', marginBottom: 10 }}>
+                    {sc.pctChange === 0 ? 'Volume actuel' : `+${sc.pctChange} % volume`}
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13 }}>
+                      <span style={{ color: 'var(--ink-500)' }}>CA projeté</span>
+                      <span style={{ fontWeight: 700, fontVariantNumeric: 'tabular-nums' }}>{money(sc.rev)}</span>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13 }}>
+                      <span style={{ color: 'var(--ink-500)' }}>Coûts variables</span>
+                      <span style={{ fontVariantNumeric: 'tabular-nums', color: 'var(--bad-500)' }}>− {money(sc.varC)}</span>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13 }}>
+                      <span style={{ color: 'var(--ink-500)' }}>Charges fixes</span>
+                      <span style={{ fontVariantNumeric: 'tabular-nums', color: 'var(--bad-400)' }}>− {money(totalAnnualFix)}</span>
+                    </div>
+                    <div style={{ borderTop: '1px solid var(--border)', paddingTop: 8, display: 'flex', justifyContent: 'space-between', fontSize: 14 }}>
+                      <span style={{ fontWeight: 700 }}>Résultat net</span>
+                      <span style={{ fontWeight: 800, fontVariantNumeric: 'tabular-nums', color: sc.net >= 0 ? 'var(--ok-600)' : 'var(--bad-500)' }}>{money(sc.net)}</span>
+                    </div>
+                    <div style={{ fontSize: 13, textAlign: 'right', color: mColor, fontWeight: 700 }}>
+                      Marge brute : {pct2(sc.margin)}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+          {baseRevenue === 0 && (
+            <div style={{ background: 'var(--info-50)', border: '1px solid var(--info-200)', borderRadius: 8, padding: '10px 14px', fontSize: 13, color: 'var(--info-700)' }}>
+              Aucun CA réel enregistré pour cet exercice. Les scénarios se baseront sur les montants budgétés une fois saisis.
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Payroll Québec Tab (Phase 4) ─────────────────────────────
+const QC_RATES_2025 = {
+  rrq:   { rate: 0.0640, maxEarnings: 69700, basicExemption: 3500, label: 'RRQ (employeur)' },
+  rqap:  { rate: 0.00692, maxEarnings: 94000, label: 'RQAP (employeur)' },
+  ae:    { rate: 0.01848, maxEarnings: 63200, label: 'AE (employeur, ×1.4)' },
+  fss:   { rate: 0.0270,  maxEarnings: null,  label: 'FSS (masse salariale < 1 M$)' },
+  cnt:   { rate: 0.0007,  maxEarnings: 94000, label: 'Normes du travail (CNT)' },
+  cnesst:{ rate: 0.015,   maxEarnings: null,  label: 'CNESST (taux moyen)' },
+};
+
+function calcQC(grossSalary, cnesstRate = 0.015) {
+  const s = grossSalary;
+  const rrqBase = Math.max(0, Math.min(s, QC_RATES_2025.rrq.maxEarnings) - QC_RATES_2025.rrq.basicExemption);
+  const rrq     = rrqBase * QC_RATES_2025.rrq.rate;
+  const rqap    = Math.min(s, QC_RATES_2025.rqap.maxEarnings) * QC_RATES_2025.rqap.rate;
+  const ae      = Math.min(s, QC_RATES_2025.ae.maxEarnings) * QC_RATES_2025.ae.rate;
+  const fss     = s * QC_RATES_2025.fss.rate;
+  const cnt     = Math.min(s, QC_RATES_2025.cnt.maxEarnings) * QC_RATES_2025.cnt.rate;
+  const cnesst  = s * cnesstRate;
+  const total   = rrq + rqap + ae + fss + cnt + cnesst;
+  return { rrq, rqap, ae, fss, cnt, cnesst, total, effective: s > 0 ? total / s * 100 : 0 };
+}
+
+function PayrollTab() {
+  const [salary,     setSalary]     = useState('');
+  const [cnesstRate, setCnesstRate] = useState('1.5');
+  const [employees,  setEmployees]  = useState('1');
+
+  const gross    = parseFloat(salary) || 0;
+  const cRate    = (parseFloat(cnesstRate) || 1.5) / 100;
+  const empCount = parseInt(employees) || 1;
+  const calc     = gross > 0 ? calcQC(gross, cRate) : null;
+
+  const fmt = v => new Intl.NumberFormat('fr-CA', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(v);
+
+  const rows = calc ? [
+    { label: 'RRQ (Régime de rentes du Québec)', amount: calc.rrq, note: `${fmt(Math.max(0, Math.min(gross, 69700) - 3500))} × 6,40 %` },
+    { label: 'RQAP (Assurance parentale Québec)', amount: calc.rqap, note: `${fmt(Math.min(gross, 94000))} × 0,692 %` },
+    { label: 'AE (Assurance-emploi, ×1,4)', amount: calc.ae, note: `${fmt(Math.min(gross, 63200))} × 1,848 %` },
+    { label: 'FSS (Fonds services de santé)', amount: calc.fss, note: `${fmt(gross)} × 2,70 %` },
+    { label: 'CNT (Normes du travail)', amount: calc.cnt, note: `${fmt(Math.min(gross, 94000))} × 0,07 %` },
+    { label: `CNESST (taux ${parseFloat(cnesstRate).toFixed(2)} %)`, amount: calc.cnesst, note: `${fmt(gross)} × ${cnesstRate} %` },
+  ] : [];
+
+  return (
+    <div style={{ maxWidth: 680 }}>
+      <div style={{ fontSize: 22, fontWeight: 800, color: 'var(--ink-900)', marginBottom: 6 }}>Calculateur de charges — Québec 2025</div>
+      <div style={{ fontSize: 13, color: 'var(--ink-400)', marginBottom: 24 }}>Cotisations patronales estimées selon les taux 2025</div>
+
+      {/* Inputs */}
+      <div style={{ background: 'var(--white)', border: '1px solid var(--border)', borderRadius: 12, padding: 20, marginBottom: 24, display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: 16 }}>
+        <div>
+          <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: 'var(--ink-500)', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '.05em' }}>Salaire brut annuel (CAD)</label>
+          <input type="number" value={salary} onChange={e => setSalary(e.target.value)} placeholder="ex. 55000"
+            style={{ width: '100%', padding: '9px 12px', border: '1px solid var(--border)', borderRadius: 8, fontSize: 14, fontWeight: 600, background: 'var(--white)', color: 'var(--ink-900)' }} />
+        </div>
+        <div>
+          <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: 'var(--ink-500)', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '.05em' }}>Taux CNESST (%)</label>
+          <input type="number" step="0.01" value={cnesstRate} onChange={e => setCnesstRate(e.target.value)} placeholder="1.5"
+            style={{ width: '100%', padding: '9px 12px', border: '1px solid var(--border)', borderRadius: 8, fontSize: 14, background: 'var(--white)', color: 'var(--ink-900)' }} />
+        </div>
+        <div>
+          <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: 'var(--ink-500)', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '.05em' }}>Nombre d'employés</label>
+          <input type="number" min="1" value={employees} onChange={e => setEmployees(e.target.value)}
+            style={{ width: '100%', padding: '9px 12px', border: '1px solid var(--border)', borderRadius: 8, fontSize: 14, background: 'var(--white)', color: 'var(--ink-900)' }} />
+        </div>
+      </div>
+
+      {calc && (
+        <>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: 12, marginBottom: 24 }}>
+            <KpiCard label="Salaire brut" value={`${fmt(gross)} $`} color="var(--info-500)" />
+            <KpiCard label="Charges patronales" value={`${fmt(calc.total)} $`} sub={`${fmt(calc.effective)} % du salaire`} color="var(--bad-400)" />
+            <KpiCard label="Coût total employeur" value={`${fmt(gross + calc.total)} $`} sub="Salaire + charges" color="var(--ink-500)" />
+            {empCount > 1 && <KpiCard label={`Charges × ${empCount} emp.`} value={`${fmt(calc.total * empCount)} $`} color="var(--bad-300)" />}
+          </div>
+
+          <div style={{ border: '1px solid var(--border)', borderRadius: 10, overflow: 'hidden', marginBottom: 16 }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <thead>
+                <tr>
+                  <th style={{ padding: '8px 12px', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', color: 'var(--ink-400)', background: 'var(--bg-soft)', textAlign: 'left', borderBottom: '2px solid var(--border)' }}>Cotisation</th>
+                  <th style={{ padding: '8px 12px', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', color: 'var(--ink-400)', background: 'var(--bg-soft)', textAlign: 'right', borderBottom: '2px solid var(--border)' }}>Calcul</th>
+                  <th style={{ padding: '8px 12px', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', color: 'var(--ink-400)', background: 'var(--bg-soft)', textAlign: 'right', borderBottom: '2px solid var(--border)' }}>Montant</th>
+                  {empCount > 1 && <th style={{ padding: '8px 12px', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', color: 'var(--ink-400)', background: 'var(--bg-soft)', textAlign: 'right', borderBottom: '2px solid var(--border)' }}>× {empCount}</th>}
+                </tr>
+              </thead>
+              <tbody>
+                {rows.map(r => (
+                  <tr key={r.label} style={{ background: 'var(--white)' }}
+                    onMouseEnter={e => e.currentTarget.style.background = 'var(--bg-soft)'}
+                    onMouseLeave={e => e.currentTarget.style.background = 'var(--white)'}>
+                    <td style={{ padding: '8px 12px', fontSize: 13, borderBottom: '1px solid var(--border)' }}>{r.label}</td>
+                    <td style={{ padding: '8px 12px', fontSize: 12, borderBottom: '1px solid var(--border)', textAlign: 'right', color: 'var(--ink-400)' }}>{r.note}</td>
+                    <td style={{ padding: '8px 12px', fontSize: 13, borderBottom: '1px solid var(--border)', textAlign: 'right', fontVariantNumeric: 'tabular-nums', fontWeight: 600 }}>{fmt(r.amount)} $</td>
+                    {empCount > 1 && <td style={{ padding: '8px 12px', fontSize: 13, borderBottom: '1px solid var(--border)', textAlign: 'right', fontVariantNumeric: 'tabular-nums', color: 'var(--ink-500)' }}>{fmt(r.amount * empCount)} $</td>}
+                  </tr>
+                ))}
+              </tbody>
+              <tfoot>
+                <tr style={{ background: 'var(--bg-soft)' }}>
+                  <td colSpan={2} style={{ padding: '9px 12px', fontWeight: 800, fontSize: 13 }}>Total charges patronales</td>
+                  <td style={{ padding: '9px 12px', fontWeight: 800, fontSize: 14, textAlign: 'right', fontVariantNumeric: 'tabular-nums', color: 'var(--bad-500)' }}>{fmt(calc.total)} $</td>
+                  {empCount > 1 && <td style={{ padding: '9px 12px', fontWeight: 800, fontSize: 14, textAlign: 'right', fontVariantNumeric: 'tabular-nums', color: 'var(--bad-500)' }}>{fmt(calc.total * empCount)} $</td>}
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+
+          <div style={{ fontSize: 12, color: 'var(--ink-400)', lineHeight: 1.6 }}>
+            Taux 2025 · RRQ max. 69 700 $ (exonération 3 500 $) · RQAP max. 94 000 $ · AE max. 63 200 $ · FSS taux simplifié masse salariale &lt; 1 M$ · CNESST variable selon secteur d'activité
+          </div>
+        </>
+      )}
+
+      {!calc && (
+        <div style={{ background: 'var(--bg-soft)', border: '1px solid var(--border)', borderRadius: 10, padding: 32, textAlign: 'center', color: 'var(--ink-400)', fontSize: 14 }}>
+          Saisissez un salaire brut annuel pour voir le calcul des charges
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── Coming Soon Tab ─────────────────────────────────────────
 function ComingSoonTab({ name }) {
   return (
@@ -923,6 +1306,8 @@ export default function FinanceScreen() {
       case 'cargo':     return <CargoTab />;
       case 'margin':    return <MarginAnalysisTab />;
       case 'finance':   return <SnapshotsTab />;
+      case 'budget':    return <BudgetTab />;
+      case 'payroll':   return <PayrollTab />;
       default:          return <ComingSoonTab name={NAV_ITEMS.find(n => n.id === activeTab)?.label ?? activeTab} />;
     }
   };
@@ -936,7 +1321,7 @@ export default function FinanceScreen() {
         </div>
         {NAV_ITEMS.map(item => {
           const isActive = activeTab === item.id;
-          const isReady  = ['dashboard', 'posts', 'cargo', 'margin', 'finance'].includes(item.id);
+          const isReady  = ['dashboard', 'posts', 'cargo', 'margin', 'finance', 'budget', 'payroll'].includes(item.id);
           return (
             <button key={item.id} onClick={() => setActiveTab(item.id)} style={{
               width: '100%', textAlign: 'left', border: 'none', borderRadius: 8, padding: '9px 10px',
