@@ -1649,6 +1649,233 @@ function HypTab() {
   );
 }
 
+// ─── Scenarios & Break-even Tab (Phase 6) ────────────────────
+function ScenariosTab() {
+  const { fmt: money } = useCurrency();
+  const currentFY = fiscalYearOf(new Date());
+  const [fy, setFy] = useState(currentFY);
+  const [loading, setLoading] = useState(true);
+
+  // Simulator inputs (seeded from actuals, fully editable)
+  const [simRev,    setSimRev]    = useState('');
+  const [simVarPct, setSimVarPct] = useState('');
+  const [simFix,    setSimFix]    = useState('');
+
+  // Named scenarios
+  const [rows, setRows] = useState([
+    { id: 1, label: 'Pessimiste', revenue: '' },
+    { id: 2, label: 'Réaliste',   revenue: '' },
+    { id: 3, label: 'Optimiste',  revenue: '' },
+  ]);
+  const [nextId, setNextId] = useState(4);
+
+  useEffect(() => {
+    setLoading(true);
+    fetch(`/api/finance/budget?fy=${fy}`)
+      .then(r => r.json())
+      .then(data => {
+        const varPosts = data.posts.filter(p => p.type === 'variable');
+        const fixPosts = data.posts.filter(p => p.type === 'fixed');
+        const totalVar = varPosts.reduce((s, p) => s + (data.actualVariable[p.id] ?? 0), 0);
+        const totalFix = fixPosts.reduce((s, p) => s + (data.annualFixed[p.id] ?? 0), 0);
+        const rev = data.totalRevenue;
+
+        setSimRev(rev > 0 ? String(Math.round(rev)) : '');
+        setSimVarPct(rev > 0 && totalVar > 0 ? String(Math.round(totalVar / rev * 1000) / 10) : '');
+        setSimFix(totalFix > 0 ? String(Math.round(totalFix)) : '');
+
+        if (rev > 0) {
+          setRows([
+            { id: 1, label: 'Pessimiste (−20 %)', revenue: String(Math.round(rev * 0.8)) },
+            { id: 2, label: 'Base (actuel)',        revenue: String(Math.round(rev)) },
+            { id: 3, label: 'Optimiste (+20 %)',    revenue: String(Math.round(rev * 1.2)) },
+          ]);
+        }
+      })
+      .finally(() => setLoading(false));
+  }, [fy]);
+
+  const rev    = parseFloat(simRev)    || 0;
+  const varPct = parseFloat(simVarPct) || 0;
+  const fix    = parseFloat(simFix)    || 0;
+  const cmRatio   = varPct < 100 ? (100 - varPct) / 100 : 0;
+  const varCost   = rev * varPct / 100;
+  const gross     = rev - varCost;
+  const net       = gross - fix;
+  const marginPct = rev > 0 ? gross / rev * 100 : null;
+  const breakEven = cmRatio > 0 && fix > 0 ? fix / cmRatio : null;
+  const progressPct = breakEven && breakEven > 0 ? Math.min(rev / breakEven * 100, 100) : 0;
+
+  function addRow() {
+    setRows(r => [...r, { id: nextId, label: `Scénario ${nextId}`, revenue: '' }]);
+    setNextId(n => n + 1);
+  }
+  function removeRow(id) { setRows(r => r.filter(x => x.id !== id)); }
+  function updateRow(id, field, val) { setRows(r => r.map(x => x.id === id ? { ...x, [field]: val } : x)); }
+
+  const inp = { padding: '5px 8px', border: '1px solid var(--border)', borderRadius: 6, fontSize: 13, background: 'var(--white)', color: 'var(--ink-900)', fontVariantNumeric: 'tabular-nums' };
+  const th  = { padding: '8px 10px', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.05em', color: 'var(--ink-400)', background: 'var(--bg-soft)', textAlign: 'right', borderBottom: '2px solid var(--border)', whiteSpace: 'nowrap' };
+  const thL = { ...th, textAlign: 'left' };
+  const td  = { padding: '7px 10px', fontSize: 13, borderBottom: '1px solid var(--border)', textAlign: 'right', fontVariantNumeric: 'tabular-nums' };
+  const tdL = { ...td, textAlign: 'left' };
+
+  const availableYears = [currentFY, currentFY - 1, currentFY - 2];
+
+  return (
+    <div>
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12, marginBottom: 24 }}>
+        <div>
+          <div style={{ fontSize: 22, fontWeight: 800, color: 'var(--ink-900)' }}>Scénarios & Break-even</div>
+          <div style={{ fontSize: 13, color: 'var(--ink-400)', marginTop: 4 }}>Simulateur interactif — ajustez les paramètres, les calculs se mettent à jour en direct</div>
+        </div>
+        <select value={fy} onChange={e => setFy(parseInt(e.target.value))}
+          style={{ padding: '6px 10px', border: '1px solid var(--border)', borderRadius: 8, fontSize: 13, background: 'var(--white)', color: 'var(--ink-900)' }}>
+          {availableYears.map(y => <option key={y} value={y}>{y}–{y + 1}</option>)}
+        </select>
+      </div>
+
+      {loading ? (
+        <div style={{ padding: 40, color: 'var(--ink-400)' }}>Chargement…</div>
+      ) : (
+        <>
+          {/* ── Simulator inputs ── */}
+          <div style={{ background: 'var(--white)', border: '1px solid var(--border)', borderRadius: 12, padding: 20, marginBottom: 20 }}>
+            <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--ink-700)', marginBottom: 16 }}>Paramètres du simulateur</div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 16 }}>
+              <div>
+                <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--ink-600)', display: 'block', marginBottom: 4 }}>CA annuel ($ CAD)</label>
+                <input type="number" min="0" step="100" value={simRev} onChange={e => setSimRev(e.target.value)} placeholder="ex. 150000" style={{ ...inp, width: '100%' }} />
+              </div>
+              <div>
+                <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--ink-600)', display: 'block', marginBottom: 4 }}>Coûts variables / CA (%)</label>
+                <input type="number" min="0" max="100" step="0.1" value={simVarPct} onChange={e => setSimVarPct(e.target.value)} placeholder="ex. 60" style={{ ...inp, width: '100%' }} />
+                <div style={{ fontSize: 11, color: 'var(--ink-400)', marginTop: 3 }}>Chargé depuis les réels YTD</div>
+              </div>
+              <div>
+                <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--ink-600)', display: 'block', marginBottom: 4 }}>Charges fixes annuelles ($ CAD)</label>
+                <input type="number" min="0" step="100" value={simFix} onChange={e => setSimFix(e.target.value)} placeholder="ex. 50000" style={{ ...inp, width: '100%' }} />
+                <div style={{ fontSize: 11, color: 'var(--ink-400)', marginTop: 3 }}>Chargé depuis les charges fixes réelles</div>
+              </div>
+            </div>
+          </div>
+
+          {/* ── Break-even KPIs ── */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: 14, marginBottom: 20 }}>
+            <KpiCard label="CA simulé" value={money(rev)} sub={`Taux marge var. : ${fmt2(100 - varPct)} %`} color="var(--info-500)" />
+            <KpiCard label="Coûts variables" value={money(varCost)} sub={`${fmt2(varPct)} % du CA`} color="var(--bad-400)" />
+            <KpiCard label="Marge brute" value={money(gross)} sub={marginPct !== null ? fmt2(marginPct) + ' %' : '—'}
+              color={gross >= 0 ? 'var(--ok-500)' : 'var(--bad-500)'} />
+            <KpiCard label="Charges fixes" value={money(fix)} sub="Annualisées" color="var(--bad-300)" />
+            <KpiCard label="Résultat net" value={money(net)} sub={net >= 0 ? 'Bénéfice' : 'Perte'}
+              color={net >= 0 ? 'var(--ok-500)' : 'var(--bad-500)'} />
+            <KpiCard label="Seuil de rentabilité"
+              value={breakEven !== null ? money(breakEven) : '—'}
+              sub={breakEven !== null && rev > 0 ? (rev >= breakEven ? '✓ Seuil atteint' : `Manque ${money(breakEven - rev)}`) : 'Données insuffisantes'}
+              color={breakEven !== null && rev >= breakEven ? 'var(--ok-500)' : 'var(--bad-500)'} />
+          </div>
+
+          {/* ── Break-even progress bar ── */}
+          {breakEven !== null && (
+            <div style={{ background: 'var(--white)', border: '1px solid var(--border)', borderRadius: 12, padding: '16px 20px', marginBottom: 20 }}>
+              <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--ink-700)', marginBottom: 12 }}>
+                Progression vers le seuil de rentabilité
+              </div>
+              <div style={{ height: 20, background: 'var(--bg-soft)', borderRadius: 10, overflow: 'hidden', position: 'relative', marginBottom: 8 }}>
+                <div style={{
+                  height: '100%', width: `${progressPct}%`,
+                  background: rev >= breakEven ? 'var(--ok-500)' : 'var(--info-500)',
+                  borderRadius: 10, transition: 'width .3s',
+                }} />
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: 'var(--ink-400)' }}>
+                <span>0</span>
+                <span style={{ fontWeight: 700, color: 'var(--ink-700)' }}>
+                  {fmt2(progressPct)} % du seuil atteint · CA actuel {money(rev)} / seuil {money(breakEven)}
+                </span>
+                <span>{money(breakEven)}</span>
+              </div>
+              <div style={{ marginTop: 10, padding: '10px 14px', background: 'var(--bg-soft)', borderRadius: 8, fontSize: 12, color: 'var(--ink-600)' }}>
+                <strong>Formule :</strong> Seuil = Charges fixes ({money(fix)}) ÷ Taux de marge sur coûts var. ({fmt2(cmRatio * 100)} %) = <strong>{money(breakEven)}</strong>
+              </div>
+            </div>
+          )}
+
+          {/* ── Named scenarios ── */}
+          <div style={{ background: 'var(--white)', border: '1px solid var(--border)', borderRadius: 12, overflow: 'hidden', marginBottom: 12 }}>
+            <div style={{ padding: '14px 16px', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--ink-700)' }}>Scénarios nommés</div>
+              <button onClick={addRow} style={{ padding: '5px 12px', border: '1px solid var(--info-300)', borderRadius: 7, fontSize: 12, fontWeight: 600, cursor: 'pointer', background: 'var(--info-50)', color: 'var(--info-700)' }}>
+                + Ajouter
+              </button>
+            </div>
+            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <thead>
+                <tr>
+                  <th style={thL}>Nom</th>
+                  <th style={th}>CA projeté ($)</th>
+                  <th style={th}>Coûts var.</th>
+                  <th style={th}>Marge brute</th>
+                  <th style={th}>Marge %</th>
+                  <th style={th}>Résultat net</th>
+                  <th style={{ ...th, width: 36 }}></th>
+                </tr>
+              </thead>
+              <tbody>
+                {rows.map(row => {
+                  const rRev   = parseFloat(row.revenue) || 0;
+                  const rVar   = rRev * varPct / 100;
+                  const rGross = rRev - rVar;
+                  const rNet   = rGross - fix;
+                  const rMpct  = rRev > 0 ? rGross / rRev * 100 : null;
+                  const mColor = rMpct === null ? 'var(--ink-400)' : rMpct >= 20 ? 'var(--ok-600)' : rMpct >= 0 ? 'var(--info-600)' : 'var(--bad-500)';
+                  return (
+                    <tr key={row.id} style={{ background: 'var(--white)' }}
+                      onMouseEnter={e => e.currentTarget.style.background = 'var(--bg-soft)'}
+                      onMouseLeave={e => e.currentTarget.style.background = 'var(--white)'}>
+                      <td style={tdL}>
+                        <input value={row.label} onChange={e => updateRow(row.id, 'label', e.target.value)}
+                          style={{ ...inp, width: 160 }} />
+                      </td>
+                      <td style={td}>
+                        <input type="number" min="0" step="100" value={row.revenue} onChange={e => updateRow(row.id, 'revenue', e.target.value)}
+                          placeholder="—" style={{ ...inp, width: 110 }} />
+                      </td>
+                      <td style={{ ...td, color: 'var(--bad-500)' }}>{rRev > 0 ? money(rVar) : '—'}</td>
+                      <td style={{ ...td, color: rRev > 0 ? (rGross >= 0 ? 'var(--ok-600)' : 'var(--bad-500)') : 'var(--ink-300)', fontWeight: rRev > 0 ? 700 : 400 }}>
+                        {rRev > 0 ? money(rGross) : '—'}
+                      </td>
+                      <td style={{ ...td, color: mColor, fontWeight: rMpct !== null ? 700 : 400 }}>
+                        {rMpct !== null ? fmt2(rMpct) + ' %' : '—'}
+                      </td>
+                      <td style={{ ...td, color: rRev > 0 ? (rNet >= 0 ? 'var(--ok-600)' : 'var(--bad-500)') : 'var(--ink-300)', fontWeight: rRev > 0 ? 700 : 400 }}>
+                        {rRev > 0 ? money(rNet) : '—'}
+                      </td>
+                      <td style={{ ...td, textAlign: 'center', paddingLeft: 4, paddingRight: 4 }}>
+                        <button onClick={() => removeRow(row.id)}
+                          style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--ink-300)', fontSize: 15, padding: '0 2px', lineHeight: 1 }}
+                          title="Supprimer">×</button>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+            {rows.length === 0 && (
+              <div style={{ padding: 24, textAlign: 'center', color: 'var(--ink-400)', fontSize: 13 }}>
+                Aucun scénario. Cliquez sur « + Ajouter » pour en créer.
+              </div>
+            )}
+          </div>
+
+          <div style={{ fontSize: 12, color: 'var(--ink-400)', marginTop: 8 }}>
+            Les scénarios utilisent le même ratio coûts variables ({fmt2(varPct)} %) et les mêmes charges fixes ({money(fix)}) que le simulateur.
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
 // ─── Coming Soon Tab ─────────────────────────────────────────
 function ComingSoonTab({ name }) {
   return (
@@ -1676,6 +1903,7 @@ export default function FinanceScreen() {
       case 'routes':     return <RoutesTab />;
       case 'transport':  return <TransportTab />;
       case 'hyp':        return <HypTab />;
+      case 'scenarios':  return <ScenariosTab />;
       default:           return <ComingSoonTab name={NAV_ITEMS.find(n => n.id === activeTab)?.label ?? activeTab} />;
     }
   };
@@ -1689,7 +1917,7 @@ export default function FinanceScreen() {
         </div>
         {NAV_ITEMS.map(item => {
           const isActive = activeTab === item.id;
-          const isReady  = ['dashboard', 'posts', 'cargo', 'margin', 'finance', 'budget', 'payroll', 'routes', 'transport', 'hyp'].includes(item.id);
+          const isReady  = ['dashboard', 'posts', 'cargo', 'margin', 'finance', 'budget', 'payroll', 'routes', 'transport', 'hyp', 'scenarios'].includes(item.id);
           return (
             <button key={item.id} onClick={() => setActiveTab(item.id)} style={{
               width: '100%', textAlign: 'left', border: 'none', borderRadius: 8, padding: '9px 10px',
