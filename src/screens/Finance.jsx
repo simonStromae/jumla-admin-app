@@ -1284,6 +1284,371 @@ function PayrollTab() {
   );
 }
 
+// ─── Routes Tab — Rentabilité par ligne ──────────────────────
+const MONTHS_FR_SHORT = ['juil.','août','sept.','oct.','nov.','déc.','janv.','févr.','mars','avr.','mai','juin'];
+
+function RoutesTab() {
+  const { fmt: money } = useCurrency();
+  const [data, setData]   = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [expanded, setExpanded] = useState(null);
+  const currentFY = fiscalYearOf(new Date());
+
+  useEffect(() => {
+    setLoading(true);
+    fetch('/api/finance/cost-breakdown?fy=' + currentFY)
+      .then(r => r.json())
+      .then(setData)
+      .finally(() => setLoading(false));
+  }, [currentFY]);
+
+  if (loading) return <div style={{ padding: 32, color: 'var(--ink-400)' }}>Chargement…</div>;
+  if (!data) return null;
+
+  const { byRoute, months, byPost, posts } = data;
+
+  const marginColor = (pct) =>
+    pct === null ? 'var(--ink-400)' : pct >= 20 ? 'var(--ok-600)' : pct >= 0 ? 'var(--info-600)' : 'var(--bad-500)';
+
+  return (
+    <div>
+      <div style={{ marginBottom: 20 }}>
+        <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '.08em', textTransform: 'uppercase', color: 'var(--info-600)', marginBottom: 6 }}>
+          Exercice {fiscalLabel(currentFY)}
+        </div>
+        <div style={{ fontSize: 22, fontWeight: 800, color: 'var(--ink-900)' }}>Rentabilité par ligne</div>
+        <div style={{ fontSize: 14, color: 'var(--ink-400)', marginTop: 4 }}>Marge brute par route, basée sur les coûts variables saisisis.</div>
+      </div>
+
+      {byRoute.length === 0 ? (
+        <div style={{ padding: 32, textAlign: 'center', color: 'var(--ink-400)' }}>Aucune cargaison avec route dans cet exercice.</div>
+      ) : (
+        <div style={{ background: 'var(--white)', border: '1px solid var(--border)', borderRadius: 12, overflow: 'hidden' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+            <thead>
+              <tr style={{ background: 'var(--bg-soft)' }}>
+                <th style={{ padding: '10px 14px', textAlign: 'left', fontWeight: 600, color: 'var(--ink-500)', fontSize: 11, textTransform: 'uppercase', letterSpacing: '.05em' }}>Route</th>
+                <th style={{ padding: '10px 14px', textAlign: 'right', fontWeight: 600, color: 'var(--ink-500)', fontSize: 11, textTransform: 'uppercase', letterSpacing: '.05em' }}>Cargaisons</th>
+                <th style={{ padding: '10px 14px', textAlign: 'right', fontWeight: 600, color: 'var(--ink-500)', fontSize: 11, textTransform: 'uppercase', letterSpacing: '.05em' }}>CA</th>
+                <th style={{ padding: '10px 14px', textAlign: 'right', fontWeight: 600, color: 'var(--ink-500)', fontSize: 11, textTransform: 'uppercase', letterSpacing: '.05em' }}>Coûts var.</th>
+                <th style={{ padding: '10px 14px', textAlign: 'right', fontWeight: 600, color: 'var(--ink-500)', fontSize: 11, textTransform: 'uppercase', letterSpacing: '.05em' }}>Marge brute</th>
+                <th style={{ padding: '10px 14px', textAlign: 'right', fontWeight: 600, color: 'var(--ink-500)', fontSize: 11, textTransform: 'uppercase', letterSpacing: '.05em' }}>Marge %</th>
+                <th style={{ width: 32 }}></th>
+              </tr>
+            </thead>
+            <tbody>
+              {byRoute.map((r, i) => {
+                const isOpen = expanded === r.routeId;
+                const pctColor = marginColor(r.marginPct);
+                return (
+                  <>
+                    <tr key={r.routeId} style={{ borderTop: i > 0 ? '1px solid var(--border)' : 'none', background: isOpen ? 'var(--info-50)' : 'transparent' }}>
+                      <td style={{ padding: '12px 14px', fontWeight: 600, color: 'var(--ink-900)' }}>{r.route}</td>
+                      <td style={{ padding: '12px 14px', textAlign: 'right', color: 'var(--ink-600)' }}>{r.campaignCount}</td>
+                      <td style={{ padding: '12px 14px', textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>{money(r.revenue)}</td>
+                      <td style={{ padding: '12px 14px', textAlign: 'right', fontVariantNumeric: 'tabular-nums', color: 'var(--bad-500)' }}>{money(r.variableCosts)}</td>
+                      <td style={{ padding: '12px 14px', textAlign: 'right', fontVariantNumeric: 'tabular-nums', fontWeight: 600 }}>{money(r.grossMargin)}</td>
+                      <td style={{ padding: '12px 14px', textAlign: 'right', fontWeight: 700, color: pctColor }}>{r.marginPct !== null ? fmt2(r.marginPct) + ' %' : '—'}</td>
+                      <td style={{ padding: '12px 8px' }}>
+                        <button onClick={() => setExpanded(isOpen ? null : r.routeId)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--ink-400)', fontSize: 12, padding: '2px 6px', borderRadius: 4 }}>
+                          {isOpen ? '▲' : '▼'}
+                        </button>
+                      </td>
+                    </tr>
+                    {isOpen && (
+                      <tr key={r.routeId + '-detail'}>
+                        <td colSpan={7} style={{ padding: '0 14px 14px 28px', background: 'var(--info-50)' }}>
+                          <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--ink-500)', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '.05em' }}>Détail par poste de coût</div>
+                          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                            {posts.filter(p => r.costByPost[p.id] > 0).map(p => (
+                              <div key={p.id} style={{ background: 'var(--white)', border: '1px solid var(--border)', borderRadius: 8, padding: '6px 12px', fontSize: 12 }}>
+                                <span style={{ color: 'var(--ink-500)' }}>{p.name}: </span>
+                                <span style={{ fontWeight: 700, color: 'var(--bad-500)' }}>{money(r.costByPost[p.id])}</span>
+                              </div>
+                            ))}
+                            {posts.filter(p => r.costByPost[p.id] > 0).length === 0 && (
+                              <div style={{ color: 'var(--ink-400)', fontSize: 12 }}>Aucun coût variable saisi pour cette route.</div>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    )}
+                  </>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Transport Tab — Transport & Douane ───────────────────────
+function TransportTab() {
+  const { fmt: money } = useCurrency();
+  const [data, setData]   = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [view, setView]   = useState('by-post'); // 'by-post' | 'by-month'
+  const currentFY = fiscalYearOf(new Date());
+
+  useEffect(() => {
+    setLoading(true);
+    fetch('/api/finance/cost-breakdown?fy=' + currentFY)
+      .then(r => r.json())
+      .then(setData)
+      .finally(() => setLoading(false));
+  }, [currentFY]);
+
+  if (loading) return <div style={{ padding: 32, color: 'var(--ink-400)' }}>Chargement…</div>;
+  if (!data) return null;
+
+  const { posts, byPost, totalByPost, totalByMonth, months } = data;
+
+  const grandTotal = Object.values(totalByPost).reduce((s, v) => s + v, 0);
+
+  const btnStyle = (active) => ({
+    padding: '6px 14px', borderRadius: 6, border: '1px solid var(--border)', cursor: 'pointer', fontSize: 13,
+    background: active ? 'var(--info-600)' : 'var(--white)', color: active ? '#fff' : 'var(--ink-700)', fontWeight: active ? 700 : 500,
+  });
+
+  return (
+    <div>
+      <div style={{ marginBottom: 20 }}>
+        <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '.08em', textTransform: 'uppercase', color: 'var(--info-600)', marginBottom: 6 }}>
+          Exercice {fiscalLabel(currentFY)}
+        </div>
+        <div style={{ fontSize: 22, fontWeight: 800, color: 'var(--ink-900)' }}>Transport & Douane</div>
+        <div style={{ fontSize: 14, color: 'var(--ink-400)', marginTop: 4 }}>Répartition des coûts variables par poste.</div>
+      </div>
+
+      <div style={{ marginBottom: 18, display: 'flex', gap: 8 }}>
+        <button style={btnStyle(view === 'by-post')}  onClick={() => setView('by-post')}>Par poste</button>
+        <button style={btnStyle(view === 'by-month')} onClick={() => setView('by-month')}>Par mois</button>
+      </div>
+
+      {view === 'by-post' && (
+        <div style={{ background: 'var(--white)', border: '1px solid var(--border)', borderRadius: 12, overflow: 'hidden' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+            <thead>
+              <tr style={{ background: 'var(--bg-soft)' }}>
+                <th style={{ padding: '10px 14px', textAlign: 'left', fontWeight: 600, color: 'var(--ink-500)', fontSize: 11, textTransform: 'uppercase', letterSpacing: '.05em' }}>Poste</th>
+                <th style={{ padding: '10px 14px', textAlign: 'right', fontWeight: 600, color: 'var(--ink-500)', fontSize: 11, textTransform: 'uppercase', letterSpacing: '.05em' }}>Total YTD</th>
+                <th style={{ padding: '10px 14px', textAlign: 'right', fontWeight: 600, color: 'var(--ink-500)', fontSize: 11, textTransform: 'uppercase', letterSpacing: '.05em' }}>% du total</th>
+              </tr>
+            </thead>
+            <tbody>
+              {posts.filter(p => (totalByPost[p.id] ?? 0) > 0).map((p, i) => {
+                const amt = totalByPost[p.id] ?? 0;
+                const pct = grandTotal > 0 ? (amt / grandTotal) * 100 : 0;
+                return (
+                  <tr key={p.id} style={{ borderTop: i > 0 ? '1px solid var(--border)' : 'none' }}>
+                    <td style={{ padding: '12px 14px', color: 'var(--ink-800)' }}>
+                      {p.name}
+                      <div style={{ marginTop: 4, height: 4, borderRadius: 2, background: 'var(--border)', width: 120 }}>
+                        <div style={{ height: '100%', borderRadius: 2, background: 'var(--bad-400)', width: pct + '%' }} />
+                      </div>
+                    </td>
+                    <td style={{ padding: '12px 14px', textAlign: 'right', fontVariantNumeric: 'tabular-nums', fontWeight: 600, color: 'var(--bad-500)' }}>{money(amt)}</td>
+                    <td style={{ padding: '12px 14px', textAlign: 'right', color: 'var(--ink-500)' }}>{fmt2(pct)} %</td>
+                  </tr>
+                );
+              })}
+              <tr style={{ borderTop: '2px solid var(--border)', background: 'var(--bg-soft)' }}>
+                <td style={{ padding: '12px 14px', fontWeight: 700, color: 'var(--ink-900)' }}>Total</td>
+                <td style={{ padding: '12px 14px', textAlign: 'right', fontVariantNumeric: 'tabular-nums', fontWeight: 700, color: 'var(--bad-600)' }}>{money(grandTotal)}</td>
+                <td style={{ padding: '12px 14px', textAlign: 'right', fontWeight: 700 }}>100 %</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {view === 'by-month' && (
+        <div style={{ background: 'var(--white)', border: '1px solid var(--border)', borderRadius: 12, overflow: 'hidden', overflowX: 'auto' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
+            <thead>
+              <tr style={{ background: 'var(--bg-soft)' }}>
+                <th style={{ padding: '10px 14px', textAlign: 'left', fontWeight: 600, color: 'var(--ink-500)', fontSize: 11, textTransform: 'uppercase', letterSpacing: '.05em', position: 'sticky', left: 0, background: 'var(--bg-soft)' }}>Poste</th>
+                {months.map((m, i) => (
+                  <th key={m} style={{ padding: '10px 8px', textAlign: 'right', fontWeight: 600, color: 'var(--ink-500)', fontSize: 11, whiteSpace: 'nowrap' }}>{MONTHS_FR_SHORT[i]}</th>
+                ))}
+                <th style={{ padding: '10px 14px', textAlign: 'right', fontWeight: 700, color: 'var(--ink-700)', fontSize: 11, textTransform: 'uppercase' }}>Total</th>
+              </tr>
+            </thead>
+            <tbody>
+              {posts.filter(p => (totalByPost[p.id] ?? 0) > 0).map((p, i) => (
+                <tr key={p.id} style={{ borderTop: i > 0 ? '1px solid var(--border)' : 'none' }}>
+                  <td style={{ padding: '10px 14px', color: 'var(--ink-800)', position: 'sticky', left: 0, background: 'var(--white)', whiteSpace: 'nowrap' }}>{p.name}</td>
+                  {months.map(m => (
+                    <td key={m} style={{ padding: '10px 8px', textAlign: 'right', fontVariantNumeric: 'tabular-nums', color: (byPost[p.id]?.[m] ?? 0) > 0 ? 'var(--bad-500)' : 'var(--ink-300)' }}>
+                      {(byPost[p.id]?.[m] ?? 0) > 0 ? money(byPost[p.id][m]) : '—'}
+                    </td>
+                  ))}
+                  <td style={{ padding: '10px 14px', textAlign: 'right', fontVariantNumeric: 'tabular-nums', fontWeight: 700, color: 'var(--bad-500)' }}>{money(totalByPost[p.id] ?? 0)}</td>
+                </tr>
+              ))}
+              <tr style={{ borderTop: '2px solid var(--border)', background: 'var(--bg-soft)' }}>
+                <td style={{ padding: '10px 14px', fontWeight: 700, color: 'var(--ink-900)', position: 'sticky', left: 0, background: 'var(--bg-soft)' }}>Total</td>
+                {months.map(m => (
+                  <td key={m} style={{ padding: '10px 8px', textAlign: 'right', fontVariantNumeric: 'tabular-nums', fontWeight: 700, color: (totalByMonth[m] ?? 0) > 0 ? 'var(--bad-600)' : 'var(--ink-300)' }}>
+                    {(totalByMonth[m] ?? 0) > 0 ? money(totalByMonth[m]) : '—'}
+                  </td>
+                ))}
+                <td style={{ padding: '10px 14px', textAlign: 'right', fontVariantNumeric: 'tabular-nums', fontWeight: 800, color: 'var(--bad-600)' }}>{money(grandTotal)}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Hypothèses Tab — Hypothèses / kg ────────────────────────
+const HYP_FIELDS = [
+  { key: 'transportPerKg',  label: 'Transport / kg',     unit: '$/kg',  help: 'Fret aérien ou terrestre par kilogramme' },
+  { key: 'customsPct',      label: 'Douane (% valeur)',  unit: '%',     help: 'Taux de droits de douane sur la valeur déclarée' },
+  { key: 'brokerPerKg',     label: 'Courtier / kg',      unit: '$/kg',  help: 'Honoraires du transitaire ou courtier en douane' },
+  { key: 'storagePerKg',    label: 'Entreposage / kg',   unit: '$/kg',  help: 'Coûts de stockage par kilogramme' },
+  { key: 'handlingPerKg',   label: 'Manutention / kg',   unit: '$/kg',  help: 'Chargement, déchargement, emballage' },
+];
+
+function HypTab() {
+  const { fmt: money } = useCurrency();
+  const currentFY = fiscalYearOf(new Date());
+  const [fy, setFY]       = useState(currentFY);
+  const [hyp, setHyp]     = useState(null);
+  const [saved, setSaved] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const saveTimer = useRef(null);
+
+  useEffect(() => {
+    setLoading(true);
+    fetch('/api/finance/hypotheses?fy=' + fy)
+      .then(r => r.json())
+      .then(d => { setHyp(d.hyp); setLoading(false); });
+  }, [fy]);
+
+  const update = (key, raw) => {
+    const val = parseFloat(raw) || 0;
+    setHyp(h => ({ ...h, [key]: val }));
+    setSaved(false);
+    clearTimeout(saveTimer.current);
+    saveTimer.current = setTimeout(() => {
+      setHyp(prev => {
+        fetch('/api/finance/hypotheses?fy=' + fy, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(prev),
+        }).then(() => setSaved(true));
+        return prev;
+      });
+    }, 800);
+  };
+
+  if (loading || !hyp) return <div style={{ padding: 32, color: 'var(--ink-400)' }}>Chargement…</div>;
+
+  const weight = hyp.targetWeightKg || 1000;
+  const revKg  = hyp.revenuePerKg || 0;
+  const varCost = (
+    hyp.transportPerKg * weight +
+    (hyp.customsPct / 100) * (revKg * weight) +
+    hyp.brokerPerKg * weight +
+    hyp.storagePerKg * weight +
+    hyp.handlingPerKg * weight
+  );
+  const revenue   = revKg * weight;
+  const grossMargin = revenue - varCost;
+  const marginPct   = revenue > 0 ? (grossMargin / revenue) * 100 : null;
+
+  const inputStyle = { width: '100%', padding: '8px 10px', border: '1px solid var(--border)', borderRadius: 6, fontSize: 14, background: 'var(--white)', color: 'var(--ink-900)' };
+
+  return (
+    <div>
+      <div style={{ marginBottom: 20, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div>
+          <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '.08em', textTransform: 'uppercase', color: 'var(--info-600)', marginBottom: 6 }}>
+            Exercice {fiscalLabel(fy)}
+          </div>
+          <div style={{ fontSize: 22, fontWeight: 800, color: 'var(--ink-900)' }}>Hypothèses / kg</div>
+          <div style={{ fontSize: 14, color: 'var(--ink-400)', marginTop: 4 }}>Paramètres de coût par kilogramme pour les projections.</div>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          {saved && <span style={{ fontSize: 12, color: 'var(--ok-600)' }}>✓ Sauvegardé</span>}
+          <select value={fy} onChange={e => setFY(Number(e.target.value))} style={{ padding: '6px 10px', border: '1px solid var(--border)', borderRadius: 6, fontSize: 13, background: 'var(--white)' }}>
+            {[currentFY, currentFY - 1, currentFY - 2].map(y => <option key={y} value={y}>{fiscalLabel(y)}</option>)}
+          </select>
+        </div>
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24 }}>
+        {/* Parameters */}
+        <div style={{ background: 'var(--white)', border: '1px solid var(--border)', borderRadius: 12, padding: 20 }}>
+          <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--ink-700)', marginBottom: 16 }}>Paramètres de coût</div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+            {HYP_FIELDS.map(f => (
+              <div key={f.key}>
+                <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--ink-600)', display: 'block', marginBottom: 4 }}>
+                  {f.label} <span style={{ fontWeight: 400, color: 'var(--ink-400)' }}>({f.unit})</span>
+                </label>
+                <input type="number" min="0" step="0.01" value={hyp[f.key] ?? 0}
+                  onChange={e => update(f.key, e.target.value)} style={inputStyle} />
+                <div style={{ fontSize: 11, color: 'var(--ink-400)', marginTop: 3 }}>{f.help}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Simulation */}
+        <div>
+          <div style={{ background: 'var(--white)', border: '1px solid var(--border)', borderRadius: 12, padding: 20, marginBottom: 16 }}>
+            <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--ink-700)', marginBottom: 16 }}>Simulation par volume</div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+              <div>
+                <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--ink-600)', display: 'block', marginBottom: 4 }}>Poids cible (kg)</label>
+                <input type="number" min="0" step="1" value={hyp.targetWeightKg ?? 1000}
+                  onChange={e => update('targetWeightKg', e.target.value)} style={inputStyle} />
+              </div>
+              <div>
+                <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--ink-600)', display: 'block', marginBottom: 4 }}>Revenu / kg ($/kg)</label>
+                <input type="number" min="0" step="0.01" value={hyp.revenuePerKg ?? 0}
+                  onChange={e => update('revenuePerKg', e.target.value)} style={inputStyle} />
+              </div>
+            </div>
+          </div>
+          <div style={{ background: 'var(--white)', border: '1px solid var(--border)', borderRadius: 12, padding: 20 }}>
+            <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--ink-700)', marginBottom: 16 }}>Résultat estimé</div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13 }}>
+                <span style={{ color: 'var(--ink-500)' }}>Revenu estimé</span>
+                <span style={{ fontWeight: 700 }}>{money(revenue)}</span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13 }}>
+                <span style={{ color: 'var(--ink-500)' }}>Coûts variables estimés</span>
+                <span style={{ fontWeight: 700, color: 'var(--bad-500)' }}>{money(varCost)}</span>
+              </div>
+              <div style={{ borderTop: '1px solid var(--border)', paddingTop: 10, display: 'flex', justifyContent: 'space-between', fontSize: 14 }}>
+                <span style={{ fontWeight: 700 }}>Marge brute estimée</span>
+                <span style={{ fontWeight: 800, color: grossMargin >= 0 ? 'var(--ok-600)' : 'var(--bad-500)' }}>{money(grossMargin)}</span>
+              </div>
+              {marginPct !== null && (
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13 }}>
+                  <span style={{ color: 'var(--ink-500)' }}>Marge %</span>
+                  <span style={{ fontWeight: 700, color: marginPct >= 20 ? 'var(--ok-600)' : marginPct >= 0 ? 'var(--info-600)' : 'var(--bad-500)' }}>{fmt2(marginPct)} %</span>
+                </div>
+              )}
+              <div style={{ background: 'var(--bg-soft)', borderRadius: 8, padding: '10px 12px', fontSize: 12, color: 'var(--ink-500)', marginTop: 4 }}>
+                Coût variable total / kg : <strong style={{ color: 'var(--ink-700)' }}>{weight > 0 ? fmt2(varCost / weight) : '—'} $/kg</strong>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── Coming Soon Tab ─────────────────────────────────────────
 function ComingSoonTab({ name }) {
   return (
@@ -1307,8 +1672,11 @@ export default function FinanceScreen() {
       case 'margin':    return <MarginAnalysisTab />;
       case 'finance':   return <SnapshotsTab />;
       case 'budget':    return <BudgetTab />;
-      case 'payroll':   return <PayrollTab />;
-      default:          return <ComingSoonTab name={NAV_ITEMS.find(n => n.id === activeTab)?.label ?? activeTab} />;
+      case 'payroll':    return <PayrollTab />;
+      case 'routes':     return <RoutesTab />;
+      case 'transport':  return <TransportTab />;
+      case 'hyp':        return <HypTab />;
+      default:           return <ComingSoonTab name={NAV_ITEMS.find(n => n.id === activeTab)?.label ?? activeTab} />;
     }
   };
 
@@ -1321,7 +1689,7 @@ export default function FinanceScreen() {
         </div>
         {NAV_ITEMS.map(item => {
           const isActive = activeTab === item.id;
-          const isReady  = ['dashboard', 'posts', 'cargo', 'margin', 'finance', 'budget', 'payroll'].includes(item.id);
+          const isReady  = ['dashboard', 'posts', 'cargo', 'margin', 'finance', 'budget', 'payroll', 'routes', 'transport', 'hyp'].includes(item.id);
           return (
             <button key={item.id} onClick={() => setActiveTab(item.id)} style={{
               width: '100%', textAlign: 'left', border: 'none', borderRadius: 8, padding: '9px 10px',
