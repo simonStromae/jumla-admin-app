@@ -26,19 +26,19 @@ const DEFAULT_FEES_META = {
   deliveryFee: 25,
 };
 
-function fmtTransport(t) {
-  if (t.transportFlat  !== undefined) return `${t.transportFlat} $ (forfait)`;
-  if (t.transportPerKg !== undefined) return `${t.transportPerKg} $/kg`;
+function fmtTransport(t, cur = 'CAD') {
+  if (t.transportFlat  !== undefined) return `${t.transportFlat} ${cur} (forfait)`;
+  if (t.transportPerKg !== undefined) return `${t.transportPerKg} ${cur}/kg`;
   return '—';
 }
-function fmtManut(t) {
-  if (t.manutentionFlat !== undefined) return `${t.manutentionFlat} $ (forfait)`;
-  if (t.manutentionPerUnit !== undefined) return `${t.manutentionPerUnit} $/unité · min ${t.manutentionMin ?? 0} $`;
+function fmtManut(t, cur = 'CAD') {
+  if (t.manutentionFlat !== undefined) return `${t.manutentionFlat} ${cur} (forfait)`;
+  if (t.manutentionPerUnit !== undefined) return `${t.manutentionPerUnit} ${cur}/unité · min ${t.manutentionMin ?? 0} ${cur}`;
   return '—';
 }
-function fmtRate(flat, perKg) {
-  if (flat   !== undefined) return `${flat} $ (forfait)`;
-  if (perKg  !== undefined) return `${perKg} $/kg`;
+function fmtRate(flat, perKg, cur = 'CAD') {
+  if (flat   !== undefined) return `${flat} ${cur} (forfait)`;
+  if (perKg  !== undefined) return `${perKg} ${cur}/kg`;
   return '—';
 }
 
@@ -71,10 +71,10 @@ function TarifGrid({ tiers, fees, currency = 'CAD', isDefault = false }) {
                 <td className="mono" style={{ fontWeight: 700, whiteSpace: 'nowrap' }}>
                   {tier.to >= 99999 ? `> ${tier.from} kg` : `${tier.from} – ${tier.to} kg`}
                 </td>
-                <td style={{ whiteSpace: 'nowrap' }}>{fmtTransport(tier)}</td>
-                <td style={{ whiteSpace: 'nowrap' }}>{fmtManut(tier)}</td>
-                <td style={{ whiteSpace: 'nowrap' }}>{fmtRate(tier.douaneFlat, tier.douanePerKg)}</td>
-                <td style={{ whiteSpace: 'nowrap' }}>{fmtRate(tier.formalitesFlat, tier.formalitesPerKg)}</td>
+                <td style={{ whiteSpace: 'nowrap' }}>{fmtTransport(tier, cur)}</td>
+                <td style={{ whiteSpace: 'nowrap' }}>{fmtManut(tier, cur)}</td>
+                <td style={{ whiteSpace: 'nowrap' }}>{fmtRate(tier.douaneFlat, tier.douanePerKg, cur)}</td>
+                <td style={{ whiteSpace: 'nowrap' }}>{fmtRate(tier.formalitesFlat, tier.formalitesPerKg, cur)}</td>
               </tr>
             ))}
           </tbody>
@@ -1689,15 +1689,15 @@ function RouteEditModal({ editRoute, onClose, onSaved }) {
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 12 }}>
                 <div className="field" style={{ marginBottom: 0 }}>
-                  <label className="label">Tarif CBM ($/m³)</label>
+                  <label className="label">Tarif CBM ({currency}/m³)</label>
                   <input className="input mono" type="number" step="10" value={pricePerCbm} onChange={e => setPricePerCbm(e.target.value)} />
                 </div>
                 <div className="field" style={{ marginBottom: 0 }}>
-                  <label className="label">Volumineux ($/m³)</label>
+                  <label className="label">Volumineux ({currency}/m³)</label>
                   <input className="input mono" type="number" step="10" value={bulkyPerCbm} onChange={e => setBulkyPerCbm(e.target.value)} />
                 </div>
                 <div className="field" style={{ marginBottom: 0 }}>
-                  <label className="label">Seuil haute valeur ($)</label>
+                  <label className="label">Seuil haute valeur ({currency})</label>
                   <input className="input mono" type="number" step="50" value={highValueThreshold} onChange={e => setHighValueThreshold(e.target.value)} />
                 </div>
                 <div className="field" style={{ marginBottom: 0 }}>
@@ -1741,7 +1741,7 @@ function RouteEditModal({ editRoute, onClose, onSaved }) {
                       <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
                         <select className="select input--sm" value={tier.transportType} onChange={e => updTier(tier.id, 'transportType', e.target.value)} style={{ fontSize: 11, padding: '2px 4px', width: 70 }}>
                           <option value="flat">Forfait</option>
-                          <option value="perKg">$/kg</option>
+                          <option value="perKg">{currency}/kg</option>
                         </select>
                         <input className="input input--sm mono" type="number" value={tier.transportValue} onChange={e => updTier(tier.id, 'transportValue', e.target.value)} style={{ width: 55 }} />
                       </div>
@@ -1750,7 +1750,7 @@ function RouteEditModal({ editRoute, onClose, onSaved }) {
                       <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
                         <select className="select input--sm" value={tier.cartonType} onChange={e => updTier(tier.id, 'cartonType', e.target.value)} style={{ fontSize: 11, padding: '2px 4px', width: 70 }}>
                           <option value="flat">Forfait</option>
-                          <option value="perUnit">$/carton</option>
+                          <option value="perUnit">{currency}/carton</option>
                         </select>
                         <input className="input input--sm mono" type="number" value={tier.cartonValue} onChange={e => updTier(tier.id, 'cartonValue', e.target.value)} style={{ width: 55 }} />
                       </div>
@@ -1759,7 +1759,7 @@ function RouteEditModal({ editRoute, onClose, onSaved }) {
                       <div style={{ display: 'flex', gap: 4, alignItems: 'center', flexWrap: 'wrap' }}>
                         <select className="select input--sm" value={tier.manutentionType} onChange={e => updTier(tier.id, 'manutentionType', e.target.value)} style={{ fontSize: 11, padding: '2px 4px', width: 80 }}>
                           <option value="flat">Forfait</option>
-                          <option value="perUnit">$/unité</option>
+                          <option value="perUnit">{currency}/unité</option>
                         </select>
                         <input className="input input--sm mono" type="number" value={tier.manutentionValue} onChange={e => updTier(tier.id, 'manutentionValue', e.target.value)} style={{ width: 50 }} />
                         {tier.manutentionType === 'perUnit' && (
@@ -1772,7 +1772,7 @@ function RouteEditModal({ editRoute, onClose, onSaved }) {
                       <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
                         <select className="select input--sm" value={tier.douaneType} onChange={e => updTier(tier.id, 'douaneType', e.target.value)} style={{ fontSize: 11, padding: '2px 4px', width: 70 }}>
                           <option value="flat">Forfait</option>
-                          <option value="perKg">$/kg</option>
+                          <option value="perKg">{currency}/kg</option>
                         </select>
                         <input className="input input--sm mono" type="number" value={tier.douaneValue} onChange={e => updTier(tier.id, 'douaneValue', e.target.value)} style={{ width: 55 }} />
                       </div>
@@ -1781,7 +1781,7 @@ function RouteEditModal({ editRoute, onClose, onSaved }) {
                       <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
                         <select className="select input--sm" value={tier.formalitesType} onChange={e => updTier(tier.id, 'formalitesType', e.target.value)} style={{ fontSize: 11, padding: '2px 4px', width: 70 }}>
                           <option value="flat">Forfait</option>
-                          <option value="perKg">$/kg</option>
+                          <option value="perKg">{currency}/kg</option>
                         </select>
                         <input className="input input--sm mono" type="number" value={tier.formalitesValue} onChange={e => updTier(tier.id, 'formalitesValue', e.target.value)} style={{ width: 55 }} />
                       </div>
@@ -1815,7 +1815,7 @@ function RouteEditModal({ editRoute, onClose, onSaved }) {
                 { label: 'Petit sac',  val: bagSmall,  set: setBagSmall,  african: true },
                 { label: 'Moyen sac', val: bagMedium, set: setBagMedium, african: true },
                 { label: 'Grand sac', val: bagLarge,  set: setBagLarge,  african: true },
-                { label: 'Plastique', sub: '$/unité', val: plastic, set: setPlastic, always: true },
+                { label: 'Plastique', sub: `${currency}/unité`, val: plastic, set: setPlastic, always: true },
               ].filter(f => f.always || (f.african && africanRoute)).map(f => (
                 <div key={f.label} className="field" style={{ marginBottom: 0 }}>
                   <label className="label">{f.label}{f.sub && <span className="opt"> {f.sub}</span>}</label>

@@ -2,18 +2,19 @@ import { useState, useEffect, useCallback } from 'react';
 import I from '../components/Icons.jsx';
 import { RoutePill } from '../components/Shell.jsx';
 import { useAdminT } from '../lib/useAdminT.js';
+import { useCurrency } from '../lib/useCurrency.js';
 import PhoneInput from '../components/PhoneInput.jsx';
 
 // TODO: PRODUCT_TYPES labels/descs have no matching i18n keys — move inside component and translate if keys are added
 const PRODUCT_TYPES = [
   { id: 'standard',     label: 'Standard',                       desc: 'Savons, pagnes, articles généraux' },
-  { id: 'vetements',    label: 'Vêtements / Chaussures / Sacs',  desc: '+2 $/kg supplément' },
-  { id: 'cosmetique',   label: 'Cosmétiques / Compléments',      desc: '+3 $/kg supplément' },
+  { id: 'vetements',    label: 'Vêtements / Chaussures / Sacs',  desc: '+2 CAD/kg supplément' },
+  { id: 'cosmetique',   label: 'Cosmétiques / Compléments',      desc: '+3 CAD/kg supplément' },
   { id: 'alimentaire',  label: 'Alimentaire / Épices',           desc: 'Ndolè, poisson fumé, café…' },
-  { id: 'biere',        label: 'Bière',                          desc: '6 $/kg + frais SAQ' },
+  { id: 'biere',        label: 'Bière',                          desc: '6 CAD/kg + frais SAQ' },
   { id: 'manioc_huile', label: 'Bâton de manioc / Huile rouge',  desc: 'Tarif spécial' },
-  { id: 'electronique', label: 'Électronique',                   desc: '+5 $/kg supplément' },
-  { id: 'documents',    label: 'Documents',                      desc: 'Tarif réduit -2 $/kg' },
+  { id: 'electronique', label: 'Électronique',                   desc: '+5 CAD/kg supplément' },
+  { id: 'documents',    label: 'Documents',                      desc: 'Tarif réduit -2 CAD/kg' },
 ];
 
 function NumField({ label, value, onChange, min = 0 }) {
@@ -32,12 +33,12 @@ function NumField({ label, value, onChange, min = 0 }) {
   );
 }
 
-function PriceRow({ label, value, bold }) {
+function PriceRow({ label, value, bold, currency = 'CAD' }) {
   if (!value && value !== 0) return null;
   return (
     <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: bold ? 13 : 12, fontWeight: bold ? 700 : 400, color: bold ? 'var(--ink-900)' : 'var(--ink-600)', padding: '3px 0' }}>
       <span>{label}</span>
-      <span className="mono">{value.toFixed(2)} $</span>
+      <span className="mono">{value.toFixed(2)} {currency}</span>
     </div>
   );
 }
@@ -45,6 +46,7 @@ function PriceRow({ label, value, bold }) {
 export default function ParcelFormPage({ mode = 'create', parcel, campaign, onNav }) {
   const isEdit = mode === 'edit';
   const t = useAdminT();
+  const { currency } = useCurrency();
 
   const [campaigns, setCampaigns]   = useState([]);
   const [clients, setClients]       = useState([]);
@@ -506,7 +508,7 @@ export default function ParcelFormPage({ mode = 'create', parcel, campaign, onNa
               {/* TODO: no i18n keys for delivery option labels (Retrait entrepôt, Livraison à domicile, Gratuit) */}
               {[
                 { id: 'pickup', label: 'Retrait entrepôt', en: 'Warehouse pickup', extra: 'Gratuit' },
-                { id: 'home',   label: 'Livraison à domicile', en: 'Home delivery', extra: '+25 $ CAD' },
+                { id: 'home',   label: 'Livraison à domicile', en: 'Home delivery', extra: '+25 CAD' },
               ].map(opt => (
                 <label key={opt.id} style={{
                   display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px',
@@ -634,8 +636,8 @@ export default function ParcelFormPage({ mode = 'create', parcel, campaign, onNa
               </div>
               <div style={{ fontSize: 26, fontWeight: 800 }}>
                 {calcLoading ? '…' : pricing
-                  ? `${(pricing.prixClient + (data.delivery === 'home' ? 25 : 0)).toFixed(2)} $`
-                  : totalKg > 0 ? '—' : '— $'}
+                  ? `${(pricing.prixClient + (data.delivery === 'home' ? 25 : 0)).toFixed(2)} ${currency}`
+                  : totalKg > 0 ? '—' : `— ${currency}`}
               </div>
               <div style={{ fontSize: 11, opacity: .55, marginTop: 2 }}>
                 {/* TODO: "CAD · Marge" label has no i18n key */}
@@ -660,29 +662,29 @@ export default function ParcelFormPage({ mode = 'create', parcel, campaign, onNa
               {pricing && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
                   {/* TODO: price breakdown labels (Transport, Manutention, Douane, etc.) have no i18n keys */}
-                  <PriceRow label="Transport" value={pricing.transport} />
-                  {pricing.cartons > 0   && <PriceRow label="Cartons" value={pricing.cartons} />}
-                  {pricing.sacs > 0      && <PriceRow label="Sacs" value={pricing.sacs} />}
-                  <PriceRow label="Manutention" value={pricing.manutention} />
-                  {pricing.douane > 0    && <PriceRow label="Douane & terminal" value={pricing.douane} />}
-                  {pricing.formalites > 0 && <PriceRow label="Formalités" value={pricing.formalites} />}
-                  {pricing.conditionnement > 0 && <PriceRow label="Conditionnement" value={pricing.conditionnement} />}
-                  {pricing.fraisSAQ > 0  && <PriceRow label="Frais SAQ" value={pricing.fraisSAQ} />}
+                  <PriceRow label="Transport" value={pricing.transport} currency={currency} />
+                  {pricing.cartons > 0   && <PriceRow label="Cartons" value={pricing.cartons} currency={currency} />}
+                  {pricing.sacs > 0      && <PriceRow label="Sacs" value={pricing.sacs} currency={currency} />}
+                  <PriceRow label="Manutention" value={pricing.manutention} currency={currency} />
+                  {pricing.douane > 0    && <PriceRow label="Douane & terminal" value={pricing.douane} currency={currency} />}
+                  {pricing.formalites > 0 && <PriceRow label="Formalités" value={pricing.formalites} currency={currency} />}
+                  {pricing.conditionnement > 0 && <PriceRow label="Conditionnement" value={pricing.conditionnement} currency={currency} />}
+                  {pricing.fraisSAQ > 0  && <PriceRow label="Frais SAQ" value={pricing.fraisSAQ} currency={currency} />}
                   <div style={{ borderTop: '1px solid var(--border-soft)', margin: '6px 0' }} />
                   {pricing.cbmApplied ? (
                     <div style={{ padding: '6px 8px', background: '#e0f2fe', borderRadius: 6, fontSize: 12, color: '#0369a1', fontWeight: 600, marginBottom: 4 }}>
-                      🚢 Tarif CBM appliqué : {Number(cbm).toFixed(2)} m³ × {(pricing.cbmPrice / Number(cbm)).toFixed(0)} $/m³
+                      🚢 Tarif CBM appliqué : {Number(cbm).toFixed(2)} m³ × {(pricing.cbmPrice / Number(cbm)).toFixed(0)} {currency}/m³
                     </div>
                   ) : (
                     <>
-                      <PriceRow label="Sous-total" value={pricing.sousTotal} />
-                      <PriceRow label={`Marge ${data.marginPct}%`} value={pricing.marge} />
-                      {pricing.cbmPrice > 0 && <div style={{ fontSize: 11, color: 'var(--ink-400)', padding: '2px 0' }}>CBM alternatif : {pricing.cbmPrice.toFixed(2)} $ (poids prédominant)</div>}
+                      <PriceRow label="Sous-total" value={pricing.sousTotal} currency={currency} />
+                      <PriceRow label={`Marge ${data.marginPct}%`} value={pricing.marge} currency={currency} />
+                      {pricing.cbmPrice > 0 && <div style={{ fontSize: 11, color: 'var(--ink-400)', padding: '2px 0' }}>CBM alternatif : {pricing.cbmPrice.toFixed(2)} {currency} (poids prédominant)</div>}
                     </>
                   )}
-                  {data.delivery === 'home' && <PriceRow label="Livraison domicile" value={25} />}
+                  {data.delivery === 'home' && <PriceRow label="Livraison domicile" value={25} currency={currency} />}
                   <div style={{ borderTop: '2px solid var(--ink-200)', margin: '6px 0' }} />
-                  <PriceRow label="Prix client" value={pricing.prixClient + (data.delivery === 'home' ? 25 : 0)} bold />
+                  <PriceRow label="Prix client" value={pricing.prixClient + (data.delivery === 'home' ? 25 : 0)} bold currency={currency} />
                 </div>
               )}
             </div>

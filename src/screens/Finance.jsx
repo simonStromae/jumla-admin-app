@@ -1,7 +1,6 @@
 'use client';
 import { useState, useEffect, useCallback, useRef } from 'react';
-
-const money = (v) => new Intl.NumberFormat('fr-CA', { style: 'currency', currency: 'CAD', maximumFractionDigits: 0 }).format(v || 0);
+import { useCurrency } from '../lib/useCurrency.js';
 const fmt2 = (v) => new Intl.NumberFormat('fr-CA', { maximumFractionDigits: 2, minimumFractionDigits: 2 }).format(v || 0);
 
 function fiscalYearOf(date) {
@@ -42,6 +41,7 @@ function KpiCard({ label, value, sub, color }) {
 
 // ─── Dashboard Tab ───────────────────────────────────────────
 function DashboardTab() {
+  const { fmt: money } = useCurrency();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
 
@@ -86,6 +86,7 @@ function DashboardTab() {
 
 // ─── Posts Tab ───────────────────────────────────────────────
 function PostsTab() {
+  const { fmt: money, currency } = useCurrency();
   const [posts, setPosts] = useState([]);
   const [dataMode, setDataMode] = useState('historical'); // historical | real
   const [realCategory, setRealCategory] = useState('variable'); // variable | fixed
@@ -298,7 +299,7 @@ function PostsTab() {
               {wKg > 0 && totalVariable > 0 && (
                 <div style={{ background: 'var(--bg-soft)', borderRadius: 8, padding: '10px 14px' }}>
                   <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--ink-400)', textTransform: 'uppercase', marginBottom: 4 }}>Coût / kg</div>
-                  <div style={{ fontSize: 18, fontWeight: 800, color: 'var(--ink-900)' }}>{fmt2(totalVariable / wKg)} $</div>
+                  <div style={{ fontSize: 18, fontWeight: 800, color: 'var(--ink-900)' }}>{fmt2(totalVariable / wKg)} {currency}</div>
                 </div>
               )}
             </div>
@@ -445,6 +446,7 @@ function PostsTab() {
 
 // ─── Cargo Margin Tab ────────────────────────────────────────
 function CargoTab() {
+  const { fmt: money, currency } = useCurrency();
   const [campaigns, setCampaigns] = useState([]);
   const [selected, setSelected] = useState('');
   const [data, setData] = useState(null);
@@ -502,7 +504,7 @@ function CargoTab() {
             <KpiCard label="CA facturé" value={money(revCad)} sub={data.campaign.revenueCadIsOverride ? 'Valeur manuelle' : 'Paiements reçus'} color="var(--info-500)" />
             <KpiCard label="Coûts variables" value={money(totalVarCosts)} sub={`${filledCount}/${posts.length} postes renseignés`} color="var(--bad-400)" />
             {gross !== null && <KpiCard label="Marge brute" value={money(gross)} sub={fmt2(pct) + ' %'} color={gross >= 0 ? 'var(--ok-500)' : 'var(--bad-500)'} />}
-            {wKg && <KpiCard label="Coût / kg" value={fmt2(totalVarCosts / wKg) + ' $'} sub={`Poids AWB : ${wKg} kg`} />}
+            {wKg && <KpiCard label="Coût / kg" value={fmt2(totalVarCosts / wKg) + ' ' + currency} sub={`Poids AWB : ${wKg} kg`} />}
           </div>
 
           {filledCount < posts.length && (
