@@ -107,11 +107,15 @@ model Campaign {
   createdAt     DateTime       @default(now())
   deletedAt     DateTime?
 
+  financeRevenueCad  Float?
+  financeWeightKg    Float?
+
   costs         CampaignCost?
   costItems     CampaignCostItem[]
   legs          CampaignLeg[]
   parcels       Parcel[]
   invoices      Invoice[]
+  cargoVariableCosts CargoVariableCost[]
 
   @@map("campaigns")
 }
@@ -308,6 +312,59 @@ model Bordereau {
   createdAt         DateTime  @default(now())
 
   @@map("bordereaux")
+}
+
+model CostPost {
+  id            Int      @id
+  name          String
+  type          String   // "variable" | "fixed" | "excluded"
+  historicalAmt Float    @default(0)
+  sortOrder     Int      @default(0)
+  active        Boolean  @default(true)
+  customAdded   Boolean  @default(false)
+  createdAt     DateTime @default(now())
+
+  cargoVariableCosts CargoVariableCost[]
+  fixedMonthlyCosts  FixedMonthlyCost[]
+
+  @@map("cost_posts")
+}
+
+model CargoVariableCost {
+  id         String   @id @default(cuid())
+  campaignId String
+  campaign   Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  postId     Int
+  post       CostPost @relation(fields: [postId], references: [id])
+  amountCad  Float
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@unique([campaignId, postId])
+  @@map("cargo_variable_costs")
+}
+
+model FixedMonthlyCost {
+  id        String   @id @default(cuid())
+  month     String
+  postId    Int
+  post      CostPost @relation(fields: [postId], references: [id])
+  amountCad Float
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([month, postId])
+  @@map("fixed_monthly_costs")
+}
+
+model FiscalSnapshot {
+  id         String   @id @default(cuid())
+  fiscalYear Int
+  createdAt  DateTime @default(now())
+  payload    Json
+
+  @@unique([fiscalYear])
+  @@map("fiscal_snapshots")
 }
 
 model Setting {

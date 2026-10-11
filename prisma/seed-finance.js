@@ -1,0 +1,140 @@
+// Run with: DATABASE_URL=... node -r dotenv/config prisma/seed-finance.js
+// Or: via Vercel deployment (DATABASE_URL is set automatically)
+const { PrismaClient } = require('@prisma/client');
+const { PrismaNeon } = require('@prisma/adapter-neon');
+
+const adapter = new PrismaNeon({ connectionString: process.env.DATABASE_URL });
+const prisma = new PrismaClient({ adapter });
+
+const POSTS = [
+  // Variable directe (49 posts, IDs 24-72)
+  { id: 24, name: 'Airline transport fees Lufthansa',                    type: 'variable', historicalAmt: 77709.05, sortOrder: 24 },
+  { id: 25, name: 'Airline transport fees Air France (Pro excell)',       type: 'variable', historicalAmt: 3449.99,  sortOrder: 25 },
+  { id: 26, name: 'Airline transport fees Air France (Good log)',         type: 'variable', historicalAmt: 22937.67, sortOrder: 26 },
+  { id: 27, name: 'Airline transport fees RAM (AGL)',                     type: 'variable', historicalAmt: 1863.35,  sortOrder: 27 },
+  { id: 28, name: 'Airline transport fees Ethiopian Airline (ASI)',       type: 'variable', historicalAmt: 2107.50,  sortOrder: 28 },
+  { id: 29, name: 'Airline export formality fees Douala',                 type: 'variable', historicalAmt: 14878.00, sortOrder: 29 },
+  { id: 30, name: 'Customs Import Douala',                                type: 'variable', historicalAmt: 3111.00,  sortOrder: 30 },
+  { id: 31, name: 'Customs clerk fee Douala',                             type: 'variable', historicalAmt: 120.00,   sortOrder: 31 },
+  { id: 32, name: 'Customs Montreal',                                     type: 'variable', historicalAmt: 7122.01,  sortOrder: 32 },
+  { id: 33, name: 'Airport terminal fee CAS Montreal',                    type: 'variable', historicalAmt: 6669.03,  sortOrder: 33 },
+  { id: 34, name: 'Airport warehousing fee CAS Montreal',                 type: 'variable', historicalAmt: 0.00,     sortOrder: 34 },
+  { id: 35, name: 'Airport warehousing fee AIRTIME',                      type: 'variable', historicalAmt: 0.00,     sortOrder: 35 },
+  { id: 36, name: 'Menzie aviation (air france)',                         type: 'variable', historicalAmt: 1657.50,  sortOrder: 36 },
+  { id: 37, name: 'Weekly courier invoice Zendit import (puro-fedex)',    type: 'variable', historicalAmt: 3573.61,  sortOrder: 37 },
+  { id: 38, name: 'Weekly Negative courier invoice Zendit import',        type: 'variable', historicalAmt: -3573.61, sortOrder: 38 },
+  { id: 39, name: 'Courier average fees per shipment import',             type: 'variable', historicalAmt: 3573.61,  sortOrder: 39 },
+  { id: 40, name: 'Weekly courier fees Zendit export (puro-fedex)',       type: 'variable', historicalAmt: 388.38,   sortOrder: 40 },
+  { id: 41, name: 'Weekly Negative courier fees Zendit export',           type: 'variable', historicalAmt: -388.38,  sortOrder: 41 },
+  { id: 42, name: 'Courier average fees per shipment export',             type: 'variable', historicalAmt: 388.38,   sortOrder: 42 },
+  { id: 43, name: 'LTL fees Zendit import',                               type: 'variable', historicalAmt: 0.00,     sortOrder: 43 },
+  { id: 44, name: 'LTL Negative fees Zendit import',                      type: 'variable', historicalAmt: 0.00,     sortOrder: 44 },
+  { id: 45, name: 'LTL average fees Zendit import',                       type: 'variable', historicalAmt: 0.00,     sortOrder: 45 },
+  { id: 46, name: 'LTL fees Zendit export',                               type: 'variable', historicalAmt: 0.00,     sortOrder: 46 },
+  { id: 47, name: 'LTL Negative fees Zendit export',                      type: 'variable', historicalAmt: 0.00,     sortOrder: 47 },
+  { id: 48, name: 'LTL average fees Zendit export',                       type: 'variable', historicalAmt: 0.00,     sortOrder: 48 },
+  { id: 49, name: 'Sub-contractor Toronto',                               type: 'variable', historicalAmt: 0.00,     sortOrder: 49 },
+  { id: 50, name: 'Plastification-wrapping Douala',                       type: 'variable', historicalAmt: 0.00,     sortOrder: 50 },
+  { id: 51, name: 'Cartons Douala',                                       type: 'variable', historicalAmt: 934.00,   sortOrder: 51 },
+  { id: 52, name: 'Carton scotch tape',                                   type: 'variable', historicalAmt: 125.00,   sortOrder: 52 },
+  { id: 53, name: 'Colle pour carton',                                    type: 'variable', historicalAmt: 0.00,     sortOrder: 53 },
+  { id: 54, name: 'Papier film transparent',                              type: 'variable', historicalAmt: 146.00,   sortOrder: 54 },
+  { id: 55, name: 'Bouteille de plastique',                               type: 'variable', historicalAmt: 147.00,   sortOrder: 55 },
+  { id: 56, name: 'Boite en plastique',                                   type: 'variable', historicalAmt: 0.00,     sortOrder: 56 },
+  { id: 57, name: 'Bidons en plastique',                                  type: 'variable', historicalAmt: 0.00,     sortOrder: 57 },
+  { id: 58, name: 'Cordes en plastique',                                  type: 'variable', historicalAmt: 0.00,     sortOrder: 58 },
+  { id: 59, name: 'Emballage plastique transparent',                      type: 'variable', historicalAmt: 183.00,   sortOrder: 59 },
+  { id: 60, name: 'Glacière polystyrène',                                  type: 'variable', historicalAmt: 29.00,    sortOrder: 60 },
+  { id: 61, name: 'Bomeurs transparents',                                 type: 'variable', historicalAmt: 210.00,   sortOrder: 61 },
+  { id: 62, name: 'Sacs Bandjock Douala',                                 type: 'variable', historicalAmt: 98.00,    sortOrder: 62 },
+  { id: 63, name: 'Palette en plastique',                                 type: 'variable', historicalAmt: 66.00,    sortOrder: 63 },
+  { id: 64, name: 'Autorisation phytosanitaire',                          type: 'variable', historicalAmt: 368.00,   sortOrder: 64 },
+  { id: 65, name: 'Manutention et chargement pour le fret Douala',        type: 'variable', historicalAmt: 645.00,   sortOrder: 65 },
+  { id: 66, name: 'Transport bureau-aéroport & frais accès Douala',       type: 'variable', historicalAmt: 736.00,   sortOrder: 66 },
+  { id: 67, name: 'Frais de changement compagnie aérienne',               type: 'variable', historicalAmt: 0.00,     sortOrder: 67 },
+  { id: 68, name: "Achat d'item car perte ou endommagé",                   type: 'variable', historicalAmt: 0.00,     sortOrder: 68 },
+  { id: 69, name: 'Traitement thermique',                                 type: 'variable', historicalAmt: 0.00,     sortOrder: 69 },
+  { id: 70, name: 'Pénalité liée au magasinage',                          type: 'variable', historicalAmt: 36.00,    sortOrder: 70 },
+  { id: 71, name: 'Commissions partenaire Douala',                        type: 'variable', historicalAmt: 0.00,     sortOrder: 71 },
+  { id: 72, name: 'Dédommagement montant non-perçu',                      type: 'variable', historicalAmt: 0.00,     sortOrder: 72 },
+
+  // Fixe / exploitation (IDs 95-174, excluding "A verifier / exclu" headers)
+  { id: 95,  name: 'Pierre-Marie Tiopi — salaire',                        type: 'fixed',    historicalAmt: 29423.16, sortOrder: 95  },
+  { id: 96,  name: 'DAS Pierre-Marie',                                    type: 'fixed',    historicalAmt: 0.00,     sortOrder: 96  },
+  { id: 97,  name: 'Pierre-Marie Commission',                             type: 'fixed',    historicalAmt: 13846.32, sortOrder: 97  },
+  { id: 98,  name: 'Nabil',                                               type: 'fixed',    historicalAmt: 0.00,     sortOrder: 98  },
+  { id: 99,  name: 'DAS Nabil',                                           type: 'fixed',    historicalAmt: 0.00,     sortOrder: 99  },
+  { id: 101, name: 'Salesman 1',                                          type: 'fixed',    historicalAmt: 0.00,     sortOrder: 101 },
+  { id: 102, name: 'Salesman 2',                                          type: 'fixed',    historicalAmt: 0.00,     sortOrder: 102 },
+  { id: 104, name: 'Kim',                                                 type: 'fixed',    historicalAmt: 0.00,     sortOrder: 104 },
+  { id: 106, name: 'Accounting (Angie)',                                  type: 'fixed',    historicalAmt: 900.00,   sortOrder: 106 },
+  { id: 107, name: 'Data entry & accounting Nabil',                       type: 'fixed',    historicalAmt: 1800.00,  sortOrder: 107 },
+  { id: 109, name: 'Angelina',                                            type: 'fixed',    historicalAmt: 0.00,     sortOrder: 109 },
+  { id: 110, name: 'Maxime',                                              type: 'fixed',    historicalAmt: 0.00,     sortOrder: 110 },
+  { id: 111, name: 'Marketing',                                           type: 'fixed',    historicalAmt: 0.00,     sortOrder: 111 },
+  { id: 112, name: 'Social media',                                        type: 'fixed',    historicalAmt: 0.00,     sortOrder: 112 },
+  { id: 113, name: 'Google ads',                                          type: 'fixed',    historicalAmt: 0.00,     sortOrder: 113 },
+  { id: 115, name: 'Boris',                                               type: 'fixed',    historicalAmt: 400.00,   sortOrder: 115 },
+  { id: 116, name: 'Ngondjom Nitcheu Franck Idriss',                      type: 'fixed',    historicalAmt: 1250.00,  sortOrder: 116 },
+  { id: 117, name: 'Ngo Njeng Elisabeth Diana',                           type: 'fixed',    historicalAmt: 0.00,     sortOrder: 117 },
+  { id: 118, name: 'Sedric Marcial Yemeli Kuete',                         type: 'fixed',    historicalAmt: 3950.00,  sortOrder: 118 },
+  { id: 119, name: 'Sidoine Tchuisseu',                                   type: 'fixed',    historicalAmt: 300.00,   sortOrder: 119 },
+  { id: 120, name: 'Simon Ulrich Monoue',                                 type: 'fixed',    historicalAmt: 3900.00,  sortOrder: 120 },
+  { id: 121, name: 'Adrio Sharonne Ngaffo',                               type: 'fixed',    historicalAmt: 1900.00,  sortOrder: 121 },
+  { id: 125, name: 'Hermann salary',                                      type: 'fixed',    historicalAmt: 923.04,   sortOrder: 125 },
+  { id: 126, name: 'Hermann commission',                                  type: 'fixed',    historicalAmt: 4333.29,  sortOrder: 126 },
+  { id: 127, name: 'DJessi salary',                                       type: 'fixed',    historicalAmt: 646.20,   sortOrder: 127 },
+  { id: 128, name: 'Magnilong Kemlack Sidoine',                           type: 'fixed',    historicalAmt: 646.20,   sortOrder: 128 },
+  { id: 129, name: 'Kouoh Beranger',                                      type: 'fixed',    historicalAmt: 0.00,     sortOrder: 129 },
+  { id: 130, name: 'Kenmene Rogel Dilane',                                type: 'fixed',    historicalAmt: 0.00,     sortOrder: 130 },
+  { id: 131, name: 'Kenne Dasse Nicolas Josky',                           type: 'fixed',    historicalAmt: 0.00,     sortOrder: 131 },
+  { id: 132, name: 'Koananou Kamga',                                      type: 'fixed',    historicalAmt: 646.20,   sortOrder: 132 },
+  { id: 133, name: 'Différence taux de change',                           type: 'fixed',    historicalAmt: 0.00,     sortOrder: 133 },
+  { id: 135, name: 'Zendit rent in Douala',                               type: 'fixed',    historicalAmt: 1135.44,  sortOrder: 135 },
+  { id: 136, name: 'Zendit rent at Parcelz office',                       type: 'fixed',    historicalAmt: 0.00,     sortOrder: 136 },
+  { id: 137, name: 'Zendit rent Bulletproof warehouse',                   type: 'fixed',    historicalAmt: 4384.63,  sortOrder: 137 },
+  { id: 139, name: 'Noviship software',                                   type: 'fixed',    historicalAmt: 0.00,     sortOrder: 139 },
+  { id: 140, name: 'Noviship transactions',                               type: 'fixed',    historicalAmt: 0.00,     sortOrder: 140 },
+  { id: 141, name: 'Office expense',                                      type: 'fixed',    historicalAmt: 321.92,   sortOrder: 141 },
+  { id: 142, name: 'Uline office supplies',                               type: 'fixed',    historicalAmt: 0.00,     sortOrder: 142 },
+  { id: 143, name: 'Business trip Cameroon — airplane/visa',              type: 'fixed',    historicalAmt: 0.00,     sortOrder: 143 },
+  { id: 144, name: 'Business trip Cameroon — stay',                       type: 'fixed',    historicalAmt: 2522.00,  sortOrder: 144 },
+  { id: 145, name: 'Cell phone',                                          type: 'fixed',    historicalAmt: 0.00,     sortOrder: 145 },
+  { id: 146, name: 'Loco-Twilio-Zoom',                                    type: 'fixed',    historicalAmt: 0.00,     sortOrder: 146 },
+  { id: 147, name: 'Meta marketing',                                      type: 'fixed',    historicalAmt: 0.00,     sortOrder: 147 },
+  { id: 148, name: 'Google Adwords',                                      type: 'fixed',    historicalAmt: 0.00,     sortOrder: 148 },
+  { id: 149, name: 'Google emails',                                       type: 'fixed',    historicalAmt: 0.00,     sortOrder: 149 },
+  { id: 150, name: 'Amazon Web Services',                                 type: 'fixed',    historicalAmt: 0.00,     sortOrder: 150 },
+  { id: 152, name: 'Credit card fees',                                    type: 'fixed',    historicalAmt: 0.00,     sortOrder: 152 },
+  { id: 154, name: 'Accounting fees year end',                            type: 'fixed',    historicalAmt: 692.46,   sortOrder: 154 },
+  { id: 155, name: 'Lawyer fees',                                         type: 'fixed',    historicalAmt: 0.00,     sortOrder: 155 },
+  { id: 156, name: 'Placement agency',                                    type: 'fixed',    historicalAmt: 0.00,     sortOrder: 156 },
+  { id: 158, name: 'Car rental',                                          type: 'fixed',    historicalAmt: 0.00,     sortOrder: 158 },
+  { id: 159, name: 'Car insurance',                                       type: 'fixed',    historicalAmt: 0.00,     sortOrder: 159 },
+  { id: 160, name: 'Car maintenance',                                     type: 'fixed',    historicalAmt: 0.00,     sortOrder: 160 },
+  { id: 161, name: 'Car gas',                                             type: 'fixed',    historicalAmt: 1800.00,  sortOrder: 161 },
+  { id: 162, name: 'Long term warranty',                                  type: 'fixed',    historicalAmt: 0.00,     sortOrder: 162 },
+  { id: 170, name: 'Bryan',                                               type: 'fixed',    historicalAmt: 6250.01,  sortOrder: 170 },
+  { id: 171, name: 'DAS Bryan',                                           type: 'fixed',    historicalAmt: 625.04,   sortOrder: 171 },
+  { id: 172, name: 'Tech Software',                                       type: 'fixed',    historicalAmt: 0.00,     sortOrder: 172 },
+  { id: 173, name: 'Google emails (tech)',                                type: 'fixed',    historicalAmt: 720.00,   sortOrder: 173 },
+  { id: 174, name: 'Amazon Web Services (tech)',                          type: 'fixed',    historicalAmt: 1661.58,  sortOrder: 174 },
+];
+
+async function main() {
+  console.log('Seeding cost posts...');
+  let created = 0;
+  for (const post of POSTS) {
+    await prisma.costPost.upsert({
+      where:  { id: post.id },
+      create: post,
+      update: { name: post.name, historicalAmt: post.historicalAmt },
+    });
+    created++;
+  }
+  console.log(`Done. ${created} posts seeded.`);
+}
+
+main()
+  .catch(e => { console.error(e); process.exit(1); })
+  .finally(() => prisma.$disconnect());

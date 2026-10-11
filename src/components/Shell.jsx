@@ -118,11 +118,15 @@ export function Sidebar({ route, onNav }) {
     { id: 'verify',      label: t.nav.verify,      icon: I.Check,    route: '/admin/verify',      badge: stats.verifyPending || null, perm: 'campaigns' },
     { id: 'clients',   label: t.nav.clients,    icon: I.Users,  route: '/admin/clients',   count: stats.clients || null,        perm: null },
     { id: 'payments',  label: t.nav.payments,   icon: I.Wallet, route: '/admin/payments',  badge: stats.unpaidPayments || null, perm: 'payments' },
-    { id: 'costs',     label: t.nav.costs,      icon: I.Coins,  route: '/admin/costs',                                          perm: 'costs' },
-    { id: 'airlines',  label: t.nav.airlines,   icon: I.Plane,  route: '/admin/airlines',                                       perm: 'campaigns' },
+    { id: 'costs',     label: t.nav.costs,      icon: I.Coins,    route: '/admin/costs',                                          perm: 'costs' },
+    { id: 'finance',   label: 'Finance',        icon: I.Activity, route: '/admin/finance',                                        perm: null, adminOnly: true },
+    { id: 'airlines',  label: t.nav.airlines,   icon: I.Plane,    route: '/admin/airlines',                                       perm: 'campaigns' },
     { id: 'messaging', label: t.nav.messaging,  icon: I.Chat,   route: '/admin/messaging',                                      perm: 'whatsapp' },
   ];
-  const items = allItems.filter(it => it.perm === null || can(it.perm));
+  const items = allItems.filter(it => {
+    if (it.adminOnly && session?.user?.role !== 'admin') return false;
+    return it.perm === null || can(it.perm);
+  });
 
   const admin = [
     { id: 'agents',   label: t.nav.agents,   icon: I.Users,    route: '/admin/agents',   perm: 'agents' },
