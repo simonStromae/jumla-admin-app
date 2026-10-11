@@ -547,6 +547,164 @@ function CargoTab() {
   );
 }
 
+// ─── Margin Analysis Tab (Phase 2) ───────────────────────────
+function MarginAnalysisTab() {
+  const { fmt: money } = useCurrency();
+  const [data, setData]   = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [view, setView]   = useState('month'); // 'month' | 'route'
+
+  useEffect(() => {
+    fetch('/api/finance/margin-analysis')
+      .then(r => r.json())
+      .then(setData)
+      .finally(() => setLoading(false));
+  }, []);
+
+  if (loading) return <div style={{ padding: 32, color: 'var(--ink-400)' }}>Chargement…</div>;
+  if (!data)   return null;
+
+  const { currentFY, prevFY } = data;
+
+  const pct2 = v => v !== null && v !== undefined ? fmt2(v) + ' %' : '—';
+  const diff = (n, p) => {
+    if (!n || !p) return null;
+    return n - p;
+  };
+  const diffPct = (n, p) => {
+    if (!p || p === 0) return null;
+    return ((n - p) / Math.abs(p)) * 100;
+  };
+
+  const marginColor = v => v === null ? 'var(--ink-400)' : v >= 20 ? 'var(--ok-600)' : v >= 0 ? 'var(--info-600)' : 'var(--bad-500)';
+  const deltaColor  = v => v === null ? 'var(--ink-300)' : v > 0 ? 'var(--ok-600)' : v < 0 ? 'var(--bad-500)' : 'var(--ink-400)';
+  const deltaSign   = v => v === null ? '—' : v > 0 ? `+${fmt2(v)} %` : `${fmt2(v)} %`;
+
+  const s = {
+    th: { padding: '9px 10px', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.05em', color: 'var(--ink-400)', background: 'var(--bg-soft)', textAlign: 'right', borderBottom: '2px solid var(--border)', whiteSpace: 'nowrap' },
+    thL: { padding: '9px 10px', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.05em', color: 'var(--ink-400)', background: 'var(--bg-soft)', textAlign: 'left', borderBottom: '2px solid var(--border)', whiteSpace: 'nowrap' },
+    td: { padding: '8px 10px', fontSize: 13, borderBottom: '1px solid var(--border)', textAlign: 'right', fontVariantNumeric: 'tabular-nums' },
+    tdL: { padding: '8px 10px', fontSize: 13, borderBottom: '1px solid var(--border)', textAlign: 'left' },
+    tot: { padding: '9px 10px', fontSize: 13, fontWeight: 800, background: 'var(--bg-soft)', textAlign: 'right', fontVariantNumeric: 'tabular-nums' },
+    totL: { padding: '9px 10px', fontSize: 13, fontWeight: 800, background: 'var(--bg-soft)', textAlign: 'left' },
+  };
+
+  const FRENCH_MONTHS = ['juil.', 'août', 'sept.', 'oct.', 'nov.', 'déc.', 'janv.', 'févr.', 'mars', 'avr.', 'mai', 'juin'];
+  const monthLabel = (m) => {
+    const [y, mo] = m.split('-').map(Number);
+    const idx = mo >= 7 ? mo - 7 : mo + 5;
+    return `${FRENCH_MONTHS[idx]} ${y}`;
+  };
+
+  const rows = view === 'month'
+    ? currentFY.byMonth.map((cur, i) => ({ key: cur.month, label: monthLabel(cur.month), cur, prev: prevFY.byMonth[i] }))
+    : currentFY.byRoute.map(cur => {
+        const pr = prevFY.byRoute.find(r => r.routeId === cur.routeId);
+        return { key: cur.routeId, label: cur.route, cur, prev: pr ?? null };
+      });
+
+  const ctot = currentFY.totals;
+  const ptot = prevFY.totals;
+
+  return (
+    <div>
+      <div style={{ marginBottom: 20 }}>
+        <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '.08em', textTransform: 'uppercase', color: 'var(--info-600)', marginBottom: 6 }}>
+          Comparaison {currentFY.label} vs {prevFY.label}
+        </div>
+        <div style={{ fontSize: 22, fontWeight: 800, color: 'var(--ink-900)' }}>Analyse des marges YTD</div>
+      </div>
+
+      {/* Summary KPIs */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: 12, marginBottom: 24 }}>
+        <KpiCard label={`CA ${currentFY.label}`}   value={money(ctot.revenue)}     sub={`N-1 : ${money(ptot.revenue)}`}     color="var(--info-500)" />
+        <KpiCard label={`Coûts var. ${currentFY.label}`} value={money(ctot.variableCosts)} sub={`N-1 : ${money(ptot.variableCosts)}`} color="var(--bad-400)" />
+        <KpiCard label="Marge brute N"  value={money(ctot.grossMargin)}  sub={pct2(ctot.marginPct)}  color={marginColor(ctot.marginPct)} />
+        <KpiCard label="Marge brute N-1" value={money(ptot.grossMargin)} sub={pct2(ptot.marginPct)} color={marginColor(ptot.marginPct)} />
+        <KpiCard label="Δ Marge brute"
+          value={deltaSign(diffPct(ctot.grossMargin, ptot.grossMargin))}
+          sub={diff(ctot.grossMargin, ptot.grossMargin) !== null ? money(diff(ctot.grossMargin, ptot.grossMargin)) : ''}
+          color={deltaColor(diffPct(ctot.grossMargin, ptot.grossMargin))} />
+      </div>
+
+      {/* View toggle */}
+      <div style={{ display: 'flex', gap: 6, background: 'var(--bg-soft)', border: '1px solid var(--border)', borderRadius: 10, padding: 4, width: 'fit-content', marginBottom: 20 }}>
+        {[{ id: 'month', label: 'Par mois' }, { id: 'route', label: 'Par ligne' }].map(v => (
+          <button key={v.id} onClick={() => setView(v.id)} style={{
+            padding: '6px 16px', borderRadius: 7, border: 'none', cursor: 'pointer', fontSize: 13, fontWeight: 600,
+            background: view === v.id ? 'var(--white)' : 'transparent',
+            color: view === v.id ? 'var(--ink-900)' : 'var(--ink-400)',
+            boxShadow: view === v.id ? '0 1px 3px rgba(0,0,0,.08)' : 'none',
+          }}>{v.label}</button>
+        ))}
+      </div>
+
+      <div style={{ border: '1px solid var(--border)', borderRadius: 10, overflow: 'hidden' }}>
+        <div style={{ overflowX: 'auto' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 720 }}>
+            <thead>
+              <tr>
+                <th style={s.thL}>{view === 'month' ? 'Mois' : 'Ligne'}</th>
+                <th style={s.th}>CA N</th>
+                <th style={s.th}>CA N-1</th>
+                <th style={s.th}>Coûts var. N</th>
+                <th style={s.th}>Coûts var. N-1</th>
+                <th style={s.th}>Marge brute N</th>
+                <th style={s.th}>Marge % N</th>
+                <th style={s.th}>Marge % N-1</th>
+                <th style={s.th}>Δ marge</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map(({ key, label, cur, prev }) => {
+                const prevRow = prev ?? { revenue: 0, variableCosts: 0, grossMargin: 0, marginPct: null, campaignCount: 0 };
+                const dp = diffPct(cur.grossMargin, prevRow.grossMargin);
+                const hasData = cur.revenue > 0 || cur.variableCosts > 0;
+                return (
+                  <tr key={key} style={{ background: 'var(--white)', opacity: hasData ? 1 : 0.45 }}
+                    onMouseEnter={e => e.currentTarget.style.background = 'var(--bg-soft)'}
+                    onMouseLeave={e => e.currentTarget.style.background = hasData ? 'var(--white)' : 'transparent'}>
+                    <td style={{ ...s.tdL, fontWeight: 600 }}>{label}</td>
+                    <td style={s.td}>{cur.revenue > 0 ? money(cur.revenue) : <span style={{ color: 'var(--ink-300)' }}>—</span>}</td>
+                    <td style={{ ...s.td, color: 'var(--ink-400)' }}>{prevRow.revenue > 0 ? money(prevRow.revenue) : <span style={{ color: 'var(--ink-300)' }}>—</span>}</td>
+                    <td style={s.td}>{cur.variableCosts > 0 ? money(cur.variableCosts) : <span style={{ color: 'var(--ink-300)' }}>—</span>}</td>
+                    <td style={{ ...s.td, color: 'var(--ink-400)' }}>{prevRow.variableCosts > 0 ? money(prevRow.variableCosts) : <span style={{ color: 'var(--ink-300)' }}>—</span>}</td>
+                    <td style={{ ...s.td, fontWeight: 700, color: cur.grossMargin >= 0 ? 'var(--ok-600)' : 'var(--bad-500)' }}>
+                      {cur.revenue > 0 ? money(cur.grossMargin) : <span style={{ color: 'var(--ink-300)' }}>—</span>}
+                    </td>
+                    <td style={{ ...s.td, color: marginColor(cur.marginPct), fontWeight: 700 }}>{pct2(cur.marginPct)}</td>
+                    <td style={{ ...s.td, color: marginColor(prevRow.marginPct) }}>{pct2(prevRow.marginPct)}</td>
+                    <td style={{ ...s.td, fontWeight: 700, color: deltaColor(dp) }}>{deltaSign(dp)}</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+            <tfoot>
+              <tr>
+                <td style={s.totL}>Total exercice</td>
+                <td style={s.tot}>{money(ctot.revenue)}</td>
+                <td style={{ ...s.tot, color: 'var(--ink-500)' }}>{money(ptot.revenue)}</td>
+                <td style={s.tot}>{money(ctot.variableCosts)}</td>
+                <td style={{ ...s.tot, color: 'var(--ink-500)' }}>{money(ptot.variableCosts)}</td>
+                <td style={{ ...s.tot, color: ctot.grossMargin >= 0 ? 'var(--ok-600)' : 'var(--bad-500)' }}>{money(ctot.grossMargin)}</td>
+                <td style={{ ...s.tot, color: marginColor(ctot.marginPct) }}>{pct2(ctot.marginPct)}</td>
+                <td style={{ ...s.tot, color: marginColor(ptot.marginPct) }}>{pct2(ptot.marginPct)}</td>
+                <td style={{ ...s.tot, color: deltaColor(diffPct(ctot.grossMargin, ptot.grossMargin)) }}>
+                  {deltaSign(diffPct(ctot.grossMargin, ptot.grossMargin))}
+                </td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+      </div>
+
+      <div style={{ marginTop: 14, fontSize: 12, color: 'var(--ink-400)' }}>
+        N = {currentFY.label} · N-1 = {prevFY.label} · Marge brute = CA − coûts variables · Δ = variation en % de la marge brute
+      </div>
+    </div>
+  );
+}
+
 // ─── Coming Soon Tab ─────────────────────────────────────────
 function ComingSoonTab({ name }) {
   return (
@@ -567,6 +725,7 @@ export default function FinanceScreen() {
       case 'dashboard': return <DashboardTab />;
       case 'posts':     return <PostsTab />;
       case 'cargo':     return <CargoTab />;
+      case 'margin':    return <MarginAnalysisTab />;
       default:          return <ComingSoonTab name={NAV_ITEMS.find(n => n.id === activeTab)?.label ?? activeTab} />;
     }
   };
@@ -580,7 +739,7 @@ export default function FinanceScreen() {
         </div>
         {NAV_ITEMS.map(item => {
           const isActive = activeTab === item.id;
-          const isReady  = ['dashboard', 'posts', 'cargo'].includes(item.id);
+          const isReady  = ['dashboard', 'posts', 'cargo', 'margin'].includes(item.id);
           return (
             <button key={item.id} onClick={() => setActiveTab(item.id)} style={{
               width: '100%', textAlign: 'left', border: 'none', borderRadius: 8, padding: '9px 10px',
