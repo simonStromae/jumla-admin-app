@@ -1158,9 +1158,9 @@ const WEIGHT_CATEGORIES = [
 ];
 
 const BEER_FORMATS = [
-  { id: '24x65', label: '24×65 cl — 24.50$' },
-  { id: '24x33', label: '24×33 cl — 35.83$' },
-  { id: '12x50', label: '12×50 cl — 21.34$' },
+  { id: '24x65', label: '24×65 cl — 24.50 CAD' },
+  { id: '24x33', label: '24×33 cl — 35.83 CAD' },
+  { id: '12x50', label: '12×50 cl — 21.34 CAD' },
 ];
 
 function WeightModal({ parcel, onClose, onSaved }) {
@@ -1389,7 +1389,7 @@ function WeightModal({ parcel, onClose, onSaved }) {
                 ['Transport', bd.transport],
               ].map(([label, val]) => (
                 <div key={label} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12.5, padding: '5px 0', color: 'var(--ink-700)' }}>
-                  <span>{label} ({bd.totalKg} kg)</span><span className="mono">{val?.toFixed(2)} $</span>
+                  <span>{label} ({bd.totalKg} kg)</span><span className="mono">{val?.toFixed(2)} {routeCurrency}</span>
                 </div>
               ))}
 
@@ -1397,8 +1397,8 @@ function WeightModal({ parcel, onClose, onSaved }) {
               {bd.supplements?.map(s => (
                 <div key={s.category} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, padding: '4px 0', color: 'var(--ink-600)', paddingLeft: 10 }}>
                   {/* TODO: i18n — 'Suppl.' prefix has no direct key */}
-                  <span>Suppl. {labelCat(s.category)} ({s.kg} kg × {s.rate >= 0 ? '+' : ''}{s.rate}$/kg)</span>
-                  <span className="mono">{s.amount >= 0 ? '+' : ''}{s.amount?.toFixed(2)} $</span>
+                  <span>Suppl. {labelCat(s.category)} ({s.kg} kg × {s.rate >= 0 ? '+' : ''}{s.rate} {routeCurrency}/kg)</span>
+                  <span className="mono">{s.amount >= 0 ? '+' : ''}{s.amount?.toFixed(2)} {routeCurrency}</span>
                 </div>
               ))}
 
@@ -1407,44 +1407,44 @@ function WeightModal({ parcel, onClose, onSaved }) {
                 <div key={i} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, padding: '4px 0', color: 'var(--warn-700)', paddingLeft: 10 }}>
                   {/* TODO: i18n — 'SAQ' and 'casiers' have no direct keys */}
                   <span>SAQ {l.format} × {l.nbCasiers} casiers</span>
-                  <span className="mono">+{l.amount?.toFixed(2)} $</span>
+                  <span className="mono">+{l.amount?.toFixed(2)} {routeCurrency}</span>
                 </div>
               ))}
 
               {bd.carton > 0 && (
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, padding: '4px 0', color: 'var(--ink-600)' }}>
                   {/* TODO: i18n — 'Carton' breakdown label has no direct key */}
-                  <span>Carton</span><span className="mono">{bd.carton?.toFixed(2)} $</span>
+                  <span>Carton</span><span className="mono">{bd.carton?.toFixed(2)} {routeCurrency}</span>
                 </div>
               )}
               {bd.sacs > 0 && (
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, padding: '4px 0', color: 'var(--ink-600)' }}>
                   {/* TODO: i18n — 'Sacs' breakdown label has no direct key */}
-                  <span>Sacs</span><span className="mono">{bd.sacs?.toFixed(2)} $</span>
+                  <span>Sacs</span><span className="mono">{bd.sacs?.toFixed(2)} {routeCurrency}</span>
                 </div>
               )}
               {bd.manutention > 0 && (
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, padding: '4px 0', color: 'var(--ink-600)' }}>
                   {/* TODO: i18n — 'Manutention' breakdown label has no direct key */}
-                  <span>Manutention</span><span className="mono">{bd.manutention?.toFixed(2)} $</span>
+                  <span>Manutention</span><span className="mono">{bd.manutention?.toFixed(2)} {routeCurrency}</span>
                 </div>
               )}
               {bd.douane > 0 && (
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, padding: '4px 0', color: 'var(--ink-600)' }}>
                   {/* TODO: i18n — 'Douane' breakdown label has no direct key */}
-                  <span>Douane</span><span className="mono">{bd.douane?.toFixed(2)} $</span>
+                  <span>Douane</span><span className="mono">{bd.douane?.toFixed(2)} {routeCurrency}</span>
                 </div>
               )}
               {bd.formalites > 0 && (
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, padding: '4px 0', color: 'var(--ink-600)' }}>
                   {/* TODO: i18n — 'Formalités' breakdown label has no direct key */}
-                  <span>Formalités</span><span className="mono">{bd.formalites?.toFixed(2)} $</span>
+                  <span>Formalités</span><span className="mono">{bd.formalites?.toFixed(2)} {routeCurrency}</span>
                 </div>
               )}
               {bd.plastic > 0 && (
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, padding: '4px 0', color: 'var(--ink-600)' }}>
                   {/* TODO: i18n — 'Conditionnement' breakdown label has no direct key */}
-                  <span>Conditionnement</span><span className="mono">{bd.plastic?.toFixed(2)} $</span>
+                  <span>Conditionnement</span><span className="mono">{bd.plastic?.toFixed(2)} {routeCurrency}</span>
                 </div>
               )}
 
@@ -1453,11 +1453,11 @@ function WeightModal({ parcel, onClose, onSaved }) {
 
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, padding: '4px 0', color: 'var(--ink-700)' }}>
                 {/* TODO: i18n — 'Sous-total' has no direct key */}
-                <span>Sous-total</span><span className="mono">{bd.sousTotal?.toFixed(2)} $</span>
+                <span>Sous-total</span><span className="mono">{bd.sousTotal?.toFixed(2)} {routeCurrency}</span>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, padding: '4px 0', color: 'var(--ink-600)' }}>
                 {/* TODO: i18n — 'Marge' breakdown label has no direct key */}
-                <span>Marge ({bd.marginPct}%)</span><span className="mono">+{bd.marge?.toFixed(2)} $</span>
+                <span>Marge ({bd.marginPct}%)</span><span className="mono">+{bd.marge?.toFixed(2)} {routeCurrency}</span>
               </div>
 
               <div style={{ borderTop: '2px solid var(--ink-900)', margin: '10px 0' }} />
@@ -1465,7 +1465,7 @@ function WeightModal({ parcel, onClose, onSaved }) {
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 16, fontWeight: 800, color: 'var(--ink-900)', padding: '4px 0' }}>
                 {/* TODO: i18n — 'Prix client' has no direct key */}
                 <span>Prix client</span>
-                <span className="mono">{bd.prixClient?.toFixed(2)} $</span>
+                <span className="mono">{bd.prixClient?.toFixed(2)} {routeCurrency}</span>
               </div>
 
               {/* ── Comparaison vs estimation réservation ── */}

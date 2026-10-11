@@ -1,10 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { useNav } from '@/src/lib/nav';
-
-function formatCAD(amount) {
-  return new Intl.NumberFormat('fr-CA', { style: 'currency', currency: 'CAD' }).format(Number(amount) || 0);
-}
+import { useCurrency } from '@/src/lib/useCurrency.js';
 
 function formatDate(dateStr) {
   if (!dateStr) return '—';
@@ -74,6 +71,7 @@ function StatusBadge({ status }) {
 
 export default function DashboardPage() {
   const onNav = useNav();
+  const { fmt: formatCAD } = useCurrency();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
 
