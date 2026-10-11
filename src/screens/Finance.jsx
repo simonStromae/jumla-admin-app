@@ -1649,7 +1649,7 @@ function HypTab() {
   );
 }
 
-// ─── Scenarios & Break-even Tab (Phase 6) ────────────────────
+// ─── Scénarios & Break-even Tab (Phase 6) ────────────────────
 function ScenariosTab() {
   const { fmt: money } = useCurrency();
   const currentFY = fiscalYearOf(new Date());
