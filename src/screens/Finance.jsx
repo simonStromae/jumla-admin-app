@@ -272,7 +272,7 @@ function PostsTab() {
             <option value="">— Sélectionner une cargaison —</option>
             {campaigns.map(c => (
               <option key={c.id} value={c.id}>
-                {c.code} · {c.route ? `${c.route.origin} → ${c.route.destination}` : ''} · {c.departureDate ? new Date(c.departureDate).toLocaleDateString('fr-CA') : '—'}
+                {c.code} · {c.from && c.to ? `${c.from} → ${c.to}` : ''} · {c.departureDate ? new Date(c.departureDate).toLocaleDateString('fr-CA') : '—'}
               </option>
             ))}
           </select>
@@ -493,7 +493,7 @@ function CargoTab() {
         <option value="">— Sélectionner une cargaison —</option>
         {campaigns.map(c => (
           <option key={c.id} value={c.id}>
-            {c.code} · {c.route ? `${c.route.origin} → ${c.route.destination}` : ''} · {c.departureDate ? new Date(c.departureDate).toLocaleDateString('fr-CA') : '—'}
+            {c.code} · {c.from && c.to ? `${c.from} → ${c.to}` : ''} · {c.departureDate ? new Date(c.departureDate).toLocaleDateString('fr-CA') : '—'}
           </option>
         ))}
       </select>
