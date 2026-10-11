@@ -65,7 +65,7 @@ function DashboardTab() {
           Exercice {fiscalLabel(data.fiscalYear)} · YTD au {data.ytdThrough}
         </div>
         <div style={{ fontSize: 22, fontWeight: 800, color: 'var(--ink-900)' }}>Tableau de bord financier</div>
-        <div style={{ fontSize: 14, color: 'var(--ink-400)', marginTop: 4 }}>{data.campaignCount} cargaison{data.campaignCount !== 1 ? 's' : ''} dans l'exercice en cours</div>
+        <div style={{ fontSize: 14, color: 'var(--ink-400)', marginTop: 4 }}>{data.campaignCount} cargaison{data.campaignCount !== 1 ? 's' : ''} dans l{'’'}exercice en cours</div>
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 14, marginBottom: 24 }}>
@@ -783,7 +783,7 @@ function SnapshotsTab() {
 
       {snapshots.length === 0 ? (
         <div style={{ background: 'var(--bg-soft)', border: '1px solid var(--border)', borderRadius: 10, padding: 32, textAlign: 'center', color: 'var(--ink-400)', fontSize: 14 }}>
-          Aucun exercice archivé. Le cron du 1er juillet archivera automatiquement l'exercice écoulé.<br />
+          Aucun exercice archivé. Le cron du 1er juillet archivera automatiquement l{'’'}exercice écoulé.<br />
           Vous pouvez aussi archiver manuellement via le bouton ci-dessus.
         </div>
       ) : (
@@ -1023,7 +1023,7 @@ function BudgetTab() {
       {view === 'budget' && (
         <>
           <div style={{ fontSize: 13, color: 'var(--ink-500)', marginBottom: 16 }}>
-            Saisissez les montants budgétés pour l'exercice {data.label} · Réel YTD = cumulé depuis juillet
+            Saisissez les montants budgétés pour l{'’'}exercice {data.label} · Réel YTD = cumulé depuis juillet
           </div>
           {[{ label: 'Coûts variables', posts: varPosts, actualMap: data.actualVariable, budgetTotal: totalBudgetVar, actualTotal: totalActualVar },
             { label: 'Charges fixes (YTD)', posts: fixPosts, actualMap: data.actualFixed, budgetTotal: totalBudgetFix, actualTotal: totalActualFix }].map(section => (
@@ -1222,7 +1222,7 @@ function PayrollTab() {
             style={{ width: '100%', padding: '9px 12px', border: '1px solid var(--border)', borderRadius: 8, fontSize: 14, background: 'var(--white)', color: 'var(--ink-900)' }} />
         </div>
         <div>
-          <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: 'var(--ink-500)', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '.05em' }}>Nombre d'employés</label>
+          <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: 'var(--ink-500)', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '.05em' }}>Nombre d{'’'}employés</label>
           <input type="number" min="1" value={employees} onChange={e => setEmployees(e.target.value)}
             style={{ width: '100%', padding: '9px 12px', border: '1px solid var(--border)', borderRadius: 8, fontSize: 14, background: 'var(--white)', color: 'var(--ink-900)' }} />
         </div>
@@ -1270,7 +1270,7 @@ function PayrollTab() {
           </div>
 
           <div style={{ fontSize: 12, color: 'var(--ink-400)', lineHeight: 1.6 }}>
-            Taux 2025 · RRQ max. 69 700 $ (exonération 3 500 $) · RQAP max. 94 000 $ · AE max. 63 200 $ · FSS taux simplifié masse salariale &lt; 1 M$ · CNESST variable selon secteur d'activité
+            Taux 2025 · RRQ max. 69 700 $ (exonération 3 500 $) · RQAP max. 94 000 $ · AE max. 63 200 $ · FSS taux simplifié masse salariale &lt; 1 M$ · CNESST variable selon secteur d{'’'}activité
           </div>
         </>
       )}
