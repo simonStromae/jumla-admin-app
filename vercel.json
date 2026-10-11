@@ -7,6 +7,10 @@
     {
       "path": "/api/cron/reengage",
       "schedule": "0 10 * * *"
+    },
+    {
+      "path": "/api/cron/archive-fiscal-year",
+      "schedule": "0 6 1 7 *"
     }
   ]
 }

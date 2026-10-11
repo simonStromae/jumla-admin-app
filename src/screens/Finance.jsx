@@ -705,6 +705,202 @@ function MarginAnalysisTab() {
   );
 }
 
+// ─── Fiscal Snapshots Tab (Phase 3) ──────────────────────────
+function SnapshotsTab() {
+  const { fmt: money } = useCurrency();
+  const [snapshots, setSnapshots] = useState([]);
+  const [loading,   setLoading]   = useState(true);
+  const [selected,  setSelected]  = useState(null);
+  const [archiving, setArchiving] = useState(false);
+  const [archiveMsg, setArchiveMsg] = useState('');
+
+  useEffect(() => {
+    fetch('/api/finance/snapshots')
+      .then(r => r.json())
+      .then(s => {
+        setSnapshots(s);
+        if (s.length > 0) setSelected(s[0].fiscalYear);
+      })
+      .finally(() => setLoading(false));
+  }, []);
+
+  const handleArchive = async () => {
+    setArchiving(true);
+    setArchiveMsg('');
+    const res = await fetch('/api/finance/archive-fiscal-year', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({}) });
+    const d = await res.json();
+    if (d.alreadyExists) {
+      setArchiveMsg(`L'exercice ${d.fiscalYear}–${d.fiscalYear + 1} est déjà archivé.`);
+    } else if (d.ok) {
+      setArchiveMsg(`Exercice ${d.label} archivé (${d.campaignCount} cargaisons).`);
+      const updated = await fetch('/api/finance/snapshots').then(r => r.json());
+      setSnapshots(updated);
+      setSelected(d.fiscalYear);
+    } else {
+      setArchiveMsg('Erreur lors de l\'archivage.');
+    }
+    setArchiving(false);
+  };
+
+  if (loading) return <div style={{ padding: 32, color: 'var(--ink-400)' }}>Chargement…</div>;
+
+  const snap = snapshots.find(s => s.fiscalYear === selected);
+  const payload = snap?.payload;
+
+  const pct2 = v => v !== null && v !== undefined ? fmt2(v) + ' %' : '—';
+  const marginColor = v => v === null ? 'var(--ink-400)' : v >= 20 ? 'var(--ok-600)' : v >= 0 ? 'var(--info-600)' : 'var(--bad-500)';
+  const FRENCH_MONTHS = ['juil.', 'août', 'sept.', 'oct.', 'nov.', 'déc.', 'janv.', 'févr.', 'mars', 'avr.', 'mai', 'juin'];
+  const monthLabel = (m) => {
+    const [y, mo] = m.split('-').map(Number);
+    const idx = mo >= 7 ? mo - 7 : mo + 5;
+    return `${FRENCH_MONTHS[idx]} ${y}`;
+  };
+
+  const s = {
+    th: { padding: '9px 10px', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.05em', color: 'var(--ink-400)', background: 'var(--bg-soft)', textAlign: 'right', borderBottom: '2px solid var(--border)' },
+    thL: { padding: '9px 10px', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.05em', color: 'var(--ink-400)', background: 'var(--bg-soft)', textAlign: 'left', borderBottom: '2px solid var(--border)' },
+    td: { padding: '8px 10px', fontSize: 13, borderBottom: '1px solid var(--border)', textAlign: 'right', fontVariantNumeric: 'tabular-nums' },
+    tdL: { padding: '8px 10px', fontSize: 13, borderBottom: '1px solid var(--border)', textAlign: 'left' },
+    tot: { padding: '9px 10px', fontSize: 13, fontWeight: 800, background: 'var(--bg-soft)', textAlign: 'right', fontVariantNumeric: 'tabular-nums' },
+    totL: { padding: '9px 10px', fontSize: 13, fontWeight: 800, background: 'var(--bg-soft)', textAlign: 'left' },
+  };
+
+  return (
+    <div>
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12, marginBottom: 20 }}>
+        <div>
+          <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '.08em', textTransform: 'uppercase', color: 'var(--info-600)', marginBottom: 6 }}>Archivage automatique · 1er juillet</div>
+          <div style={{ fontSize: 22, fontWeight: 800, color: 'var(--ink-900)' }}>Exercices archivés</div>
+        </div>
+        <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
+          {archiveMsg && <span style={{ fontSize: 13, color: 'var(--ink-500)' }}>{archiveMsg}</span>}
+          <button onClick={handleArchive} disabled={archiving}
+            style={{ background: 'var(--brand-gradient)', color: '#fff', border: 'none', borderRadius: 8, padding: '9px 18px', fontSize: 13, fontWeight: 700, cursor: archiving ? 'not-allowed' : 'pointer', opacity: archiving ? .6 : 1 }}>
+            {archiving ? 'Archivage…' : '📦 Archiver l\'exercice précédent'}
+          </button>
+        </div>
+      </div>
+
+      {snapshots.length === 0 ? (
+        <div style={{ background: 'var(--bg-soft)', border: '1px solid var(--border)', borderRadius: 10, padding: 32, textAlign: 'center', color: 'var(--ink-400)', fontSize: 14 }}>
+          Aucun exercice archivé. Le cron du 1er juillet archivera automatiquement l'exercice écoulé.<br />
+          Vous pouvez aussi archiver manuellement via le bouton ci-dessus.
+        </div>
+      ) : (
+        <>
+          {/* Year selector */}
+          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 20 }}>
+            {snapshots.map(s => (
+              <button key={s.fiscalYear} onClick={() => setSelected(s.fiscalYear)} style={{
+                padding: '7px 14px', borderRadius: 8, border: '1px solid var(--border)', cursor: 'pointer', fontSize: 13, fontWeight: 600,
+                background: selected === s.fiscalYear ? 'var(--info-50)' : 'var(--white)',
+                color: selected === s.fiscalYear ? 'var(--info-700)' : 'var(--ink-700)',
+              }}>
+                {s.fiscalYear}–{s.fiscalYear + 1}
+              </button>
+            ))}
+          </div>
+
+          {payload && (
+            <>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: 12, marginBottom: 24 }}>
+                <KpiCard label="CA total" value={money(payload.totals.revenue)} sub={`${payload.campaignCount} cargaisons`} color="var(--info-500)" />
+                <KpiCard label="Coûts variables" value={money(payload.totals.variableCosts)} color="var(--bad-400)" />
+                <KpiCard label="Charges fixes" value={money(payload.totals.fixedCosts)} color="var(--bad-300)" />
+                <KpiCard label="Marge brute" value={money(payload.totals.grossMargin)} sub={pct2(payload.totals.marginPct)} color={marginColor(payload.totals.marginPct)} />
+                <KpiCard label="Résultat net" value={money(payload.totals.netResult)} color={payload.totals.netResult >= 0 ? 'var(--ok-500)' : 'var(--bad-500)'} />
+              </div>
+
+              <div style={{ border: '1px solid var(--border)', borderRadius: 10, overflow: 'hidden' }}>
+                <div style={{ overflowX: 'auto' }}>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 600 }}>
+                    <thead>
+                      <tr>
+                        <th style={s.thL}>Mois</th>
+                        <th style={s.th}>CA</th>
+                        <th style={s.th}>Coûts var.</th>
+                        <th style={s.th}>Charges fixes</th>
+                        <th style={s.th}>Marge brute</th>
+                        <th style={s.th}>Marge %</th>
+                        <th style={s.th}>Résultat net</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {payload.byMonth.map(row => (
+                        <tr key={row.month}
+                          style={{ background: row.revenue > 0 ? 'var(--white)' : 'transparent', opacity: row.revenue > 0 ? 1 : 0.4 }}
+                          onMouseEnter={e => { if (row.revenue > 0) e.currentTarget.style.background = 'var(--bg-soft)'; }}
+                          onMouseLeave={e => { if (row.revenue > 0) e.currentTarget.style.background = 'var(--white)'; }}>
+                          <td style={{ ...s.tdL, fontWeight: 600 }}>{monthLabel(row.month)}</td>
+                          <td style={s.td}>{row.revenue > 0 ? money(row.revenue) : <span style={{ color: 'var(--ink-300)' }}>—</span>}</td>
+                          <td style={s.td}>{row.variableCosts > 0 ? money(row.variableCosts) : <span style={{ color: 'var(--ink-300)' }}>—</span>}</td>
+                          <td style={s.td}>{row.fixedCosts > 0 ? money(row.fixedCosts) : <span style={{ color: 'var(--ink-300)' }}>—</span>}</td>
+                          <td style={{ ...s.td, fontWeight: 700, color: row.revenue > 0 ? (row.grossMargin >= 0 ? 'var(--ok-600)' : 'var(--bad-500)') : 'var(--ink-300)' }}>
+                            {row.revenue > 0 ? money(row.grossMargin) : '—'}
+                          </td>
+                          <td style={{ ...s.td, color: marginColor(row.marginPct), fontWeight: 700 }}>{pct2(row.marginPct)}</td>
+                          <td style={{ ...s.td, color: row.netResult >= 0 ? 'var(--ok-600)' : 'var(--bad-500)' }}>
+                            {row.revenue > 0 ? money(row.netResult) : <span style={{ color: 'var(--ink-300)' }}>—</span>}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                    <tfoot>
+                      <tr>
+                        <td style={s.totL}>Total exercice</td>
+                        <td style={s.tot}>{money(payload.totals.revenue)}</td>
+                        <td style={s.tot}>{money(payload.totals.variableCosts)}</td>
+                        <td style={s.tot}>{money(payload.totals.fixedCosts)}</td>
+                        <td style={{ ...s.tot, color: payload.totals.grossMargin >= 0 ? 'var(--ok-600)' : 'var(--bad-500)' }}>{money(payload.totals.grossMargin)}</td>
+                        <td style={{ ...s.tot, color: marginColor(payload.totals.marginPct) }}>{pct2(payload.totals.marginPct)}</td>
+                        <td style={{ ...s.tot, color: payload.totals.netResult >= 0 ? 'var(--ok-600)' : 'var(--bad-500)' }}>{money(payload.totals.netResult)}</td>
+                      </tr>
+                    </tfoot>
+                  </table>
+                </div>
+              </div>
+
+              {payload.byRoute.length > 0 && (
+                <div style={{ marginTop: 24 }}>
+                  <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--ink-700)', marginBottom: 12 }}>Répartition par ligne</div>
+                  <div style={{ border: '1px solid var(--border)', borderRadius: 10, overflow: 'hidden' }}>
+                    <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                      <thead>
+                        <tr>
+                          <th style={s.thL}>Ligne</th>
+                          <th style={s.th}>CA</th>
+                          <th style={s.th}>Coûts var.</th>
+                          <th style={s.th}>Marge brute</th>
+                          <th style={s.th}>Marge %</th>
+                          <th style={s.th}>Cargaisons</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {payload.byRoute.map(r => (
+                          <tr key={r.routeId} style={{ background: 'var(--white)' }}
+                            onMouseEnter={e => e.currentTarget.style.background = 'var(--bg-soft)'}
+                            onMouseLeave={e => e.currentTarget.style.background = 'var(--white)'}>
+                            <td style={{ ...s.tdL, fontWeight: 600 }}>{r.route}</td>
+                            <td style={s.td}>{money(r.revenue)}</td>
+                            <td style={s.td}>{money(r.variableCosts)}</td>
+                            <td style={{ ...s.td, fontWeight: 700, color: r.grossMargin >= 0 ? 'var(--ok-600)' : 'var(--bad-500)' }}>{money(r.grossMargin)}</td>
+                            <td style={{ ...s.td, color: marginColor(r.marginPct), fontWeight: 700 }}>{pct2(r.marginPct)}</td>
+                            <td style={s.td}>{r.campaignCount}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+            </>
+          )}
+        </>
+      )}
+    </div>
+  );
+}
+
 // ─── Coming Soon Tab ─────────────────────────────────────────
 function ComingSoonTab({ name }) {
   return (
@@ -726,6 +922,7 @@ export default function FinanceScreen() {
       case 'posts':     return <PostsTab />;
       case 'cargo':     return <CargoTab />;
       case 'margin':    return <MarginAnalysisTab />;
+      case 'finance':   return <SnapshotsTab />;
       default:          return <ComingSoonTab name={NAV_ITEMS.find(n => n.id === activeTab)?.label ?? activeTab} />;
     }
   };
@@ -739,7 +936,7 @@ export default function FinanceScreen() {
         </div>
         {NAV_ITEMS.map(item => {
           const isActive = activeTab === item.id;
-          const isReady  = ['dashboard', 'posts', 'cargo', 'margin'].includes(item.id);
+          const isReady  = ['dashboard', 'posts', 'cargo', 'margin', 'finance'].includes(item.id);
           return (
             <button key={item.id} onClick={() => setActiveTab(item.id)} style={{
               width: '100%', textAlign: 'left', border: 'none', borderRadius: 8, padding: '9px 10px',
