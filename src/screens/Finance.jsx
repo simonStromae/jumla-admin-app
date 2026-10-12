@@ -1,6 +1,7 @@
 'use client';
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useCurrency } from '../lib/useCurrency.js';
+import I from '../components/Icons.jsx';
 const fmt2 = (v) => new Intl.NumberFormat('fr-CA', { maximumFractionDigits: 2, minimumFractionDigits: 2 }).format(v || 0);
 
 function fiscalYearOf(date) {
@@ -14,27 +15,27 @@ function currentMonth() {
 }
 
 const NAV_ITEMS = [
-  { id: 'dashboard',  label: 'Tableau de bord',       icon: '📊' },
-  { id: 'posts',      label: 'Postes de coûts',        icon: '📋' },
-  { id: 'cargo',      label: 'Cargaisons',             icon: '✈️' },
-  { id: 'margin',     label: 'Marge',                  icon: '📈' },
-  { id: 'finance',    label: 'Analyse financière',     icon: '💰' },
-  { id: 'transport',  label: 'Transport & Douane',     icon: '🚚' },
-  { id: 'routes',     label: 'Rentabilité par ligne',  icon: '🗺️' },
-  { id: 'budget',     label: 'Budget annuel',          icon: '📒' },
-  { id: 'payroll',    label: 'Paie Québec',            icon: '👥' },
-  { id: 'hyp',        label: 'Hypothèses / kg',        icon: '⚙️' },
-  { id: 'scenarios',  label: 'Scénarios & Break-even', icon: '🔮' },
-  { id: 'guide',      label: 'Guide',                  icon: '📖' },
+  { id: 'dashboard',  label: 'Tableau de bord',       icon: I.Activity  },
+  { id: 'posts',      label: 'Postes de coûts',        icon: I.FileText  },
+  { id: 'cargo',      label: 'Cargaisons',             icon: I.Plane     },
+  { id: 'margin',     label: 'Marge',                  icon: I.Scale     },
+  { id: 'finance',    label: 'Analyse financière',     icon: I.Archive   },
+  { id: 'transport',  label: 'Transport & Douane',     icon: I.Truck     },
+  { id: 'routes',     label: 'Rentabilité par ligne',  icon: I.Route     },
+  { id: 'budget',     label: 'Budget annuel',          icon: I.Calculator},
+  { id: 'payroll',    label: 'Paie Québec',            icon: I.Users     },
+  { id: 'hyp',        label: 'Hypothèses / kg',        icon: I.Settings  },
+  { id: 'scenarios',  label: 'Scénarios & Break-even', icon: I.Sparkle   },
+  { id: 'guide',      label: 'Guide',                  icon: I.Help      },
 ];
 
 // ─── KPI Card ────────────────────────────────────────────────
 function KpiCard({ label, value, sub, color }) {
   return (
-    <div style={{ background: 'var(--white)', border: '1px solid var(--border)', borderRadius: 12, padding: '18px 20px', borderLeft: color ? `3px solid ${color}` : undefined }}>
-      <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--ink-400)', textTransform: 'uppercase', letterSpacing: '.05em', marginBottom: 8 }}>{label}</div>
-      <div style={{ fontSize: 24, fontWeight: 800, color: 'var(--ink-900)', fontVariantNumeric: 'tabular-nums' }}>{value}</div>
-      {sub && <div style={{ fontSize: 12, color: 'var(--ink-400)', marginTop: 4 }}>{sub}</div>}
+    <div className="kpi" style={color ? { borderLeft: `3px solid ${color}` } : undefined}>
+      <div className="kpi__label">{label}</div>
+      <div className="kpi__value">{value}</div>
+      {sub && <div className="kpi__delta">{sub}</div>}
     </div>
   );
 }
@@ -240,7 +241,7 @@ function PostsTab() {
 
       {/* Mode toggle */}
       <div style={{ display: 'flex', gap: 6, background: 'var(--bg-soft)', border: '1px solid var(--border)', borderRadius: 10, padding: 5, width: 'fit-content', marginBottom: 20 }}>
-        {[['historical', '📚 Historique'], ['real', '✏️ Réel']].map(([m, label]) => (
+        {[['historical', 'Historique'], ['real', 'Réel']].map(([m, label]) => (
           <button key={m} onClick={() => setDataMode(m)} style={{
             border: 'none', borderRadius: 7, padding: '9px 18px', cursor: 'pointer', fontSize: 14, fontWeight: 700,
             background: dataMode === m ? 'var(--brand-gradient)' : 'transparent',
@@ -252,7 +253,7 @@ function PostsTab() {
       {/* Real mode: category tabs */}
       {dataMode === 'real' && (
         <div style={{ display: 'flex', gap: 6, marginBottom: 20 }}>
-          {[['variable', '✈ Coûts variables'], ['fixed', '🏢 Coûts fixes']].map(([c, label]) => (
+          {[['variable', 'Coûts variables'], ['fixed', 'Coûts fixes']].map(([c, label]) => (
             <button key={c} onClick={() => setRealCategory(c)} style={{
               border: `2px solid ${realCategory === c ? 'var(--info-500)' : 'var(--border)'}`,
               borderRadius: 8, padding: '8px 16px', cursor: 'pointer', fontSize: 13, fontWeight: 700,
@@ -776,7 +777,7 @@ function SnapshotsTab() {
           {archiveMsg && <span style={{ fontSize: 13, color: 'var(--ink-500)' }}>{archiveMsg}</span>}
           <button onClick={handleArchive} disabled={archiving}
             style={{ background: 'var(--brand-gradient)', color: '#fff', border: 'none', borderRadius: 8, padding: '9px 18px', fontSize: 13, fontWeight: 700, cursor: archiving ? 'not-allowed' : 'pointer', opacity: archiving ? .6 : 1 }}>
-            {archiving ? 'Archivage…' : '📦 Archiver l\'exercice précédent'}
+            {archiving ? 'Archivage…' : 'Archiver l\'exercice précédent'}
           </button>
         </div>
       </div>
@@ -1010,7 +1011,7 @@ function BudgetTab() {
 
       {/* View toggle */}
       <div style={{ display: 'flex', gap: 6, background: 'var(--bg-soft)', border: '1px solid var(--border)', borderRadius: 10, padding: 4, width: 'fit-content', marginBottom: 24 }}>
-        {[{ id: 'budget', label: '📒 Budget' }, { id: 'breakeven', label: '⚖️ Break-even' }, { id: 'scenarios', label: '🔮 Scénarios' }].map(v => (
+        {[{ id: 'budget', label: 'Budget' }, { id: 'breakeven', label: 'Break-even' }, { id: 'scenarios', label: 'Scénarios' }].map(v => (
           <button key={v.id} onClick={() => setView(v.id)} style={{
             padding: '6px 14px', borderRadius: 7, border: 'none', cursor: 'pointer', fontSize: 13, fontWeight: 600,
             background: view === v.id ? 'var(--white)' : 'transparent',
@@ -1880,7 +1881,9 @@ function ScenariosTab() {
 function ComingSoonTab({ name }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: 300, gap: 12, color: 'var(--ink-400)', textAlign: 'center' }}>
-      <div style={{ fontSize: 40 }}>🚧</div>
+      <div style={{ width: 56, height: 56, borderRadius: 16, background: 'var(--bg-soft)', border: '1px solid var(--border)', display: 'grid', placeItems: 'center' }}>
+        <I.Sparkle style={{ width: 26, height: 26, color: 'var(--ink-300)' }} />
+      </div>
       <div style={{ fontSize: 18, fontWeight: 700, color: 'var(--ink-700)' }}>{name}</div>
       <div style={{ fontSize: 14 }}>Cette section sera disponible prochainement.</div>
     </div>
@@ -1911,22 +1914,18 @@ export default function FinanceScreen() {
   return (
     <div style={{ display: 'flex', minHeight: 'calc(100vh - 56px)', gap: 0, background: 'var(--bg)' }}>
       {/* Left nav */}
-      <aside style={{ width: 220, flexShrink: 0, background: 'var(--white)', borderRight: '1px solid var(--border)', padding: '20px 12px', position: 'sticky', top: 56, height: 'calc(100vh - 56px)', overflowY: 'auto' }}>
-        <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: '.1em', textTransform: 'uppercase', color: 'var(--ink-300)', marginBottom: 12, paddingLeft: 8 }}>
-          Finance
-        </div>
+      <aside style={{ width: 248, flexShrink: 0, background: 'var(--white)', borderRight: '1px solid var(--border)', padding: '12px 10px', position: 'sticky', top: 56, height: 'calc(100vh - 56px)', overflowY: 'auto' }}>
+        <div className="sidebar__section">Finance</div>
         {NAV_ITEMS.map(item => {
           const isActive = activeTab === item.id;
           const isReady  = ['dashboard', 'posts', 'cargo', 'margin', 'finance', 'budget', 'payroll', 'routes', 'transport', 'hyp', 'scenarios'].includes(item.id);
+          const Ic = item.icon;
           return (
-            <button key={item.id} onClick={() => setActiveTab(item.id)} style={{
-              width: '100%', textAlign: 'left', border: 'none', borderRadius: 8, padding: '9px 10px',
-              marginBottom: 2, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8, fontSize: 13,
-              fontWeight: isActive ? 700 : 500,
-              background: isActive ? 'var(--info-50)' : 'transparent',
-              color: isActive ? 'var(--info-700)' : isReady ? 'var(--ink-700)' : 'var(--ink-400)',
-            }}>
-              <span style={{ fontSize: 15 }}>{item.icon}</span>
+            <button key={item.id} onClick={() => setActiveTab(item.id)}
+              className={'sidebar__link' + (isActive ? ' is-active' : '')}
+              style={{ width: '100%', textAlign: 'left', border: 'none', marginBottom: 2,
+                color: !isReady && !isActive ? 'var(--ink-400)' : undefined }}>
+              <Ic />
               <span style={{ flex: 1 }}>{item.label}</span>
               {!isReady && <span style={{ fontSize: 9, fontWeight: 700, color: 'var(--ink-300)' }}>bientôt</span>}
             </button>
