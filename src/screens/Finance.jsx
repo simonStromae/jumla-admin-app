@@ -1292,18 +1292,22 @@ function RoutesTab() {
   const { fmt: money } = useCurrency();
   const [data, setData]   = useState(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [expanded, setExpanded] = useState(null);
   const currentFY = fiscalYearOf(new Date());
 
   useEffect(() => {
     setLoading(true);
+    setError(null);
     fetch('/api/finance/cost-breakdown?fy=' + currentFY)
-      .then(r => r.json())
+      .then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
       .then(setData)
+      .catch(e => setError(e.message))
       .finally(() => setLoading(false));
   }, [currentFY]);
 
   if (loading) return <div style={{ padding: 32, color: 'var(--ink-400)' }}>Chargement…</div>;
+  if (error) return <div style={{ padding: 32, color: 'var(--bad-500)' }}>Erreur : {error}</div>;
   if (!data) return null;
 
   const { byRoute, months, byPost, posts } = data;
@@ -1390,18 +1394,22 @@ function TransportTab() {
   const { fmt: money } = useCurrency();
   const [data, setData]   = useState(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [view, setView]   = useState('by-post'); // 'by-post' | 'by-month'
   const currentFY = fiscalYearOf(new Date());
 
   useEffect(() => {
     setLoading(true);
+    setError(null);
     fetch('/api/finance/cost-breakdown?fy=' + currentFY)
-      .then(r => r.json())
+      .then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
       .then(setData)
+      .catch(e => setError(e.message))
       .finally(() => setLoading(false));
   }, [currentFY]);
 
   if (loading) return <div style={{ padding: 32, color: 'var(--ink-400)' }}>Chargement…</div>;
+  if (error) return <div style={{ padding: 32, color: 'var(--bad-500)' }}>Erreur : {error}</div>;
   if (!data) return null;
 
   const { posts, byPost, totalByPost, totalByMonth, months } = data;
