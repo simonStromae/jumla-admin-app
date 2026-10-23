@@ -4,7 +4,7 @@
   "version": "0.1.0",
   "scripts": {
     "dev": "next dev",
-    "build": "prisma generate && node scripts/ensure-baseline.js && prisma migrate deploy && next build",
+    "build": "node_modules/.bin/prisma generate && node scripts/ensure-baseline.js && node_modules/.bin/prisma migrate deploy && next build",
     "start": "next start",
     "lint": "next lint"
   },
