@@ -3,6 +3,10 @@
 import "dotenv/config";
 import { defineConfig } from "prisma/config";
 
+// Disable advisory locking so concurrent Vercel builds (jumlas + simonstromaes-projects)
+// don't race on pg_advisory_lock and cause P1002 timeouts.
+process.env.PRISMA_SCHEMA_DISABLE_ADVISORY_LOCK = "1";
+
 export default defineConfig({
   schema: "prisma/schema.prisma",
   migrations: {
