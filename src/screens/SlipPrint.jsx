@@ -18,6 +18,7 @@ export default function SlipPrintScreen({ code, onNav }) {
   const [loading, setLoading] = useState(true);
   const [error,   setError]   = useState('');
   const [paymentEmail, setPaymentEmail] = useState('incjumla@gmail.com');
+  const [hidePrice,    setHidePrice]    = useState(false);
 
   useEffect(() => {
     fetch('/api/public/config').then(r => r.json()).then(d => {
@@ -65,6 +66,10 @@ export default function SlipPrintScreen({ code, onNav }) {
         <span style={{ fontSize: 13, fontWeight: 600 }}>Aperçu avant impression</span>
         <span style={{ fontSize: 12, color: 'var(--ink-400)' }}>— A4 portrait, marges 12 mm</span>
         <div style={{ flex: 1 }} />
+        <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: 'var(--ink-600)', cursor: 'pointer', userSelect: 'none' }}>
+          <input type="checkbox" checked={hidePrice} onChange={e => setHidePrice(e.target.checked)} style={{ cursor: 'pointer' }} />
+          Masquer le prix
+        </label>
         <button className="btn btn--brand btn--sm" onClick={() => window.print()}><I.Print />Exporter PDF</button>
       </div>
 
@@ -260,19 +265,21 @@ export default function SlipPrintScreen({ code, onNav }) {
                     {data.weightKg ?? data.parcel.weightKg ?? '—'} kg
                   </td>
                 </tr>
-                <tr style={{ background: '#0F172A', color: 'white', fontWeight: 700 }}>
-                  <td style={{ ...cell, color: 'white', fontSize: 12, borderColor: '#0F172A' }}>TOTAL DÛ</td>
-                  <td style={{ ...cell, color: 'white', textAlign: 'right', fontFamily: 'monospace', fontSize: 14, borderColor: '#0F172A' }}>
-                    {(data.payment?.amount ?? data.parcel.priceXaf ?? 0).toLocaleString('fr')} {currency}
-                  </td>
-                </tr>
-                <tr>
-                  <td colSpan={2} style={{ ...cell, fontSize: 11, color: paid ? '#059669' : 'var(--info-600)', fontWeight: 600 }}>
-                    {paid
-                      ? '✓ Réglé · ' + (data.payment?.paidAt ? fmt(data.payment.paidAt) : '') + (data.payment?.interacRef ? ' · ' + data.payment.interacRef : '')
-                      : '⏳ Paiement en attente'}
-                  </td>
-                </tr>
+                {!hidePrice && (<>
+                  <tr style={{ background: '#0F172A', color: 'white', fontWeight: 700 }}>
+                    <td style={{ ...cell, color: 'white', fontSize: 12, borderColor: '#0F172A' }}>TOTAL DÛ</td>
+                    <td style={{ ...cell, color: 'white', textAlign: 'right', fontFamily: 'monospace', fontSize: 14, borderColor: '#0F172A' }}>
+                      {(data.payment?.amount ?? data.parcel.priceXaf ?? 0).toLocaleString('fr')} {currency}
+                    </td>
+                  </tr>
+                  <tr>
+                    <td colSpan={2} style={{ ...cell, fontSize: 11, color: paid ? '#059669' : 'var(--info-600)', fontWeight: 600 }}>
+                      {paid
+                        ? '✓ Réglé · ' + (data.payment?.paidAt ? fmt(data.payment.paidAt) : '') + (data.payment?.interacRef ? ' · ' + data.payment.interacRef : '')
+                        : '⏳ Paiement en attente'}
+                    </td>
+                  </tr>
+                </>)}
               </tbody>
             </table>
           </div>
