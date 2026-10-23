@@ -266,13 +266,13 @@ export default function SlipPrintScreen({ code, onNav }) {
                   </td>
                 </tr>
                 {!hidePrice && (<>
-                  <tr style={{ background: '#0F172A', color: 'white', fontWeight: 700 }}>
+                  <tr className="no-print" style={{ background: '#0F172A', color: 'white', fontWeight: 700 }}>
                     <td style={{ ...cell, color: 'white', fontSize: 12, borderColor: '#0F172A' }}>TOTAL DÛ</td>
                     <td style={{ ...cell, color: 'white', textAlign: 'right', fontFamily: 'monospace', fontSize: 14, borderColor: '#0F172A' }}>
                       {(data.payment?.amount ?? data.parcel.priceXaf ?? 0).toLocaleString('fr')} {currency}
                     </td>
                   </tr>
-                  <tr>
+                  <tr className="no-print">
                     <td colSpan={2} style={{ ...cell, fontSize: 11, color: paid ? '#059669' : 'var(--info-600)', fontWeight: 600 }}>
                       {paid
                         ? '✓ Réglé · ' + (data.payment?.paidAt ? fmt(data.payment.paidAt) : '') + (data.payment?.interacRef ? ' · ' + data.payment.interacRef : '')
