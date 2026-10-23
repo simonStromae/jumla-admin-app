@@ -293,7 +293,7 @@ export default function SlipPrintScreen({ code, onNav }) {
                 </div>
                 <div style={{ borderBottom: '1px solid #0F172A', marginBottom: 6 }} />
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: '#374151' }}>
-                  <span>{i === 1 ? data.client.name : '_______________'}</span>
+                  <span>{i === 1 ? (data.recipient?.name || data.client.name) : '_______________'}</span>
                   <span>Date : ____ / ____ / ____</span>
                 </div>
               </div>

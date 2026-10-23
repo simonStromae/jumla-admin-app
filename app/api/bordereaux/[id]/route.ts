@@ -31,6 +31,8 @@ export async function GET(_: NextRequest, { params }: { params: { id: string } }
   const route    = campaign.route;
   const addresses = parcel.client.addresses as any;
   const delivery = addresses?.delivery ?? {};
+  // Parcel-level recip fields (set via admin UI) take priority over legacy client delivery address
+  const p = parcel as any;
 
   return NextResponse.json({
     id:                bl.id,
@@ -51,9 +53,9 @@ export async function GET(_: NextRequest, { params }: { params: { id: string } }
       email:   parcel.client.email,
     },
     recipient: {
-      name:    delivery.name    || parcel.client.name,
-      phone:   delivery.phone   || parcel.client.phone,
-      address: delivery.address || '',
+      name:    p.recipName    || delivery.name    || parcel.client.name,
+      phone:   p.recipPhone   || delivery.phone   || parcel.client.phone,
+      address: p.recipAddress || delivery.address || p.recipCity || '',
     },
     campaign: {
       code:          campaign.code,

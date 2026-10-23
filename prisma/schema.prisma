@@ -189,6 +189,10 @@ model Parcel {
   recipName         String?
   recipPhone        String?
   recipCity         String?
+  recipAddress      String?
+  recipApt          String?
+  recipProvince     String?
+  recipPostal       String?
   confirmedPriceXaf Int?
   adjustmentStatus  String?  @default("none")
   delivery          String?  @default("pickup")
