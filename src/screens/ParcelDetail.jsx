@@ -243,6 +243,7 @@ export default function ParcelDetailScreen({ id, onNav }) {
         </div>
         <div className="page__actions">
           <button className="btn btn--ghost" onClick={() => onNav('/admin/parcels/' + id + '/labels')}><I.Tag />{t.parcels.detail.bordereaux}</button>
+          <button className="btn btn--ghost" onClick={() => onNav('/admin/parcels/' + id + '/policies/print')}><I.FileText />Politiques à signer</button>
           <button className="btn btn--ghost" onClick={() => window.open('/client/invoice/' + id, '_blank')}><I.FileText />{t.parcels.detail.billing}</button>
           {/* TODO: i18n — 'Poids / Prix' has no direct key (composite weight+price) */}
           <button className="btn btn--ghost" onClick={() => setShowWeightModal(true)}><I.Edit />Poids / Prix</button>
