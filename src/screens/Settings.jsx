@@ -2144,6 +2144,8 @@ function SectionPaymentGateway() {
   const [showTx, setShowTx]   = useState(false);
   const [testing, setTesting] = useState(false);
   const [testResult, setTestResult] = useState(null); // null | { ok, error }
+  const [onlinePaymentEnabled, setOnlinePaymentEnabled] = useState(false);
+  const [togglingPayment, setTogglingPayment] = useState(false);
 
   useEffect(() => {
     fetch('/api/settings').then(r => r.json()).then(d => {
@@ -2153,8 +2155,20 @@ function SectionPaymentGateway() {
         authnet_transaction_key: d.authnet_transaction_key ?? prev.authnet_transaction_key,
         authnet_environment:     d.authnet_environment     ?? prev.authnet_environment,
       }));
+      setOnlinePaymentEnabled(d.online_payment_enabled === 'true');
     }).catch(() => {});
   }, []);
+
+  async function toggleOnlinePayment() {
+    const next = !onlinePaymentEnabled;
+    setTogglingPayment(true);
+    setOnlinePaymentEnabled(next);
+    await fetch('/api/settings', {
+      method: 'PUT', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ online_payment_enabled: String(next) }),
+    }).catch(() => {});
+    setTogglingPayment(false);
+  }
 
   const set = k => e => setFields(f => ({ ...f, [k]: e.target.value }));
 
@@ -2206,6 +2220,31 @@ function SectionPaymentGateway() {
           </button>
         </div>
       }>
+
+      {/* Online payment master toggle */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 16px', background: onlinePaymentEnabled ? 'var(--ok-50)' : 'var(--bg-soft)', border: '1px solid ' + (onlinePaymentEnabled ? 'var(--ok-200)' : 'var(--border)'), borderRadius: 10, marginBottom: 20 }}>
+        <div>
+          <div style={{ fontSize: 14, fontWeight: 700, color: onlinePaymentEnabled ? 'var(--ok-800)' : 'var(--ink-700)' }}>
+            {onlinePaymentEnabled ? '✓ Paiement en ligne activé' : 'Paiement en ligne désactivé'}
+          </div>
+          <div style={{ fontSize: 12, color: 'var(--ink-400)', marginTop: 3 }}>
+            {onlinePaymentEnabled
+              ? 'Le bouton de paiement par carte est visible côté client.'
+              : 'Le bouton de paiement par carte est masqué et les tentatives de paiement sont refusées.'}
+          </div>
+        </div>
+        <div onClick={togglingPayment ? undefined : toggleOnlinePayment} style={{
+          width: 44, height: 24, borderRadius: 12, cursor: togglingPayment ? 'default' : 'pointer', flexShrink: 0,
+          background: onlinePaymentEnabled ? 'var(--ok-500)' : 'var(--ink-200)',
+          position: 'relative', transition: 'background .2s', opacity: togglingPayment ? .6 : 1,
+        }}>
+          <div style={{
+            position: 'absolute', top: 2, left: onlinePaymentEnabled ? 22 : 2,
+            width: 20, height: 20, borderRadius: 10, background: 'white',
+            transition: 'left .2s', boxShadow: '0 1px 3px rgba(0,0,0,.2)',
+          }} />
+        </div>
+      </div>
 
       {/* Status badge + test result */}
       <div style={{ marginBottom: 20, display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center' }}>

@@ -18,6 +18,11 @@ async function resolveToken(token: string) {
 
 export async function POST(req: NextRequest, { params }: { params: { token: string } }) {
   try {
+    const onlinePaymentRow = await prisma.setting.findUnique({ where: { key: 'online_payment_enabled' } });
+    if (onlinePaymentRow?.value !== 'true') {
+      return NextResponse.json({ error: 'Le paiement en ligne est temporairement désactivé.' }, { status: 503 });
+    }
+
     const parcelId = await resolveToken(params.token);
     if (!parcelId) return NextResponse.json({ error: 'Lien invalide ou expiré' }, { status: 404 });
 
