@@ -24,7 +24,7 @@ export async function POST(req: NextRequest) {
 
   // Read messaging preferences
   const prefRows = await prisma.setting.findMany({
-    where: { key: { in: ['MESSAGING_ENABLED', 'MESSAGING_CHANNEL', 'TWILIO_SMS_FROM'] } },
+    where: { key: { in: ['MESSAGING_ENABLED', 'MESSAGING_CHANNEL', 'TWILIO_SMS_FROM', 'warehouse_addr'] } },
   }).catch(() => []);
   const pref: Record<string, string> = {};
   for (const r of prefRows) pref[r.key] = r.value;
@@ -86,9 +86,9 @@ export async function POST(req: NextRequest) {
       ? new Date(p.campaign.arrivalDate).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' })
       : 'à définir';
 
-    // Route-specific overrides from fees.arrival; fall back to hardcoded Montreal defaults
+    // Route-specific overrides from fees.arrival; fall back to company setting then hardcoded default
     const routeFees = (p.campaign as any).route?.fees as any;
-    const warehouseAddress = routeFees?.arrival?.address ?? '5500 Pl. de la Savane, Lachine';
+    const warehouseAddress = routeFees?.arrival?.address ?? pref['warehouse_addr'] ?? '5500 Pl. de la Savane, Lachine';
     const agentPhone       = routeFees?.arrival?.phone   ?? '+1 514 998 0709';
     const destCode         = (p.campaign as any).route?.destination ?? 'MTL';
     const CITY_MAP: Record<string, string> = {
