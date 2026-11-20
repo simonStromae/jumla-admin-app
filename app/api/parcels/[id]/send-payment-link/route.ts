@@ -19,6 +19,11 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
 
   if (!parcel) return NextResponse.json({ error: 'Colis introuvable' }, { status: 404 });
 
+  const onlinePaymentRow = await prisma.setting.findUnique({ where: { key: 'online_payment_enabled' } });
+  if (onlinePaymentRow?.value !== 'true') {
+    return NextResponse.json({ error: 'Le paiement en ligne est désactivé — activez-le dans les réglages avant d\'envoyer un lien de paiement.' }, { status: 503 });
+  }
+
   const clientPhone = parcel.client.phone || parcel.client.email;
   if (!clientPhone) {
     return NextResponse.json({ error: 'Numéro de téléphone du client introuvable' }, { status: 400 });

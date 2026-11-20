@@ -5,10 +5,14 @@ import { prisma } from '@/src/lib/prisma';
 // Returns only the Accept.js-safe fields — no Transaction Key
 export async function GET() {
   const rows = await prisma.setting.findMany({
-    where: { key: { in: ['authnet_login_id', 'authnet_client_key', 'authnet_environment'] } },
+    where: { key: { in: ['authnet_login_id', 'authnet_client_key', 'authnet_environment', 'online_payment_enabled'] } },
   });
   const m: Record<string, string> = {};
   for (const r of rows) m[r.key] = r.value;
+
+  if (m.online_payment_enabled !== 'true') {
+    return NextResponse.json({ enabled: false });
+  }
 
   const loginId   = m.authnet_login_id   ?? '';
   const clientKey = m.authnet_client_key ?? '';
