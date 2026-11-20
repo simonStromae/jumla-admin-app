@@ -226,6 +226,24 @@ Une discordance a été détectée sur votre bordereau *{bordereau_code}* (colis
 
 Merci de vous connecter à votre espace client pour consulter les détails et régulariser votre dossier.`,
   },
+  auto_status_arrival: {
+    label:   'Statut colis — Arrivée / Retrait',
+    trigger: "Déclenché quand un colis passe au statut « Arrivé entrepôt dest. » (ard) ou « Prêt pour livraison/retrait » (pdl)",
+    vars:    ['{first_name}', '{parcel_code}', '{status_label}', '{warehouse_address}', '{agent_phone}'],
+    body:
+`Bonjour {first_name} 👋
+
+Bonne nouvelle ! Votre colis *{parcel_code}* est arrivé.
+
+Statut : *{status_label}*
+
+📍 Retrait : *{warehouse_address}*
+📞 Contact : {agent_phone}
+
+Merci,
+Jumla Shipping`,
+  },
+
   auto_bordereau_invite: {
     label:   'Invitation attestation bordereau',
     trigger: "Déclenché à la création d'un bordereau — invite le client à attester son contenu",

@@ -54,7 +54,7 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
       notifyTarget: true,
       notifyPhone: true,
       notifyEmail: true,
-      campaign: { select: { status: true } },
+      campaign: { select: { status: true, route: { select: { fees: true, destination: true } } } },
       client: { select: { name: true, email: true, phone: true } },
     },
   });
@@ -195,23 +195,36 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
       ).catch(() => {});
     }
 
+    // For arrival/pickup-ready statuses, resolve warehouse address from route fees
+    const isArrivalStatus = status === 'ard' || status === 'pdl';
+    const routeFees = (existing as any)?.campaign?.route?.fees as any;
+    const destCode  = (existing as any)?.campaign?.route?.destination ?? '';
+    const CITY_MAP: Record<string, string> = {
+      MTL: 'Montréal', YUL: 'Montréal', DLA: 'Douala', BRU: 'Bruxelles', LOS: 'Lagos',
+    };
+    const warehouseAddress = routeFees?.arrival?.address
+      ?? (await prisma.setting.findUnique({ where: { key: 'warehouse_addr' } }).catch(() => null))?.value
+      ?? '5500 Pl. de la Savane, Lachine';
+    const agentPhone = routeFees?.arrival?.phone
+      ?? routeFees?.dropoff?.phone
+      ?? '+1 514 998 0709';
+
+    const waNotifId   = isArrivalStatus ? 'auto_status_arrival' : 'auto_status_parcel';
+    const waNotifVars = isArrivalStatus
+      ? { first_name: firstName, parcel_code: trackingCode, status_label: statusLabel, warehouse_address: warehouseAddress, agent_phone: agentPhone }
+      : { first_name: firstName, parcel_code: trackingCode, status_label: statusLabel };
+
     // WhatsApp — sender
     if (sendToSender && existing?.client?.phone) {
-      renderWaTemplate('auto_status_parcel', {
-        first_name: firstName, parcel_code: trackingCode, status_label: statusLabel,
-      }).then(msg => sendWhatsappNotification(
-        existing!.client!.phone!, msg, params.id, 'auto_status_parcel',
-        { first_name: firstName, parcel_code: trackingCode, status_label: statusLabel },
+      renderWaTemplate(waNotifId, waNotifVars).then(msg => sendWhatsappNotification(
+        existing!.client!.phone!, msg, params.id, waNotifId, waNotifVars,
       )).catch(() => {});
     }
     // WhatsApp — recipient / custom
     const targetPhone = (sendToRecipient || sendToCustom) ? notifyPhone : null;
     if (targetPhone) {
-      renderWaTemplate('auto_status_parcel', {
-        first_name: firstName, parcel_code: trackingCode, status_label: statusLabel,
-      }).then(msg => sendWhatsappNotification(
-        targetPhone, msg, params.id, 'auto_status_parcel',
-        { first_name: firstName, parcel_code: trackingCode, status_label: statusLabel },
+      renderWaTemplate(waNotifId, waNotifVars).then(msg => sendWhatsappNotification(
+        targetPhone, msg, params.id, waNotifId, waNotifVars,
       )).catch(() => {});
     }
     // Push notification on status change

@@ -67,10 +67,15 @@ export default function MessagingScreen({ onNav, campaignId }) {
 
   useEffect(() => { loadData(); }, [loadData]);
 
-  // Load customised templates from settings
+  const [warehouseAddr, setWarehouseAddr] = useState('5500 Pl. de la Savane, Lachine');
+  const [agentPhone,    setAgentPhone]    = useState('+1 514 998 0709');
+
+  // Load customised templates and company address from settings
   useEffect(() => {
     fetch('/api/settings').then(r => r.json()).then(d => {
-      const loaded = TEMPLATE_DEFAULTS.map(tmpl => ({
+      if (d.warehouse_addr) setWarehouseAddr(d.warehouse_addr);
+      const defaults = makeTemplateDefaults(currency);
+      const loaded = defaults.map(tmpl => ({
         ...tmpl,
         l:    d[`wa_tmpl_${tmpl.id}_label`] ?? tmpl.l,
         body: d[`wa_tmpl_${tmpl.id}_body`]  ?? tmpl.body,
@@ -123,8 +128,8 @@ export default function MessagingScreen({ onNav, campaignId }) {
     .replace(/\{parcel_code\}/g,       previewParcel?.trackingCode ?? 'JMS-00000')
     .replace(/\{arrival_date\}/g,      'à définir')
     .replace(/\{destination_city\}/g,  'Montréal')
-    .replace(/\{warehouse_address\}/g, '5500 Pl. de la Savane, Lachine')
-    .replace(/\{agent_phone\}/g,       '+1 514 000 0000');
+    .replace(/\{warehouse_address\}/g, warehouseAddr)
+    .replace(/\{agent_phone\}/g,       agentPhone);
 
   async function handleSend() {
     if (!selected.length || !apiStatus?.configured || apiStatus?.messagingEnabled === false) return;
