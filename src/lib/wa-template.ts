@@ -260,6 +260,18 @@ Votre bordereau *{bordereau_code}* (colis {parcel_code}) est maintenant disponib
 Merci,
 Jumla Shipping`,
   },
+
+  agent_whatsapp_ready: {
+    label:   'Message agent — Colis prêt',
+    trigger: "Pré-rempli dans le bouton WhatsApp de la fiche colis (page agent) — l'agent peut le modifier avant d'envoyer",
+    vars:    ['{parcel_code}', '{warehouse_address}'],
+    body:
+`Bonjour, votre colis {parcel_code} est prêt. Merci de vous présenter pour le retrait.
+
+📍 {warehouse_address}
+
+— Jumla Shipping`,
+  },
 };
 
 // ─── Twilio Content API template definitions ───────────────────────────────
