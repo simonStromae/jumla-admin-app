@@ -151,7 +151,7 @@ export default function PolicyPrintScreen({ id, onNav }) {
             </div>
 
             <SECTION num="1" title="Principe de responsabilité">
-              Jumla agit à titre de transporteur et de prestataire de services logistiques. Sa responsabilité est limitée aux fautes directement imputables à Jumla. Elle ne peut être tenue responsable des dommages résultant notamment de la nature des marchandises, d'un emballage inadéquat, d'un vice caché, de retards causés par des compagnies aériennes ou partenaires logistiques, d'une inspection ou saisie douanière, ou d'un cas de force majeure.
+              Jumla agit à titre de transporteur et de prestataire de services logistiques. Sa responsabilité est limitée aux fautes directement imputables à Jumla et à ses prestataires (Sté Tatico Sarl). Elle ne peut être tenue responsable des dommages résultant notamment de la nature des marchandises, d'un emballage inadéquat, d'un vice caché, de retards causés par des compagnies aériennes ou partenaires logistiques, d'une inspection ou saisie douanière, ou d'un cas de force majeure.
             </SECTION>
 
             <SECTION num="2" title="Délais pour présenter une réclamation">
@@ -160,11 +160,12 @@ export default function PolicyPrintScreen({ id, onNav }) {
                 'Colis perdu : 30 jours civils maximum après la date prévue de livraison.',
                 'Toute réclamation reçue hors délai pourra être refusée.',
               ]} />
-              Les réclamations doivent être soumises via le formulaire en ligne ou par courriel à <strong>info@jumlas.com</strong>. Les réclamations par téléphone, texto ou réseaux sociaux ne constituent pas une demande officielle.
+              Les réclamations doivent être soumises exclusivement via le formulaire en ligne ou par courriel à <strong>info@jumlas.com</strong> et non à aucun de ses prestataires (Sté Tatico Sarl). Les réclamations par téléphone, texto ou réseaux sociaux ne constituent pas une demande officielle.
             </SECTION>
 
             <SECTION num="3" title="Situations exclues de toute indemnisation">
               <Bullets items={[
+                'Crash d\'avion.',
                 'Produits périssables ou soumis à une détérioration naturelle.',
                 'Saisie, confiscation ou destruction par une autorité douanière.',
                 'Colis contenant des marchandises interdites.',
@@ -176,6 +177,17 @@ export default function PolicyPrintScreen({ id, onNav }) {
 
             <SECTION num="4" title="Responsabilité maximale">
               Sauf garantie particulière souscrite, la responsabilité financière de Jumla est limitée au montant des frais de transport payés pour le colis concerné. Jumla n'est jamais responsable des pertes commerciales, du manque à gagner, des pertes indirectes, des dommages punitifs ou des dommages moraux.
+            </SECTION>
+
+            <SECTION num="5" title="Garantie particulière (assurance)">
+              <Bullets items={[
+                'Assurance du colis : vue l\'importance et la valeur du colis, le client peut souscrire à une assurance tout risque dans une compagnie d\'assurance de son choix pour la couverture de son colis.',
+                'Garantie particulière : le client qui déclare la valeur de son colis avant l\'expédition devra payer, en plus des frais d\'expédition, 25 % de la valeur déclarée comme garantie particulière en cas de perte.',
+              ]} />
+            </SECTION>
+
+            <SECTION num="6" title="Partenaires groupeurs et intermédiaires">
+              Tout client dont l'expédition est organisée par un partenaire groupeur ou un intermédiaire doit adresser toute réclamation relative à un dommage ou à une perte directement à ce partenaire, et non à Jumla. Le client ne peut s'adresser directement à Jumla que dans le cas où le partenaire l'a expressément mis en relation directe avec Jumla pour la gestion de son expédition.
             </SECTION>
           </div>
 
@@ -207,12 +219,12 @@ export default function PolicyPrintScreen({ id, onNav }) {
             {[
               {
                 label: 'Marchandises interdites',
-                text: "Je confirme que mon colis ne contient aucune marchandise interdite (armes, explosifs, produits dangereux, stupéfiants, contrefaçons, billets de banque, etc.) ni tout autre article dont le transport est interdit par la réglementation douanière canadienne ou de destination. Je comprends qu'une fausse déclaration entraîne le rejet de toute réclamation et peut faire l'objet de poursuites civiles ou pénales.",
+                text: "Je confirme que ma marchandise ne contient aucune marchandise interdite (armes, explosifs, produits dangereux, stupéfiants, contrefaçons, billets de banque, produits pharmaceutiques en provenance d'Afrique, viandes et dérivés (produits laitiers) en provenance du Cameroun, bois non traité, produits alimentaires riches en fer (Cubes Maggi), produits alimentaires pauvres en vitamine D (Margarine Jadida et autres), insecticides...) ni tout autre article dont le transport est interdit par la réglementation douanière canadienne ou de destination. Je comprends qu'une fausse déclaration entraîne le rejet de toute réclamation et peut faire l'objet de poursuites civiles ou pénales.",
                 checked: parcel.forbiddenAcknowledged,
               },
               {
                 label: 'Objets de valeur',
-                text: "Je déclare avoir été informé(e) que les objets de valeur (bijoux, appareils électroniques, œuvres d'art, etc.) non couverts par la garantie optionnelle proposée par Jumla ne feront l'objet d'aucune indemnisation en cas de perte ou de vol, conformément à la renonciation ci-présente.",
+                text: "Je déclare avoir été informé(e) que les objets de valeur (bijoux, appareils électroniques, œuvres d'art, objets culturels, produits vestimentaires, compléments alimentaires, thés et cafés, produits cosmétiques...) non couverts par la garantie particulière proposée par Jumla ne feront l'objet d'aucune indemnisation en cas de perte ou de vol, conformément à la renonciation ci-présente.",
                 checked: parcel.waiverAccepted || parcel.hasValuable === false,
                 note: parcel.hasValuable && parcel.declaredValue
                   ? `Valeur déclarée : ${Number(parcel.declaredValue).toLocaleString('fr')} CAD`
