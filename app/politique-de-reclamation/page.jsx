@@ -162,12 +162,14 @@ Jumla n'est jamais responsable :`,
   },
   {
     n: 14,
-    title: 'Partenaires commerciaux',
+    title: 'Partenaires commerciaux et groupeurs',
     body: `Les partenaires ou revendeurs utilisant les services de Jumla demeurent seuls responsables envers leurs propres clients.
 
 Toute indemnisation sera versée exclusivement au partenaire ayant conclu le contrat avec Jumla.
 
-Il appartient au partenaire de régler toute réclamation avec son client.`,
+Il appartient au partenaire de régler toute réclamation avec son client.
+
+Tout client dont l'expédition est organisée par un partenaire groupeur ou un intermédiaire doit adresser toute réclamation relative à un dommage ou à une perte directement à ce partenaire, et non à Jumla. Le client ne peut s'adresser directement à Jumla que dans le cas où le partenaire l'a expressément mis en relation directe avec Jumla pour la gestion de son expédition.`,
   },
   {
     n: 15,

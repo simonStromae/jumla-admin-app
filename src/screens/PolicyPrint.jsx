@@ -185,6 +185,10 @@ export default function PolicyPrintScreen({ id, onNav }) {
                 'Garantie particulière : le client qui déclare la valeur de son colis avant l\'expédition devra payer, en plus des frais d\'expédition, 25 % de la valeur déclarée comme garantie particulière en cas de perte.',
               ]} />
             </SECTION>
+
+            <SECTION num="6" title="Partenaires groupeurs et intermédiaires">
+              Tout client dont l'expédition est organisée par un partenaire groupeur ou un intermédiaire doit adresser toute réclamation relative à un dommage ou à une perte directement à ce partenaire, et non à Jumla. Le client ne peut s'adresser directement à Jumla que dans le cas où le partenaire l'a expressément mis en relation directe avec Jumla pour la gestion de son expédition.
+            </SECTION>
           </div>
 
           {/* Section B — Politique de confidentialité (résumé) */}
