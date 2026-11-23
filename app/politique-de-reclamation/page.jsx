@@ -16,7 +16,7 @@ Toute personne utilisant les services de Jumla reconnaît avoir pris connaissanc
     title: 'Principe général',
     body: `Jumla agit principalement à titre de transporteur et de prestataire de services logistiques.
 
-Notre responsabilité est limitée aux situations où une faute directement imputable à Jumla est démontrée.
+Notre responsabilité est limitée aux situations où une faute directement imputable à Jumla et à ses prestataires (Sté Tatico Sarl) est démontrée.
 
 Jumla ne peut être tenue responsable des dommages résultant notamment :`,
     bullets: [
@@ -52,17 +52,19 @@ Jumla ne peut être tenue responsable des dommages résultant notamment :`,
       'emballage inadéquat fourni par le client;',
       'renseignements incomplets ou erronés fournis par le client;',
       'retard attribuable aux compagnies aériennes, maritimes ou aux autorités gouvernementales;',
+      'crash d\'avion;',
       'catastrophe naturelle, guerre, pandémie, grève ou autre cas de force majeure.',
     ],
   },
   {
     n: 5,
-    title: 'Marchandises de valeur',
-    body: `Tout objet de valeur doit être déclaré au moment de l'expédition.
-
-Lorsque le client choisit de souscrire la garantie offerte par Jumla, moyennant le paiement des frais applicables, une indemnisation pourra être accordée conformément aux présentes conditions.
-
-Si le client refuse cette garantie, il renonce à toute réclamation relativement à la perte ou au vol de cette marchandise, conformément à la renonciation écrite signée lors de l'expédition.`,
+    title: 'Garantie particulière (assurance)',
+    body: `Tout objet de valeur doit être déclaré au moment de l'expédition.`,
+    bullets: [
+      "Assurance du colis : vue l'importance et la valeur du colis, le client peut souscrire à une assurance tout risque dans une compagnie d'assurance de son choix pour la couverture de son colis.",
+      "Garantie particulière : le client qui déclare la valeur de son colis avant l'expédition devra payer, en plus des frais d'expédition, 25 % de la valeur déclarée comme garantie particulière en cas de perte.",
+    ],
+    after: "Si le client refuse cette garantie, il renonce à toute réclamation relativement à la perte ou au vol de cette marchandise, conformément à la renonciation écrite signée lors de l'expédition.",
   },
   {
     n: 6,
@@ -80,7 +82,7 @@ Si le client refuse cette garantie, il renonce à toute réclamation relativemen
     body: `Les réclamations doivent être soumises exclusivement :`,
     bullets: [
       'au moyen du formulaire disponible sur le site Internet de Jumla;',
-      'ou par courriel au service des réclamations.',
+      'ou par courriel exclusivement à info@jumlas.com et non à aucun de ses prestataires (Sté Tatico Sarl).',
     ],
     after: 'Les réclamations par téléphone, message texte, réseaux sociaux ou messagerie instantanée ne constituent pas une demande officielle.',
   },
