@@ -71,6 +71,8 @@ export default function AgentParcelPage() {
   const [blBusy,       setBlBusy]       = useState({});
   const [blEcartOpen,  setBlEcartOpen]  = useState({});
   const [blEcartNote,  setBlEcartNote]  = useState({});
+  const [warehouseAddr, setWarehouseAddr] = useState('5500 Pl. de la Savane, Lachine');
+  const [waReadyTmpl,   setWaReadyTmpl]  = useState(null);
 
   useEffect(() => {
     fetch(`/api/parcels/${id}`)
@@ -80,6 +82,13 @@ export default function AgentParcelPage() {
     fetch('/api/admin/drivers')
       .then(r => r.json())
       .then(d => Array.isArray(d) && setDrivers(d))
+      .catch(() => {});
+    fetch('/api/settings')
+      .then(r => r.json())
+      .then(d => {
+        if (d.warehouse_addr) setWarehouseAddr(d.warehouse_addr);
+        if (d.wa_tmpl_agent_whatsapp_ready_body) setWaReadyTmpl(d.wa_tmpl_agent_whatsapp_ready_body);
+      })
       .catch(() => {});
   }, [id]);
 
@@ -171,7 +180,11 @@ export default function AgentParcelPage() {
 
   const contactPhone = parcel.recipPhone || parcel.client?.phone;
   const contactName  = parcel.recipName  || parcel.client?.name;
-  const waLink       = contactPhone ? `https://wa.me/${formatPhone(contactPhone)}?text=${encodeURIComponent(`Bonjour, votre colis ${parcel.trackingCode} est prêt. Merci de vous présenter pour le retrait. — Jumla Shipping`)}` : null;
+  const defaultWaReadyBody = `Bonjour, votre colis {parcel_code} est prêt. Merci de vous présenter pour le retrait.\n\n📍 {warehouse_address}\n\n— Jumla Shipping`;
+  const waReadyBody  = (waReadyTmpl ?? defaultWaReadyBody)
+    .replace(/\{parcel_code\}/g,       parcel.trackingCode ?? '')
+    .replace(/\{warehouse_address\}/g, warehouseAddr);
+  const waLink       = contactPhone ? `https://wa.me/${formatPhone(contactPhone)}?text=${encodeURIComponent(waReadyBody)}` : null;
   const currentColor = STATUS_COLOR[parcel.status] ?? '#6B7280';
 
   return (
