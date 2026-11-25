@@ -45,6 +45,8 @@ model User {
   defaultDelivery    String?   @default("pickup")
   companyName        String?
   billingAddress     String?
+  partnerRatePerKg   Float?
+  partnerMarginXaf   Int?
   createdAt          DateTime  @default(now())
 
   parcels               Parcel[]        @relation("ClientParcels")
