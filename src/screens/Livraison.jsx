@@ -114,8 +114,7 @@ export default function LivraisonScreen({ onNav }) {
     || (p.client.name ?? '').toLowerCase().includes(q)
     || (p.recipCity  ?? '').toLowerCase().includes(q);
 
-  const today = new Date(); today.setHours(0, 0, 0, 0);
-  const deliveredTodayAll = homeDone.filter(p => p.deliveredAt && new Date(p.deliveredAt) >= today);
+  const todayStart = new Date(); todayStart.setHours(0, 0, 0, 0);
 
   const tabs = [
     { key: 'home',       label: 'Livraison domicile', count: home.filter(p => !['ok','tdl'].includes(p.status)).length },
@@ -371,7 +370,7 @@ export default function LivraisonScreen({ onNav }) {
             pending: [],
           };
           if (p.status === 'liv') driverMap[d.id].inProgress.push(p);
-          else if (p.status === 'ok' && p.deliveredAt && new Date(p.deliveredAt) >= today) driverMap[d.id].deliveredToday.push(p);
+          else if (p.status === 'ok' && p.deliveredAt && new Date(p.deliveredAt) >= todayStart) driverMap[d.id].deliveredToday.push(p);
           else if (p.status === 'tdl') driverMap[d.id].failed.push(p);
           else if (!['ok'].includes(p.status)) driverMap[d.id].pending.push(p);
         });
