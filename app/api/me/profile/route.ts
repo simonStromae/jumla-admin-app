@@ -15,7 +15,7 @@ export async function GET() {
   const userId = (session.user as any).id;
   const user = await prisma.user.findUnique({
     where: { id: userId },
-    select: { id: true, name: true, email: true, phone: true, city: true, country: true, addresses: true },
+    select: { id: true, name: true, email: true, phone: true, city: true, country: true, addresses: true, clientType: true, partnerRatePerKg: true, partnerMarginXaf: true },
   });
   const addr = parseAddressesObj(user?.addresses);
   return NextResponse.json({
@@ -25,6 +25,9 @@ export async function GET() {
     phone:           user?.phone,
     city:            user?.city,
     country:         user?.country,
+    clientType:      user?.clientType,
+    partnerRatePerKg: user?.partnerRatePerKg ?? null,
+    partnerMarginXaf: user?.partnerMarginXaf ?? null,
     savedAddresses:   Array.isArray(addr.saved)       ? addr.saved       : [],
     savedRecipients:  Array.isArray(addr.recipients)  ? addr.recipients  : [],
   });

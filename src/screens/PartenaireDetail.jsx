@@ -440,6 +440,101 @@ function NewInvoiceModal({ partner, campaigns, onClose, onCreated }) {
   );
 }
 
+// ─── Pricing Section ───────────────────────────────────────────────────────────
+function PricingSection({ partner, onSaved }) {
+  const { fmt } = useCurrency();
+  const [rate,   setRate]   = useState(partner.partnerRatePerKg != null ? String(partner.partnerRatePerKg) : '');
+  const [margin, setMargin] = useState(partner.partnerMarginXaf != null ? String(partner.partnerMarginXaf) : '');
+  const [saving, setSaving] = useState(false);
+  const [saved,  setSaved]  = useState(false);
+
+  const handleSave = async () => {
+    setSaving(true);
+    await fetch('/api/admin/partners/' + partner.id, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        partnerRatePerKg:  rate   !== '' ? rate   : null,
+        partnerMarginXaf:  margin !== '' ? margin : null,
+      }),
+    });
+    setSaving(false);
+    setSaved(true);
+    setTimeout(() => setSaved(false), 2500);
+    onSaved({ partnerRatePerKg: rate !== '' ? parseFloat(rate) || null : null, partnerMarginXaf: margin !== '' ? parseInt(margin, 10) || null : null });
+  };
+
+  const rateNum   = parseFloat(rate)   || 0;
+  const marginNum = parseInt(margin, 10) || 0;
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 20, maxWidth: 520 }}>
+      <div style={{ background: 'var(--bg-soft)', borderRadius: 12, padding: '18px 20px' }}>
+        <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--ink-500)', textTransform: 'uppercase', letterSpacing: '.04em', marginBottom: 14 }}>
+          Tarif partenaire
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+          <div>
+            <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: 'var(--ink-500)', marginBottom: 5 }}>
+              Taux (XAF / kg)
+            </label>
+            <input
+              type="number"
+              min={0}
+              step={100}
+              value={rate}
+              onChange={e => setRate(e.target.value)}
+              placeholder="ex: 1500"
+              style={{ width: '100%', padding: '8px 10px', border: '1px solid var(--border)', borderRadius: 8, fontSize: 14, fontFamily: 'var(--font-mono)', boxSizing: 'border-box' }}
+            />
+          </div>
+          <div>
+            <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: 'var(--ink-500)', marginBottom: 5 }}>
+              Marge fixe (XAF)
+            </label>
+            <input
+              type="number"
+              min={0}
+              step={1000}
+              value={margin}
+              onChange={e => setMargin(e.target.value)}
+              placeholder="ex: 50000"
+              style={{ width: '100%', padding: '8px 10px', border: '1px solid var(--border)', borderRadius: 8, fontSize: 14, fontFamily: 'var(--font-mono)', boxSizing: 'border-box' }}
+            />
+          </div>
+        </div>
+        <div style={{ marginTop: 10, fontSize: 12, color: 'var(--ink-400)' }}>
+          Total facture = Σ poids (kg) × taux + marge fixe
+        </div>
+      </div>
+
+      {(rateNum > 0 || marginNum > 0) && (
+        <div style={{ background: 'white', border: '1px solid var(--border)', borderRadius: 10, padding: '14px 16px' }}>
+          <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--ink-500)', marginBottom: 8 }}>Exemple de calcul</div>
+          <div style={{ fontSize: 12.5, color: 'var(--ink-600)', lineHeight: 1.7 }}>
+            {rateNum > 0 && <div>Pour <strong>10 kg</strong> → {fmt(rateNum * 10, 'XAF')}</div>}
+            {rateNum > 0 && <div>Pour <strong>50 kg</strong> → {fmt(rateNum * 50, 'XAF')}</div>}
+            {marginNum > 0 && <div>+ marge fixe → {fmt(marginNum, 'XAF')}</div>}
+            {rateNum > 0 && marginNum > 0 && (
+              <div style={{ marginTop: 6, fontWeight: 700, color: 'var(--ink-900)' }}>
+                Total 50 kg → {fmt(rateNum * 50 + marginNum, 'XAF')}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      <button
+        onClick={handleSave}
+        disabled={saving}
+        style={{ alignSelf: 'flex-start', padding: '10px 24px', borderRadius: 9, border: 'none', background: saved ? 'var(--ok-600)' : 'var(--brand-600)', color: 'white', fontWeight: 700, fontSize: 13.5, cursor: saving ? 'default' : 'pointer', opacity: saving ? 0.7 : 1 }}
+      >
+        {saving ? 'Enregistrement…' : saved ? '✓ Enregistré' : 'Enregistrer'}
+      </button>
+    </div>
+  );
+}
+
 // ─── Main screen ───────────────────────────────────────────────────────────────
 export default function PartenaireDetailScreen({ id, onNav }) {
   const { currency, fmt, convert } = useCurrency();
@@ -506,6 +601,10 @@ export default function PartenaireDetailScreen({ id, onNav }) {
 
   if (loading) return <div style={{ padding: 60, textAlign: 'center', color: 'var(--ink-400)' }}>Chargement…</div>;
   if (!data)   return <div style={{ padding: 60, textAlign: 'center', color: 'var(--bad-600)' }}>Partenaire introuvable.</div>;
+
+  const handlePricingSaved = (fields) => {
+    setData(prev => prev ? { ...prev, partner: { ...prev.partner, ...fields } } : prev);
+  };
 
   const { partner, campaigns } = data;
   const activeCampaigns = campaigns.filter(g => g.campaign && !['fin', 'ann'].includes(g.campaign.status));
@@ -593,6 +692,7 @@ export default function PartenaireDetailScreen({ id, onNav }) {
           { key: 'active',   label: `En cours (${activeCampaigns.length})` },
           { key: 'history',  label: `Historique (${pastCampaigns.length})` },
           { key: 'invoices', label: `Factures (${invoices.length})` },
+          { key: 'pricing',  label: 'Tarification' },
         ].map(t => (
           <button key={t.key} onClick={() => setTab(t.key)}
             style={{ padding: '10px 18px', background: 'none', cursor: 'pointer', border: 'none', borderBottom: tab === t.key ? '2px solid var(--brand-600)' : '2px solid transparent', color: tab === t.key ? 'var(--brand-600)' : 'var(--ink-500)', fontWeight: tab === t.key ? 700 : 400, fontSize: 13.5, marginBottom: -1 }}
@@ -621,6 +721,10 @@ export default function PartenaireDetailScreen({ id, onNav }) {
               ))
           }
         </div>
+      )}
+
+      {tab === 'pricing' && (
+        <PricingSection partner={partner} onSaved={handlePricingSaved} />
       )}
 
       {tab === 'invoices' && (
