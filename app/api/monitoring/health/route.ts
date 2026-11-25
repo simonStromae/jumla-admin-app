@@ -99,20 +99,34 @@ async function checkAuthNet(): Promise<ServiceStatus> {
   }
 }
 
-async function checkCron(): Promise<ServiceStatus> {
+function formatLastRun(value: string | undefined): string {
+  if (!value) return 'Aucun run enregistre';
+  return `Dernier run : ${new Date(value).toLocaleString('fr-FR', { timeZone: 'America/Toronto' })}`;
+}
+
+async function checkCronReminders(): Promise<ServiceStatus> {
   const secret = process.env.CRON_SECRET;
   if (!secret) {
-    return { id: 'cron', label: 'Cron relances paiement', status: 'warn', detail: 'CRON_SECRET absent — cron non securise' };
+    return { id: 'cron_reminders', label: 'Cron relances paiement', status: 'warn', detail: 'CRON_SECRET absent' };
   }
   try {
-    const lastRun = await prisma.setting.findFirst({ where: { key: 'cron_payment_reminders_last_run' } });
-    const lastRunAt = lastRun?.value;
-    const detail = lastRunAt
-      ? `Dernier run : ${new Date(lastRunAt).toLocaleString('fr-FR', { timeZone: 'America/Toronto' })}`
-      : 'Aucun run enregistre';
-    return { id: 'cron', label: 'Cron relances paiement', status: 'ok', detail };
+    const row = await prisma.setting.findFirst({ where: { key: 'cron_payment_reminders_last_run' } });
+    return { id: 'cron_reminders', label: 'Cron relances paiement', status: 'ok', detail: formatLastRun(row?.value) };
   } catch {
-    return { id: 'cron', label: 'Cron relances paiement', status: 'ok', detail: 'Secret configure (aucun run enregistre)' };
+    return { id: 'cron_reminders', label: 'Cron relances paiement', status: 'ok', detail: 'Secret configure (aucun run enregistre)' };
+  }
+}
+
+async function checkCronReengage(): Promise<ServiceStatus> {
+  const secret = process.env.CRON_SECRET;
+  if (!secret) {
+    return { id: 'cron_reengage', label: 'Cron re-engagement clients', status: 'warn', detail: 'CRON_SECRET absent' };
+  }
+  try {
+    const row = await prisma.setting.findFirst({ where: { key: 'cron_reengage_last_run' } });
+    return { id: 'cron_reengage', label: 'Cron re-engagement clients', status: 'ok', detail: formatLastRun(row?.value) };
+  } catch {
+    return { id: 'cron_reengage', label: 'Cron re-engagement clients', status: 'ok', detail: 'Secret configure (aucun run enregistre)' };
   }
 }
 
@@ -120,11 +134,11 @@ export async function GET() {
   const { error } = await requireOnlyAdmin();
   if (error) return error;
 
-  const [db, migrations, twilio, resend, authnet, cron] = await Promise.allSettled([
-    checkDb(), checkMigrations(), checkTwilio(), checkResend(), checkAuthNet(), checkCron(),
+  const [db, migrations, twilio, resend, authnet, cronReminders, cronReengage] = await Promise.allSettled([
+    checkDb(), checkMigrations(), checkTwilio(), checkResend(), checkAuthNet(), checkCronReminders(), checkCronReengage(),
   ]);
 
-  const services: ServiceStatus[] = [db, migrations, twilio, resend, authnet, cron].map((r) =>
+  const services: ServiceStatus[] = [db, migrations, twilio, resend, authnet, cronReminders, cronReengage].map((r) =>
     r.status === 'fulfilled' ? r.value : { id: 'unknown', label: 'Service', status: 'error' as const, detail: String((r as any).reason) }
   );
 
