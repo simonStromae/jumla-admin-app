@@ -941,6 +941,164 @@ function SectionWaTemplates() {
   );
 }
 
+/* ── Relances de paiement automatiques ──────────────────── */
+function SectionPaymentReminders() {
+  const [enabled, setEnabled]   = useState(true);
+  const [waves,   setWaves]     = useState([3, 7, 14]);
+  const [loading, setLoading]   = useState(false);
+  const [runResult, setRunResult] = useState(null);
+  const [running,  setRunning]  = useState(false);
+  const [saved,    setSaved]    = useState(false);
+
+  useEffect(() => {
+    setLoading(true);
+    fetch('/api/settings/reminders')
+      .then(r => r.json())
+      .then(d => { setEnabled(d.enabled); setWaves(d.waves ?? [3, 7, 14]); })
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, []);
+
+  async function handleSave() {
+    setSaved(false);
+    await fetch('/api/settings/reminders', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ enabled, waves }),
+    });
+    setSaved(true);
+    setTimeout(() => setSaved(false), 2000);
+  }
+
+  async function handleRun(dryRun) {
+    setRunning(true);
+    setRunResult(null);
+    try {
+      const r = await fetch('/api/settings/reminders', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ dryRun }),
+      });
+      const d = await r.json();
+      setRunResult({ ...d, dryRun });
+    } catch (e) {
+      setRunResult({ error: e?.message ?? 'Erreur' });
+    } finally {
+      setRunning(false);
+    }
+  }
+
+  const updateWave = (i, val) => {
+    const n = parseInt(val, 10);
+    if (!isNaN(n) && n > 0) setWaves(w => w.map((v, idx) => idx === i ? n : v));
+  };
+
+  const addWave    = () => setWaves(w => [...w, Math.max(...w, 0) + 7]);
+  const removeWave = (i) => setWaves(w => w.filter((_, idx) => idx !== i));
+
+  return (
+    <SettingsCard title="Relances de paiement automatiques" sub="Envoie un message WhatsApp aux clients dont le paiement est en attente depuis X jours.">
+      {loading ? (
+        <div style={{ height: 60, display: 'flex', alignItems: 'center', color: 'var(--ink-400)', fontSize: 13 }}>Chargement…</div>
+      ) : (
+        <>
+          {/* Global toggle */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 20, padding: '12px 14px', border: '1px solid var(--border)', borderRadius: 8 }}>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontSize: 13.5, fontWeight: 600 }}>Relances actives</div>
+              <div style={{ fontSize: 12, color: 'var(--ink-500)', marginTop: 2 }}>Lorsque désactivé, aucun message de relance n'est envoyé automatiquement.</div>
+            </div>
+            <span style={{ fontSize: 11, color: enabled ? 'var(--ok-700)' : 'var(--ink-400)', fontWeight: 600, minWidth: 60, textAlign: 'right' }}>
+              {enabled ? 'Actif' : 'Inactif'}
+            </span>
+            <button onClick={() => setEnabled(v => !v)} style={{
+              width: 36, height: 20, borderRadius: 999,
+              background: enabled ? 'var(--brand-500)' : 'var(--ink-200)',
+              border: 'none', cursor: 'pointer', position: 'relative', transition: 'background .15s', flexShrink: 0,
+            }}>
+              <span style={{ position: 'absolute', left: enabled ? 18 : 2, top: 2, width: 16, height: 16, borderRadius: 999, background: 'white', boxShadow: '0 1px 3px rgba(0,0,0,.2)', transition: 'left .15s' }} />
+            </button>
+          </div>
+
+          {/* Wave config */}
+          <div style={{ marginBottom: 20 }}>
+            <div style={{ fontSize: 12.5, fontWeight: 600, color: 'var(--ink-700)', marginBottom: 10 }}>Jours après création du paiement</div>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center' }}>
+              {waves.map((w, i) => (
+                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 4, background: 'var(--bg-100)', border: '1px solid var(--border)', borderRadius: 8, padding: '5px 10px' }}>
+                  <span style={{ fontSize: 12, color: 'var(--ink-500)' }}>J+</span>
+                  <input
+                    type="number"
+                    min="1" max="90"
+                    value={w}
+                    onChange={e => updateWave(i, e.target.value)}
+                    style={{ width: 44, border: 'none', background: 'transparent', fontSize: 13, fontWeight: 600, textAlign: 'center', outline: 'none' }}
+                  />
+                  {waves.length > 1 && (
+                    <button onClick={() => removeWave(i)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--ink-300)', fontSize: 14, padding: 0, lineHeight: 1 }}>×</button>
+                  )}
+                </div>
+              ))}
+              <button onClick={addWave} style={{ fontSize: 12, color: 'var(--brand-600)', background: 'none', border: '1px dashed var(--brand-300)', borderRadius: 8, padding: '5px 12px', cursor: 'pointer' }}>
+                + Ajouter
+              </button>
+            </div>
+            <div style={{ fontSize: 11.5, color: 'var(--ink-400)', marginTop: 8 }}>
+              La relance est envoyée une seule fois par tranche de 24 h, le matin à 9h00.
+            </div>
+          </div>
+
+          {/* Save */}
+          <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 20 }}>
+            <button className="btn btn--primary btn--sm" onClick={handleSave}>
+              {saved ? '✓ Sauvegardé' : 'Sauvegarder'}
+            </button>
+          </div>
+
+          {/* Test run */}
+          <div style={{ borderTop: '1px solid var(--border-soft)', paddingTop: 16 }}>
+            <div style={{ fontSize: 12.5, fontWeight: 600, color: 'var(--ink-700)', marginBottom: 8 }}>Test & déclenchement manuel</div>
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 12 }}>
+              <button className="btn btn--ghost btn--sm" onClick={() => handleRun(true)} disabled={running}>
+                {running ? 'En cours…' : 'Simuler (dry-run)'}
+              </button>
+              <button className="btn btn--sm" onClick={() => handleRun(false)} disabled={running}
+                style={{ background: 'var(--info-600)', color: 'white', border: 'none' }}>
+                {running ? 'En cours…' : 'Envoyer maintenant'}
+              </button>
+            </div>
+            {runResult && (
+              <div style={{ fontSize: 12, background: runResult.error ? 'var(--bad-50)' : 'var(--ok-50)', border: `1px solid ${runResult.error ? 'var(--bad-200)' : 'var(--ok-200)'}`, borderRadius: 8, padding: '10px 14px', lineHeight: 1.7 }}>
+                {runResult.error ? (
+                  <span style={{ color: 'var(--bad-700)' }}>Erreur : {runResult.error}</span>
+                ) : (
+                  <>
+                    {runResult.dryRun && <div style={{ color: 'var(--info-700)', fontWeight: 600, marginBottom: 4 }}>Simulation — aucun message envoyé</div>}
+                    <div>Total : <strong>{runResult.total}</strong> colis · Envoyés : <strong>{runResult.sent}</strong> · Ignorés : <strong>{runResult.skipped}</strong> · Échecs : <strong>{runResult.failed}</strong></div>
+                    <div style={{ color: 'var(--ink-400)', marginTop: 4 }}>Vagues testées : J+{runResult.waves?.join(', J+')}</div>
+                    {runResult.results?.length > 0 && (
+                      <details style={{ marginTop: 8 }}>
+                        <summary style={{ cursor: 'pointer', fontSize: 11.5, color: 'var(--ink-500)' }}>Détail ({runResult.results.length})</summary>
+                        <div style={{ marginTop: 6, display: 'grid', gap: 2 }}>
+                          {runResult.results.map((r, i) => (
+                            <div key={i} style={{ fontSize: 11, color: r.status === 'sent' ? 'var(--ok-700)' : r.status === 'failed' ? 'var(--bad-700)' : 'var(--ink-400)' }}>
+                              {r.trackingCode} · J+{r.wave} · {r.status}{r.reason ? ` (${r.reason})` : ''}
+                            </div>
+                          ))}
+                        </div>
+                      </details>
+                    )}
+                  </>
+                )}
+              </div>
+            )}
+          </div>
+        </>
+      )}
+    </SettingsCard>
+  );
+}
+
 /* ── Auto-notifications ──────────────────────────────────── */
 function SectionAutoNotif() {
   const t = useAdminT();
@@ -2376,7 +2534,7 @@ export default function SettingsScreen({ onNav }) {
           )}
           {section === 'devises'   && <SectionDevises routes={routes} />}
           {section === 'whatsapp'  && <><SectionWhatsapp /><SectionPushSetup /><SectionWaTemplates /></>}
-          {section === 'auto'      && <SectionAutoNotif />}
+          {section === 'auto'      && <><SectionPaymentReminders /><SectionAutoNotif /></>}
           {section === 'campaigns' && <SectionCampaigns />}
           {section === 'codes'     && <SectionCodes />}
           {section === 'payment'   && <SectionPaymentGateway />}
