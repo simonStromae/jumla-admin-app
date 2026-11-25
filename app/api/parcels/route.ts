@@ -8,7 +8,7 @@ function genTrackingCode() {
 }
 
 export async function GET(req: NextRequest) {
-  const { error } = await requireAdmin();
+  const { error } = await requirePermission('parcels');
   if (error) return error;
 
   const { searchParams } = new URL(req.url);

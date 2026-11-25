@@ -4,7 +4,7 @@ import { prisma } from '@/src/lib/prisma';
 import { requireAdmin, requirePermission } from '@/src/lib/api-auth';
 
 export async function GET(_: NextRequest, { params }: { params: { id: string } }) {
-  const { error } = await requireAdmin();
+  const { error } = await requirePermission('clients');
   if (error) return error;
 
   const client = await prisma.user.findUnique({

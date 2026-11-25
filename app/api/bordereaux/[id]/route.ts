@@ -1,14 +1,14 @@
 export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/src/lib/prisma';
-import { requireAdmin } from '@/src/lib/api-auth';
+import { requirePermission } from '@/src/lib/api-auth';
 import { auth } from '@/auth';
 import { createNotification } from '@/src/lib/notifications';
 import { sendWhatsappNotification } from '@/src/lib/twilio';
 import { renderWaTemplate } from '@/src/lib/wa-template';
 
 export async function GET(_: NextRequest, { params }: { params: { id: string } }) {
-  const { error } = await requireAdmin();
+  const { error } = await requirePermission('slips');
   if (error) return error;
 
   const bl = await prisma.bordereau.findFirst({
@@ -83,7 +83,7 @@ export async function GET(_: NextRequest, { params }: { params: { id: string } }
 }
 
 export async function PUT(req: NextRequest, { params }: { params: { id: string } }) {
-  const { error } = await requireAdmin();
+  const { error } = await requirePermission('slips');
   if (error) return error;
 
   const body = await req.json();
@@ -196,7 +196,7 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
 }
 
 export async function DELETE(_: NextRequest, { params }: { params: { id: string } }) {
-  const { error } = await requireAdmin();
+  const { error } = await requirePermission('slips');
   if (error) return error;
 
   await prisma.bordereau.delete({ where: { id: params.id } });

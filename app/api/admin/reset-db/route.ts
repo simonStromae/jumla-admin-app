@@ -1,9 +1,9 @@
 import { NextResponse } from 'next/server';
-import { requireAdmin } from '@/src/lib/api-auth';
+import { requireOnlyAdmin } from '@/src/lib/api-auth';
 import { prisma } from '@/src/lib/prisma';
 
 export async function POST() {
-  const { error } = await requireAdmin();
+  const { error } = await requireOnlyAdmin();
   if (error) return error;
 
   // List users to determine what to keep

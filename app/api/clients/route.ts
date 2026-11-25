@@ -2,10 +2,10 @@ export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
 import { prisma } from '@/src/lib/prisma';
-import { requireAdmin, requirePermission } from '@/src/lib/api-auth';
+import { requirePermission } from '@/src/lib/api-auth';
 
 export async function GET(req: NextRequest) {
-  const { error } = await requireAdmin();
+  const { error } = await requirePermission('clients');
   if (error) return error;
 
   const { searchParams } = new URL(req.url);

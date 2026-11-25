@@ -1,13 +1,13 @@
 export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/src/lib/prisma';
-import { requireAdmin, requirePermission, mapCampaignStatus, toPrismaStatus } from '@/src/lib/api-auth';
+import { requirePermission, mapCampaignStatus, toPrismaStatus } from '@/src/lib/api-auth';
 import { auth } from '@/auth';
 import { sendWhatsappNotification, CAMPAIGN_STATUS_LABELS } from '@/src/lib/twilio';
 import { renderWaTemplate } from '@/src/lib/wa-template';
 
 export async function GET(_: NextRequest, { params }: { params: { id: string } }) {
-  const { error } = await requireAdmin();
+  const { error } = await requirePermission('campaigns');
   if (error) return error;
 
   const c = await prisma.campaign.findUnique({
