@@ -43,11 +43,17 @@ model User {
   clientType         String?   @default("standard")
   clientTypeChosen   Boolean   @default(false)
   defaultDelivery    String?   @default("pickup")
-  companyName        String?
-  billingAddress     String?
-  partnerRatePerKg   Float?
-  partnerMarginXaf   Int?
-  createdAt          DateTime  @default(now())
+  companyName              String?
+  billingAddress           String?
+  partnerRateCadPerKg      Float?
+  partnerEnvelopeRateCad   Float?
+  partnerMarginType        String?
+  partnerMarginValue       Float?
+  partnerPaymentTerms      String?
+  partnerCreditLimitCad    Float?
+  partnerAllowAutonomous   Boolean  @default(true)
+  partnerCheckCredit       Boolean  @default(true)
+  createdAt                DateTime @default(now())
 
   parcels               Parcel[]        @relation("ClientParcels")
   driverParcels         Parcel[]        @relation("DriverParcels")
@@ -440,6 +446,7 @@ model PartnerContact {
   city      String?
   address   String?
   notes     String?
+  archived  Boolean  @default(false)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 

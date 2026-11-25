@@ -19,8 +19,14 @@ export async function GET(_req: NextRequest, { params }: { params: { id: string 
       clientType: true,
       companyName: true,
       billingAddress: true,
-      partnerRatePerKg: true,
-      partnerMarginXaf: true,
+      partnerRateCadPerKg: true,
+      partnerEnvelopeRateCad: true,
+      partnerMarginType: true,
+      partnerMarginValue: true,
+      partnerPaymentTerms: true,
+      partnerCreditLimitCad: true,
+      partnerAllowAutonomous: true,
+      partnerCheckCredit: true,
       createdAt: true,
       parcels: {
         where: { OR: [{ deletedAt: null }, { status: 'ann' }] },
@@ -96,16 +102,23 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
   if (error) return error;
 
   const body = await req.json();
-  const allowed = ['companyName', 'billingAddress', 'clientType', 'phone', 'city', 'partnerRatePerKg', 'partnerMarginXaf'];
+  const allowed = [
+    'companyName', 'billingAddress', 'clientType', 'phone', 'city',
+    'partnerRateCadPerKg', 'partnerEnvelopeRateCad',
+    'partnerMarginType', 'partnerMarginValue',
+    'partnerPaymentTerms', 'partnerCreditLimitCad',
+    'partnerAllowAutonomous', 'partnerCheckCredit',
+  ];
   const data: Record<string, any> = {};
   for (const key of allowed) {
     if (key in body) data[key] = body[key];
   }
   // Admin explicitly chose a type → suppress the onboarding modal for the user
   if (body.clientType) data.clientTypeChosen = true;
-  // Coerce pricing fields to number or null
-  if ('partnerRatePerKg' in data) data.partnerRatePerKg = data.partnerRatePerKg != null ? parseFloat(data.partnerRatePerKg) || null : null;
-  if ('partnerMarginXaf' in data) data.partnerMarginXaf = data.partnerMarginXaf != null ? parseInt(data.partnerMarginXaf) || null : null;
+  // Coerce float fields
+  for (const f of ['partnerRateCadPerKg', 'partnerEnvelopeRateCad', 'partnerMarginValue', 'partnerCreditLimitCad']) {
+    if (f in data) data[f] = data[f] != null && data[f] !== '' ? parseFloat(data[f]) || null : null;
+  }
 
   await (prisma.user.update as any)({ where: { id: params.id }, data });
   return NextResponse.json({ ok: true });

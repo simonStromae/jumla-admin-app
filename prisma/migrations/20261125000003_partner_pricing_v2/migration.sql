@@ -1,0 +1,11 @@
+-- Partner pricing v2: new fields on users, archived on partner_contacts
+ALTER TABLE users ADD COLUMN IF NOT EXISTS "partnerRateCadPerKg"    DOUBLE PRECISION;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS "partnerEnvelopeRateCad" DOUBLE PRECISION;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS "partnerMarginType"      TEXT;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS "partnerMarginValue"     DOUBLE PRECISION;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS "partnerPaymentTerms"    TEXT;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS "partnerCreditLimitCad"  DOUBLE PRECISION;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS "partnerAllowAutonomous" BOOLEAN NOT NULL DEFAULT TRUE;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS "partnerCheckCredit"     BOOLEAN NOT NULL DEFAULT TRUE;
+
+ALTER TABLE partner_contacts ADD COLUMN IF NOT EXISTS "archived" BOOLEAN NOT NULL DEFAULT FALSE;

@@ -440,97 +440,224 @@ function NewInvoiceModal({ partner, campaigns, onClose, onCreated }) {
   );
 }
 
-// ─── Pricing Section ───────────────────────────────────────────────────────────
+const PAYMENT_TERMS_LABELS = {
+  on_shipment: "À l'expédition",
+  net7:  'Net 7 jours',
+  net15: 'Net 15 jours',
+  net30: 'Net 30 jours',
+};
+
+// ─── Pricing Section v2 ────────────────────────────────────────────────────────
 function PricingSection({ partner, onSaved }) {
-  const { fmt } = useCurrency();
-  const [rate,   setRate]   = useState(partner.partnerRatePerKg != null ? String(partner.partnerRatePerKg) : '');
-  const [margin, setMargin] = useState(partner.partnerMarginXaf != null ? String(partner.partnerMarginXaf) : '');
+  const [rateCad,       setRateCad]       = useState(partner.partnerRateCadPerKg      != null ? String(partner.partnerRateCadPerKg)      : '');
+  const [envelopeRate,  setEnvelopeRate]  = useState(partner.partnerEnvelopeRateCad   != null ? String(partner.partnerEnvelopeRateCad)   : '');
+  const [marginType,    setMarginType]    = useState(partner.partnerMarginType     ?? 'fixed');
+  const [marginValue,   setMarginValue]   = useState(partner.partnerMarginValue       != null ? String(partner.partnerMarginValue)       : '');
+  const [paymentTerms,  setPaymentTerms]  = useState(partner.partnerPaymentTerms  ?? 'on_shipment');
+  const [creditLimit,   setCreditLimit]   = useState(partner.partnerCreditLimitCad    != null ? String(partner.partnerCreditLimitCad)    : '');
+  const [allowAuto,     setAllowAuto]     = useState(partner.partnerAllowAutonomous   ?? true);
+  const [checkCredit,   setCheckCredit]   = useState(partner.partnerCheckCredit       ?? true);
   const [saving, setSaving] = useState(false);
   const [saved,  setSaved]  = useState(false);
 
+  const rateNum    = parseFloat(rateCad)    || 0;
+  const marginNum  = parseFloat(marginValue) || 0;
+  const reselPrice = rateNum + (marginType === 'fixed' ? marginNum : rateNum * marginNum / 100);
+
   const handleSave = async () => {
     setSaving(true);
+    const payload = {
+      partnerRateCadPerKg:    rateCad      !== '' ? parseFloat(rateCad)    || null : null,
+      partnerEnvelopeRateCad: envelopeRate !== '' ? parseFloat(envelopeRate) || null : null,
+      partnerMarginType:      marginType   || null,
+      partnerMarginValue:     marginValue  !== '' ? parseFloat(marginValue) || null : null,
+      partnerPaymentTerms:    paymentTerms || null,
+      partnerCreditLimitCad:  creditLimit  !== '' ? parseFloat(creditLimit) || null : null,
+      partnerAllowAutonomous: allowAuto,
+      partnerCheckCredit:     checkCredit,
+    };
     await fetch('/api/admin/partners/' + partner.id, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        partnerRatePerKg:  rate   !== '' ? rate   : null,
-        partnerMarginXaf:  margin !== '' ? margin : null,
-      }),
+      body: JSON.stringify(payload),
     });
     setSaving(false);
     setSaved(true);
     setTimeout(() => setSaved(false), 2500);
-    onSaved({ partnerRatePerKg: rate !== '' ? parseFloat(rate) || null : null, partnerMarginXaf: margin !== '' ? parseInt(margin, 10) || null : null });
+    onSaved(payload);
   };
 
-  const rateNum   = parseFloat(rate)   || 0;
-  const marginNum = parseInt(margin, 10) || 0;
+  const field = { width: '100%', padding: '8px 10px', border: '1px solid var(--border)', borderRadius: 8, fontSize: 14, fontFamily: 'var(--font-mono)', boxSizing: 'border-box' };
+  const label = { display: 'block', fontSize: 12, fontWeight: 700, color: 'var(--ink-500)', marginBottom: 5 };
+  const section = { background: 'var(--bg-soft)', borderRadius: 12, padding: '18px 20px', display: 'flex', flexDirection: 'column', gap: 14 };
+  const sectionTitle = { fontSize: 11, fontWeight: 800, color: 'var(--ink-500)', textTransform: 'uppercase', letterSpacing: '.06em', marginBottom: 2 };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 20, maxWidth: 520 }}>
-      <div style={{ background: 'var(--bg-soft)', borderRadius: 12, padding: '18px 20px' }}>
-        <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--ink-500)', textTransform: 'uppercase', letterSpacing: '.04em', marginBottom: 14 }}>
-          Tarif partenaire
-        </div>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 20, maxWidth: 580 }}>
+
+      {/* Tarification */}
+      <div style={section}>
+        <div style={sectionTitle}>Tarification</div>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
           <div>
-            <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: 'var(--ink-500)', marginBottom: 5 }}>
-              Taux (XAF / kg)
-            </label>
-            <input
-              type="number"
-              min={0}
-              step={100}
-              value={rate}
-              onChange={e => setRate(e.target.value)}
-              placeholder="ex: 1500"
-              style={{ width: '100%', padding: '8px 10px', border: '1px solid var(--border)', borderRadius: 8, fontSize: 14, fontFamily: 'var(--font-mono)', boxSizing: 'border-box' }}
-            />
+            <label style={label}>Tarif négocié CAD / kg</label>
+            <input type="number" min={0} step={0.5} value={rateCad} onChange={e => setRateCad(e.target.value)} placeholder="ex: 11.50" style={field} />
           </div>
           <div>
-            <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: 'var(--ink-500)', marginBottom: 5 }}>
-              Marge fixe (XAF)
-            </label>
-            <input
-              type="number"
-              min={0}
-              step={1000}
-              value={margin}
-              onChange={e => setMargin(e.target.value)}
-              placeholder="ex: 50000"
-              style={{ width: '100%', padding: '8px 10px', border: '1px solid var(--border)', borderRadius: 8, fontSize: 14, fontFamily: 'var(--font-mono)', boxSizing: 'border-box' }}
-            />
+            <label style={label}>Tarif enveloppe (CAD / unité)</label>
+            <input type="number" min={0} step={0.5} value={envelopeRate} onChange={e => setEnvelopeRate(e.target.value)} placeholder="ex: 5.00" style={field} />
           </div>
         </div>
-        <div style={{ marginTop: 10, fontSize: 12, color: 'var(--ink-400)' }}>
-          Total facture = Σ poids (kg) × taux + marge fixe
+
+        <div>
+          <label style={label}>Type de marge partenaire</label>
+          <div style={{ display: 'flex', gap: 10 }}>
+            {[{ v: 'fixed', l: '$ — Montant fixe / kg' }, { v: 'percent', l: '% — Majoration du tarif' }].map(opt => (
+              <label key={opt.v} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, cursor: 'pointer', flex: 1, padding: '7px 12px', border: `1px solid ${marginType === opt.v ? 'var(--brand-400)' : 'var(--border)'}`, borderRadius: 8, background: marginType === opt.v ? 'var(--brand-50)' : 'white', fontWeight: marginType === opt.v ? 700 : 400 }}>
+                <input type="radio" value={opt.v} checked={marginType === opt.v} onChange={() => setMarginType(opt.v)} style={{ accentColor: 'var(--brand-600)' }} />
+                {opt.l}
+              </label>
+            ))}
+          </div>
+        </div>
+
+        <div>
+          <label style={label}>Marge ({marginType === 'fixed' ? 'CAD / kg' : '% du tarif'})</label>
+          <input type="number" min={0} step={marginType === 'fixed' ? 0.5 : 1} value={marginValue} onChange={e => setMarginValue(e.target.value)} placeholder={marginType === 'fixed' ? 'ex: 3.50' : 'ex: 30'} style={field} />
+        </div>
+
+        {rateNum > 0 && (
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'white', borderRadius: 9, padding: '10px 14px', border: '1px solid var(--border-soft)' }}>
+            <span style={{ fontSize: 12.5, color: 'var(--ink-600)' }}>Prix de revente</span>
+            <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 800, fontSize: 15, color: 'var(--ink-900)' }}>
+              {reselPrice.toFixed(2)} CAD / kg
+            </span>
+          </div>
+        )}
+      </div>
+
+      {/* Conditions commerciales */}
+      <div style={section}>
+        <div style={sectionTitle}>Conditions commerciales</div>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+          <div>
+            <label style={label}>Conditions de paiement</label>
+            <select value={paymentTerms} onChange={e => setPaymentTerms(e.target.value)}
+              style={{ ...field, fontFamily: 'inherit' }}>
+              {Object.entries(PAYMENT_TERMS_LABELS).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+            </select>
+          </div>
+          <div>
+            <label style={label}>Limite de crédit (CAD)</label>
+            <input type="number" min={0} step={500} value={creditLimit} onChange={e => setCreditLimit(e.target.value)} placeholder="ex: 5000" style={field} />
+          </div>
         </div>
       </div>
 
-      {(rateNum > 0 || marginNum > 0) && (
-        <div style={{ background: 'white', border: '1px solid var(--border)', borderRadius: 10, padding: '14px 16px' }}>
-          <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--ink-500)', marginBottom: 8 }}>Exemple de calcul</div>
-          <div style={{ fontSize: 12.5, color: 'var(--ink-600)', lineHeight: 1.7 }}>
-            {rateNum > 0 && <div>Pour <strong>10 kg</strong> → {fmt(rateNum * 10, 'XAF')}</div>}
-            {rateNum > 0 && <div>Pour <strong>50 kg</strong> → {fmt(rateNum * 50, 'XAF')}</div>}
-            {marginNum > 0 && <div>+ marge fixe → {fmt(marginNum, 'XAF')}</div>}
-            {rateNum > 0 && marginNum > 0 && (
-              <div style={{ marginTop: 6, fontWeight: 700, color: 'var(--ink-900)' }}>
-                Total 50 kg → {fmt(rateNum * 50 + marginNum, 'XAF')}
-              </div>
-            )}
-          </div>
-        </div>
-      )}
+      {/* Contrôles */}
+      <div style={section}>
+        <div style={sectionTitle}>Contrôles</div>
+        {[
+          { val: allowAuto,   set: setAllowAuto,   label: 'Autoriser la création autonome de colis', sub: 'Le partenaire peut créer des colis sans validation préalable' },
+          { val: checkCredit, set: setCheckCredit, label: 'Contrôler paiement et crédit avant départ', sub: 'Bloque la création si la limite de crédit est atteinte et non réglée' },
+        ].map((ctrl, i) => (
+          <label key={i} style={{ display: 'flex', gap: 12, cursor: 'pointer', alignItems: 'flex-start' }}>
+            <div style={{ position: 'relative', marginTop: 2, flexShrink: 0 }}>
+              <input type="checkbox" checked={ctrl.val} onChange={e => ctrl.set(e.target.checked)}
+                style={{ width: 16, height: 16, accentColor: 'var(--brand-600)', cursor: 'pointer' }} />
+            </div>
+            <div>
+              <div style={{ fontSize: 13.5, fontWeight: 600, color: 'var(--ink-900)' }}>{ctrl.label}</div>
+              <div style={{ fontSize: 12, color: 'var(--ink-400)', marginTop: 1 }}>{ctrl.sub}</div>
+            </div>
+          </label>
+        ))}
+      </div>
 
       <button
         onClick={handleSave}
         disabled={saving}
-        style={{ alignSelf: 'flex-start', padding: '10px 24px', borderRadius: 9, border: 'none', background: saved ? 'var(--ok-600)' : 'var(--brand-600)', color: 'white', fontWeight: 700, fontSize: 13.5, cursor: saving ? 'default' : 'pointer', opacity: saving ? 0.7 : 1 }}
+        style={{ alignSelf: 'flex-start', padding: '10px 28px', borderRadius: 9, border: 'none', background: saved ? 'var(--ok-600)' : 'var(--brand-600)', color: 'white', fontWeight: 700, fontSize: 14, cursor: saving ? 'default' : 'pointer', opacity: saving ? 0.7 : 1 }}
       >
         {saving ? 'Enregistrement…' : saved ? '✓ Enregistré' : 'Enregistrer'}
       </button>
+    </div>
+  );
+}
+
+// ─── Contacts Section ──────────────────────────────────────────────────────────
+function ContactsSection({ partnerId }) {
+  const [contacts,     setContacts]     = useState([]);
+  const [loading,      setLoading]      = useState(true);
+  const [showArchived, setShowArchived] = useState(false);
+  const [archiving,    setArchiving]    = useState(null);
+
+  const load = (archived) => {
+    setLoading(true);
+    fetch(`/api/client/contacts?partnerId=${partnerId}&showArchived=${archived ? '1' : '0'}`)
+      .then(r => r.json())
+      .then(d => { setContacts(Array.isArray(d) ? d : []); setLoading(false); })
+      .catch(() => setLoading(false));
+  };
+
+  useEffect(() => { load(showArchived); }, [partnerId]);
+
+  const toggleArchive = async (contact) => {
+    setArchiving(contact.id);
+    await fetch('/api/client/contacts/' + contact.id, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: contact.name, archived: !contact.archived }),
+    });
+    setArchiving(null);
+    load(showArchived);
+  };
+
+  const handleShowArchived = (val) => {
+    setShowArchived(val);
+    load(val);
+  };
+
+  return (
+    <div>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
+        <div style={{ fontSize: 13.5, fontWeight: 700, color: 'var(--ink-700)' }}>
+          {contacts.length} contact{contacts.length !== 1 ? 's' : ''}
+        </div>
+        <label style={{ display: 'flex', alignItems: 'center', gap: 7, fontSize: 13, color: 'var(--ink-600)', cursor: 'pointer' }}>
+          <input type="checkbox" checked={showArchived} onChange={e => handleShowArchived(e.target.checked)}
+            style={{ accentColor: 'var(--brand-600)' }} />
+          Afficher les clients archivés
+        </label>
+      </div>
+
+      {loading ? (
+        <div style={{ padding: 40, textAlign: 'center', color: 'var(--ink-400)' }}>Chargement…</div>
+      ) : contacts.length === 0 ? (
+        <div style={{ padding: 40, textAlign: 'center', color: 'var(--ink-400)' }}>Aucun contact enregistré.</div>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          {contacts.map(c => (
+            <div key={c.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: c.archived ? 'var(--bg-soft)' : 'white', border: '1px solid var(--border)', borderRadius: 10, padding: '12px 16px', opacity: c.archived ? 0.65 : 1 }}>
+              <div>
+                <div style={{ fontWeight: 700, fontSize: 14, color: 'var(--ink-900)' }}>{c.name}</div>
+                <div style={{ fontSize: 12, color: 'var(--ink-500)', marginTop: 2, display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+                  {c.phone && <span>📱 {c.phone}</span>}
+                  {c.address && <span>📍 {c.address}</span>}
+                  {c.city && <span>{c.city}</span>}
+                </div>
+              </div>
+              <button
+                onClick={() => toggleArchive(c)}
+                disabled={archiving === c.id}
+                style={{ padding: '5px 12px', borderRadius: 7, border: '1px solid var(--border)', background: 'white', color: c.archived ? 'var(--ok-600)' : 'var(--ink-500)', fontSize: 12, fontWeight: 600, cursor: 'pointer', flexShrink: 0 }}
+              >
+                {archiving === c.id ? '…' : c.archived ? 'Restaurer' : 'Archiver'}
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
@@ -693,6 +820,7 @@ export default function PartenaireDetailScreen({ id, onNav }) {
           { key: 'history',  label: `Historique (${pastCampaigns.length})` },
           { key: 'invoices', label: `Factures (${invoices.length})` },
           { key: 'pricing',  label: 'Tarification' },
+          { key: 'contacts', label: 'Registre clients' },
         ].map(t => (
           <button key={t.key} onClick={() => setTab(t.key)}
             style={{ padding: '10px 18px', background: 'none', cursor: 'pointer', border: 'none', borderBottom: tab === t.key ? '2px solid var(--brand-600)' : '2px solid transparent', color: tab === t.key ? 'var(--brand-600)' : 'var(--ink-500)', fontWeight: tab === t.key ? 700 : 400, fontSize: 13.5, marginBottom: -1 }}
@@ -725,6 +853,10 @@ export default function PartenaireDetailScreen({ id, onNav }) {
 
       {tab === 'pricing' && (
         <PricingSection partner={partner} onSaved={handlePricingSaved} />
+      )}
+
+      {tab === 'contacts' && (
+        <ContactsSection partnerId={partner.id} />
       )}
 
       {tab === 'invoices' && (

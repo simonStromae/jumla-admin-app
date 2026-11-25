@@ -14,21 +14,23 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
   }
 
   const body = await req.json();
-  const { name, phone, city, address, notes } = body;
+  const { name, phone, city, address, notes, archived } = body;
 
-  if (!name?.trim()) {
+  if (name !== undefined && !name?.trim()) {
     return NextResponse.json({ error: 'Le nom est obligatoire' }, { status: 400 });
   }
 
+  const updateData: Record<string, any> = {};
+  if (name     !== undefined) updateData.name    = name.trim();
+  if (phone    !== undefined) updateData.phone   = phone?.trim() || null;
+  if (city     !== undefined) updateData.city    = city?.trim() || null;
+  if (address  !== undefined) updateData.address = address?.trim() || null;
+  if (notes    !== undefined) updateData.notes   = notes?.trim() || null;
+  if (archived !== undefined) updateData.archived = Boolean(archived);
+
   const updated = await prisma.partnerContact.update({
     where: { id: params.id },
-    data: {
-      name: name.trim(),
-      phone: phone?.trim() || null,
-      city: city?.trim() || null,
-      address: address?.trim() || null,
-      notes: notes?.trim() || null,
-    },
+    data: updateData,
   });
 
   return NextResponse.json(updated);
