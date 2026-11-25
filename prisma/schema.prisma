@@ -59,6 +59,7 @@ model User {
   invoices              Invoice[]
   transactions          Transaction[]   @relation("TransactionClient")
   recordedTransactions  Transaction[]   @relation("TransactionRecorder")
+  partnerContacts       PartnerContact[]
 
   @@map("users")
 }
@@ -426,4 +427,20 @@ model Invoice {
   updatedAt  DateTime  @updatedAt
 
   @@map("invoices")
+}
+
+model PartnerContact {
+  id        String   @id @default(cuid())
+  partnerId String
+  partner   User     @relation(fields: [partnerId], references: [id], onDelete: Cascade)
+  name      String
+  phone     String?
+  city      String?
+  address   String?
+  notes     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([partnerId])
+  @@map("partner_contacts")
 }
