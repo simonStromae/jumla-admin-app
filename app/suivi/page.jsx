@@ -268,6 +268,42 @@ function TrackContent() {
               )}
             </div>
 
+            {/* Payment CTA — visible quand non payé */}
+            {!result.paid && (
+              <div style={{
+                background: 'white',
+                border: '1px solid rgba(239,68,68,.2)',
+                borderLeft: '4px solid ' + J.danger,
+                borderRadius: 12,
+                padding: '18px 22px',
+                display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap',
+                boxShadow: '0 1px 3px rgba(0,0,0,.08)',
+              }}>
+                <div style={{ flex: 1, minWidth: 160 }}>
+                  <div style={{ fontFamily: FONT_DISPLAY, fontSize: 13, fontWeight: 700, color: '#DC2626', marginBottom: 4 }}>⏳ Paiement en attente</div>
+                  <div style={{ fontSize: 12, color: J.gray400 }}>Connectez-vous pour régler ce colis directement depuis votre espace client.</div>
+                </div>
+                <a
+                  href={'/login?redirect=' + encodeURIComponent('/client/suivi?code=' + result.trackingCode)}
+                  style={{
+                    display: 'inline-block',
+                    padding: '10px 20px',
+                    background: J.gradient,
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: 8,
+                    fontFamily: FONT_DISPLAY, fontWeight: 700, fontSize: 13,
+                    letterSpacing: '.06em', textTransform: 'uppercase',
+                    textDecoration: 'none',
+                    whiteSpace: 'nowrap',
+                    boxShadow: '0 4px 14px rgba(27,79,216,.25)',
+                  }}
+                >
+                  Payer maintenant →
+                </a>
+              </div>
+            )}
+
             {/* Footer CTA */}
             <div style={{ textAlign: 'center', fontSize: 13, color: J.gray400, padding: '8px 0' }}>
               {t('tracking.footer.pre')}{' '}
