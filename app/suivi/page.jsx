@@ -77,7 +77,7 @@ function TrackContent() {
     try {
       const res  = await fetch('/api/public/track?code=' + encodeURIComponent(code.trim().toUpperCase()));
       const json = await res.json();
-      if (!res.ok) setError(json.error || 'not_found');
+      if (!res.ok) setError(res.status === 429 ? (json.error || 'rate_limit') : 'not_found');
       else setResult(json);
     } catch { setError('network'); }
     setLoading(false);
@@ -157,7 +157,8 @@ function TrackContent() {
             <div>
               {error === 'not_found'
                 ? <>{t('tracking.notFoundDetail', { code: input })}</>
-                : t('error.network')}
+                : error === 'network' ? t('error.network')
+                : error}
             </div>
           </div>
         )}

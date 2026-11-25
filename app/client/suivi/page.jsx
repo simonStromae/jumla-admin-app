@@ -54,7 +54,7 @@ function SuiviContent() {
     try {
       const res = await fetch('/api/me/track?code=' + encodeURIComponent(code.trim().toUpperCase()));
       const json = await res.json();
-      if (!res.ok) setError('not_found');
+      if (!res.ok) setError(res.status === 429 ? (json.error || 'rate_limit') : 'not_found');
       else setResult(json);
     } catch { setError('network'); }
     setLoading(false);
@@ -105,7 +105,8 @@ function SuiviContent() {
         <div style={{ padding: '14px 18px', background: 'var(--bad-50)', border: '1px solid var(--bad-100)', borderRadius: 10, color: 'var(--bad-700)', fontSize: 13, fontWeight: 500, marginBottom: 20 }}>
           {error === 'not_found'
             ? <>{t('tracking.notFoundDetail', { code: input })}</>
-            : t('error.network')}
+            : error === 'network' ? t('error.network')
+            : error}
         </div>
       )}
 
