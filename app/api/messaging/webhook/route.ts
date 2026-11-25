@@ -1,16 +1,33 @@
 export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/src/lib/prisma';
+import crypto from 'crypto';
 
 // Twilio calls this URL with message status updates (delivered, failed, etc.)
 // Configure in Twilio console: Messaging > Senders > WhatsApp > Status Callback URL
 export async function POST(req: NextRequest) {
   let body: URLSearchParams;
+  let rawText: string;
   try {
-    const text = await req.text();
-    body = new URLSearchParams(text);
+    rawText = await req.text();
+    body = new URLSearchParams(rawText);
   } catch {
     return NextResponse.json({ error: 'Invalid body' }, { status: 400 });
+  }
+
+  // Verify Twilio signature to prevent spoofed callbacks
+  const authToken = process.env.TWILIO_AUTH_TOKEN;
+  if (authToken) {
+    const twilioSignature = req.headers.get('x-twilio-signature') ?? '';
+    const url = `${process.env.NEXTAUTH_URL ?? ''}/api/messaging/webhook`;
+    const params: Record<string, string> = {};
+    body.forEach((v, k) => { params[k] = v; });
+    const sortedKeys = Object.keys(params).sort();
+    const toSign = url + sortedKeys.map(k => k + params[k]).join('');
+    const expected = crypto.createHmac('sha1', authToken).update(toSign).digest('base64');
+    if (!crypto.timingSafeEqual(Buffer.from(expected), Buffer.from(twilioSignature.padEnd(expected.length)))) {
+      return NextResponse.json({ error: 'Signature invalide' }, { status: 403 });
+    }
   }
 
   const messageSid    = body.get('MessageSid')    ?? '';

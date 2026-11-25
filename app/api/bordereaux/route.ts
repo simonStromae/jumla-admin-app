@@ -1,12 +1,12 @@
 export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/src/lib/prisma';
-import { requireAdmin } from '@/src/lib/api-auth';
+import { requirePermission } from '@/src/lib/api-auth';
 import { sendWhatsappNotification } from '@/src/lib/twilio';
 import { renderWaTemplate } from '@/src/lib/wa-template';
 
 export async function GET(req: NextRequest) {
-  const { error } = await requireAdmin();
+  const { error } = await requirePermission('slips');
   if (error) return error;
 
   const { searchParams } = new URL(req.url);
@@ -56,7 +56,7 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  const { error } = await requireAdmin();
+  const { error } = await requirePermission('slips');
   if (error) return error;
 
   const { parcelId, description, weightKg, nbPieces, notes, items } = await req.json();

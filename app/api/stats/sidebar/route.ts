@@ -1,9 +1,12 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/src/lib/prisma';
+import { requireAdmin } from '@/src/lib/api-auth';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET() {
+  const { error } = await requireAdmin();
+  if (error) return error;
   try {
     const [campaigns, clients, verifyPending, unpaidPayments] = await Promise.all([
       (prisma.campaign.count as any)({ where: { deletedAt: null } }).catch(() => prisma.campaign.count()),

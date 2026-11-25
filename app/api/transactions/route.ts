@@ -1,10 +1,10 @@
 export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/src/lib/prisma';
-import { requireAdmin, requirePermission } from '@/src/lib/api-auth';
+import { requirePermission } from '@/src/lib/api-auth';
 
 export async function GET() {
-  const { error } = await requireAdmin();
+  const { error } = await requirePermission('payments');
   if (error) return error;
 
   let rows: any[] = [];

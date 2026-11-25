@@ -1,12 +1,12 @@
 export const dynamic = 'force-dynamic';
 import { NextResponse } from 'next/server';
 import { prisma } from '@/src/lib/prisma';
-import { requireAdmin } from '@/src/lib/api-auth';
+import { requireOnlyAdmin } from '@/src/lib/api-auth';
 
 // Applies any missing Finance schema changes to the database.
 // Safe to run multiple times (all statements use IF NOT EXISTS / ADD COLUMN IF NOT EXISTS).
 export async function POST() {
-  const { error } = await requireAdmin();
+  const { error } = await requireOnlyAdmin();
   if (error) return error;
 
   const steps: string[] = [];
@@ -85,7 +85,7 @@ export async function POST() {
 }
 
 export async function GET() {
-  const { error } = await requireAdmin();
+  const { error } = await requireOnlyAdmin();
   if (error) return error;
 
   // Quick check: do the new columns exist on campaigns?

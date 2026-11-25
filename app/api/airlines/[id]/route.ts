@@ -1,10 +1,10 @@
 export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/src/lib/prisma';
-import { requireAdmin } from '@/src/lib/api-auth';
+import { requireOnlyAdmin } from '@/src/lib/api-auth';
 
 export async function PUT(req: NextRequest, { params }: { params: { id: string } }) {
-  const { error } = await requireAdmin();
+  const { error } = await requireOnlyAdmin();
   if (error) return error;
 
   const { name, iata, country, logoUrl, active } = await req.json();
@@ -25,7 +25,7 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
 }
 
 export async function DELETE(_: NextRequest, { params }: { params: { id: string } }) {
-  const { error } = await requireAdmin();
+  const { error } = await requireOnlyAdmin();
   if (error) return error;
 
   const legsCount = await prisma.campaignLeg.count({ where: { airlineId: params.id } });

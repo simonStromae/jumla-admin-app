@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { requireAdmin } from '@/src/lib/api-auth';
+import { requireOnlyAdmin } from '@/src/lib/api-auth';
 import { prisma } from '@/src/lib/prisma';
 
 // The same cascade map as in campaigns/[id]/route.ts
@@ -20,7 +20,7 @@ const CASCADE: Record<string, string[]> = {
 const EXCEPTIONAL = ['adr', 'tdl', 'dom', 'cla', 'rte', 'ann'];
 
 export async function POST() {
-  const { error } = await requireAdmin();
+  const { error } = await requireOnlyAdmin();
   if (error) return error;
 
   // Fetch all non-enr campaigns
