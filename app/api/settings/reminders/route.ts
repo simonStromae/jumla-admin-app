@@ -2,7 +2,7 @@ export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/src/lib/prisma';
 import { requireAdmin } from '@/src/lib/api-auth';
-import { runReminders } from '@/app/api/cron/payment-reminders/route';
+import { runReminders } from '@/src/lib/reminders';
 
 const KEYS = ['REMINDER_ENABLED', 'REMINDER_WAVES'] as const;
 
