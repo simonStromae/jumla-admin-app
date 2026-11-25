@@ -4,7 +4,7 @@ import { prisma } from '@/src/lib/prisma';
 import { requireAdmin, requirePermission, mapCampaignStatus } from '@/src/lib/api-auth';
 
 export async function GET(req: NextRequest) {
-  const { error } = await requireAdmin();
+  const { error } = await requirePermission('campaigns');
   if (error) return error;
 
   const archived = req.nextUrl.searchParams.get('archived') === 'true';

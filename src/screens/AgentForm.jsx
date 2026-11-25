@@ -315,10 +315,11 @@ export default function AgentFormModal({ mode = 'create', agent, onClose, onSave
           <div className="section-title">{t.agents.listHeaders.role} <span className="section-title__count">{totalPerms} Permissions</span></div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8, marginBottom: 16 }}>
             {[
-              { id: 'admin',    label: 'Administrateur' /* TODO: add translation key */,    desc: 'Accès complet' /* TODO: add translation key */,      icon: '👑', count: 27 },
-              { id: 'agent',    label: 'Agent opérationnel' /* TODO: add translation key */, desc: 'Cargaisons & clients' /* TODO: add translation key */, icon: '🚚', count: 14 },
-              { id: 'readonly', label: 'Lecture seule' /* TODO: add translation key */,     desc: 'Consultation uniquement' /* TODO: add translation key */, icon: '👁', count: 7  },
+              { id: 'admin',    label: 'Administrateur' /* TODO: add translation key */,    desc: 'Accès complet' /* TODO: add translation key */,      icon: '👑' },
+              { id: 'agent',    label: 'Agent opérationnel' /* TODO: add translation key */, desc: 'Cargaisons & clients' /* TODO: add translation key */, icon: '🚚' },
+              { id: 'readonly', label: 'Lecture seule' /* TODO: add translation key */,     desc: 'Consultation uniquement' /* TODO: add translation key */, icon: '👁' },
             ].map(r => {
+              const presetCount = Object.values(ROLE_PRESETS[r.id]).reduce((a, p) => a + p.length, 0);
               const sel = data.role === r.id;
               return (
                 <button key={r.id} onClick={() => applyRolePreset(r.id)} style={{
@@ -331,7 +332,7 @@ export default function AgentFormModal({ mode = 'create', agent, onClose, onSave
                     <span style={{ fontSize: 13.5, fontWeight: 700, color: sel ? 'var(--brand-700)' : 'var(--ink-800)' }}>{r.label}</span>
                   </div>
                   <div style={{ fontSize: 11.5, color: 'var(--ink-500)', marginBottom: 6 }}>{r.desc}</div>
-                  <div className="mono" style={{ fontSize: 10.5, color: sel ? 'var(--brand-700)' : 'var(--ink-400)', fontWeight: 600 }}>{r.count} Permissions</div>
+                  <div className="mono" style={{ fontSize: 10.5, color: sel ? 'var(--brand-700)' : 'var(--ink-400)', fontWeight: 600 }}>{presetCount} Permissions</div>
                 </button>
               );
             })}
