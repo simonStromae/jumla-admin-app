@@ -48,11 +48,12 @@ function OverviewRow({ p, onNav, drivers, onAssign, assigning }) {
 }
 
 export default function LivraisonScreen({ onNav }) {
-  const [data,      setData]      = useState(null);
-  const [loading,   setLoading]   = useState(true);
-  const [tab,       setTab]       = useState('home');
-  const [assigning, setAssigning] = useState({});
-  const [search,    setSearch]    = useState('');
+  const [data,         setData]         = useState(null);
+  const [loading,      setLoading]      = useState(true);
+  const [tab,          setTab]          = useState('home');
+  const [assigning,    setAssigning]    = useState({});
+  const [search,       setSearch]       = useState('');
+  const [rescheduling, setRescheduling] = useState({});
 
   const load = () => {
     setLoading(true);
@@ -72,6 +73,17 @@ export default function LivraisonScreen({ onNav }) {
       body: JSON.stringify({ driverId: driverId || null }),
     });
     setAssigning(a => ({ ...a, [parcelId]: false }));
+    load();
+  };
+
+  const handleReschedule = async (parcelId, driverId) => {
+    setRescheduling(r => ({ ...r, [parcelId]: true }));
+    await fetch(`/api/parcels/${parcelId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status: 'pdl', driverId: driverId || null }),
+    });
+    setRescheduling(r => ({ ...r, [parcelId]: false }));
     load();
   };
 
@@ -102,10 +114,14 @@ export default function LivraisonScreen({ onNav }) {
     || (p.client.name ?? '').toLowerCase().includes(q)
     || (p.recipCity  ?? '').toLowerCase().includes(q);
 
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  const deliveredTodayAll = homeDone.filter(p => p.deliveredAt && new Date(p.deliveredAt) >= today);
+
   const tabs = [
     { key: 'home',       label: 'Livraison domicile', count: home.filter(p => !['ok','tdl'].includes(p.status)).length },
-    { key: 'pickup',     label: 'Retrait entrepôt',   count: pickup.length },
-    { key: 'results',    label: 'Résultats',           count: homeDone.length + homeFailed.length },
+    { key: 'drivers',    label: 'Livreurs',            count: drivers.length },
+    { key: 'pickup',     label: 'Retrait entrepôt',    count: pickup.length },
+    { key: 'results',    label: 'Résultats',            count: homeDone.length + homeFailed.length },
   ];
 
   // Group assigned+in-progress by driver for the home tab
@@ -340,6 +356,117 @@ export default function LivraisonScreen({ onNav }) {
         );
       })()}
 
+      {/* ── Tab: Livreurs ── */}
+      {tab === 'drivers' && (() => {
+        // Build per-driver stats from all home parcels
+        const driverMap = {};
+        home.forEach(p => {
+          const d = p.driver;
+          if (!d) return;
+          if (!driverMap[d.id]) driverMap[d.id] = {
+            driver: d,
+            inProgress: [],
+            deliveredToday: [],
+            failed: [],
+            pending: [],
+          };
+          if (p.status === 'liv') driverMap[d.id].inProgress.push(p);
+          else if (p.status === 'ok' && p.deliveredAt && new Date(p.deliveredAt) >= today) driverMap[d.id].deliveredToday.push(p);
+          else if (p.status === 'tdl') driverMap[d.id].failed.push(p);
+          else if (!['ok'].includes(p.status)) driverMap[d.id].pending.push(p);
+        });
+
+        // Add drivers with no parcels
+        drivers.forEach(d => {
+          if (!driverMap[d.id]) driverMap[d.id] = { driver: d, inProgress: [], deliveredToday: [], failed: [], pending: [] };
+        });
+
+        const rows = Object.values(driverMap);
+
+        return rows.length === 0 ? (
+          <div style={{ textAlign: 'center', padding: '60px 20px', color: 'var(--ink-400)' }}>
+            <div style={{ fontSize: 36, marginBottom: 10 }}>🚚</div>
+            <div style={{ fontWeight: 600, color: 'var(--ink-600)' }}>Aucun livreur actif</div>
+          </div>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            {rows.map(({ driver, inProgress, deliveredToday: dToday, failed, pending }) => {
+              const total = inProgress.length + dToday.length + failed.length + pending.length;
+              return (
+                <div key={driver.id} className="card" style={{ overflow: 'hidden' }}>
+                  {/* Driver header */}
+                  <div style={{ padding: '12px 16px', borderBottom: '1px solid var(--border)', background: 'var(--bg-soft)', display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <div style={{ width: 36, height: 36, borderRadius: '50%', background: 'var(--brand-100)', color: 'var(--brand-700)', fontWeight: 800, fontSize: 14, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                      {driver.name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2)}
+                    </div>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontWeight: 700, fontSize: 14, color: 'var(--ink-900)' }}>{driver.name}</div>
+                      {driver.phone && <div className="mono" style={{ fontSize: 11, color: 'var(--ink-400)' }}>{driver.phone}</div>}
+                    </div>
+                    <div style={{ display: 'flex', gap: 6 }}>
+                      {driver.phone && (
+                        <a href={`https://wa.me/${driver.phone.replace(/\D/g, '')}`} target="_blank" rel="noreferrer"
+                          style={{ display: 'inline-flex', alignItems: 'center', background: '#25D366', color: 'white', borderRadius: 6, padding: '4px 10px', fontSize: 11, fontWeight: 600, textDecoration: 'none', gap: 4 }}>
+                          WA
+                        </a>
+                      )}
+                      {driver.phone && (
+                        <a href={`tel:${driver.phone}`}
+                          style={{ display: 'inline-flex', alignItems: 'center', background: 'var(--bg)', color: 'var(--ink-700)', borderRadius: 6, padding: '4px 10px', fontSize: 11, fontWeight: 600, textDecoration: 'none', border: '1px solid var(--border)' }}>
+                          📞
+                        </a>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* KPI row */}
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', borderBottom: total > 0 ? '1px solid var(--border-soft)' : 'none' }}>
+                    {[
+                      { v: pending.length,   l: 'En attente',  c: pending.length > 0 ? 'var(--ink-700)' : 'var(--ink-300)' },
+                      { v: inProgress.length, l: 'En cours',   c: inProgress.length > 0 ? 'var(--info-600)' : 'var(--ink-300)' },
+                      { v: dToday.length,    l: 'Livrés auj.', c: dToday.length > 0 ? 'var(--ok-600)' : 'var(--ink-300)' },
+                      { v: failed.length,    l: 'Échecs',       c: failed.length > 0 ? 'var(--bad-600)' : 'var(--ink-300)' },
+                    ].map((k, i) => (
+                      <div key={i} style={{ padding: '8px 10px', textAlign: 'center', borderRight: i < 3 ? '1px solid var(--border-soft)' : 'none' }}>
+                        <div style={{ fontSize: 20, fontWeight: 800, color: k.c, fontFamily: 'var(--ff-mono)' }}>{k.v}</div>
+                        <div style={{ fontSize: 10, color: 'var(--ink-400)', marginTop: 1 }}>{k.l}</div>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Parcel list */}
+                  {total > 0 && (
+                    <div>
+                      {[...inProgress, ...pending, ...failed, ...dToday].slice(0, 6).map((p, i, arr) => (
+                        <div key={p.id} style={{ padding: '8px 16px', display: 'flex', alignItems: 'center', gap: 10, borderBottom: i < arr.length - 1 ? '1px solid var(--border-soft)' : 'none' }}>
+                          <a className="mono" style={{ fontSize: 11.5, fontWeight: 700, color: 'var(--brand-700)', cursor: 'pointer', flexShrink: 0 }} onClick={() => onNav('/parcels/' + p.id.split('-').pop())}>{p.trackingCode}</a>
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--ink-700)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{p.recipName ?? p.client.name}</div>
+                            {p.recipCity && <div style={{ fontSize: 11, color: 'var(--ink-400)' }}>{p.recipCity}</div>}
+                          </div>
+                          <Badge status={p.status} />
+                        </div>
+                      ))}
+                      {total > 6 && (
+                        <div style={{ padding: '8px 16px', fontSize: 12, color: 'var(--ink-400)', textAlign: 'center', borderTop: '1px solid var(--border-soft)' }}>
+                          +{total - 6} autres colis
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {total === 0 && (
+                    <div style={{ padding: '16px', textAlign: 'center', color: 'var(--ink-400)', fontSize: 12.5 }}>
+                      Aucun colis assigné
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        );
+      })()}
+
       {/* ── Tab: Retrait entrepôt ── */}
       {tab === 'pickup' && (
         pickup.length === 0 ? (
@@ -385,9 +512,11 @@ export default function LivraisonScreen({ onNav }) {
         ) : (
           <div className="card" style={{ overflow: 'hidden' }}>
             <table className="table" style={{ width: '100%' }}>
-              <thead><tr><th>Colis</th><th>Livreur</th><th>Destinataire</th><th>Résultat</th><th>Date</th></tr></thead>
+              <thead><tr><th>Colis</th><th>Livreur</th><th>Destinataire</th><th>Résultat</th><th>Frais livraison</th><th>Date</th><th></th></tr></thead>
               <tbody>
-                {results.map(p => (
+                {results.map(p => {
+                  const fee = p.pricingDetails?.deliveryFee;
+                  return (
                   <tr key={p.id}>
                     <td><a className="mono" style={{ fontWeight: 700, color: 'var(--brand-700)', cursor: 'pointer', fontSize: 12 }} onClick={() => onNav('/parcels/' + p.id.split('-').pop())}>{p.trackingCode}</a></td>
                     <td style={{ fontSize: 12.5 }}>{p.driver?.name ?? '—'}</td>
@@ -396,9 +525,41 @@ export default function LivraisonScreen({ onNav }) {
                       <Badge status={p.status} />
                       {p.deliveryProof?.note && <div style={{ fontSize: 10.5, color: 'var(--ink-500)', marginTop: 3, fontStyle: 'italic', maxWidth: 180 }}>{p.deliveryProof.note}</div>}
                     </td>
+                    <td className="mono" style={{ fontSize: 12.5, fontWeight: 600, color: fee ? 'var(--ok-700)' : 'var(--ink-300)' }}>
+                      {fee ? `${fee.toLocaleString('fr-FR')} XAF` : '—'}
+                    </td>
                     <td style={{ fontSize: 12, color: 'var(--ink-500)' }}>{p.deliveredAt ? new Date(p.deliveredAt).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' }) : '—'}</td>
+                    <td>
+                      {p.status === 'tdl' && (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                          <select
+                            className="select"
+                            style={{ fontSize: 11, padding: '4px 6px', minWidth: 110 }}
+                            defaultValue={p.driver?.id ?? ''}
+                            disabled={rescheduling[p.id]}
+                            onChange={e => { if (e.target.value !== '__action__') return; }}
+                            onBlur={() => {}}
+                          >
+                            <option value="" disabled>— Livreur —</option>
+                            {drivers.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
+                          </select>
+                          <button
+                            className="btn btn--sm btn--info"
+                            disabled={rescheduling[p.id]}
+                            style={{ fontSize: 11, padding: '4px 10px', whiteSpace: 'nowrap' }}
+                            onClick={e => {
+                              const sel = e.currentTarget.previousElementSibling;
+                              handleReschedule(p.id, sel.value || null);
+                            }}
+                          >
+                            {rescheduling[p.id] ? '…' : '↺ Reprogrammer'}
+                          </button>
+                        </div>
+                      )}
+                    </td>
                   </tr>
-                ))}
+                  );
+                })}
               </tbody>
             </table>
           </div>

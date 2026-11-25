@@ -145,6 +145,22 @@ export default function DriverDashboard() {
               const tel = p.recipPhone || p.client?.phone;
               const msg = msgs[p.id];
               const act = acting[p.id];
+
+              // Build full address for Maps link
+              const addrParts = [
+                p.recipAddress,
+                p.recipApt ? `apt ${p.recipApt}` : null,
+                p.recipCity,
+                p.recipProvince,
+                p.recipPostal,
+              ].filter(Boolean);
+              const fullAddress = addrParts.join(', ');
+              const mapsUrl = fullAddress
+                ? `https://maps.google.com/?q=${encodeURIComponent(fullAddress)}`
+                : p.recipCity
+                  ? `https://maps.google.com/?q=${encodeURIComponent(p.recipCity)}`
+                  : null;
+
               return (
                 <div key={p.id} className="drv-card" style={{ padding: '14px' }}>
                   {/* Header row */}
@@ -157,9 +173,40 @@ export default function DriverDashboard() {
                   <div style={{ fontSize: 14, fontWeight: 700, color: '#111827', marginBottom: 2 }}>
                     {p.recipName || p.client?.name}
                   </div>
-                  {p.recipCity && (
-                    <div style={{ fontSize: 12, color: '#6B7280', marginBottom: 4 }}>📍 {p.recipCity}</div>
+
+                  {/* Full address block */}
+                  {(p.recipAddress || p.recipCity) && (
+                    <div style={{ marginBottom: 8 }}>
+                      {p.recipAddress && (
+                        <div style={{ fontSize: 12.5, color: '#374151', fontWeight: 500 }}>
+                          {p.recipAddress}{p.recipApt ? `, apt ${p.recipApt}` : ''}
+                        </div>
+                      )}
+                      {(p.recipCity || p.recipProvince || p.recipPostal) && (
+                        <div style={{ fontSize: 12, color: '#6B7280' }}>
+                          {[p.recipCity, p.recipProvince, p.recipPostal].filter(Boolean).join(', ')}
+                        </div>
+                      )}
+                      {mapsUrl && (
+                        <a
+                          href={mapsUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          style={{
+                            display: 'inline-flex', alignItems: 'center', gap: 4, marginTop: 5,
+                            background: '#EFF6FF', color: '#1B4FD8', borderRadius: 6,
+                            padding: '4px 10px', fontSize: 11.5, fontWeight: 600, textDecoration: 'none',
+                          }}
+                        >
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ width: 13, height: 13 }}>
+                            <path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>
+                          </svg>
+                          Ouvrir dans Maps
+                        </a>
+                      )}
+                    </div>
                   )}
+
                   {tel && (
                     <div style={{ display: 'flex', gap: 6, marginBottom: 10 }}>
                       <span style={{ fontSize: 12, color: '#6B7280', lineHeight: '28px' }}>{tel}</span>
