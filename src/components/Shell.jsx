@@ -129,9 +129,10 @@ export function Sidebar({ route, onNav }) {
   });
 
   const admin = [
-    { id: 'agents',   label: t.nav.agents,   icon: I.Users,    route: '/admin/agents',   perm: 'agents' },
-    { id: 'logs',     label: t.nav.logs,     icon: I.Activity, route: '/admin/logs',     perm: 'analytics' },
-    { id: 'settings', label: t.nav.settings, icon: I.Settings, route: '/admin/settings', perm: 'settings' },
+    { id: 'agents',     label: t.nav.agents,     icon: I.Users,    route: '/admin/agents',     perm: 'agents' },
+    { id: 'logs',       label: t.nav.logs,       icon: I.Activity, route: '/admin/logs',       perm: 'analytics' },
+    { id: 'monitoring', label: t.nav.monitoring, icon: I.Sparkle,  route: '/admin/monitoring', adminOnly: true },
+    { id: 'settings',   label: t.nav.settings,   icon: I.Settings, route: '/admin/settings',   perm: 'settings' },
   ];
   // An agent with any admin sub-permission should see the Administration section
   const hasAdminSubPerm = !isAdmin && Array.isArray(perms.admin) && perms.admin.length > 0;
