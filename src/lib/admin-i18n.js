@@ -38,6 +38,7 @@ const fr = {
     messaging: 'Messagerie',
     agents: 'Agents',
     logs: 'Journal',
+    monitoring: 'Monitoring',
     settings: 'Paramètres',
   },
 
@@ -350,6 +351,7 @@ const en = {
     messaging: 'Messaging',
     agents: 'Team',
     logs: 'Audit Log',
+    monitoring: 'Monitoring',
     settings: 'Settings',
   },
 

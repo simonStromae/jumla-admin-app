@@ -127,5 +127,13 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
   const result = await runReminders(false);
+  // Track last run time for the monitoring dashboard
+  try {
+    await prisma.setting.upsert({
+      where: { key: 'cron_payment_reminders_last_run' },
+      update: { value: new Date().toISOString() },
+      create: { key: 'cron_payment_reminders_last_run', value: new Date().toISOString() },
+    });
+  } catch {}
   return NextResponse.json(result);
 }
