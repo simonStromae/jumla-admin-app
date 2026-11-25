@@ -134,4 +134,20 @@ export async function autoMigrate() {
       "createdAt" TIMESTAMPTZ NOT NULL DEFAULT NOW()
     )
   `);
+
+  // Error logs (API 500s)
+  await run(`
+    CREATE TABLE IF NOT EXISTS error_logs (
+      id TEXT PRIMARY KEY,
+      route TEXT NOT NULL,
+      method TEXT NOT NULL DEFAULT 'GET',
+      status INTEGER NOT NULL DEFAULT 500,
+      message TEXT NOT NULL,
+      stack TEXT,
+      "userId" TEXT,
+      "createdAt" TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )
+  `);
+  await run(`CREATE INDEX IF NOT EXISTS error_logs_created_at_idx ON error_logs ("createdAt" DESC)`);
+  await run(`CREATE INDEX IF NOT EXISTS error_logs_route_idx ON error_logs (route)`);
 }

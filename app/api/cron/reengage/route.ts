@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/src/lib/prisma';
 import { sendWhatsappNotification } from '@/src/lib/twilio';
 import { renderWaTemplate } from '@/src/lib/wa-template';
+import { logError } from '@/src/lib/logError';
 
 // Vercel calls this with CRON_SECRET in Authorization header
 function isAuthorized(req: NextRequest) {
@@ -124,5 +125,8 @@ export async function GET(req: NextRequest) {
   const skipped = results.filter(r => r.status === 'skipped').length;
   const failed = results.filter(r => r.status === 'failed').length;
 
+  if (failed > 0) {
+    await logError({ route: '/api/cron/reengage', method: 'GET', status: 500, message: `${failed} notification(s) echouee(s) sur ${cancelledParcels.length} colis` });
+  }
   return NextResponse.json({ ok: true, sent, skipped, failed, total: cancelledParcels.length, results });
 }

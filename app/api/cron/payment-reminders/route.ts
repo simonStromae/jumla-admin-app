@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/src/lib/prisma';
 import { sendWhatsappNotification } from '@/src/lib/twilio';
 import { renderWaTemplate } from '@/src/lib/wa-template';
+import { logError } from '@/src/lib/logError';
 
 function isAuthorized(req: NextRequest) {
   const secret = process.env.CRON_SECRET;
@@ -126,14 +127,17 @@ export async function GET(req: NextRequest) {
   if (!isAuthorized(req)) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
-  const result = await runReminders(false);
-  // Track last run time for the monitoring dashboard
   try {
+    const result = await runReminders(false);
+    // Track last run time for the monitoring dashboard
     await prisma.setting.upsert({
       where: { key: 'cron_payment_reminders_last_run' },
       update: { value: new Date().toISOString() },
       create: { key: 'cron_payment_reminders_last_run', value: new Date().toISOString() },
     });
-  } catch {}
-  return NextResponse.json(result);
+    return NextResponse.json(result);
+  } catch (e: any) {
+    await logError({ route: '/api/cron/payment-reminders', method: 'GET', status: 500, message: e?.message ?? String(e), stack: e?.stack });
+    return NextResponse.json({ error: 'Cron failed', detail: e?.message }, { status: 500 });
+  }
 }
