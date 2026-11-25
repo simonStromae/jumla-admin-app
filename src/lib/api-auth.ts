@@ -13,6 +13,19 @@ export async function requireAdmin() {
   return { session };
 }
 
+/** Réservé à l'admin pur — les agents n'ont pas accès. */
+export async function requireOnlyAdmin() {
+  const session = await auth();
+  if (!session?.user) {
+    return { error: NextResponse.json({ error: 'Non authentifié' }, { status: 401 }) };
+  }
+  const role = (session.user as any).role;
+  if (role !== 'admin') {
+    return { error: NextResponse.json({ error: 'Réservé aux administrateurs' }, { status: 403 }) };
+  }
+  return { session };
+}
+
 export async function requireDriver() {
   const session = await auth();
   if (!session?.user) {
