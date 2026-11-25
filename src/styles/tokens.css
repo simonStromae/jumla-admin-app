@@ -799,26 +799,72 @@ a { color: inherit; text-decoration: none; }
 .monitoring-live-dot--error { background: var(--bad-500); }
 .monitoring-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 12px;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 14px;
 }
+
+/* Dark dashboard cards */
 .monitoring-card {
-  background: var(--surface-1);
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  padding: 14px 16px;
+  background: #111827;
+  border: 1px solid rgba(255,255,255,0.07);
+  border-radius: 16px;
+  padding: 20px;
+  color: #f9fafb;
+  position: relative;
+  overflow: hidden;
   animation: monitoring-pulse-ok 4s ease-in-out infinite;
   transition: box-shadow .3s;
 }
-.monitoring-card[data-status="error"]  { border-color: var(--bad-100);  background: var(--bad-50);  animation: monitoring-pulse-error 1.8s ease-in-out infinite; }
-.monitoring-card[data-status="warn"]   { border-color: var(--warn-100); background: var(--warn-50); animation: monitoring-pulse-warn 2.5s ease-in-out infinite; }
-.monitoring-card[data-status="unconfigured"] { animation: none; }
-.monitoring-card__header {
-  display: flex; align-items: center; justify-content: space-between; gap: 8px;
+.monitoring-card[data-status="ok"]    { border-color: rgba(74,222,128,.15); }
+.monitoring-card[data-status="warn"]  { border-color: rgba(250,204,21,.2);  animation: monitoring-pulse-warn 2.5s ease-in-out infinite; }
+.monitoring-card[data-status="error"] { border-color: rgba(248,113,113,.2); background: #130a0a; animation: monitoring-pulse-error 1.8s ease-in-out infinite; }
+.monitoring-card[data-status="unconfigured"] { border-color: rgba(255,255,255,0.05); animation: none; }
+
+.monitoring-card__top {
+  display: flex; align-items: center; gap: 10px; margin-bottom: 20px;
 }
-.monitoring-card__label  { font-size: 13px; font-weight: 600; color: var(--ink-800); }
-.monitoring-card__detail { font-size: 12px; color: var(--ink-400); margin-top: 6px; display: flex; align-items: center; justify-content: space-between; }
-.monitoring-card__latency { font-family: var(--ff-mono); font-size: 11px; color: var(--ink-300); }
+.monitoring-card__svc-icon {
+  width: 32px; height: 32px; border-radius: 8px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+}
+.monitoring-card[data-status="ok"]            .monitoring-card__svc-icon { background: rgba(74,222,128,.15); color: #4ade80; }
+.monitoring-card[data-status="warn"]          .monitoring-card__svc-icon { background: rgba(250,204,21,.15); color: #facc15; }
+.monitoring-card[data-status="error"]         .monitoring-card__svc-icon { background: rgba(248,113,113,.15); color: #f87171; }
+.monitoring-card[data-status="unconfigured"]  .monitoring-card__svc-icon { background: rgba(148,163,184,.1); color: #94a3b8; }
+
+.monitoring-card__label {
+  flex: 1; font-size: 12px; font-weight: 500; color: #94a3b8;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.monitoring-card__status-badge {
+  flex-shrink: 0; display: flex; align-items: center; gap: 4px;
+  font-size: 11px; font-weight: 600; padding: 3px 8px;
+  border-radius: 20px; white-space: nowrap;
+}
+.monitoring-card__status-badge[data-status="ok"]           { background: rgba(74,222,128,.12); color: #4ade80; }
+.monitoring-card__status-badge[data-status="warn"]         { background: rgba(250,204,21,.12); color: #facc15; }
+.monitoring-card__status-badge[data-status="error"]        { background: rgba(248,113,113,.12); color: #f87171; }
+.monitoring-card__status-badge[data-status="unconfigured"] { background: rgba(148,163,184,.08); color: #94a3b8; }
+
+.monitoring-card__kpi {
+  display: flex; align-items: baseline; gap: 6px; margin-bottom: 14px;
+}
+.monitoring-card__kpi-num {
+  font-size: 40px; font-weight: 700; color: #f9fafb; line-height: 1;
+  font-variant-numeric: tabular-nums; letter-spacing: -1px;
+}
+.monitoring-card__kpi-unit {
+  font-size: 18px; font-weight: 500; color: #64748b;
+}
+.monitoring-card__kpi-icon {
+  display: flex; align-items: center;
+}
+.monitoring-card__kpi-icon[data-status="ok"]           { color: #4ade80; }
+.monitoring-card__kpi-icon[data-status="warn"]         { color: #facc15; }
+.monitoring-card__kpi-icon[data-status="error"]        { color: #f87171; }
+.monitoring-card__kpi-icon[data-status="unconfigured"] { color: #64748b; }
+
+.monitoring-card__detail { font-size: 12px; color: #64748b; line-height: 1.4; }
 
 .monitoring-empty {
   display: flex; align-items: center; gap: 8px;

@@ -9,25 +9,49 @@ const STATUS_CONFIG = {
   unconfigured: { label: 'Non configure', cls: 'badge--neutral', icon: I.Lock    },
 };
 
+const SERVICE_ICONS = {
+  db:             I.Activity,
+  migrations:     I.History,
+  twilio:         I.Whatsapp,
+  resend:         I.Mail,
+  authnet:        I.CreditCard,
+  cron_reminders: I.Bell,
+  cron_reengage:  I.Refresh,
+};
+
 function ServiceCard({ service }) {
   const cfg = STATUS_CONFIG[service.status] ?? STATUS_CONFIG.error;
-  const Icon = cfg.icon;
+  const StatusIcon = cfg.icon;
+  const SvcIcon = SERVICE_ICONS[service.id] ?? I.Activity;
+
   return (
     <div className="monitoring-card" data-status={service.status}>
-      <div className="monitoring-card__header">
+      <div className="monitoring-card__top">
+        <div className="monitoring-card__svc-icon">
+          <SvcIcon width={16} height={16} />
+        </div>
         <span className="monitoring-card__label">{service.label}</span>
-        <span className={`badge ${cfg.cls}`} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-          <Icon width={12} height={12} />
+        <span className="monitoring-card__status-badge" data-status={service.status}>
+          <StatusIcon width={10} height={10} />
           {cfg.label}
         </span>
       </div>
-      {(service.detail || service.latencyMs != null) && (
-        <div className="monitoring-card__detail">
-          {service.detail}
-          {service.latencyMs != null && (
-            <span className="monitoring-card__latency">{service.latencyMs} ms</span>
-          )}
-        </div>
+
+      <div className="monitoring-card__kpi">
+        {service.latencyMs != null ? (
+          <>
+            <span className="monitoring-card__kpi-num">{service.latencyMs}</span>
+            <span className="monitoring-card__kpi-unit">ms</span>
+          </>
+        ) : (
+          <div className="monitoring-card__kpi-icon" data-status={service.status}>
+            <StatusIcon width={30} height={30} />
+          </div>
+        )}
+      </div>
+
+      {service.detail && (
+        <div className="monitoring-card__detail">{service.detail}</div>
       )}
     </div>
   );
