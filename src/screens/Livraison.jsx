@@ -297,20 +297,33 @@ export default function LivraisonScreen({ onNav }) {
                   <span style={{ fontSize: 11, fontWeight: 700, padding: '1px 7px', borderRadius: 10, background: 'var(--bad-100)', color: 'var(--bad-700)' }}>{unassigned.length}</span>
                   <span style={{ marginLeft: 'auto', fontSize: 11.5, color: 'var(--bad-600)', fontWeight: 500 }}>Assignation requise</span>
                 </div>
-                <table className="table" style={{ width: '100%' }}>
+                <table className="table" style={{ width: '100%', tableLayout: 'fixed' }}>
+                  <colgroup>
+                    <col style={{ width: 148 }} />
+                    <col style={{ width: 170 }} />
+                    <col />
+                    <col style={{ width: 118 }} />
+                    <col style={{ width: 148 }} />
+                  </colgroup>
                   <thead><tr><th>Colis</th><th>Client</th><th>Destinataire</th><th>Statut</th><th>Assigner</th></tr></thead>
                   <tbody>
                     {unassigned.map(p => (
                       <tr key={p.id}>
-                        <td>
+                        <td style={{ verticalAlign: 'middle' }}>
                           <a className="mono" style={{ fontWeight: 700, color: 'var(--brand-700)', cursor: 'pointer', fontSize: 12 }} onClick={() => onNav('/parcels/' + p.id.split('-').pop())}>{p.trackingCode}</a>
                           <div style={{ fontSize: 10.5, color: 'var(--ink-400)', marginTop: 1 }}>{p.campaign.from} → {p.campaign.to}</div>
                         </td>
-                        <td><div style={{ fontSize: 12.5, fontWeight: 600 }}>{p.client.name}</div><div className="mono" style={{ fontSize: 10.5, color: 'var(--ink-400)' }}>{p.client.phone ?? '—'}</div></td>
-                        <td><div style={{ fontSize: 12.5, fontWeight: 600 }}>{p.recipName ?? '—'}</div><div style={{ fontSize: 10.5, color: 'var(--ink-400)' }}>{p.recipCity ?? ''}{p.recipPhone ? ` · ${p.recipPhone}` : ''}</div></td>
-                        <td><Badge status={p.status} /></td>
-                        <td>
-                          <select className="select" style={{ fontSize: 12, padding: '5px 8px' }} value="" disabled={assigning[p.id]} onChange={e => e.target.value && handleAssign(p.id, e.target.value)}>
+                        <td style={{ verticalAlign: 'middle' }}>
+                          <div style={{ fontSize: 12.5, fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{p.client.name}</div>
+                          <div className="mono" style={{ fontSize: 10.5, color: 'var(--ink-400)' }}>{p.client.phone ?? '—'}</div>
+                        </td>
+                        <td style={{ verticalAlign: 'middle' }}>
+                          <div style={{ fontSize: 12.5, fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{p.recipName ?? '—'}</div>
+                          <div style={{ fontSize: 10.5, color: 'var(--ink-400)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{p.recipCity ?? ''}{p.recipPhone ? ` · ${p.recipPhone}` : ''}</div>
+                        </td>
+                        <td style={{ verticalAlign: 'middle' }}><Badge status={p.status} /></td>
+                        <td style={{ verticalAlign: 'middle' }}>
+                          <select className="select" style={{ fontSize: 12, padding: '5px 8px', width: '100%' }} value="" disabled={assigning[p.id]} onChange={e => e.target.value && handleAssign(p.id, e.target.value)}>
                             <option value="">— Livreur —</option>
                             {drivers.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
                           </select>
@@ -344,16 +357,27 @@ export default function LivraisonScreen({ onNav }) {
                       </a>
                     )}
                   </div>
-                  <table className="table" style={{ width: '100%' }}>
+                  <table className="table" style={{ width: '100%', tableLayout: 'fixed' }}>
+                    <colgroup>
+                      <col style={{ width: 148 }} />
+                      <col />
+                      <col style={{ width: 118 }} />
+                      <col style={{ width: 148 }} />
+                    </colgroup>
                     <thead><tr><th>Colis</th><th>Destinataire</th><th>Statut</th><th>Réassigner</th></tr></thead>
                     <tbody>
                       {rows.map(p => (
                         <tr key={p.id}>
-                          <td><a className="mono" style={{ fontWeight: 700, color: 'var(--brand-700)', cursor: 'pointer', fontSize: 12 }} onClick={() => onNav('/parcels/' + p.id.split('-').pop())}>{p.trackingCode}</a></td>
-                          <td><div style={{ fontSize: 12.5, fontWeight: 600 }}>{p.recipName ?? '—'}</div><div style={{ fontSize: 10.5, color: 'var(--ink-400)' }}>{p.recipCity ?? ''}</div></td>
-                          <td><Badge status={p.status} /></td>
-                          <td>
-                            <select className="select" style={{ fontSize: 12, padding: '5px 8px' }} value={driver.id} disabled={assigning[p.id]} onChange={e => handleAssign(p.id, e.target.value)}>
+                          <td style={{ verticalAlign: 'middle' }}>
+                            <a className="mono" style={{ fontWeight: 700, color: 'var(--brand-700)', cursor: 'pointer', fontSize: 12 }} onClick={() => onNav('/parcels/' + p.id.split('-').pop())}>{p.trackingCode}</a>
+                          </td>
+                          <td style={{ verticalAlign: 'middle' }}>
+                            <div style={{ fontSize: 12.5, fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{p.recipName ?? '—'}</div>
+                            <div style={{ fontSize: 10.5, color: 'var(--ink-400)' }}>{p.recipCity ?? ''}</div>
+                          </td>
+                          <td style={{ verticalAlign: 'middle' }}><Badge status={p.status} /></td>
+                          <td style={{ verticalAlign: 'middle' }}>
+                            <select className="select" style={{ fontSize: 12, padding: '5px 8px', width: '100%' }} value={driver.id} disabled={assigning[p.id]} onChange={e => handleAssign(p.id, e.target.value)}>
                               <option value="">— Retirer —</option>
                               {drivers.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
                             </select>
@@ -496,19 +520,31 @@ export default function LivraisonScreen({ onNav }) {
           </div>
         ) : (
           <div className="card" style={{ overflow: 'hidden' }}>
-            <table className="table" style={{ width: '100%' }}>
+            <table className="table" style={{ width: '100%', tableLayout: 'fixed' }}>
+              <colgroup>
+                <col style={{ width: 148 }} />
+                <col />
+                <col style={{ width: 150 }} />
+                <col style={{ width: 80 }} />
+                <col style={{ width: 118 }} />
+              </colgroup>
               <thead><tr><th>Colis</th><th>Client</th><th>Cargaison</th><th>Poids</th><th>Statut</th></tr></thead>
               <tbody>
                 {pickup.filter(filter).map(p => (
                   <tr key={p.id}>
-                    <td><a className="mono" style={{ fontWeight: 700, color: 'var(--brand-700)', cursor: 'pointer', fontSize: 12 }} onClick={() => onNav('/parcels/' + p.id.split('-').pop())}>{p.trackingCode}</a></td>
-                    <td>
-                      <div style={{ fontSize: 12.5, fontWeight: 600 }}>{p.client.name}</div>
+                    <td style={{ verticalAlign: 'middle' }}>
+                      <a className="mono" style={{ fontWeight: 700, color: 'var(--brand-700)', cursor: 'pointer', fontSize: 12 }} onClick={() => onNav('/parcels/' + p.id.split('-').pop())}>{p.trackingCode}</a>
+                    </td>
+                    <td style={{ verticalAlign: 'middle' }}>
+                      <div style={{ fontSize: 12.5, fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{p.client.name}</div>
                       <div className="mono" style={{ fontSize: 10.5, color: 'var(--ink-400)' }}>{p.client.phone ?? '—'}</div>
                     </td>
-                    <td style={{ fontSize: 12.5 }}>{p.campaign.code}<div style={{ fontSize: 10.5, color: 'var(--ink-400)' }}>{p.campaign.from} → {p.campaign.to}</div></td>
-                    <td className="mono" style={{ fontSize: 12.5 }}>{p.weightKg ? `${p.weightKg} kg` : '—'}</td>
-                    <td><Badge status={p.status} /></td>
+                    <td style={{ verticalAlign: 'middle', fontSize: 12.5 }}>
+                      <div style={{ fontWeight: 600 }}>{p.campaign.code}</div>
+                      <div style={{ fontSize: 10.5, color: 'var(--ink-400)' }}>{p.campaign.from} → {p.campaign.to}</div>
+                    </td>
+                    <td style={{ verticalAlign: 'middle' }} className="mono">{p.weightKg ? `${p.weightKg} kg` : '—'}</td>
+                    <td style={{ verticalAlign: 'middle' }}><Badge status={p.status} /></td>
                   </tr>
                 ))}
               </tbody>
@@ -531,30 +567,46 @@ export default function LivraisonScreen({ onNav }) {
           </div>
         ) : (
           <div className="card" style={{ overflow: 'hidden' }}>
-            <table className="table" style={{ width: '100%' }}>
+            <table className="table" style={{ width: '100%', tableLayout: 'fixed' }}>
+              <colgroup>
+                <col style={{ width: 148 }} />
+                <col style={{ width: 130 }} />
+                <col />
+                <col style={{ width: 118 }} />
+                <col style={{ width: 130 }} />
+                <col style={{ width: 80 }} />
+                <col style={{ width: 170 }} />
+              </colgroup>
               <thead><tr><th>Colis</th><th>Livreur</th><th>Destinataire</th><th>Résultat</th><th>Frais livraison</th><th>Date</th><th></th></tr></thead>
               <tbody>
                 {results.map(p => {
                   const fee = p.pricingDetails?.deliveryFee;
                   return (
                   <tr key={p.id}>
-                    <td><a className="mono" style={{ fontWeight: 700, color: 'var(--brand-700)', cursor: 'pointer', fontSize: 12 }} onClick={() => onNav('/parcels/' + p.id.split('-').pop())}>{p.trackingCode}</a></td>
-                    <td style={{ fontSize: 12.5 }}>{p.driver?.name ?? '—'}</td>
-                    <td><div style={{ fontSize: 12.5, fontWeight: 600 }}>{p.recipName ?? '—'}</div><div style={{ fontSize: 10.5, color: 'var(--ink-400)' }}>{p.recipCity ?? ''}</div></td>
-                    <td>
+                    <td style={{ verticalAlign: 'middle' }}>
+                      <a className="mono" style={{ fontWeight: 700, color: 'var(--brand-700)', cursor: 'pointer', fontSize: 12 }} onClick={() => onNav('/parcels/' + p.id.split('-').pop())}>{p.trackingCode}</a>
+                    </td>
+                    <td style={{ verticalAlign: 'middle', fontSize: 12.5, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{p.driver?.name ?? '—'}</td>
+                    <td style={{ verticalAlign: 'middle' }}>
+                      <div style={{ fontSize: 12.5, fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{p.recipName ?? '—'}</div>
+                      <div style={{ fontSize: 10.5, color: 'var(--ink-400)' }}>{p.recipCity ?? ''}</div>
+                    </td>
+                    <td style={{ verticalAlign: 'middle' }}>
                       <Badge status={p.status} />
-                      {p.deliveryProof?.note && <div style={{ fontSize: 10.5, color: 'var(--ink-500)', marginTop: 3, fontStyle: 'italic', maxWidth: 180 }}>{p.deliveryProof.note}</div>}
+                      {p.deliveryProof?.note && <div style={{ fontSize: 10.5, color: 'var(--ink-500)', marginTop: 3, fontStyle: 'italic', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.deliveryProof.note}</div>}
                     </td>
-                    <td className="mono" style={{ fontSize: 12.5, fontWeight: 600, color: fee ? 'var(--ok-700)' : 'var(--ink-300)' }}>
-                      {fee ? `${fee.toLocaleString('fr-FR')} XAF` : '—'}
+                    <td style={{ verticalAlign: 'middle' }} className="mono">
+                      <span style={{ fontSize: 12.5, fontWeight: 600, color: fee ? 'var(--ok-700)' : 'var(--ink-300)' }}>
+                        {fee ? `${fee.toLocaleString('fr-FR')} XAF` : '—'}
+                      </span>
                     </td>
-                    <td style={{ fontSize: 12, color: 'var(--ink-500)' }}>{p.deliveredAt ? new Date(p.deliveredAt).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' }) : '—'}</td>
-                    <td>
+                    <td style={{ verticalAlign: 'middle', fontSize: 12, color: 'var(--ink-500)' }}>{p.deliveredAt ? new Date(p.deliveredAt).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' }) : '—'}</td>
+                    <td style={{ verticalAlign: 'middle' }}>
                       {p.status === 'tdl' && (
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                           <select
                             className="select"
-                            style={{ fontSize: 11, padding: '4px 6px', minWidth: 110 }}
+                            style={{ fontSize: 11, padding: '4px 6px', flex: 1, minWidth: 0 }}
                             defaultValue={p.driver?.id ?? ''}
                             disabled={rescheduling[p.id]}
                             onChange={e => { if (e.target.value !== '__action__') return; }}
@@ -566,13 +618,13 @@ export default function LivraisonScreen({ onNav }) {
                           <button
                             className="btn btn--sm btn--info"
                             disabled={rescheduling[p.id]}
-                            style={{ fontSize: 11, padding: '4px 10px', whiteSpace: 'nowrap' }}
+                            style={{ fontSize: 11, padding: '4px 8px', whiteSpace: 'nowrap', flexShrink: 0 }}
                             onClick={e => {
                               const sel = e.currentTarget.previousElementSibling;
                               handleReschedule(p.id, sel.value || null);
                             }}
                           >
-                            {rescheduling[p.id] ? '…' : '↺ Reprogrammer'}
+                            {rescheduling[p.id] ? '…' : '↺'}
                           </button>
                         </div>
                       )}
