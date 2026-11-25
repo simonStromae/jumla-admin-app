@@ -125,6 +125,12 @@ export async function GET(req: NextRequest) {
   const skipped = results.filter(r => r.status === 'skipped').length;
   const failed = results.filter(r => r.status === 'failed').length;
 
+  await prisma.setting.upsert({
+    where: { key: 'cron_reengage_last_run' },
+    update: { value: new Date().toISOString() },
+    create: { key: 'cron_reengage_last_run', value: new Date().toISOString() },
+  });
+
   if (failed > 0) {
     await logError({ route: '/api/cron/reengage', method: 'GET', status: 500, message: `${failed} notification(s) echouee(s) sur ${cancelledParcels.length} colis` });
   }
