@@ -16,6 +16,7 @@ function currentMonth() {
 
 const NAV_ITEMS = [
   { id: 'dashboard',  label: 'Tableau de bord',       icon: I.Activity  },
+  { id: 'cashflow',   label: 'Trésorerie',             icon: I.Sparkle   },
   { id: 'posts',      label: 'Postes de coûts',        icon: I.FileText  },
   { id: 'cargo',      label: 'Cargaisons',             icon: I.Plane     },
   { id: 'margin',     label: 'Marge',                  icon: I.Scale     },
@@ -40,7 +41,34 @@ function KpiCard({ label, value, sub, color }) {
   );
 }
 
+// ─── Sparkline SVG ───────────────────────────────────────────
+function Sparkline({ values, color = 'var(--info-500)', height = 48, width = 220 }) {
+  if (!values || values.length < 2) return null;
+  const max = Math.max(...values);
+  const min = Math.min(...values);
+  const range = max - min || 1;
+  const pad = 4;
+  const pts = values.map((v, i) => {
+    const x = pad + (i / (values.length - 1)) * (width - pad * 2);
+    const y = pad + (1 - (v - min) / range) * (height - pad * 2);
+    return `${x.toFixed(1)},${y.toFixed(1)}`;
+  });
+  return (
+    <svg width={width} height={height} style={{ display: 'block', overflow: 'visible' }}>
+      <polyline points={pts.join(' ')} fill="none" stroke={color} strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" />
+      {values.map((v, i) => {
+        const [x, y] = pts[i].split(',').map(Number);
+        return i === values.length - 1
+          ? <circle key={i} cx={x} cy={y} r={3} fill={color} />
+          : null;
+      })}
+    </svg>
+  );
+}
+
 // ─── Dashboard Tab ───────────────────────────────────────────
+const MONTHS_FR = ['juil.','août','sept.','oct.','nov.','déc.','janv.','févr.','mars','avr.','mai','juin'];
+
 function DashboardTab() {
   const { fmt: money } = useCurrency();
   const [data, setData] = useState(null);
@@ -59,6 +87,14 @@ function DashboardTab() {
   const marginColor = data.marginPct >= 20 ? 'var(--ok-500)' : data.marginPct >= 0 ? 'var(--info-500)' : 'var(--bad-500)';
   const netColor = data.netResult >= 0 ? 'var(--ok-500)' : 'var(--bad-500)';
 
+  const revValues  = (data.byMonth ?? []).map(m => m.revenue);
+  const margValues = (data.byMonth ?? []).map(m => m.grossMargin);
+  const monthLabels = (data.byMonth ?? []).map(m => {
+    const [y, mo] = m.month.split('-').map(Number);
+    const idx = mo >= 7 ? mo - 7 : mo + 5;
+    return MONTHS_FR[idx];
+  });
+
   return (
     <div>
       <div style={{ marginBottom: 20 }}>
@@ -66,8 +102,16 @@ function DashboardTab() {
           Exercice {fiscalLabel(data.fiscalYear)} · YTD au {data.ytdThrough}
         </div>
         <div style={{ fontSize: 22, fontWeight: 800, color: 'var(--ink-900)' }}>Tableau de bord financier</div>
-        <div style={{ fontSize: 14, color: 'var(--ink-400)', marginTop: 4 }}>{data.campaignCount} cargaison{data.campaignCount !== 1 ? 's' : ''} dans l{'’'}exercice en cours</div>
+        <div style={{ fontSize: 14, color: 'var(--ink-400)', marginTop: 4 }}>{data.campaignCount} cargaison{data.campaignCount !== 1 ? 's' : ''} dans l{"'"}exercice en cours</div>
       </div>
+
+      {/* Completeness alert */}
+      {data.incompleteCampaigns > 0 && (
+        <div style={{ background: 'var(--info-50)', border: '1px solid var(--info-200)', borderRadius: 8, padding: '10px 14px', fontSize: 13, color: 'var(--info-700)', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
+          <span style={{ fontWeight: 700 }}>⚠ {data.incompleteCampaigns} cargaison{data.incompleteCampaigns > 1 ? 's' : ''} sans coûts variables</span>
+          <span style={{ color: 'var(--info-600)' }}>— la marge affichée est provisoire.</span>
+        </div>
+      )}
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 14, marginBottom: 24 }}>
         <KpiCard label="CA facturé YTD" value={money(data.totalRevenueCad)} sub="Paiements reçus" color="var(--info-500)" />
@@ -78,8 +122,168 @@ function DashboardTab() {
         <KpiCard label="Résultat net YTD" value={money(data.netResult)} sub="Après toutes charges" color={netColor} />
       </div>
 
+      {/* Sparklines */}
+      {revValues.length >= 2 && (
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginBottom: 24 }}>
+          {[
+            { label: 'Évolution du CA', values: revValues, color: 'var(--info-500)' },
+            { label: 'Évolution de la marge brute', values: margValues, color: marginColor },
+          ].map(({ label, values, color }) => {
+            const hasData = values.some(v => v > 0);
+            return (
+              <div key={label} style={{ background: 'var(--white)', border: '1px solid var(--border)', borderRadius: 10, padding: '14px 16px' }}>
+                <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--ink-500)', marginBottom: 10, textTransform: 'uppercase', letterSpacing: '.05em' }}>{label}</div>
+                {hasData ? (
+                  <>
+                    <Sparkline values={values} color={color} width={320} height={52} />
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: 'var(--ink-300)', marginTop: 6 }}>
+                      {monthLabels.map((ml, i) => (
+                        <span key={i} style={{ flex: 1, textAlign: i === 0 ? 'left' : i === monthLabels.length - 1 ? 'right' : 'center' }}>
+                          {i === 0 || i === monthLabels.length - 1 ? ml : ''}
+                        </span>
+                      ))}
+                    </div>
+                  </>
+                ) : (
+                  <div style={{ fontSize: 13, color: 'var(--ink-300)', padding: '12px 0' }}>Pas encore de données ce mois-ci.</div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
+
       <div style={{ background: 'var(--bg-soft)', border: '1px solid var(--border)', borderRadius: 10, padding: 16, fontSize: 13, color: 'var(--ink-500)' }}>
         <strong style={{ color: 'var(--ink-700)' }}>Formule :</strong> CA facturé ({money(data.totalRevenueCad)}) − Coûts variables ({money(data.totalVariableCosts)}) = Marge brute ({money(data.grossMargin)}) − Charges fixes ({money(data.totalFixedCosts)}) = <strong style={{ color: netColor }}>Résultat net {money(data.netResult)}</strong>
+      </div>
+    </div>
+  );
+}
+
+// ─── Cashflow Tab ────────────────────────────────────────────
+const MONTHS_FR_CF = ['janv.','févr.','mars','avr.','mai','juin','juil.','août','sept.','oct.','nov.','déc.'];
+
+function monthLabel(m) {
+  const [y, mo] = m.split('-').map(Number);
+  return `${MONTHS_FR_CF[mo - 1]} ${y}`;
+}
+
+function CashflowTab() {
+  const { fmt: money } = useCurrency();
+  const [data, setData]   = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [expanded, setExpanded] = useState(null);
+
+  useEffect(() => {
+    fetch('/api/finance/cashflow')
+      .then(r => r.json())
+      .then(setData)
+      .finally(() => setLoading(false));
+  }, []);
+
+  if (loading) return <div style={{ padding: 32, color: 'var(--ink-400)' }}>Chargement…</div>;
+  if (!data) return null;
+
+  const { rows } = data;
+
+  const maxRevenue = Math.max(...rows.map(r => r.revenue), 1);
+
+  return (
+    <div>
+      <div style={{ marginBottom: 20 }}>
+        <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '.08em', textTransform: 'uppercase', color: 'var(--info-600)', marginBottom: 6 }}>
+          Projection · 6 prochains mois
+        </div>
+        <div style={{ fontSize: 22, fontWeight: 800, color: 'var(--ink-900)' }}>Prévisions de trésorerie</div>
+        <div style={{ fontSize: 14, color: 'var(--ink-400)', marginTop: 4 }}>
+          Entrées attendues (cargaisons) vs sorties prévues (charges fixes + variables)
+        </div>
+      </div>
+
+      {/* Month cards */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 14, marginBottom: 28 }}>
+        {rows.map(row => {
+          const isOpen = expanded === row.month;
+          const netColor = row.net >= 0 ? 'var(--ok-600)' : 'var(--bad-500)';
+          const cumColor = row.cumulative >= 0 ? 'var(--ok-600)' : 'var(--bad-500)';
+          const barW = row.revenue > 0 ? Math.min(row.revenue / maxRevenue * 100, 100) : 0;
+          return (
+            <div key={row.month} style={{
+              background: 'var(--white)', border: '1px solid var(--border)', borderRadius: 12,
+              borderTop: row.isCurrent ? '3px solid var(--info-500)' : row.isPast ? '3px solid var(--border)' : '3px solid transparent',
+              opacity: row.isPast ? 0.75 : 1,
+            }}>
+              <div style={{ padding: '14px 16px 10px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 10 }}>
+                  <div>
+                    <div style={{ fontSize: 12, fontWeight: 700, color: row.isCurrent ? 'var(--info-600)' : 'var(--ink-500)', textTransform: 'uppercase', letterSpacing: '.06em' }}>
+                      {monthLabel(row.month)}{row.isCurrent ? ' · En cours' : row.isPast ? ' · Passé' : ''}
+                    </div>
+                  </div>
+                  <div style={{ textAlign: 'right' }}>
+                    <div style={{ fontSize: 15, fontWeight: 800, color: netColor }}>{money(row.net)}</div>
+                    <div style={{ fontSize: 11, color: 'var(--ink-400)' }}>net du mois</div>
+                  </div>
+                </div>
+
+                {/* Revenue bar */}
+                <div style={{ height: 6, background: 'var(--bg-soft)', borderRadius: 3, marginBottom: 10 }}>
+                  <div style={{ height: '100%', width: barW + '%', background: 'var(--info-400)', borderRadius: 3, transition: 'width .3s' }} />
+                </div>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 5, fontSize: 13 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                    <span style={{ color: 'var(--ink-500)' }}>Entrées attendues</span>
+                    <span style={{ fontWeight: 700, color: 'var(--ok-600)', fontVariantNumeric: 'tabular-nums' }}>{row.revenue > 0 ? '+' + money(row.revenue) : '—'}</span>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                    <span style={{ color: 'var(--ink-500)' }}>Coûts variables</span>
+                    <span style={{ color: row.variableCosts > 0 ? 'var(--bad-500)' : 'var(--ink-300)', fontVariantNumeric: 'tabular-nums' }}>{row.variableCosts > 0 ? '−' + money(row.variableCosts) : '—'}</span>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                    <span style={{ color: 'var(--ink-500)' }}>
+                      Charges fixes{row.fixedIsEstimated ? <span style={{ fontSize: 10, color: 'var(--ink-300)', marginLeft: 4 }}>estimé</span> : ''}
+                    </span>
+                    <span style={{ color: 'var(--bad-400)', fontVariantNumeric: 'tabular-nums' }}>{row.fixedCosts > 0 ? '−' + money(row.fixedCosts) : '—'}</span>
+                  </div>
+                </div>
+
+                <div style={{ marginTop: 10, paddingTop: 8, borderTop: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', fontSize: 12 }}>
+                  <span style={{ color: 'var(--ink-400)' }}>Cumul</span>
+                  <span style={{ fontWeight: 700, color: cumColor, fontVariantNumeric: 'tabular-nums' }}>{money(row.cumulative)}</span>
+                </div>
+              </div>
+
+              {/* Expand campaigns */}
+              {row.campaigns.length > 0 && (
+                <button onClick={() => setExpanded(isOpen ? null : row.month)}
+                  style={{ width: '100%', border: 'none', borderTop: '1px solid var(--border)', background: 'var(--bg-soft)', color: 'var(--info-700)', fontSize: 12, fontWeight: 600, padding: '8px 16px', cursor: 'pointer', borderRadius: '0 0 12px 12px', textAlign: 'left' }}>
+                  {isOpen ? '▲' : '▼'} {row.campaigns.length} cargaison{row.campaigns.length > 1 ? 's' : ''}
+                </button>
+              )}
+
+              {isOpen && (
+                <div style={{ padding: '10px 16px 12px', borderTop: '1px solid var(--border)', background: 'var(--bg-soft)' }}>
+                  {row.campaigns.map(c => (
+                    <div key={c.id} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, padding: '4px 0', borderBottom: '1px solid var(--border)' }}>
+                      <span style={{ fontWeight: 600, color: 'var(--ink-700)' }}>{c.code}</span>
+                      <span style={{ color: c.hasVariableCosts ? 'var(--ink-700)' : 'var(--ink-300)', fontVariantNumeric: 'tabular-nums' }}>
+                        {money(c.revenueCad)}{!c.hasVariableCosts && <span style={{ marginLeft: 4, color: 'var(--info-500)' }}>⚠</span>}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Legend */}
+      <div style={{ background: 'var(--bg-soft)', border: '1px solid var(--border)', borderRadius: 10, padding: '12px 16px', fontSize: 12, color: 'var(--ink-500)', display: 'flex', flexWrap: 'wrap', gap: 16 }}>
+        <span><strong>Entrées</strong> : CA des cargaisons arrivant ce mois (paiements reçus + en attente)</span>
+        <span><strong>Coûts variables</strong> : montants réels saisis, ou 0 si non renseignés (⚠)</span>
+        <span><strong>Charges fixes</strong> : montant saisi pour le mois, ou moyenne des 3 derniers mois si non saisi (mention « estimé »)</span>
       </div>
     </div>
   );
@@ -784,7 +988,7 @@ function SnapshotsTab() {
 
       {snapshots.length === 0 ? (
         <div style={{ background: 'var(--bg-soft)', border: '1px solid var(--border)', borderRadius: 10, padding: 32, textAlign: 'center', color: 'var(--ink-400)', fontSize: 14 }}>
-          Aucun exercice archivé. Le cron du 1er juillet archivera automatiquement l{'’'}exercice écoulé.<br />
+          Aucun exercice archivé. Le cron du 1er juillet archivera automatiquement l{"'"}exercice écoulé.<br />
           Vous pouvez aussi archiver manuellement via le bouton ci-dessus.
         </div>
       ) : (
@@ -1024,7 +1228,7 @@ function BudgetTab() {
       {view === 'budget' && (
         <>
           <div style={{ fontSize: 13, color: 'var(--ink-500)', marginBottom: 16 }}>
-            Saisissez les montants budgétés pour l{'’'}exercice {data.label} · Réel YTD = cumulé depuis juillet
+            Saisissez les montants budgétés pour l{"'"}exercice {data.label} · Réel YTD = cumulé depuis juillet
           </div>
           {[{ label: 'Coûts variables', posts: varPosts, actualMap: data.actualVariable, budgetTotal: totalBudgetVar, actualTotal: totalActualVar },
             { label: 'Charges fixes (YTD)', posts: fixPosts, actualMap: data.actualFixed, budgetTotal: totalBudgetFix, actualTotal: totalActualFix }].map(section => (
@@ -1223,7 +1427,7 @@ function PayrollTab() {
             style={{ width: '100%', padding: '9px 12px', border: '1px solid var(--border)', borderRadius: 8, fontSize: 14, background: 'var(--white)', color: 'var(--ink-900)' }} />
         </div>
         <div>
-          <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: 'var(--ink-500)', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '.05em' }}>Nombre d{'’'}employés</label>
+          <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: 'var(--ink-500)', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '.05em' }}>Nombre d{"'"}employés</label>
           <input type="number" min="1" value={employees} onChange={e => setEmployees(e.target.value)}
             style={{ width: '100%', padding: '9px 12px', border: '1px solid var(--border)', borderRadius: 8, fontSize: 14, background: 'var(--white)', color: 'var(--ink-900)' }} />
         </div>
@@ -1271,7 +1475,7 @@ function PayrollTab() {
           </div>
 
           <div style={{ fontSize: 12, color: 'var(--ink-400)', lineHeight: 1.6 }}>
-            Taux 2025 · RRQ max. 69 700 $ (exonération 3 500 $) · RQAP max. 94 000 $ · AE max. 63 200 $ · FSS taux simplifié masse salariale &lt; 1 M$ · CNESST variable selon secteur d{'’'}activité
+            Taux 2025 · RRQ max. 69 700 $ (exonération 3 500 $) · RQAP max. 94 000 $ · AE max. 63 200 $ · FSS taux simplifié masse salariale &lt; 1 M$ · CNESST variable selon secteur d{"'"}activité
           </div>
         </>
       )}
@@ -1905,6 +2109,7 @@ export default function FinanceScreen() {
   const renderTab = () => {
     switch (activeTab) {
       case 'dashboard': return <DashboardTab />;
+      case 'cashflow':  return <CashflowTab />;
       case 'posts':     return <PostsTab />;
       case 'cargo':     return <CargoTab />;
       case 'margin':    return <MarginAnalysisTab />;
@@ -1926,7 +2131,7 @@ export default function FinanceScreen() {
         <div className="sidebar__section">Finance</div>
         {NAV_ITEMS.map(item => {
           const isActive = activeTab === item.id;
-          const isReady  = ['dashboard', 'posts', 'cargo', 'margin', 'finance', 'budget', 'payroll', 'routes', 'transport', 'hyp', 'scenarios'].includes(item.id);
+          const isReady  = ['dashboard', 'cashflow', 'posts', 'cargo', 'margin', 'finance', 'budget', 'payroll', 'routes', 'transport', 'hyp', 'scenarios'].includes(item.id);
           const Ic = item.icon;
           return (
             <button key={item.id} onClick={() => setActiveTab(item.id)}
