@@ -165,6 +165,7 @@ const NAV_ALL = [
   { labelKey: 'client.nav.tracking',   icon: I.Search,     href: '/client/suivi',        suspendedOk: true  },
   { labelKey: 'client.nav.payments',   icon: I.CreditCard, href: '/client/invoices',     suspendedOk: true  },
   { labelKey: 'client.nav.claims',     icon: I.Alert,      href: '/client/reclamations', suspendedOk: true  },
+  { labelKey: 'client.nav.contacts',   icon: I.UserPlus,   href: '/client/contacts',     suspendedOk: true,  partnerOnly: true },
   { labelKey: 'client.nav.profile',    icon: I.Users,      href: '/client/profile',      suspendedOk: true  },
 ];
 
@@ -299,9 +300,10 @@ export default function ClientLayout({ children }) {
     return <>{children}</>;
   }
 
-  const user      = session?.user;
-  const suspended = user?.status === 'suspended';
-  const NAV       = NAV_ALL.filter(n => !suspended || n.suspendedOk);
+  const user        = session?.user;
+  const suspended   = user?.status === 'suspended';
+  const isPartner   = user?.clientType === 'partenaire';
+  const NAV         = NAV_ALL.filter(n => (!suspended || n.suspendedOk) && (!n.partnerOnly || isPartner));
   const initials  = (user?.name ?? '?').split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
 
   const sidebarNav = (
@@ -640,9 +642,10 @@ export default function ClientLayout({ children }) {
               {/* Handle */}
               <div style={{ width: 40, height: 4, borderRadius: 2, background: 'var(--border)', margin: '14px auto 8px' }} />
               {[
-                { icon: I.Alert, label: 'Réclamations',   href: '/client/reclamations' },
-                { icon: I.Help,  label: 'Centre d\'aide', action: openHelp },
-                { icon: I.Users, label: 'Mon profil',     href: '/client/profile' },
+                { icon: I.Alert,    label: 'Réclamations',   href: '/client/reclamations' },
+                ...(isPartner ? [{ icon: I.UserPlus, label: 'Mes contacts', href: '/client/contacts' }] : []),
+                { icon: I.Help,     label: 'Centre d\'aide', action: openHelp },
+                { icon: I.Users,    label: 'Mon profil',     href: '/client/profile' },
               ].map(({ icon: Icon, label, href, action }) => {
                 const active = href && (pathname === href || pathname.startsWith(href + '/'));
                 return (

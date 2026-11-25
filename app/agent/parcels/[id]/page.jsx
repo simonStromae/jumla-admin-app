@@ -180,7 +180,7 @@ export default function AgentParcelPage() {
 
   const contactPhone = parcel.recipPhone || parcel.client?.phone;
   const contactName  = parcel.recipName  || parcel.client?.name;
-  const defaultWaReadyBody = `Bonjour, votre colis {parcel_code} est prêt. Merci de vous présenter pour le retrait.\n\n📍 {warehouse_address}\n\n— Jumla Shipping`;
+  const defaultWaReadyBody = `Bonjour, votre colis {parcel_code} est prêt pour le retrait.\n\n📍 Adresse de retrait :\n{warehouse_address}\n\n🚚 Vous souhaitez recevoir votre colis à domicile ?\n\nVous pouvez demander une expédition en nous transmettant les informations suivantes :\n\n- Nom complet du destinataire\n- Adresse complète de livraison\n- Ville et province\n- Code postal\n- Numéro de téléphone\n\nNous vous communiquerons les frais de livraison ainsi que les modalités d'expédition.\n\nMerci de votre confiance.\n\n— Jumla Shipping`;
   const waReadyBody  = (waReadyTmpl ?? defaultWaReadyBody)
     .replace(/\{parcel_code\}/g,       parcel.trackingCode ?? '')
     .replace(/\{warehouse_address\}/g, warehouseAddr);
