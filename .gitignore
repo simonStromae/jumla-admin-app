@@ -30,6 +30,4 @@ yarn-error.log*
 .vercel
 
 /src/generated/prisma
-
-# TypeScript build cache
 *.tsbuildinfo

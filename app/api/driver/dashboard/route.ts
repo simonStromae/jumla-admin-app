@@ -14,14 +14,20 @@ export async function GET() {
   const ACTIVE_STATUSES  = ['ard', 'lib', 'ver', 'pdl', 'liv', 'tdl'];
   const PENDING_STATUSES = ['enr', 'rec', 'pre', 'exp', 'tra', 'apd', 'dou', 'ins', 'ret'];
 
+  const PARCEL_SELECT = {
+    id: true, trackingCode: true, status: true, delivery: true,
+    recipName: true, recipPhone: true, recipCity: true,
+    recipAddress: true, recipApt: true, recipProvince: true, recipPostal: true,
+    deliveredAt: true, deliveryProof: true, notes: true,
+    client:   { select: { name: true, phone: true } },
+    campaign: { select: { code: true, status: true } },
+    payment:  { select: { status: true, amount: true } },
+  };
+
   const [allAssigned, deliveredToday, recentDeliveries, failedToday] = await Promise.all([
-    prisma.parcel.findMany({
+    (prisma.parcel.findMany as any)({
       where: { driverId, status: { notIn: ['ok'] }, deletedAt: null },
-      include: {
-        client:   { select: { name: true, phone: true } },
-        campaign: { select: { code: true, status: true } },
-        payment:  { select: { status: true, amount: true } },
-      },
+      select: PARCEL_SELECT,
       orderBy: { createdAt: 'desc' },
     }),
 
@@ -29,9 +35,13 @@ export async function GET() {
       where: { driverId, status: 'ok', deliveredAt: { gte: today, lt: tomorrow }, deletedAt: null },
     }),
 
-    prisma.parcel.findMany({
+    (prisma.parcel.findMany as any)({
       where: { driverId, status: 'ok', deletedAt: null },
-      include: { client: { select: { name: true } } },
+      select: {
+        id: true, trackingCode: true, status: true,
+        recipName: true, recipCity: true, deliveredAt: true,
+        client: { select: { name: true } },
+      },
       orderBy: { deliveredAt: 'desc' },
       take: 5,
     }),

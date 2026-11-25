@@ -48,11 +48,12 @@ function OverviewRow({ p, onNav, drivers, onAssign, assigning }) {
 }
 
 export default function LivraisonScreen({ onNav }) {
-  const [data,      setData]      = useState(null);
-  const [loading,   setLoading]   = useState(true);
-  const [tab,       setTab]       = useState('home');
-  const [assigning, setAssigning] = useState({});
-  const [search,    setSearch]    = useState('');
+  const [data,         setData]         = useState(null);
+  const [loading,      setLoading]      = useState(true);
+  const [tab,          setTab]          = useState('home');
+  const [assigning,    setAssigning]    = useState({});
+  const [search,       setSearch]       = useState('');
+  const [rescheduling, setRescheduling] = useState({});
 
   const load = () => {
     setLoading(true);
@@ -72,6 +73,17 @@ export default function LivraisonScreen({ onNav }) {
       body: JSON.stringify({ driverId: driverId || null }),
     });
     setAssigning(a => ({ ...a, [parcelId]: false }));
+    load();
+  };
+
+  const handleReschedule = async (parcelId, driverId) => {
+    setRescheduling(r => ({ ...r, [parcelId]: true }));
+    await fetch(`/api/parcels/${parcelId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status: 'pdl', driverId: driverId || null }),
+    });
+    setRescheduling(r => ({ ...r, [parcelId]: false }));
     load();
   };
 
@@ -102,10 +114,13 @@ export default function LivraisonScreen({ onNav }) {
     || (p.client.name ?? '').toLowerCase().includes(q)
     || (p.recipCity  ?? '').toLowerCase().includes(q);
 
+  const todayStart = new Date(); todayStart.setHours(0, 0, 0, 0);
+
   const tabs = [
     { key: 'home',       label: 'Livraison domicile', count: home.filter(p => !['ok','tdl'].includes(p.status)).length },
-    { key: 'pickup',     label: 'Retrait entrepôt',   count: pickup.length },
-    { key: 'results',    label: 'Résultats',           count: homeDone.length + homeFailed.length },
+    { key: 'drivers',    label: 'Livreurs',            count: drivers.length },
+    { key: 'pickup',     label: 'Retrait entrepôt',    count: pickup.length },
+    { key: 'results',    label: 'Résultats',            count: homeDone.length + homeFailed.length },
   ];
 
   // Group assigned+in-progress by driver for the home tab
@@ -232,21 +247,29 @@ export default function LivraisonScreen({ onNav }) {
       </div>
 
       {/* ── Detail tabs ── */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16, flexWrap: 'wrap' }}>
-        <div style={{ position: 'relative', flex: '1 1 220px' }}>
+      <div style={{ marginBottom: 0 }}>
+        {/* Search */}
+        <div style={{ position: 'relative', marginBottom: 0 }}>
           <I.Search style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', width: 14, height: 14, color: 'var(--ink-400)' }} />
-          <input className="input" style={{ paddingLeft: 32, fontSize: 13 }} placeholder="Colis, destinataire, client…" value={search} onChange={e => setSearch(e.target.value)} />
+          <input className="input" style={{ paddingLeft: 32, fontSize: 13, borderRadius: '8px 8px 0 0', borderBottom: 'none' }} placeholder="Colis, destinataire, client…" value={search} onChange={e => setSearch(e.target.value)} />
         </div>
-        <div style={{ display: 'flex', gap: 4, background: 'var(--bg-soft)', borderRadius: 9, padding: 4 }}>
+        {/* Underline-style tabs */}
+        <div style={{ display: 'flex', borderBottom: '2px solid var(--border)', background: 'white', borderRadius: '0 0 0 0', marginBottom: 20 }}>
           {tabs.map(t => (
             <button key={t.key} onClick={() => setTab(t.key)} style={{
-              padding: '6px 14px', borderRadius: 6, border: 'none', cursor: 'pointer', fontSize: 12.5,
+              padding: '10px 18px', border: 'none', background: 'none', cursor: 'pointer', fontSize: 13,
               fontWeight: tab === t.key ? 700 : 500,
-              background: tab === t.key ? 'white' : 'transparent',
-              color: tab === t.key ? '#111827' : 'var(--ink-500)',
-              boxShadow: tab === t.key ? '0 1px 4px rgba(0,0,0,.1)' : 'none',
+              color: tab === t.key ? 'var(--brand-700)' : 'var(--ink-500)',
+              borderBottom: tab === t.key ? '2px solid var(--brand-600)' : '2px solid transparent',
+              marginBottom: -2,
+              transition: 'color .15s, border-color .15s',
+              whiteSpace: 'nowrap',
             }}>
-              {t.label} <span style={{ fontSize: 11, opacity: .7 }}>({t.count})</span>
+              {t.label}
+              <span style={{ marginLeft: 6, fontSize: 11, fontWeight: 700, padding: '1px 6px', borderRadius: 10,
+                background: tab === t.key ? 'var(--brand-100)' : 'var(--bg-soft)',
+                color: tab === t.key ? 'var(--brand-700)' : 'var(--ink-400)',
+              }}>{t.count}</span>
             </button>
           ))}
         </div>
@@ -267,9 +290,12 @@ export default function LivraisonScreen({ onNav }) {
           <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
             {/* Unassigned */}
             {unassigned.length > 0 && (
-              <div className="card" style={{ overflow: 'hidden' }}>
-                <div style={{ padding: '10px 16px', borderBottom: '1px solid var(--border)', background: 'var(--bad-50)', display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--bad-700)' }}>⚠ Sans livreur ({unassigned.length})</span>
+              <div className="card" style={{ overflow: 'hidden', borderLeft: '3px solid var(--bad-500)' }}>
+                <div style={{ padding: '10px 16px', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <I.Alert style={{ width: 14, height: 14, color: 'var(--bad-500)', flexShrink: 0 }} />
+                  <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--bad-700)' }}>Sans livreur</span>
+                  <span style={{ fontSize: 11, fontWeight: 700, padding: '1px 7px', borderRadius: 10, background: 'var(--bad-100)', color: 'var(--bad-700)' }}>{unassigned.length}</span>
+                  <span style={{ marginLeft: 'auto', fontSize: 11.5, color: 'var(--bad-600)', fontWeight: 500 }}>Assignation requise</span>
                 </div>
                 <table className="table" style={{ width: '100%' }}>
                   <thead><tr><th>Colis</th><th>Client</th><th>Destinataire</th><th>Statut</th><th>Assigner</th></tr></thead>
@@ -302,11 +328,21 @@ export default function LivraisonScreen({ onNav }) {
               if (!rows.length) return null;
               return (
                 <div key={driver.id} className="card" style={{ overflow: 'hidden' }}>
-                  <div style={{ padding: '10px 16px', borderBottom: '1px solid var(--border)', background: 'var(--bg-soft)', display: 'flex', alignItems: 'center', gap: 10 }}>
-                    <I.Truck style={{ width: 13, height: 13, color: 'var(--brand-500)' }} />
-                    <span style={{ fontWeight: 700, fontSize: 13 }}>{driver.name}</span>
-                    {driver.phone && <span className="mono" style={{ fontSize: 11, color: 'var(--ink-400)' }}>{driver.phone}</span>}
-                    <span style={{ marginLeft: 'auto', fontSize: 12, color: 'var(--ink-500)' }}>{rows.length} colis</span>
+                  <div style={{ padding: '10px 16px', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <div style={{ width: 30, height: 30, borderRadius: '50%', background: 'var(--brand-100)', color: 'var(--brand-700)', fontWeight: 800, fontSize: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                      {driver.name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2)}
+                    </div>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontWeight: 700, fontSize: 13, color: 'var(--ink-900)' }}>{driver.name}</div>
+                      {driver.phone && <div className="mono" style={{ fontSize: 11, color: 'var(--ink-400)' }}>{driver.phone}</div>}
+                    </div>
+                    <span style={{ fontSize: 11, fontWeight: 600, padding: '2px 8px', borderRadius: 10, background: 'var(--bg-soft)', color: 'var(--ink-500)' }}>{rows.length} colis</span>
+                    {driver.phone && (
+                      <a href={`https://wa.me/${driver.phone.replace(/\D/g, '')}`} target="_blank" rel="noreferrer"
+                        style={{ display: 'inline-flex', alignItems: 'center', background: '#25D366', color: 'white', borderRadius: 6, padding: '3px 8px', fontSize: 11, fontWeight: 600, textDecoration: 'none' }}>
+                        WA
+                      </a>
+                    )}
                   </div>
                   <table className="table" style={{ width: '100%' }}>
                     <thead><tr><th>Colis</th><th>Destinataire</th><th>Statut</th><th>Réassigner</th></tr></thead>
@@ -332,10 +368,121 @@ export default function LivraisonScreen({ onNav }) {
 
             {active.length === 0 && (
               <div style={{ textAlign: 'center', padding: '60px 20px', color: 'var(--ink-400)' }}>
-                <div style={{ fontSize: 36, marginBottom: 10 }}>✅</div>
+                <I.Check style={{ width: 36, height: 36, color: 'var(--ok-400)', marginBottom: 10, display: 'inline-block' }} />
                 <div style={{ fontWeight: 600, color: 'var(--ink-600)' }}>Toutes les livraisons domicile sont gérées</div>
               </div>
             )}
+          </div>
+        );
+      })()}
+
+      {/* ── Tab: Livreurs ── */}
+      {tab === 'drivers' && (() => {
+        // Build per-driver stats from all home parcels
+        const driverMap = {};
+        home.forEach(p => {
+          const d = p.driver;
+          if (!d) return;
+          if (!driverMap[d.id]) driverMap[d.id] = {
+            driver: d,
+            inProgress: [],
+            deliveredToday: [],
+            failed: [],
+            pending: [],
+          };
+          if (p.status === 'liv') driverMap[d.id].inProgress.push(p);
+          else if (p.status === 'ok' && p.deliveredAt && new Date(p.deliveredAt) >= todayStart) driverMap[d.id].deliveredToday.push(p);
+          else if (p.status === 'tdl') driverMap[d.id].failed.push(p);
+          else if (!['ok'].includes(p.status)) driverMap[d.id].pending.push(p);
+        });
+
+        // Add drivers with no parcels
+        drivers.forEach(d => {
+          if (!driverMap[d.id]) driverMap[d.id] = { driver: d, inProgress: [], deliveredToday: [], failed: [], pending: [] };
+        });
+
+        const rows = Object.values(driverMap);
+
+        return rows.length === 0 ? (
+          <div style={{ textAlign: 'center', padding: '60px 20px', color: 'var(--ink-400)' }}>
+            <I.Truck style={{ width: 36, height: 36, color: 'var(--ink-300)', marginBottom: 10 }} />
+            <div style={{ fontWeight: 600, color: 'var(--ink-600)' }}>Aucun livreur actif</div>
+          </div>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            {rows.map(({ driver, inProgress, deliveredToday: dToday, failed, pending }) => {
+              const total = inProgress.length + dToday.length + failed.length + pending.length;
+              return (
+                <div key={driver.id} className="card" style={{ overflow: 'hidden' }}>
+                  {/* Driver header */}
+                  <div style={{ padding: '12px 16px', borderBottom: '1px solid var(--border)', background: 'var(--bg-soft)', display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <div style={{ width: 36, height: 36, borderRadius: '50%', background: 'var(--brand-100)', color: 'var(--brand-700)', fontWeight: 800, fontSize: 14, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                      {driver.name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2)}
+                    </div>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontWeight: 700, fontSize: 14, color: 'var(--ink-900)' }}>{driver.name}</div>
+                      {driver.phone && <div className="mono" style={{ fontSize: 11, color: 'var(--ink-400)' }}>{driver.phone}</div>}
+                    </div>
+                    <div style={{ display: 'flex', gap: 6 }}>
+                      {driver.phone && (
+                        <a href={`https://wa.me/${driver.phone.replace(/\D/g, '')}`} target="_blank" rel="noreferrer"
+                          style={{ display: 'inline-flex', alignItems: 'center', background: '#25D366', color: 'white', borderRadius: 6, padding: '4px 10px', fontSize: 11, fontWeight: 600, textDecoration: 'none', gap: 4 }}>
+                          WA
+                        </a>
+                      )}
+                      {driver.phone && (
+                        <a href={`tel:${driver.phone}`}
+                          style={{ display: 'inline-flex', alignItems: 'center', background: 'var(--bg)', color: 'var(--ink-700)', borderRadius: 6, padding: '4px 10px', fontSize: 11, fontWeight: 600, textDecoration: 'none', border: '1px solid var(--border)' }}>
+                          📞
+                        </a>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* KPI row */}
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', borderBottom: total > 0 ? '1px solid var(--border-soft)' : 'none' }}>
+                    {[
+                      { v: pending.length,   l: 'En attente',  c: pending.length > 0 ? 'var(--ink-700)' : 'var(--ink-300)' },
+                      { v: inProgress.length, l: 'En cours',   c: inProgress.length > 0 ? 'var(--info-600)' : 'var(--ink-300)' },
+                      { v: dToday.length,    l: 'Livrés auj.', c: dToday.length > 0 ? 'var(--ok-600)' : 'var(--ink-300)' },
+                      { v: failed.length,    l: 'Échecs',       c: failed.length > 0 ? 'var(--bad-600)' : 'var(--ink-300)' },
+                    ].map((k, i) => (
+                      <div key={i} style={{ padding: '8px 10px', textAlign: 'center', borderRight: i < 3 ? '1px solid var(--border-soft)' : 'none' }}>
+                        <div style={{ fontSize: 20, fontWeight: 800, color: k.c, fontFamily: 'var(--ff-mono)' }}>{k.v}</div>
+                        <div style={{ fontSize: 10, color: 'var(--ink-400)', marginTop: 1 }}>{k.l}</div>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Parcel list */}
+                  {total > 0 && (
+                    <div>
+                      {[...inProgress, ...pending, ...failed, ...dToday].slice(0, 6).map((p, i, arr) => (
+                        <div key={p.id} style={{ padding: '8px 16px', display: 'flex', alignItems: 'center', gap: 10, borderBottom: i < arr.length - 1 ? '1px solid var(--border-soft)' : 'none' }}>
+                          <a className="mono" style={{ fontSize: 11.5, fontWeight: 700, color: 'var(--brand-700)', cursor: 'pointer', flexShrink: 0 }} onClick={() => onNav('/parcels/' + p.id.split('-').pop())}>{p.trackingCode}</a>
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--ink-700)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{p.recipName ?? p.client.name}</div>
+                            {p.recipCity && <div style={{ fontSize: 11, color: 'var(--ink-400)' }}>{p.recipCity}</div>}
+                          </div>
+                          <Badge status={p.status} />
+                        </div>
+                      ))}
+                      {total > 6 && (
+                        <div style={{ padding: '8px 16px', fontSize: 12, color: 'var(--ink-400)', textAlign: 'center', borderTop: '1px solid var(--border-soft)' }}>
+                          +{total - 6} autres colis
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {total === 0 && (
+                    <div style={{ padding: '16px', textAlign: 'center', color: 'var(--ink-400)', fontSize: 12.5 }}>
+                      Aucun colis assigné
+                    </div>
+                  )}
+                </div>
+              );
+            })}
           </div>
         );
       })()}
@@ -344,7 +491,7 @@ export default function LivraisonScreen({ onNav }) {
       {tab === 'pickup' && (
         pickup.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '60px 20px', color: 'var(--ink-400)' }}>
-            <div style={{ fontSize: 36, marginBottom: 10 }}>📦</div>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ width: 36, height: 36, color: 'var(--ink-300)', marginBottom: 10, display: 'inline-block' }}><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
             <div style={{ fontWeight: 600, color: 'var(--ink-600)' }}>Aucun colis en attente de retrait</div>
           </div>
         ) : (
@@ -379,15 +526,17 @@ export default function LivraisonScreen({ onNav }) {
         }).filter(filter);
         return results.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '60px 20px', color: 'var(--ink-400)' }}>
-            <div style={{ fontSize: 36, marginBottom: 10 }}>📋</div>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ width: 36, height: 36, color: 'var(--ink-300)', marginBottom: 10, display: 'inline-block' }}><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
             <div style={{ fontWeight: 600, color: 'var(--ink-600)' }}>Aucun résultat de livraison</div>
           </div>
         ) : (
           <div className="card" style={{ overflow: 'hidden' }}>
             <table className="table" style={{ width: '100%' }}>
-              <thead><tr><th>Colis</th><th>Livreur</th><th>Destinataire</th><th>Résultat</th><th>Date</th></tr></thead>
+              <thead><tr><th>Colis</th><th>Livreur</th><th>Destinataire</th><th>Résultat</th><th>Frais livraison</th><th>Date</th><th></th></tr></thead>
               <tbody>
-                {results.map(p => (
+                {results.map(p => {
+                  const fee = p.pricingDetails?.deliveryFee;
+                  return (
                   <tr key={p.id}>
                     <td><a className="mono" style={{ fontWeight: 700, color: 'var(--brand-700)', cursor: 'pointer', fontSize: 12 }} onClick={() => onNav('/parcels/' + p.id.split('-').pop())}>{p.trackingCode}</a></td>
                     <td style={{ fontSize: 12.5 }}>{p.driver?.name ?? '—'}</td>
@@ -396,9 +545,41 @@ export default function LivraisonScreen({ onNav }) {
                       <Badge status={p.status} />
                       {p.deliveryProof?.note && <div style={{ fontSize: 10.5, color: 'var(--ink-500)', marginTop: 3, fontStyle: 'italic', maxWidth: 180 }}>{p.deliveryProof.note}</div>}
                     </td>
+                    <td className="mono" style={{ fontSize: 12.5, fontWeight: 600, color: fee ? 'var(--ok-700)' : 'var(--ink-300)' }}>
+                      {fee ? `${fee.toLocaleString('fr-FR')} XAF` : '—'}
+                    </td>
                     <td style={{ fontSize: 12, color: 'var(--ink-500)' }}>{p.deliveredAt ? new Date(p.deliveredAt).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' }) : '—'}</td>
+                    <td>
+                      {p.status === 'tdl' && (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                          <select
+                            className="select"
+                            style={{ fontSize: 11, padding: '4px 6px', minWidth: 110 }}
+                            defaultValue={p.driver?.id ?? ''}
+                            disabled={rescheduling[p.id]}
+                            onChange={e => { if (e.target.value !== '__action__') return; }}
+                            onBlur={() => {}}
+                          >
+                            <option value="" disabled>— Livreur —</option>
+                            {drivers.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
+                          </select>
+                          <button
+                            className="btn btn--sm btn--info"
+                            disabled={rescheduling[p.id]}
+                            style={{ fontSize: 11, padding: '4px 10px', whiteSpace: 'nowrap' }}
+                            onClick={e => {
+                              const sel = e.currentTarget.previousElementSibling;
+                              handleReschedule(p.id, sel.value || null);
+                            }}
+                          >
+                            {rescheduling[p.id] ? '…' : '↺ Reprogrammer'}
+                          </button>
+                        </div>
+                      )}
+                    </td>
                   </tr>
-                ))}
+                  );
+                })}
               </tbody>
             </table>
           </div>

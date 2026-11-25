@@ -163,7 +163,6 @@ export default function DriverScannerPage() {
                 {[
                   { label: 'Destinataire', value: parcel.recipName || parcel.client?.name },
                   { label: 'Cargaison',    value: parcel.campaign?.code },
-                  { label: 'Ville',        value: parcel.recipCity },
                   { label: 'Livreur',      value: parcel.driver?.name ?? (parcel.isMyDelivery ? 'Vous' : '—') },
                 ].map(({ label, value }) => value ? (
                   <div key={label}>
@@ -172,6 +171,47 @@ export default function DriverScannerPage() {
                   </div>
                 ) : null)}
               </div>
+
+              {/* Full address */}
+              {(parcel.recipAddress || parcel.recipCity) && (() => {
+                const addrParts = [
+                  parcel.recipAddress,
+                  parcel.recipApt ? `apt ${parcel.recipApt}` : null,
+                  parcel.recipCity,
+                  parcel.recipProvince,
+                  parcel.recipPostal,
+                ].filter(Boolean);
+                const fullAddress = addrParts.join(', ');
+                const mapsUrl = `https://maps.google.com/?q=${encodeURIComponent(fullAddress || parcel.recipCity)}`;
+                return (
+                  <div style={{ marginBottom: 10, padding: '8px 10px', background: '#F9FAFB', borderRadius: 8 }}>
+                    <div style={{ fontSize: 10, color: '#9CA3AF', fontWeight: 600, marginBottom: 3 }}>ADRESSE</div>
+                    {parcel.recipAddress && (
+                      <div style={{ fontSize: 12.5, color: '#374151', fontWeight: 500 }}>
+                        {parcel.recipAddress}{parcel.recipApt ? `, apt ${parcel.recipApt}` : ''}
+                      </div>
+                    )}
+                    <div style={{ fontSize: 12, color: '#6B7280' }}>
+                      {[parcel.recipCity, parcel.recipProvince, parcel.recipPostal].filter(Boolean).join(', ')}
+                    </div>
+                    <a
+                      href={mapsUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      style={{
+                        display: 'inline-flex', alignItems: 'center', gap: 4, marginTop: 6,
+                        background: '#EFF6FF', color: '#1B4FD8', borderRadius: 6,
+                        padding: '4px 10px', fontSize: 11.5, fontWeight: 600, textDecoration: 'none',
+                      }}
+                    >
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ width: 13, height: 13 }}>
+                        <path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>
+                      </svg>
+                      Ouvrir dans Maps
+                    </a>
+                  </div>
+                );
+              })()}
 
               {tel && (
                 <div style={{ display: 'flex', gap: 6 }}>
