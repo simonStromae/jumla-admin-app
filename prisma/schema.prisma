@@ -437,6 +437,21 @@ model Invoice {
   @@map("invoices")
 }
 
+model ErrorLog {
+  id        String   @id @default(cuid())
+  route     String
+  method    String   @default("GET")
+  status    Int
+  message   String
+  stack     String?
+  userId    String?
+  createdAt DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([route])
+  @@map("error_logs")
+}
+
 model PartnerContact {
   id        String   @id @default(cuid())
   partnerId String

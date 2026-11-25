@@ -1,13 +1,12 @@
 'use client';
 import { useState, useEffect, useCallback } from 'react';
-import { useAdminT } from '../lib/useAdminT.js';
 import I from '../components/Icons.jsx';
 
 const STATUS_CONFIG = {
-  ok:           { label: 'OK',              cls: 'badge--ok',      icon: I.Check   },
-  warn:         { label: 'Attention',       cls: 'badge--warn',    icon: I.Alert   },
-  error:        { label: 'Erreur',          cls: 'badge--bad',     icon: I.Cross   },
-  unconfigured: { label: 'Non configure',   cls: 'badge--neutral', icon: I.Lock    },
+  ok:           { label: 'OK',            cls: 'badge--ok',      icon: I.Check   },
+  warn:         { label: 'Attention',     cls: 'badge--warn',    icon: I.Alert   },
+  error:        { label: 'Erreur',        cls: 'badge--bad',     icon: I.Cross   },
+  unconfigured: { label: 'Non configure', cls: 'badge--neutral', icon: I.Lock    },
 };
 
 function ServiceCard({ service }) {
@@ -48,6 +47,77 @@ function OverallBanner({ overall, checkedAt, onRefresh, loading }) {
           {loading ? 'Verification...' : 'Actualiser'}
         </button>
       </span>
+    </div>
+  );
+}
+
+function ErrorLogSection() {
+  const [errors, setErrors]   = useState(null);
+  const [clearing, setClearing] = useState(false);
+
+  const load = useCallback(() => {
+    fetch('/api/monitoring/errors')
+      .then(r => r.json())
+      .then(d => setErrors(Array.isArray(d) ? d : []))
+      .catch(() => setErrors([]));
+  }, []);
+
+  useEffect(() => { load(); }, [load]);
+
+  const clear = async () => {
+    if (!confirm('Vider le journal des erreurs ?')) return;
+    setClearing(true);
+    await fetch('/api/monitoring/errors', { method: 'DELETE' });
+    setErrors([]);
+    setClearing(false);
+  };
+
+  return (
+    <div style={{ marginTop: 32 }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+        <div>
+          <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--ink-900)' }}>Journal des erreurs 500</div>
+          <div style={{ fontSize: 12, color: 'var(--ink-400)', marginTop: 2 }}>50 dernieres erreurs API backend</div>
+        </div>
+        {errors && errors.length > 0 && (
+          <button className="btn btn--ghost btn--sm" onClick={clear} disabled={clearing}>
+            <I.Trash width={13} height={13} />
+            Vider
+          </button>
+        )}
+      </div>
+      {errors === null && (
+        <div style={{ color: 'var(--ink-400)', fontSize: 13, padding: '16px 0' }}>Chargement...</div>
+      )}
+      {errors !== null && errors.length === 0 && (
+        <div className="monitoring-empty">
+          <I.Check width={18} height={18} style={{ color: 'var(--ok-500)' }} />
+          Aucune erreur enregistree
+        </div>
+      )}
+      {errors !== null && errors.length > 0 && (
+        <div className="monitoring-error-list">
+          {errors.map(e => (
+            <div key={e.id} className="monitoring-error-row">
+              <div className="monitoring-error-row__meta">
+                <span className="badge badge--bad" style={{ fontSize: 11 }}>{e.status}</span>
+                <span className="monitoring-error-row__method">{e.method}</span>
+                <span className="monitoring-error-row__route">{e.route}</span>
+                <span className="monitoring-error-row__time">
+                  {new Date(e.createdAt).toLocaleString('fr-FR', { timeZone: 'America/Toronto', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                </span>
+              </div>
+              <div className="monitoring-error-row__msg">{e.message}</div>
+              {e.stack && (
+                <details className="monitoring-error-row__stack">
+                  <summary>Stack trace</summary>
+                  <pre>{e.stack}</pre>
+                </details>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
@@ -97,6 +167,8 @@ export default function MonitoringScreen() {
           </div>
         </>
       )}
+
+      <ErrorLogSection />
     </div>
   );
 }
