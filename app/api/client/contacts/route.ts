@@ -3,13 +3,14 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/src/lib/prisma';
 import { requireAuth } from '@/src/lib/api-auth';
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   const { error, session } = await requireAuth();
   if (error) return error;
   const userId = (session!.user as any).id;
 
+  const { showArchived } = Object.fromEntries(new URL(req.url).searchParams);
   const contacts = await prisma.partnerContact.findMany({
-    where: { partnerId: userId },
+    where: { partnerId: userId, ...(showArchived !== '1' && { archived: false }) },
     orderBy: { name: 'asc' },
   });
 

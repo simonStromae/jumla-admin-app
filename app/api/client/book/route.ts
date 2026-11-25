@@ -25,9 +25,32 @@ export async function POST(req: NextRequest) {
 
   const userId = (session.user as any).id as string;
 
-  const dbUser = await prisma.user.findUnique({ where: { id: userId }, select: { id: true } as any });
+  const dbUser = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { id: true, status: true, clientType: true, partnerCheckCredit: true, partnerCreditLimitCad: true } as any,
+  });
   if ((dbUser as any)?.status === 'suspended') {
     return NextResponse.json({ error: 'Compte suspendu — nouveaux envois désactivés' }, { status: 403 });
+  }
+
+  // Credit limit check for partners
+  const u = dbUser as any;
+  if (u?.clientType === 'partenaire' && u?.partnerCheckCredit && u?.partnerCreditLimitCad != null) {
+    const unpaidRows = await prisma.$queryRawUnsafe<any[]>(
+      `SELECT COALESCE(SUM(p."priceXaf"),0) AS total
+       FROM payments p
+       WHERE p."clientId" = $1 AND p.status != 'completed'`,
+      userId
+    ).catch(() => [{ total: 0 }]);
+    const unpaidXaf = Number(unpaidRows[0]?.total ?? 0);
+    // Convert XAF to CAD (approximate 1 CAD = 450 XAF) for comparison
+    const unpaidCad = unpaidXaf / 450;
+    if (unpaidCad >= u.partnerCreditLimitCad) {
+      return NextResponse.json({
+        error: 'Limite de crédit atteinte — réglez votre solde impayé avant de créer un nouveau colis.',
+        code: 'CREDIT_LIMIT_REACHED',
+      }, { status: 402 });
+    }
   }
 
   const body = await req.json();

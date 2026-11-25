@@ -15,21 +15,34 @@ export async function GET() {
   const userId = (session.user as any).id;
   const user = await prisma.user.findUnique({
     where: { id: userId },
-    select: { id: true, name: true, email: true, phone: true, city: true, country: true, addresses: true, clientType: true, partnerRatePerKg: true, partnerMarginXaf: true },
+    select: {
+      id: true, name: true, email: true, phone: true, city: true, country: true,
+      addresses: true, clientType: true,
+      partnerRateCadPerKg: true, partnerEnvelopeRateCad: true,
+      partnerMarginType: true, partnerMarginValue: true,
+      partnerPaymentTerms: true, partnerCreditLimitCad: true,
+      partnerAllowAutonomous: true, partnerCheckCredit: true,
+    },
   });
   const addr = parseAddressesObj(user?.addresses);
   return NextResponse.json({
-    id:              user?.id,
-    name:            user?.name,
-    email:           user?.email,
-    phone:           user?.phone,
-    city:            user?.city,
-    country:         user?.country,
-    clientType:      user?.clientType,
-    partnerRatePerKg: user?.partnerRatePerKg ?? null,
-    partnerMarginXaf: user?.partnerMarginXaf ?? null,
-    savedAddresses:   Array.isArray(addr.saved)       ? addr.saved       : [],
-    savedRecipients:  Array.isArray(addr.recipients)  ? addr.recipients  : [],
+    id:                    user?.id,
+    name:                  user?.name,
+    email:                 user?.email,
+    phone:                 user?.phone,
+    city:                  user?.city,
+    country:               user?.country,
+    clientType:            user?.clientType,
+    partnerRateCadPerKg:   user?.partnerRateCadPerKg   ?? null,
+    partnerEnvelopeRateCad: user?.partnerEnvelopeRateCad ?? null,
+    partnerMarginType:     user?.partnerMarginType     ?? null,
+    partnerMarginValue:    user?.partnerMarginValue    ?? null,
+    partnerPaymentTerms:   user?.partnerPaymentTerms   ?? null,
+    partnerCreditLimitCad: user?.partnerCreditLimitCad ?? null,
+    partnerAllowAutonomous: user?.partnerAllowAutonomous ?? true,
+    partnerCheckCredit:    user?.partnerCheckCredit    ?? true,
+    savedAddresses:        Array.isArray(addr.saved)       ? addr.saved       : [],
+    savedRecipients:       Array.isArray(addr.recipients)  ? addr.recipients  : [],
   });
 }
 

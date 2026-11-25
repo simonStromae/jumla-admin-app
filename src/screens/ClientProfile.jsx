@@ -140,8 +140,7 @@ export default function ClientProfile() {
   // --- Profile info ---
   const [profile, setProfile] = useState({ name: '', email: '', phone: '', city: '' });
   const [clientType, setClientType] = useState(null);
-  const [partnerRate, setPartnerRate] = useState(null);
-  const [partnerMargin, setPartnerMargin] = useState(null);
+  const [partnerPricing, setPartnerPricing] = useState(null);
   const [profileLoading, setProfileLoading] = useState(true);
   const [profileSaving, setProfileSaving] = useState(false);
   const [profileMsg, setProfileMsg] = useState('');
@@ -152,8 +151,13 @@ export default function ClientProfile() {
       .then(d => {
         setProfile({ name: d.name ?? '', email: d.email ?? '', phone: d.phone ?? '', city: d.city ?? '' });
         setClientType(d.clientType ?? null);
-        setPartnerRate(d.partnerRatePerKg ?? null);
-        setPartnerMargin(d.partnerMarginXaf ?? null);
+        setPartnerPricing({
+          rateCadPerKg:    d.partnerRateCadPerKg      ?? null,
+          envelopeRateCad: d.partnerEnvelopeRateCad   ?? null,
+          marginType:      d.partnerMarginType        ?? null,
+          marginValue:     d.partnerMarginValue       ?? null,
+          paymentTerms:    d.partnerPaymentTerms      ?? null,
+        });
         setAddresses(Array.isArray(d.savedAddresses) ? d.savedAddresses : []);
         setRecipients(Array.isArray(d.savedRecipients) ? d.savedRecipients : []);
         setProfileLoading(false);
@@ -372,38 +376,45 @@ export default function ClientProfile() {
       </div>
 
       {/* Card 1b — Partner pricing (read-only, partners only) */}
-      {clientType === 'partenaire' && (
+      {clientType === 'partenaire' && partnerPricing && (
         <div style={card}>
           <div style={cardTitle}>Tarification partenaire</div>
-          {(partnerRate == null && partnerMargin == null) ? (
+          {partnerPricing.rateCadPerKg == null ? (
             <div style={{ fontSize: 13, color: 'var(--ink-400)', padding: '8px 0' }}>
               Aucun tarif configuré. Contactez-nous pour le définir.
             </div>
-          ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-                {partnerRate != null && (
+          ) : (() => {
+            const rate = partnerPricing.rateCadPerKg;
+            const mv   = partnerPricing.marginValue ?? 0;
+            const mt   = partnerPricing.marginType  ?? 'fixed';
+            const resel = rate + (mt === 'fixed' ? mv : rate * mv / 100);
+            const TERMS = { on_shipment: "À l'expédition", net7: 'Net 7 j', net15: 'Net 15 j', net30: 'Net 30 j' };
+            return (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10 }}>
                   <div style={{ background: 'var(--bg-soft)', borderRadius: 8, padding: '12px 14px' }}>
-                    <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--ink-500)', textTransform: 'uppercase', letterSpacing: '.04em', marginBottom: 4 }}>Taux / kg</div>
-                    <div style={{ fontSize: 18, fontWeight: 800, fontFamily: 'var(--font-mono)', color: 'var(--ink-900)' }}>
-                      {Number(partnerRate).toLocaleString('fr-FR')} XAF
-                    </div>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--ink-500)', textTransform: 'uppercase', letterSpacing: '.04em', marginBottom: 4 }}>Tarif négocié</div>
+                    <div style={{ fontSize: 17, fontWeight: 800, fontFamily: 'var(--font-mono)', color: 'var(--ink-900)' }}>{rate.toFixed(2)} CAD/kg</div>
                   </div>
-                )}
-                {partnerMargin != null && (
-                  <div style={{ background: 'var(--bg-soft)', borderRadius: 8, padding: '12px 14px' }}>
-                    <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--ink-500)', textTransform: 'uppercase', letterSpacing: '.04em', marginBottom: 4 }}>Marge fixe</div>
-                    <div style={{ fontSize: 18, fontWeight: 800, fontFamily: 'var(--font-mono)', color: 'var(--ink-900)' }}>
-                      {Number(partnerMargin).toLocaleString('fr-FR')} XAF
+                  {partnerPricing.envelopeRateCad != null && (
+                    <div style={{ background: 'var(--bg-soft)', borderRadius: 8, padding: '12px 14px' }}>
+                      <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--ink-500)', textTransform: 'uppercase', letterSpacing: '.04em', marginBottom: 4 }}>Tarif enveloppe</div>
+                      <div style={{ fontSize: 17, fontWeight: 800, fontFamily: 'var(--font-mono)', color: 'var(--ink-900)' }}>{partnerPricing.envelopeRateCad.toFixed(2)} CAD</div>
                     </div>
+                  )}
+                  <div style={{ background: 'var(--brand-50)', borderRadius: 8, padding: '12px 14px' }}>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--brand-600)', textTransform: 'uppercase', letterSpacing: '.04em', marginBottom: 4 }}>Prix de revente</div>
+                    <div style={{ fontSize: 17, fontWeight: 800, fontFamily: 'var(--font-mono)', color: 'var(--brand-700)' }}>{resel.toFixed(2)} CAD/kg</div>
+                  </div>
+                </div>
+                {partnerPricing.paymentTerms && (
+                  <div style={{ fontSize: 12, color: 'var(--ink-500)' }}>
+                    Conditions de paiement : <strong>{TERMS[partnerPricing.paymentTerms] ?? partnerPricing.paymentTerms}</strong>
                   </div>
                 )}
               </div>
-              <div style={{ fontSize: 12, color: 'var(--ink-400)' }}>
-                Montant facture = poids total (kg) × taux + marge fixe
-              </div>
-            </div>
-          )}
+            );
+          })()}
         </div>
       )}
 
