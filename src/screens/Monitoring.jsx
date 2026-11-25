@@ -39,7 +39,10 @@ function OverallBanner({ overall, checkedAt, onRefresh, loading }) {
   const time   = checkedAt ? new Date(checkedAt).toLocaleTimeString('fr-FR') : '';
   return (
     <div className={`monitoring-banner ${cls[overall] ?? 'monitoring-banner--warn'}`}>
-      <span className="monitoring-banner__text">{labels[overall] ?? '...'}</span>
+      <span className="monitoring-banner__text" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        <span className={`monitoring-live-dot monitoring-live-dot--${overall ?? 'warn'}`} />
+        {labels[overall] ?? '...'}
+      </span>
       <span className="monitoring-banner__meta">
         {time && <span>Verifie a {time}</span>}
         <button className="btn btn--ghost btn--sm" onClick={onRefresh} disabled={loading} style={{ marginLeft: 8 }}>
@@ -136,7 +139,11 @@ export default function MonitoringScreen() {
       .catch(e => { setError(e.message); setLoading(false); });
   }, []);
 
-  useEffect(() => { refresh(); }, [refresh]);
+  useEffect(() => {
+    refresh();
+    const id = setInterval(refresh, 30_000);
+    return () => clearInterval(id);
+  }, [refresh]);
 
   return (
     <div className="page">
