@@ -42,7 +42,7 @@ function KpiCard({ label, value, sub, color }) {
 }
 
 // ─── Sparkline SVG ───────────────────────────────────────────
-function Sparkline({ values, color = ‘var(--info-500)’, height = 48, width = 220 }) {
+function Sparkline({ values, color = 'var(--info-500)', height = 48, width = 220 }) {
   if (!values || values.length < 2) return null;
   const max = Math.max(...values);
   const min = Math.min(...values);
@@ -54,10 +54,10 @@ function Sparkline({ values, color = ‘var(--info-500)’, height = 48, width =
     return `${x.toFixed(1)},${y.toFixed(1)}`;
   });
   return (
-    <svg width={width} height={height} style={{ display: ‘block’, overflow: ‘visible’ }}>
-      <polyline points={pts.join(‘ ‘)} fill="none" stroke={color} strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" />
+    <svg width={width} height={height} style={{ display: 'block', overflow: 'visible' }}>
+      <polyline points={pts.join(' ')} fill="none" stroke={color} strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" />
       {values.map((v, i) => {
-        const [x, y] = pts[i].split(‘,’).map(Number);
+        const [x, y] = pts[i].split(',').map(Number);
         return i === values.length - 1
           ? <circle key={i} cx={x} cy={y} r={3} fill={color} />
           : null;
@@ -67,7 +67,7 @@ function Sparkline({ values, color = ‘var(--info-500)’, height = 48, width =
 }
 
 // ─── Dashboard Tab ───────────────────────────────────────────
-const MONTHS_FR = [‘juil.’,’août’,’sept.’,’oct.’,’nov.’,’déc.’,’janv.’,’févr.’,’mars’,’avr.’,’mai’,’juin’];
+const MONTHS_FR = ['juil.','août','sept.','oct.','nov.','déc.','janv.','févr.','mars','avr.','mai','juin'];
 
 function DashboardTab() {
   const { fmt: money } = useCurrency();
@@ -75,22 +75,22 @@ function DashboardTab() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch(‘/api/finance/dashboard’)
+    fetch('/api/finance/dashboard')
       .then(r => r.json())
       .then(setData)
       .finally(() => setLoading(false));
   }, []);
 
-  if (loading) return <div style={{ padding: 32, color: ‘var(--ink-400)’ }}>Chargement…</div>;
+  if (loading) return <div style={{ padding: 32, color: 'var(--ink-400)' }}>Chargement…</div>;
   if (!data) return null;
 
-  const marginColor = data.marginPct >= 20 ? ‘var(--ok-500)’ : data.marginPct >= 0 ? ‘var(--info-500)’ : ‘var(--bad-500)’;
-  const netColor = data.netResult >= 0 ? ‘var(--ok-500)’ : ‘var(--bad-500)’;
+  const marginColor = data.marginPct >= 20 ? 'var(--ok-500)' : data.marginPct >= 0 ? 'var(--info-500)' : 'var(--bad-500)';
+  const netColor = data.netResult >= 0 ? 'var(--ok-500)' : 'var(--bad-500)';
 
   const revValues  = (data.byMonth ?? []).map(m => m.revenue);
   const margValues = (data.byMonth ?? []).map(m => m.grossMargin);
   const monthLabels = (data.byMonth ?? []).map(m => {
-    const [y, mo] = m.month.split(‘-’).map(Number);
+    const [y, mo] = m.month.split('-').map(Number);
     const idx = mo >= 7 ? mo - 7 : mo + 5;
     return MONTHS_FR[idx];
   });
@@ -98,54 +98,54 @@ function DashboardTab() {
   return (
     <div>
       <div style={{ marginBottom: 20 }}>
-        <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: ‘.08em’, textTransform: ‘uppercase’, color: ‘var(--info-600)’, marginBottom: 6 }}>
+        <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '.08em', textTransform: 'uppercase', color: 'var(--info-600)', marginBottom: 6 }}>
           Exercice {fiscalLabel(data.fiscalYear)} · YTD au {data.ytdThrough}
         </div>
-        <div style={{ fontSize: 22, fontWeight: 800, color: ‘var(--ink-900)’ }}>Tableau de bord financier</div>
-        <div style={{ fontSize: 14, color: ‘var(--ink-400)’, marginTop: 4 }}>{data.campaignCount} cargaison{data.campaignCount !== 1 ? ‘s’ : ‘’} dans l{‘’’}exercice en cours</div>
+        <div style={{ fontSize: 22, fontWeight: 800, color: 'var(--ink-900)' }}>Tableau de bord financier</div>
+        <div style={{ fontSize: 14, color: 'var(--ink-400)', marginTop: 4 }}>{data.campaignCount} cargaison{data.campaignCount !== 1 ? 's' : ''} dans l{'''}exercice en cours</div>
       </div>
 
       {/* Completeness alert */}
       {data.incompleteCampaigns > 0 && (
-        <div style={{ background: ‘var(--info-50)’, border: ‘1px solid var(--info-200)’, borderRadius: 8, padding: ‘10px 14px’, fontSize: 13, color: ‘var(--info-700)’, marginBottom: 16, display: ‘flex’, alignItems: ‘center’, gap: 8 }}>
-          <span style={{ fontWeight: 700 }}>⚠ {data.incompleteCampaigns} cargaison{data.incompleteCampaigns > 1 ? ‘s’ : ‘’} sans coûts variables</span>
-          <span style={{ color: ‘var(--info-600)’ }}>— la marge affichée est provisoire.</span>
+        <div style={{ background: 'var(--info-50)', border: '1px solid var(--info-200)', borderRadius: 8, padding: '10px 14px', fontSize: 13, color: 'var(--info-700)', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
+          <span style={{ fontWeight: 700 }}>⚠ {data.incompleteCampaigns} cargaison{data.incompleteCampaigns > 1 ? 's' : ''} sans coûts variables</span>
+          <span style={{ color: 'var(--info-600)' }}>— la marge affichée est provisoire.</span>
         </div>
       )}
 
-      <div style={{ display: ‘grid’, gridTemplateColumns: ‘repeat(auto-fill, minmax(200px, 1fr))’, gap: 14, marginBottom: 24 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 14, marginBottom: 24 }}>
         <KpiCard label="CA facturé YTD" value={money(data.totalRevenueCad)} sub="Paiements reçus" color="var(--info-500)" />
         <KpiCard label="Coûts variables YTD" value={money(data.totalVariableCosts)} sub="Dépenses par cargaison" color="var(--bad-400)" />
         <KpiCard label="Charges fixes YTD" value={money(data.totalFixedCosts)} sub="Frais généraux" color="var(--bad-300)" />
-        <KpiCard label="Marge brute YTD" value={data.marginPct !== null ? fmt2(data.marginPct) + ‘ %’ : ‘—‘}
+        <KpiCard label="Marge brute YTD" value={data.marginPct !== null ? fmt2(data.marginPct) + ' %' : '—'}
           sub={money(data.grossMargin)} color={marginColor} />
         <KpiCard label="Résultat net YTD" value={money(data.netResult)} sub="Après toutes charges" color={netColor} />
       </div>
 
       {/* Sparklines */}
       {revValues.length >= 2 && (
-        <div style={{ display: ‘grid’, gridTemplateColumns: ‘1fr 1fr’, gap: 14, marginBottom: 24 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginBottom: 24 }}>
           {[
-            { label: ‘Évolution du CA’, values: revValues, color: ‘var(--info-500)’ },
-            { label: ‘Évolution de la marge brute’, values: margValues, color: marginColor },
+            { label: 'Évolution du CA', values: revValues, color: 'var(--info-500)' },
+            { label: 'Évolution de la marge brute', values: margValues, color: marginColor },
           ].map(({ label, values, color }) => {
             const hasData = values.some(v => v > 0);
             return (
-              <div key={label} style={{ background: ‘var(--white)’, border: ‘1px solid var(--border)’, borderRadius: 10, padding: ‘14px 16px’ }}>
-                <div style={{ fontSize: 12, fontWeight: 700, color: ‘var(--ink-500)’, marginBottom: 10, textTransform: ‘uppercase’, letterSpacing: ‘.05em’ }}>{label}</div>
+              <div key={label} style={{ background: 'var(--white)', border: '1px solid var(--border)', borderRadius: 10, padding: '14px 16px' }}>
+                <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--ink-500)', marginBottom: 10, textTransform: 'uppercase', letterSpacing: '.05em' }}>{label}</div>
                 {hasData ? (
                   <>
                     <Sparkline values={values} color={color} width={320} height={52} />
-                    <div style={{ display: ‘flex’, justifyContent: ‘space-between’, fontSize: 11, color: ‘var(--ink-300)’, marginTop: 6 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: 'var(--ink-300)', marginTop: 6 }}>
                       {monthLabels.map((ml, i) => (
-                        <span key={i} style={{ flex: 1, textAlign: i === 0 ? ‘left’ : i === monthLabels.length - 1 ? ‘right’ : ‘center’ }}>
-                          {i === 0 || i === monthLabels.length - 1 ? ml : ‘’}
+                        <span key={i} style={{ flex: 1, textAlign: i === 0 ? 'left' : i === monthLabels.length - 1 ? 'right' : 'center' }}>
+                          {i === 0 || i === monthLabels.length - 1 ? ml : ''}
                         </span>
                       ))}
                     </div>
                   </>
                 ) : (
-                  <div style={{ fontSize: 13, color: ‘var(--ink-300)’, padding: ‘12px 0’ }}>Pas encore de données ce mois-ci.</div>
+                  <div style={{ fontSize: 13, color: 'var(--ink-300)', padding: '12px 0' }}>Pas encore de données ce mois-ci.</div>
                 )}
               </div>
             );
@@ -153,8 +153,8 @@ function DashboardTab() {
         </div>
       )}
 
-      <div style={{ background: ‘var(--bg-soft)’, border: ‘1px solid var(--border)’, borderRadius: 10, padding: 16, fontSize: 13, color: ‘var(--ink-500)’ }}>
-        <strong style={{ color: ‘var(--ink-700)’ }}>Formule :</strong> CA facturé ({money(data.totalRevenueCad)}) − Coûts variables ({money(data.totalVariableCosts)}) = Marge brute ({money(data.grossMargin)}) − Charges fixes ({money(data.totalFixedCosts)}) = <strong style={{ color: netColor }}>Résultat net {money(data.netResult)}</strong>
+      <div style={{ background: 'var(--bg-soft)', border: '1px solid var(--border)', borderRadius: 10, padding: 16, fontSize: 13, color: 'var(--ink-500)' }}>
+        <strong style={{ color: 'var(--ink-700)' }}>Formule :</strong> CA facturé ({money(data.totalRevenueCad)}) − Coûts variables ({money(data.totalVariableCosts)}) = Marge brute ({money(data.grossMargin)}) − Charges fixes ({money(data.totalFixedCosts)}) = <strong style={{ color: netColor }}>Résultat net {money(data.netResult)}</strong>
       </div>
     </div>
   );
@@ -988,7 +988,7 @@ function SnapshotsTab() {
 
       {snapshots.length === 0 ? (
         <div style={{ background: 'var(--bg-soft)', border: '1px solid var(--border)', borderRadius: 10, padding: 32, textAlign: 'center', color: 'var(--ink-400)', fontSize: 14 }}>
-          Aucun exercice archivé. Le cron du 1er juillet archivera automatiquement l{'’'}exercice écoulé.<br />
+          Aucun exercice archivé. Le cron du 1er juillet archivera automatiquement l{'''}exercice écoulé.<br />
           Vous pouvez aussi archiver manuellement via le bouton ci-dessus.
         </div>
       ) : (
@@ -1228,7 +1228,7 @@ function BudgetTab() {
       {view === 'budget' && (
         <>
           <div style={{ fontSize: 13, color: 'var(--ink-500)', marginBottom: 16 }}>
-            Saisissez les montants budgétés pour l{'’'}exercice {data.label} · Réel YTD = cumulé depuis juillet
+            Saisissez les montants budgétés pour l{'''}exercice {data.label} · Réel YTD = cumulé depuis juillet
           </div>
           {[{ label: 'Coûts variables', posts: varPosts, actualMap: data.actualVariable, budgetTotal: totalBudgetVar, actualTotal: totalActualVar },
             { label: 'Charges fixes (YTD)', posts: fixPosts, actualMap: data.actualFixed, budgetTotal: totalBudgetFix, actualTotal: totalActualFix }].map(section => (
@@ -1427,7 +1427,7 @@ function PayrollTab() {
             style={{ width: '100%', padding: '9px 12px', border: '1px solid var(--border)', borderRadius: 8, fontSize: 14, background: 'var(--white)', color: 'var(--ink-900)' }} />
         </div>
         <div>
-          <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: 'var(--ink-500)', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '.05em' }}>Nombre d{'’'}employés</label>
+          <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: 'var(--ink-500)', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '.05em' }}>Nombre d{'''}employés</label>
           <input type="number" min="1" value={employees} onChange={e => setEmployees(e.target.value)}
             style={{ width: '100%', padding: '9px 12px', border: '1px solid var(--border)', borderRadius: 8, fontSize: 14, background: 'var(--white)', color: 'var(--ink-900)' }} />
         </div>
@@ -1475,7 +1475,7 @@ function PayrollTab() {
           </div>
 
           <div style={{ fontSize: 12, color: 'var(--ink-400)', lineHeight: 1.6 }}>
-            Taux 2025 · RRQ max. 69 700 $ (exonération 3 500 $) · RQAP max. 94 000 $ · AE max. 63 200 $ · FSS taux simplifié masse salariale &lt; 1 M$ · CNESST variable selon secteur d{'’'}activité
+            Taux 2025 · RRQ max. 69 700 $ (exonération 3 500 $) · RQAP max. 94 000 $ · AE max. 63 200 $ · FSS taux simplifié masse salariale &lt; 1 M$ · CNESST variable selon secteur d{'''}activité
           </div>
         </>
       )}
