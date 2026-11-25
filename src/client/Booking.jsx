@@ -873,6 +873,26 @@ export default function BookingScreen({ onNav, embedded = false, prefillId = nul
       .catch(() => {});
   }, [embedded]);
 
+  // Load partner contacts (clientType partenaire) and merge into savedRecipients
+  useEffect(() => {
+    if (!embedded) return;
+    const isPartner = sessionData?.user?.clientType === 'partenaire';
+    if (!isPartner) return;
+    fetch('/api/client/contacts')
+      .then(r => r.ok ? r.json() : [])
+      .then(contacts => {
+        if (!Array.isArray(contacts) || contacts.length === 0) return;
+        setSavedRecipients(prev => {
+          const existingIds = new Set(prev.map(r => r.id));
+          const toAdd = contacts
+            .filter(c => !existingIds.has('pc_' + c.id))
+            .map(c => ({ id: 'pc_' + c.id, label: '', name: c.name, phone: c.phone || '', city: c.city || '' }));
+          return toAdd.length ? [...prev, ...toAdd] : prev;
+        });
+      })
+      .catch(() => {});
+  }, [embedded, sessionData?.user?.clientType]);
+
   // Pre-fill from a previous parcel (re-booking flow)
   useEffect(() => {
     if (!embedded || !prefillId) return;

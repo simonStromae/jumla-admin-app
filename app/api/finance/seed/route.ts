@@ -1,7 +1,7 @@
 export const dynamic = 'force-dynamic';
 import { NextResponse } from 'next/server';
 import { prisma } from '@/src/lib/prisma';
-import { requireAdmin } from '@/src/lib/api-auth';
+import { requireOnlyAdmin } from '@/src/lib/api-auth';
 
 const POSTS = [
   { id: 24,  name: 'Airline transport fees Lufthansa',                   type: 'variable', historicalAmt: 77709.05, sortOrder: 24  },
@@ -116,7 +116,7 @@ const POSTS = [
 ];
 
 export async function POST() {
-  const { error } = await requireAdmin();
+  const { error } = await requireOnlyAdmin();
   if (error) return error;
 
   const existing = await prisma.costPost.count();
@@ -127,7 +127,7 @@ export async function POST() {
 }
 
 export async function GET() {
-  const { error } = await requireAdmin();
+  const { error } = await requireOnlyAdmin();
   if (error) return error;
 
   const count = await prisma.costPost.count();

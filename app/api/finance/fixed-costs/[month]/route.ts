@@ -1,10 +1,10 @@
 export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/src/lib/prisma';
-import { requireAdmin } from '@/src/lib/api-auth';
+import { requireOnlyAdmin } from '@/src/lib/api-auth';
 
 export async function GET(_req: NextRequest, { params }: { params: { month: string } }) {
-  const { error } = await requireAdmin();
+  const { error } = await requireOnlyAdmin();
   if (error) return error;
 
   const { month } = params;
@@ -31,7 +31,7 @@ export async function GET(_req: NextRequest, { params }: { params: { month: stri
 }
 
 export async function PUT(req: NextRequest, { params }: { params: { month: string } }) {
-  const { error } = await requireAdmin();
+  const { error } = await requireOnlyAdmin();
   if (error) return error;
 
   const { month } = params;

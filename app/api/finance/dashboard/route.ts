@@ -1,7 +1,7 @@
 export const dynamic = 'force-dynamic';
 import { NextResponse } from 'next/server';
 import { prisma } from '@/src/lib/prisma';
-import { requireAdmin } from '@/src/lib/api-auth';
+import { requireOnlyAdmin } from '@/src/lib/api-auth';
 
 function fiscalYearOf(date: Date): number {
   return date.getMonth() >= 6 ? date.getFullYear() : date.getFullYear() - 1;
@@ -19,7 +19,7 @@ function fiscalMonths(fy: number): string[] {
 }
 
 export async function GET() {
-  const { error } = await requireAdmin();
+  const { error } = await requireOnlyAdmin();
   if (error) return error;
 
   const now = new Date();

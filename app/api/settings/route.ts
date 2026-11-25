@@ -1,7 +1,7 @@
 export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/src/lib/prisma';
-import { requireAdmin } from '@/src/lib/api-auth';
+import { requireAdmin, requireOnlyAdmin } from '@/src/lib/api-auth';
 
 export async function GET() {
   const { error } = await requireAdmin();
@@ -14,7 +14,7 @@ export async function GET() {
 }
 
 export async function PUT(req: NextRequest) {
-  const { error } = await requireAdmin();
+  const { error } = await requireOnlyAdmin();
   if (error) return error;
 
   const body = await req.json() as Record<string, string>;
