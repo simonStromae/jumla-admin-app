@@ -266,9 +266,24 @@ Jumla Shipping`,
     trigger: "Pré-rempli dans le bouton WhatsApp de la fiche colis (page agent) — l'agent peut le modifier avant d'envoyer",
     vars:    ['{parcel_code}', '{warehouse_address}'],
     body:
-`Bonjour, votre colis {parcel_code} est prêt. Merci de vous présenter pour le retrait.
+`Bonjour, votre colis {parcel_code} est prêt pour le retrait.
 
-📍 {warehouse_address}
+📍 Adresse de retrait :
+{warehouse_address}
+
+🚚 Vous souhaitez recevoir votre colis à domicile ?
+
+Vous pouvez demander une expédition en nous transmettant les informations suivantes :
+
+- Nom complet du destinataire
+- Adresse complète de livraison
+- Ville et province
+- Code postal
+- Numéro de téléphone
+
+Nous vous communiquerons les frais de livraison ainsi que les modalités d'expédition.
+
+Merci de votre confiance.
 
 — Jumla Shipping`,
   },
