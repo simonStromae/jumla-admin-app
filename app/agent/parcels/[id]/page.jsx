@@ -71,13 +71,24 @@ export default function AgentParcelPage() {
   const [blBusy,       setBlBusy]       = useState({});
   const [blEcartOpen,  setBlEcartOpen]  = useState({});
   const [blEcartNote,  setBlEcartNote]  = useState({});
-  const [warehouseAddr, setWarehouseAddr] = useState('5500 Pl. de la Savane, Lachine');
-  const [waReadyTmpl,   setWaReadyTmpl]  = useState(null);
+  const [warehouseAddr,   setWarehouseAddr]   = useState('5500 Pl. de la Savane, Lachine');
+  const [waReadyTmpl,     setWaReadyTmpl]     = useState(null);
+  const [expedTmpl,       setExpedTmpl]       = useState(null);
+  const [paymentEmail,    setPaymentEmail]    = useState('interac@jumlas.com');
+  const [paymentPassword, setPaymentPassword] = useState('jum123');
+  const [showExpedModal,  setShowExpedModal]  = useState(false);
+  const [expedAmount,     setExpedAmount]     = useState('');
 
   useEffect(() => {
     fetch(`/api/parcels/${id}`)
       .then(r => r.json())
-      .then(d => { setParcel(d); setDriverId(d.driverId ?? ''); setLoading(false); })
+      .then(d => {
+        setParcel(d);
+        setDriverId(d.driverId ?? '');
+        const amt = d.payment?.amount ?? d.priceXaf ?? '';
+        if (amt) setExpedAmount(String(amt));
+        setLoading(false);
+      })
       .catch(() => setLoading(false));
     fetch('/api/admin/drivers')
       .then(r => r.json())
@@ -88,6 +99,9 @@ export default function AgentParcelPage() {
       .then(d => {
         if (d.warehouse_addr) setWarehouseAddr(d.warehouse_addr);
         if (d.wa_tmpl_agent_whatsapp_ready_body) setWaReadyTmpl(d.wa_tmpl_agent_whatsapp_ready_body);
+        if (d.wa_tmpl_agent_expedition_amount_body) setExpedTmpl(d.wa_tmpl_agent_expedition_amount_body);
+        if (d.payment_email) setPaymentEmail(d.payment_email);
+        if (d.payment_password) setPaymentPassword(d.payment_password);
       })
       .catch(() => {});
   }, [id]);
@@ -187,6 +201,16 @@ export default function AgentParcelPage() {
   const waLink       = contactPhone ? `https://wa.me/${formatPhone(contactPhone)}?text=${encodeURIComponent(waReadyBody)}` : null;
   const currentColor = STATUS_COLOR[parcel.status] ?? '#6B7280';
 
+  const defaultExpedTmpl = `*Message d'information Jumla*\n\nNous procédons à l'expédition de votre colis aujourd'hui. Le montant dû est de {amount} $. Confirmer l'expédition en effectuant un paiement du montant ci-haut mentionné.\nInfos paiement : {payment_email}\nPasse ci nécessaire : {payment_password}\n\n⚠️ Sans paiement reçu, l'expédition ne pourra pas être complétée.`;
+  const buildExpedMsg = (amount) =>
+    (expedTmpl ?? defaultExpedTmpl)
+      .replace(/\{amount\}/g, amount || '—')
+      .replace(/\{payment_email\}/g, paymentEmail)
+      .replace(/\{payment_password\}/g, paymentPassword);
+  const expedWaLink = contactPhone
+    ? `https://wa.me/${formatPhone(contactPhone)}?text=${encodeURIComponent(buildExpedMsg(expedAmount))}`
+    : null;
+
   return (
     <div>
       {/* Back + header */}
@@ -236,6 +260,11 @@ export default function AgentParcelPage() {
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="white"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.117.554 4.099 1.523 5.824L0 24l6.326-1.499A11.946 11.946 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.818a9.818 9.818 0 01-5.007-1.373l-.36-.213-3.751.889.905-3.651-.233-.374A9.818 9.818 0 0112 2.182c5.424 0 9.818 4.394 9.818 9.818S17.424 21.818 12 21.818z"/></svg>
                 WhatsApp
               </a>
+            )}
+            {contactPhone && (
+              <button onClick={() => setShowExpedModal(true)} className="agent-btn" style={{ flex: 1, border: '1.5px solid #00B4D8', background: '#F0FAFF', color: '#0087A8', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
+                🚀 Montant exp.
+              </button>
             )}
             {contactPhone && (
               <a href={`tel:${contactPhone}`} className="agent-btn agent-btn--ghost" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -506,6 +535,43 @@ export default function AgentParcelPage() {
             </div>
           )}
         </div>
+
+        {/* Expedition amount modal */}
+        {showExpedModal && (
+          <div onClick={() => setShowExpedModal(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.45)', zIndex: 100, display: 'flex', alignItems: 'flex-end' }}>
+            <div onClick={e => e.stopPropagation()} style={{ width: '100%', background: 'white', borderRadius: '16px 16px 0 0', padding: '20px 16px 32px', maxHeight: '90vh', overflowY: 'auto' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
+                <span style={{ fontSize: 15, fontWeight: 700, color: '#111827' }}>🚀 Montant expédition</span>
+                <button onClick={() => setShowExpedModal(false)} style={{ background: 'none', border: 'none', fontSize: 20, cursor: 'pointer', color: '#6B7280', lineHeight: 1 }}>✕</button>
+              </div>
+              <div style={{ marginBottom: 12 }}>
+                <label style={{ fontSize: 11.5, fontWeight: 700, color: '#6B7280', display: 'block', marginBottom: 4 }}>Montant dû ($)</label>
+                <input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={expedAmount}
+                  onChange={e => setExpedAmount(e.target.value)}
+                  placeholder="ex: 65"
+                  style={{ width: '100%', padding: '11px 12px', borderRadius: 9, border: '1.5px solid #00B4D8', fontSize: 16, fontWeight: 700, fontFamily: 'inherit', outline: 'none', boxSizing: 'border-box', color: '#111827' }}
+                />
+              </div>
+              <div style={{ marginBottom: 14 }}>
+                <label style={{ fontSize: 11.5, fontWeight: 700, color: '#6B7280', display: 'block', marginBottom: 4 }}>Aperçu du message</label>
+                <pre style={{ background: '#F9FAFB', border: '1px solid #E5E7EB', borderRadius: 8, padding: '10px 12px', fontSize: 12, fontFamily: 'inherit', whiteSpace: 'pre-wrap', margin: 0, color: '#374151', lineHeight: 1.5 }}>
+                  {buildExpedMsg(expedAmount)}
+                </pre>
+              </div>
+              {expedWaLink && (
+                <a href={expedWaLink} target="_blank" rel="noreferrer" onClick={() => setShowExpedModal(false)}
+                  style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, width: '100%', padding: '13px', borderRadius: 10, background: '#25D366', color: 'white', fontWeight: 700, fontSize: 15, textDecoration: 'none', boxSizing: 'border-box' }}>
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="white"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.117.554 4.099 1.523 5.824L0 24l6.326-1.499A11.946 11.946 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.818a9.818 9.818 0 01-5.007-1.373l-.36-.213-3.751.889.905-3.651-.233-.374A9.818 9.818 0 0112 2.182c5.424 0 9.818 4.394 9.818 9.818S17.424 21.818 12 21.818z"/></svg>
+                  Envoyer via WhatsApp
+                </a>
+              )}
+            </div>
+          </div>
+        )}
 
         {/* Tracking history */}
         {parcel.trackingEvents?.length > 0 && (
