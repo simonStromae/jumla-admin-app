@@ -261,6 +261,20 @@ Merci,
 Jumla Shipping`,
   },
 
+  agent_expedition_amount: {
+    label:   'Message agent — Montant expédition',
+    trigger: "Pré-rempli dans le bouton \"Montant expédition\" de la fiche colis (page agent) — l'agent ajuste le montant avant d'envoyer",
+    vars:    ['{amount}', '{payment_email}', '{payment_password}'],
+    body:
+`*Message d'information Jumla*
+
+Nous procédons à l'expédition de votre colis aujourd'hui. Le montant dû est de {amount} $. Confirmer l'expédition en effectuant un paiement du montant ci-haut mentionné.
+Infos paiement : {payment_email}
+Passe ci nécessaire : {payment_password}
+
+⚠️ Sans paiement reçu, l'expédition ne pourra pas être complétée.`,
+  },
+
   agent_whatsapp_ready: {
     label:   'Message agent — Colis prêt',
     trigger: "Pré-rempli dans le bouton WhatsApp de la fiche colis (page agent) — l'agent peut le modifier avant d'envoyer",

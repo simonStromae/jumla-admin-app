@@ -175,6 +175,7 @@ function SectionCompany() {
     contact_whatsapp:  '',
     warehouse_addr:    '5500 Place de la Savane, Lachine, QC H4S 1V8, Canada',
     payment_email:     'incjumla@gmail.com',
+    payment_password:  'jum123',
   });
   const [saving, setSaving]       = useState(false);
   const [saved,  setSaved]        = useState(false);
@@ -200,6 +201,7 @@ function SectionCompany() {
         contact_whatsapp: d.contact_whatsapp ?? f.contact_whatsapp,
         warehouse_addr:   d.warehouse_addr   ?? f.warehouse_addr,
         payment_email:    d.payment_email    ?? f.payment_email,
+        payment_password: d.payment_password ?? f.payment_password,
       }));
       if (d.company_logo)      setLogoUrl(d.company_logo);
       if (d.company_logo_icon) setLogoIconUrl(d.company_logo_icon);
@@ -266,6 +268,10 @@ function SectionCompany() {
         <div className="field">
           <label className="label">{t.common.email} <span className="opt">/ {/* TODO i18n */}affiché sur toutes les factures et instructions de paiement</span></label>
           <input className="input mono" value={fields.payment_email} onChange={set('payment_email')} placeholder="incjumla@gmail.com" />
+        </div>
+        <div className="field">
+          <label className="label">Mot de passe Interac <span className="opt">/ affiché dans le message de confirmation d'expédition</span></label>
+          <input className="input mono" value={fields.payment_password} onChange={set('payment_password')} placeholder="jum123" />
         </div>
         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, alignItems: 'center', marginTop: 4 }}>
           {saved && <span style={{ fontSize: 12, color: 'var(--ok-700)', fontWeight: 600 }}>✓ {/* TODO i18n: 'Sauvegardé' */}Sauvegardé</span>}
@@ -800,6 +806,7 @@ const WA_TMPL_DEFS = {
   invoice:  { label: 'Facture / Récap',      group: 'manual', vars: ['{first_name}','{parcel_code}','{weight}','{amount}'], body: `Bonjour {first_name},\n\nVoici le récapitulatif de votre colis {parcel_code} :\n• Poids : {weight} kg\n• Montant : {amount} CAD\n\nJumla Shipping` },
   broadcast:       { label: 'Annonce cargaison',              group: 'manual', vars: ['{first_name}','{arrival_date}'], body: `Bonjour {first_name} 👋\n\nNouvelle cargaison disponible — départ prévu le {arrival_date}.\n\nRéservez votre place dès maintenant.\n\nJumla Shipping` },
   broadcast_china: { label: 'Annonce cargaison — Route Chine', group: 'manual', vars: ['{first_name}','{route}','{departure_date}','{arrival_date}'], body: `Bonjour {first_name} 👋\n\n🇨🇳➡️🇨🇦 *Nouvelle cargaison Chine → Canada !*\n\nJumla Shipping ouvre une nouvelle cargaison maritime sur la route *{route}*.\n\n📦 Idéal pour : électronique, vêtements, articles généraux\n🚢 Départ de Chine : *{departure_date}*\n🗓 Arrivée estimée au Canada : *{arrival_date}*\n\nRéservez votre place dès maintenant sur jumla.app\n\nJumla Shipping` },
+  agent_expedition_amount: { label: 'Message agent — Montant expédition', group: 'manual', trigger: "Pré-rempli dans le bouton \"Montant expédition\" (page agent) — l'agent ajuste le montant avant d'envoyer", vars: ['{amount}','{payment_email}','{payment_password}'], body: `*Message d'information Jumla*\n\nNous procédons à l'expédition de votre colis aujourd'hui. Le montant dû est de {amount} $. Confirmer l'expédition en effectuant un paiement du montant ci-haut mentionné.\nInfos paiement : {payment_email}\nPasse ci nécessaire : {payment_password}\n\n⚠️ Sans paiement reçu, l'expédition ne pourra pas être complétée.` },
   agent_whatsapp_ready: { label: 'Message agent — Colis prêt', group: 'manual', trigger: "Pré-rempli dans le bouton WhatsApp de la fiche colis (page agent) — l'agent peut le modifier avant d'envoyer", vars: ['{parcel_code}','{warehouse_address}'], body: `Bonjour, votre colis {parcel_code} est prêt pour le retrait.\n\n📍 Adresse de retrait :\n{warehouse_address}\n\n🚚 Vous souhaitez recevoir votre colis à domicile ?\n\nVous pouvez demander une expédition en nous transmettant les informations suivantes :\n\n- Nom complet du destinataire\n- Adresse complète de livraison\n- Ville et province\n- Code postal\n- Numéro de téléphone\n\nNous vous communiquerons les frais de livraison ainsi que les modalités d'expédition.\n\nMerci de votre confiance.\n\n— Jumla Shipping` },
   // Automatiques
   auto_status_parcel:         { label: 'Statut colis',          group: 'auto', trigger: "Changement de statut d'un colis",           vars: ['{first_name}','{parcel_code}','{status_label}'], body: `Bonjour {first_name} 👋\n\nLe statut de votre colis *{parcel_code}* a été mis à jour.\n\nNouveau statut : *{status_label}*\n\nConnectez-vous à votre espace client pour suivre votre envoi.` },
